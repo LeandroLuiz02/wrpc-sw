@@ -485,12 +485,12 @@ void spll_show_stats()
 
 	if (softpll.mode > 0)
 		    pp_printf("softpll: irqs %d seq %s mode %d "
-		     "alignment_state %d HL%d ML%d HY=%d MY=%d DelCnt=%d\n",
+		     "alignment_state %d HL%d ML%d HY=%d MY=%d DelCnt=%d setpoint:%d\n",
 		      s->irq_count, statename,
 			      s->mode, s->ext.align_state,
 			      s->helper.ld.locked, s->mpll.ld.locked,
 			      s->helper.pi.y, s->mpll.pi.y,
-			      s->delock_count);
+			      s->delock_count, s->mpll.phase_shift_current);
 }
 
 int spll_shifter_busy(int channel)
@@ -649,7 +649,7 @@ int spll_update()
 	return ret != 0;
 }
 
-static int spll_measure_frequency(int osc)
+int spll_measure_frequency(int osc)
 {
 	volatile uint32_t *reg;
 
@@ -667,7 +667,7 @@ static int spll_measure_frequency(int osc)
 			return 0;
 	}
 
-    timer_delay_ms(2000);
+  //  timer_delay_ms(2000);
     return (*reg ) & (0xfffffff);
 }
 
@@ -699,20 +699,20 @@ static int calc_apr(int meas_min, int meas_max, int f_center )
 
 void check_vco_frequencies()
 {
-	disable_irq();
+	//disable_irq();
 
 	int f_min, f_max;
 	pll_verbose("SoftPLL VCO Frequency/APR test:\n");
 
-	spll_set_dac(-1, 0);
+//	spll_set_dac(-1, 0);
 	f_min = spll_measure_frequency(SPLL_OSC_DMTD);
-	spll_set_dac(-1, 65535);
+//	spll_set_dac(-1, 65535);
 	f_max = spll_measure_frequency(SPLL_OSC_DMTD);
 	pll_verbose("DMTD VCO:  Low=%d Hz Hi=%d Hz, APR = %d ppm.\n", f_min, f_max, calc_apr(f_min, f_max, 62500000));
 
-	spll_set_dac(0, 0);
+//	spll_set_dac(0, 0);
 	f_min = spll_measure_frequency(SPLL_OSC_REF);
-	spll_set_dac(0, 65535);
+//	spll_set_dac(0, 65535);
 	f_max = spll_measure_frequency(SPLL_OSC_REF);
 	pll_verbose("REF VCO:   Low=%d Hz Hi=%d Hz, APR = %d ppm.\n", f_min, f_max, calc_apr(f_min, f_max, REF_CLOCK_FREQ_HZ));
 
