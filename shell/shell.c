@@ -37,6 +37,7 @@
 #define KEY_LEFT (ESCAPE_FLAG | 68)
 #define KEY_RIGHT (ESCAPE_FLAG | 67)
 #define KEY_ENTER (13)
+#define KEY_ENTER10 (10)
 #define KEY_ESCAPE (27)
 #define KEY_BACKSPACE (127)
 #define KEY_DELETE (126)
@@ -200,6 +201,7 @@ int shell_interactive()
 				break;
 
 			case KEY_ENTER:
+			case KEY_ENTER10:
 				pp_printf("\n");
 				state = SH_EXEC;
 				break;
