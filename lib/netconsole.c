@@ -46,9 +46,14 @@ int netconsole_read_byte(void)
 	return -1;
 }
 
+/* NOTE: pp_printf will not work in this function
+ * because it can be called from pp_printf */
 int netconsole_write_string(const char *s)
 {
-	int len;
+	static int len = 0;
+	const uint8_t *p;
+	static uint8_t *d = NULL;
+
 	if (!netconsole_has_peer)
 		return 0;
 	/* Prevent recursive calls when net verbose configured.
@@ -56,12 +61,33 @@ int netconsole_write_string(const char *s)
 	 * with netconsole */
 	if (NET_IS_VERBOSE)
 		netconsole_has_peer = 0;
-	strncpy((char *) &tx_buf[UDP_END], s, SH_MAX_LINE_LEN);
-	len = min(strlen(s), SH_MAX_LINE_LEN);
-	len += UDP_END;
-	fill_udp((uint8_t *)tx_buf, len, &netconsole_udp_addr);
-	ptpd_netif_sendto(netconsole_socket,
-			  &netconsole_sock_addr, tx_buf, len, 0);
+	p = (uint8_t *)s;
+	while (1) {
+		if (!d) {
+			d = &tx_buf[UDP_END];
+			len = 0;
+			}
+		if (!*p) {
+			break;
+		}
+
+		*d = *p;
+		len++;
+		if (*d == '\n' || len == SH_MAX_LINE_LEN) {
+			len += UDP_END;
+			fill_udp((uint8_t *)tx_buf, len, &netconsole_udp_addr);
+			ptpd_netif_sendto(netconsole_socket,
+					  &netconsole_sock_addr, tx_buf, len,
+					  0);
+			d = NULL;
+			/* len is cleared when d == NULL */
+			p++;
+			continue;
+		}
+		p++;
+		d++;
+	}
+
 	if (NET_IS_VERBOSE)
 		netconsole_has_peer = 1;
 	return 0;
