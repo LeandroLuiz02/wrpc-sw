@@ -15,7 +15,7 @@
 #include "shell.h"
 #include "netconsole.h"
 
-static uint8_t __netconsole_queue[128];
+static uint8_t __netconsole_queue[152];
 static struct wrpc_socket __static_netconsole_socket = {
 	.queue.buff = __netconsole_queue,
 	.queue.size = sizeof(__netconsole_queue),
