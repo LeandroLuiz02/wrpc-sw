@@ -52,14 +52,19 @@ int netconsole_write_string(const char *s)
 	static int len = 0;
 	const uint8_t *p;
 	static uint8_t *d = NULL;
+	static int rec_level = 0;
 
 	if (netconsole_status != NETCONSOLE_ENABLED)
 		return 0;
+
 	/* Prevent recursive calls when net verbose configured.
 	 * NOTE: Even with the following if, NET_IS_VERBOSE does not work
 	 * with netconsole */
-	if (NET_IS_VERBOSE)
-		netconsole_status = NETCONSOLE_DISABLED;
+	if (rec_level > 0)
+		return 0;
+
+	rec_level++;
+	
 	p = (uint8_t *)s;
 	while (1) {
 		if (!d) {
@@ -94,8 +99,7 @@ int netconsole_write_string(const char *s)
 		d++;
 	}
 
-	if (NET_IS_VERBOSE)
-		netconsole_status = NETCONSOLE_ENABLED;
+	rec_level--;
 	return 0;
 }
 
