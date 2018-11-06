@@ -72,7 +72,12 @@ int netconsole_write_string(const char *s)
 
 		*d = *p;
 		len++;
-		if (*d == '\n' || len == SH_MAX_LINE_LEN) {
+		/* send packet on:
+		 * --newline
+		 * --"#", so prompt is send
+		 * --max line length
+		 */
+		if (*d == '\n' || *d == '#' || len == SH_MAX_LINE_LEN) {
 			len += UDP_END;
 			netconsole_udp_addr.sport = htons(NETCONSOLE_PORT);
 			getIP((void *)&netconsole_udp_addr.saddr);
