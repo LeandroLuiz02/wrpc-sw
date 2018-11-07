@@ -28,6 +28,7 @@
 #include "temperature.h"
 #include "sfp.h"
 #include "dev/syscon.h"
+#include "netconsole.h"
 #include "shell.h"
 #include "storage.h"
 
@@ -230,6 +231,9 @@ static int sdb_mem_type = -1;
 static int sdb_base_addr = -1;
 static int sdb_param = -1;
 
+/* related to wrpcNetconsoleGroup */
+static int netconsole_apply_status = 0;
+
 /* Keep the number of aux diag registers available in the FPGA bitstream */
 static uint32_t aux_diag_reg_ro_num;
 static uint32_t aux_diag_reg_rw_num;
@@ -264,6 +268,7 @@ static int func_aux_diag(uint8_t *buf, uint8_t in_oid_limb_matched_len,
 static int get_value(uint8_t *buf, uint8_t asn, void *p);
 static int get_pp(uint8_t *buf, struct snmp_oid *obj);
 static int get_p(uint8_t *buf, struct snmp_oid *obj);
+static int get_u16(uint8_t *buf, struct snmp_oid *obj);
 static int get_i32sat(uint8_t *buf, uint8_t asn, void *p);
 static int get_i32sat_pp(uint8_t *buf, struct snmp_oid *obj);
 static int get_time(uint8_t *buf, struct snmp_oid *obj);
@@ -271,6 +276,7 @@ static int get_servo(uint8_t *buf, struct snmp_oid *obj);
 static int get_port(uint8_t *buf, struct snmp_oid *obj);
 static int get_temp(uint8_t *buf, struct snmp_oid *obj);
 static int get_sfp(uint8_t *buf, struct snmp_oid *obj);
+static int get_mac(uint8_t *buf, struct snmp_oid *obj);
 static int get_aux_diag(uint8_t *buf, struct snmp_oid *obj);
 static int set_value(uint8_t *set_buff, struct snmp_oid *obj, void *p);
 static int set_pp(uint8_t *buf, struct snmp_oid *obj);
@@ -279,6 +285,7 @@ static int set_ptp_restart(uint8_t *buf, struct snmp_oid *obj);
 static int set_ptp_config(uint8_t *buf, struct snmp_oid *obj);
 static int set_init_script_config(uint8_t *buf, struct snmp_oid *obj);
 static int set_sdb(uint8_t *buf, struct snmp_oid *obj);
+static int set_netconsole(uint8_t *buf, struct snmp_oid *obj);
 static int set_aux_diag(uint8_t *buf, struct snmp_oid *obj);
 static int data_aux_diag(uint8_t *buf, struct snmp_oid *obj, int mode);
 
@@ -297,6 +304,8 @@ static uint8_t oid_wrpcPortGroup[] =        {0x2B,6,1,4,1,96,101,1,7};
 static uint8_t oid_wrpcSfpTable[] =         {0x2B,6,1,4,1,96,101,1,8,1};
 static uint8_t oid_wrpcInitScriptConfigGroup[] =   {0x2B,6,1,4,1,96,101,1,9};
 static uint8_t oid_wrpcSdbGroup[] =         {0x2B,6,1,4,1,96,101,1,10};
+static uint8_t oid_wrpcNetconsoleGetGroup[] =  {0x2B,6,1,4,1,96,101,1,11,1};
+static uint8_t oid_wrpcNetconsoleSetGroup[] =  {0x2B,6,1,4,1,96,101,1,11,2};
 /* In below OIDs zeros will be replaced in the snmp_init function by values
  * read from FPA */
 static uint8_t oid_wrpcAuxRoTable[] =       {0x2B,6,1,4,1,96,101,2,0,0,1,1};
@@ -378,6 +387,14 @@ static uint8_t oid_wrpcSdbMemType[] =            {2,0};
 static uint8_t oid_wrpcSdbBaseAddr[] =           {3,0};
 static uint8_t oid_wrpcSdbParam[] =              {4,0};
 
+/* oid_wrpcNetconsoleGetGroup */
+static uint8_t oid_wrpcNetconsoleGetStatus[] =   {1,0};
+static uint8_t oid_wrpcNetconsoleGetPeerMac[] =  {2,0};
+static uint8_t oid_wrpcNetconsoleGetPeerIp[] =   {3,0};
+static uint8_t oid_wrpcNetconsoleGetPeerPort[] = {4,0};
+
+/* oid_wrpcNetconsoleSetGroup */
+static uint8_t oid_wrpcNetconsoleSetApply[] =    {1,0};
 
 /* NOTE: to have SNMP_GET_NEXT working properly this array has to be sorted by
 	 OIDs */
@@ -488,6 +505,21 @@ static struct snmp_oid oid_array_wrpcSdbGroup[] = {
 	{ 0, }
 };
 
+/* wrpcNetconsoleGetGroup */
+static struct snmp_oid oid_array_wrpcNetconsoleGetGroup[] = {
+	OID_FIELD_VAR(   oid_wrpcNetconsoleGetStatus,   get_p,        NO_SET,         ASN_INTEGER,   &netconsole_status),
+	OID_FIELD_VAR(   oid_wrpcNetconsoleGetPeerMac,  get_mac,      NO_SET,         ASN_OCTET_STR, &netconsole_sock_addr.mac),
+	OID_FIELD_VAR(   oid_wrpcNetconsoleGetPeerIp,   get_p,        NO_SET,         ASN_IPADDRESS, &netconsole_udp_addr.daddr),
+	OID_FIELD_VAR(   oid_wrpcNetconsoleGetPeerPort, get_u16,      NO_SET,         ASN_INTEGER,   &netconsole_udp_addr.dport),
+	{ 0, }
+};
+
+/* wrpcNetconsoleSetGroup */
+static struct snmp_oid oid_array_wrpcNetconsoleSetGroup[] = {
+	OID_FIELD_VAR(   oid_wrpcNetconsoleSetApply,   get_p,        set_netconsole, ASN_INTEGER,   &netconsole_apply_status),
+	{ 0, }
+};
+
 static struct snmp_oid oid_array_wrpcAuxRoTable[] = {
 	OID_FIELD_VAR(NULL, get_aux_diag, NO_SET, ASN_UNSIGNED, AUX_DIAG_RO),
 	{ 0, }
@@ -514,6 +546,12 @@ static struct snmp_oid_limb oid_limb_array[] = {
 #endif
 #if defined(CONFIG_SNMP_SDB) && defined(CONFIG_SNMP_SET)
 	OID_LIMB_FIELD(oid_wrpcSdbGroup,         func_group, oid_array_wrpcSdbGroup),
+#endif
+#ifdef CONFIG_SNMP_NETCONSOLE
+	OID_LIMB_FIELD(oid_wrpcNetconsoleGetGroup,  func_group, oid_array_wrpcNetconsoleGetGroup),
+#endif
+#if defined(CONFIG_SNMP_NETCONSOLE) && defined(CONFIG_SNMP_SET)
+	OID_LIMB_FIELD(oid_wrpcNetconsoleSetGroup,  func_group, oid_array_wrpcNetconsoleSetGroup),
 #endif
 #ifdef CONFIG_SNMP_AUX_DIAG
 	OID_LIMB_FIELD(oid_wrpcAuxRoTable,       func_aux_diag, oid_array_wrpcAuxRoTable),
@@ -1026,6 +1064,12 @@ static int get_p(uint8_t *buf, struct snmp_oid *obj)
 	return get_value(buf, obj->asn, obj->p + obj->offset);
 }
 
+static int get_u16(uint8_t *buf, struct snmp_oid *obj)
+{
+	uint16_t tmp = *((uint16_t *)obj->p + obj->offset);
+	return get_value(buf, obj->asn, &tmp);
+}
+
 static int get_i32sat(uint8_t *buf, uint8_t asn, void *p)
 {
 	int64_t tmp_int64;
@@ -1158,6 +1202,15 @@ static int get_sfp(uint8_t *buf, struct snmp_oid *obj)
 	}
 
 	return 0;
+}
+
+/* Copy mac and add '\0' char at the end. So ASN_OCTET_STR can find the end */
+static int get_mac(uint8_t *buf, struct snmp_oid *obj)
+{
+	uint8_t mac_buf[ETH_ALEN + 1];
+	memcpy(mac_buf, obj->p, ETH_ALEN);
+	mac_buf[ETH_ALEN] = '\0';
+	return get_value(buf, obj->asn, mac_buf);
 }
 
 static int set_aux_diag(uint8_t *buf, struct snmp_oid *obj)
@@ -1513,6 +1566,37 @@ static int set_sdb(uint8_t *buf, struct snmp_oid *obj)
 	return ret;
 }
 
+static int set_netconsole(uint8_t *buf, struct snmp_oid *obj)
+{
+	int ret;
+	int32_t *apply_mode;
+
+	apply_mode = obj->p;
+	ret = set_value(buf, obj, apply_mode);
+	if (ret <= 0)
+		return ret;
+	snmp_verbose("%s enter\n", __func__);
+
+	switch (*apply_mode) {
+	case NETCONSOLE_DISABLED:
+		snmp_verbose("%s disable netconsole\n", __func__);
+		netconsole_status = NETCONSOLE_DISABLED;
+		*apply_mode = applySuccessful;
+		break;
+
+	case NETCONSOLE_OFF:
+		snmp_verbose("%s off netconsole\n", __func__);
+		netconsole_status = NETCONSOLE_OFF;
+		*apply_mode = applySuccessful;
+		break;
+
+	default:
+		*apply_mode = applyFailed;
+	}
+
+	return ret;
+}
+
 /*
  * Perverse...  snmpwalk does getnext anyways.
  *
@@ -1689,6 +1773,10 @@ static int snmp_respond(uint8_t *buf)
 		(void) oid_wrpcInitScriptConfigGroup;
 		oid_array_wrpcSdbGroup[0].oid_len = 0;
 		(void) oid_wrpcSdbGroup;
+		oid_array_wrpcNetconsoleGetGroup[0].oid_len = 0;
+		(void) oid_wrpcNetconsoleGetGroup;
+		oid_array_wrpcNetconsoleSetGroup[0].oid_len = 0;
+		(void) oid_wrpcNetconsoleSetGroup;
 	}
 
 	for (a_i = 0, h_i = 0; a_i < sizeof(match_array); a_i++, h_i++) {

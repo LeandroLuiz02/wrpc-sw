@@ -232,6 +232,13 @@ config SNMP_SDB
 	help
 	  This option adds a branch wrpcSdbGroup to the SNMP
 
+config SNMP_NETCONSOLE
+	depends on SNMP && NETCONSOLE
+	default y
+	boolean "Adds support of enabling/disabling netconsole via SNMP"
+	help
+	  This option adds a branch wrpcNetconsoleGroup to the SNMP
+
 config SNMP_AUX_DIAG
 	depends on SNMP && AUX_DIAG
 	default y if AUX_DIAG
