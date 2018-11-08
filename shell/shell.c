@@ -156,6 +156,8 @@ int shell_exec(const char *cmd)
 	shell_is_interacting = 1;
 	i = _shell_exec();
 	shell_is_interacting = 0;
+	/* clean cmd_buf */
+	cmd_buf[0] = '\0';
 	return i;
 }
 
