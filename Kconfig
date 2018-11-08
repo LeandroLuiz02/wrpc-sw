@@ -219,15 +219,14 @@ config SNMP_SET
 	  This option enables support for SET requests for Mini SNMP responder
 
 config SNMP_INIT
-	depends on SNMP && BUILD_INIT
-	default y if BUILD_INIT
-	default n
+	depends on SNMP && SNMP_SET && FLASH_INIT
+	default y
 	boolean "Adds support of changing init script/commands via SNMP"
 	help
 	  This option adds a branch wrpcInitScriptConfigGroup to the SNMP
 
 config SNMP_SDB
-	depends on SNMP && GENSDBFS
+	depends on SNMP && SNMP_SET && GENSDBFS
 	default y
 	boolean "Adds support of generation of SDB via SNMP"
 	help

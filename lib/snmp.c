@@ -509,10 +509,10 @@ static struct snmp_oid_limb oid_limb_array[] = {
 	OID_LIMB_FIELD(oid_wrpcPtpConfigGroup,   func_group, oid_array_wrpcPtpConfigGroup),
 	OID_LIMB_FIELD(oid_wrpcPortGroup,        func_group, oid_array_wrpcPortGroup),
 	OID_LIMB_FIELD(oid_wrpcSfpTable,         func_table, oid_array_wrpcSfpTable),
-#ifdef CONFIG_SNMP_INIT
+#if defined(CONFIG_SNMP_INIT) && defined(CONFIG_SNMP_SET)
 	OID_LIMB_FIELD(oid_wrpcInitScriptConfigGroup, func_group, oid_array_wrpcInitScriptConfigGroup),
 #endif
-#ifdef CONFIG_SNMP_SDB
+#if defined(CONFIG_SNMP_SDB) && defined(CONFIG_SNMP_SET)
 	OID_LIMB_FIELD(oid_wrpcSdbGroup,         func_group, oid_array_wrpcSdbGroup),
 #endif
 #ifdef CONFIG_SNMP_AUX_DIAG
