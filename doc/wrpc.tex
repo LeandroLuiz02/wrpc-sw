@@ -881,6 +881,89 @@ Depending on your board, 1-PPS output is produced on:
 \end{itemize*}
 
 % ==========================================================================
+\subsection{Netconsole}
+\label{Netconsole}
+From the version 4.3 of WRPC the output from the serial console can be
+redirected\footnote{Such redirection includes \texttt{gui} command.
+To exit from \texttt{gui} when using the netconsole, please type
+\texttt{<Esc>} followed by \texttt{<Enter>}.}
+using UDP packets (port 55) to a remote host in the network via WR port. To use such
+functionality WRPC has to have compiled in option \texttt{CONFIG\_NETCONSOLE}.
+
+To be able to configure netconsole from WRPC's command line the option
+\texttt{CONFIG\_CMD\_NETCONSOLE} has to be set in the dot-config.
+
+To make sure that netconsole is enabled, please execute \texttt{netconsole}
+command in the WRPC's shell:
+\begin{lstlisting}
+wrc# netconsole
+netconsole turned off
+\end{lstlisting}
+The above means that netconsole is ready to accept connections from a remote
+host. On the remote host, please execute the \texttt{nc}
+(or \texttt{netcat})\footnote{This is a standard tool which is installed on
+most Linux machines by default} command with the following parameters:
+\begin{lstlisting}
+host_pc$ nc -u <IP> 55
+\end{lstlisting}
+When any command is send via netconsole to WRPC it will start responding
+immediately. Please note that to trigger the sending of a command the
+\texttt{<enter>} key has to be pressed.
+
+Example session of a netconsole may look the following (on a host):
+\begin{lstlisting}
+$ nc -u 192.168.1.20 55
+
+
+wrc#temp
+ temp
+pcb:46.3750
+wrc#mode
+ mode
+running; e2e slave
+wrc#
+\end{lstlisting}
+At the same time the follwing will be printed on the serial console:
+\begin{lstlisting}
+wrc# temp
+pcb:46.3750
+wrc# mode
+running; e2e slave
+wrc#
+\end{lstlisting}
+
+Please note that all the input given on a host side will be printed twice in
+the netconsole, but only once in serial console. This will also bring an extra
+newline when \texttt{<enter>} is pressed. When all the interaction is made from
+a serial console, no extra newlines are introduced.
+Such behavior is caused by a \texttt{nc}. To get rid of such behavior custom
+version of \texttt{nc} would have to be distributed, which intentionally is
+avoided.
+
+To disable netconsole completely, please execute command:
+\begin{lstlisting}
+wrc# netconsole disable
+netconsole disabled
+\end{lstlisting}
+To make netconsole to listen for incoming messages please execute the folling
+command:
+\begin{lstlisting}
+wrc# netconsole off
+netconsole turned off
+\end{lstlisting}
+Alternatively IP, MAC and port number of netconsole's peer can be entered
+manually, so netconsole will start sending packets to a given location.
+\begin{lstlisting}
+wrc# netconsole 90:e2:ba:1a:c6:78 192.168.1.1 53364
+netconsole's peer: MAC: 90:e2:ba:1a:c6:78 IP: 192.168.1.1 port: 53364
+\end{lstlisting}
+Worth to mentione here is that \texttt{nc} accepts parameter \texttt{-p}
+which specifies on which port \texttt{nc} will communicate on the host side.
+
+WRPC also may have support of configuring netconsole via SNMP, for details
+please check the section~\ref{Configuring netconsole via SNMP}.
+
+% ==========================================================================
 \newpage
 \section{WRPC diagnostics}
 \subsection{SNMP}
@@ -1192,6 +1275,44 @@ WR-WRPC-MIB::wrpcSdbParam.0 = INTEGER: 64
 $ snmpset -t 20 $SNMP_OPT wrpcSdbApply.0 = eraseFlash
 WR-WRPC-MIB::wrpcSdbApply.0 = INTEGER: applySuccessful(100)
 \end{lstlisting}
+
+% ==========================================================================
+\subsubsection{Configuring netconsole via SNMP}
+\label{Configuring netconsole via SNMP}
+
+It is possible to check the status and configure the netconsole described in
+section~\ref{Netconsole} via SNMP. Additionally it is possible to get MAC, IP
+and port number of a peer via SNMP.
+
+To be albe to read the above parameters the option
+\texttt{CONFIG\_SNMP\_NETCONSOLE} has to be enabled.
+\begin{lstlisting}
+$ snmpwalk $SNMP_OPT wrpcNetconsoleGetGroup
+WR-WRPC-MIB::wrpcNetconsoleGetStatus.0 = INTEGER: enabled(1)
+WR-WRPC-MIB::wrpcNetconsoleGetPeerMac.0 = STRING: 90:e2:ba:1a:c6:78
+WR-WRPC-MIB::wrpcNetconsoleGetPeerIp.0 = IpAddress: 192.168.1.1
+WR-WRPC-MIB::wrpcNetconsoleGetPeerPort.0 = INTEGER: 53364
+\end{lstlisting}
+
+If SNMP sets are enabled with option \texttt{CONFIG\_SNMP\_SET}, it is possible
+to change netconsole's mode to \texttt{disable} and \texttt{off} via SNMP.
+For more details please check section~\ref{Netconsole}.
+
+Set netconsole's mode to \texttt{off}:
+\begin{lstlisting}
+$ snmpset $SNMP_OPT wrpcNetconsoleSetApply.0 = off
+WR-WRPC-MIB::wrpcNetconsoleSetApply.0 = INTEGER: applySuccessful(100)
+\end{lstlisting}
+
+Set netconsole's mode to \texttt{disable}.
+\begin{lstlisting}
+$ snmpset $SNMP_OPT wrpcNetconsoleSetApply.0 = disable
+WR-WRPC-MIB::wrpcNetconsoleSetApply.0 = INTEGER: applySuccessful(100)
+\end{lstlisting}
+
+
+As today there is no possibility to set parameters like MAC, IP and port number
+of netconsole's peer via SNMP.
 
 % ==========================================================================
 \newpage
@@ -1701,6 +1822,12 @@ udp-based network services, in addition to \textit{ptp}:
 
 	If \texttt{CONFIG\_SNMP} is set, the node is a snmp agent.
         See section \ref{Diagnostics via SNMP} for details.\\
+& \\
+\textit{ netconsole } &
+
+	If \texttt{CONFIG\_NETCONSOLE} is set, the node may mirror all serial
+	console's output to the remote host. See section~\ref{Netconsole}
+	for details.\\
 
 \end{longtable}
 
@@ -1919,7 +2046,9 @@ tools used to build and run it, you can write to our mailing list
     After setting the mode, \texttt{ptp start} must be re-issued \\
 
   \code{netconsole} & prints peer's MAC, IP and port number used by
-    the netconsole \\
+    the netconsole; to enable \code{netconsole} command
+    \texttt{CONFIG\_CMD\_NETCONSOLE} has to be set in the dot-config; for more
+    information about netconsole please refer to the section \ref{Netconsole}\\
 
   \code{netconsole <MAC> <IP> <PORT>} & sets peer's MAC, IP and port number for
     the netconsole \\
