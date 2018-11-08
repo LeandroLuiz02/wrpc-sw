@@ -898,5 +898,60 @@ wrpcNetconsoleSetApply         OBJECT-TYPE
     ::= { wrpcNetconsoleSetGroup 1 }
 
 -- ****************************************************************************
+wrpcShellCmdGroup              OBJECT IDENTIFIER ::= { wrpcCore 12 }
+
+wrpcShellCmdRun                OBJECT-TYPE
+    SYNTAX                     INTEGER {
+                                   na(0),
+                                   execute(12),
+                                   executionSuccessful(100),
+                                   executionFailed(200),
+                                   executionFailedEmptyLine(201)
+                                   executionFailedSetMagicTo44451(202)
+                               }
+    MAX-ACCESS                 read-write
+    STATUS                     current
+    DESCRIPTION
+            "Run a shell command stored in wrpcShellCmdLine. Before command is run
+             OID wrpcShellCmdMagic has to be filled with 44451. This oid can have
+             the following values:
+             execute - to run the command stored in wrpcShellCmdLine
+             executionSuccessful - trigger of a command was successful,
+                                   but this has no information whether the command itslef was successful!
+                                   Check the wrpcShellCmdReturnCode!
+             executionFailed - failed to trigger the command
+             executionFailedEmptyLine - empty wrpcShellCmdLine
+             executionFailedSetMagicTo44451 - wrong magic in wrpcShellCmdMagic
+            "
+    ::= { wrpcShellCmdGroup 1 }
+
+wrpcShellCmdLine               OBJECT-TYPE
+    SYNTAX                     DisplayString (SIZE(0..80))
+    MAX-ACCESS                 read-write
+    STATUS                     current
+    DESCRIPTION
+            "Specify the command to be run"
+    ::= { wrpcShellCmdGroup 2 }
+
+wrpcShellCmdMagic              OBJECT-TYPE
+    SYNTAX                     INTEGER {
+                                   na(0),
+                                   magic(44451)
+                               }
+    MAX-ACCESS                 read-write
+    STATUS                     current
+    DESCRIPTION
+            "To be able to execute command this OID has to contain 44451. After a run of a command this OID is zeroed"
+    ::= { wrpcShellCmdGroup 3 }
+
+wrpcShellCmdReturnCode         OBJECT-TYPE
+    SYNTAX                     Integer32
+    MAX-ACCESS                 read-write
+    STATUS                     current
+    DESCRIPTION
+            "Return code of last executed command"
+    ::= { wrpcShellCmdGroup 4 }
+
+-- ****************************************************************************
 
 END

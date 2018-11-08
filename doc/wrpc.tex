@@ -1315,6 +1315,58 @@ As today there is no possibility to set parameters like MAC, IP and port number
 of netconsole's peer via SNMP.
 
 % ==========================================================================
+\subsubsection{Run shell command via SNMP}
+\label{Run shell command via SNMP}
+
+When options \texttt{CONFIG\_SNMP\_CMD} and \texttt{CONFIG\_SNMP\_SET} are
+enabled in a dot-config, it is possible to trigger execution of any shell
+command via SNMP.
+
+To trigger an exectuion of a command, the command has to be set to
+the OID \texttt{wrpcShellCmdLine.0}. To prevent accidential runs, the magic
+number \texttt{44451} (literal \texttt{magic} can be used instead) has to be
+set in the OID \texttt{wrpcShellCmdMagic.0}.
+Finally, to trigger the execution set the OID \texttt{wrpcShellCmdRun.0} with
+value 12 (or literal \texttt{execute}). The last set will return information
+whether the triggering of a command was successful or not. To figure out if
+the command succeeded, please check the return value stored in the OID
+\texttt{wrpcShellCmdReturnCode.0}
+
+The example below shows the execution of \texttt{ip} command via SNMP.
+\begin{lstlisting}
+$ snmpset $SNMP_OPT wrpcShellCmdLine.0 = "ip"
+WR-WRPC-MIB::wrpcShellCmdLine.0 = STRING: ver
+$ snmpset $SNMP_OPT wrpcShellCmdMagic.0 = magic
+WR-WRPC-MIB::wrpcShellCmdMagic.0 = INTEGER: magic(44451)
+$ snmpset $SNMP_OPT wrpcShellCmdRun.0 = execute
+WR-WRPC-MIB::wrpcShellCmdRun.0 = INTEGER: executionSuccessful(100)
+\end{lstlisting}
+
+To check the return value:
+\begin{lstlisting}
+$ snmpget $SNMP_OPT WR-WRPC-MIB::wrpcShellCmdReturnCode
+WR-WRPC-MIB::wrpcShellCmdReturnCode.0 = INTEGER: 0
+\end{lstlisting}
+
+The \texttt{ip} command triggered in the above example caused the following
+output on a serial console:
+\begin{lstlisting}
+Execute command from SNMP: "ip"
+IP-address: 192.168.1.20 (from bootp)
+\end{lstlisting}
+
+The output of the executed command is printed only on the serial
+console\footnote{However, it can be also mirrored to the netconsole.
+For details, please check the section~\ref{Netconsole}.}.
+As today it cannot be forwarded via SNMP.
+
+\textbf{Note:} the maximum supported length of a command is the same as for
+the serial console's shell, which is 80 chars.
+
+\textbf{Note:} Be careful with interactive commands. It is possible to start
+such command (e.g. \texttt{gui}) via SNMP, but it is not possible to stop it.
+
+% ==========================================================================
 \newpage
 \subsection{Syslog}
 \label{Syslog}

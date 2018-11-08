@@ -232,6 +232,13 @@ config SNMP_SDB
 	help
 	  This option adds a branch wrpcSdbGroup to the SNMP
 
+config SNMP_CMD
+	depends on SNMP && SNMP_SET
+	default y
+	boolean "Allow to run any shell command via SNMP"
+	help
+	  This option adds a branch wrpcShellCmdGroup to the SNMP
+
 config SNMP_NETCONSOLE
 	depends on SNMP && NETCONSOLE
 	default y

@@ -131,6 +131,14 @@
  * wrpcPtpConfigApply */
 #define applyFailedEmptyParam 201
 
+/* new defines for oid_wrpcShellCmdRun */
+#define execute 12
+#define executionSuccessful 100
+#define executionFailed 200
+#define executionFailedEmptyLine 201
+#define executionFailedSetMagicTo44451 202
+#define shellCmdReturnCodeMAGIC 44451
+
 /* defines for wrpcTemperatureTable */
 #define TABLE_ROW 1
 #define TABLE_COL 0
@@ -234,6 +242,12 @@ static int sdb_param = -1;
 /* related to wrpcNetconsoleGroup */
 static int netconsole_apply_status = 0;
 
+/* related to wrpcShellCmdGroup */
+static char shell_cmd_line[SH_MAX_LINE_LEN + 1];
+static int shell_cmd_apply_status;
+static int shell_cmd_magic;
+static int shell_cmd_return_code;
+
 /* Keep the number of aux diag registers available in the FPGA bitstream */
 static uint32_t aux_diag_reg_ro_num;
 static uint32_t aux_diag_reg_rw_num;
@@ -286,6 +300,7 @@ static int set_ptp_config(uint8_t *buf, struct snmp_oid *obj);
 static int set_init_script_config(uint8_t *buf, struct snmp_oid *obj);
 static int set_sdb(uint8_t *buf, struct snmp_oid *obj);
 static int set_netconsole(uint8_t *buf, struct snmp_oid *obj);
+static int set_shell_cmd(uint8_t *buf, struct snmp_oid *obj);
 static int set_aux_diag(uint8_t *buf, struct snmp_oid *obj);
 static int data_aux_diag(uint8_t *buf, struct snmp_oid *obj, int mode);
 
@@ -306,6 +321,7 @@ static uint8_t oid_wrpcInitScriptConfigGroup[] =   {0x2B,6,1,4,1,96,101,1,9};
 static uint8_t oid_wrpcSdbGroup[] =         {0x2B,6,1,4,1,96,101,1,10};
 static uint8_t oid_wrpcNetconsoleGetGroup[] =  {0x2B,6,1,4,1,96,101,1,11,1};
 static uint8_t oid_wrpcNetconsoleSetGroup[] =  {0x2B,6,1,4,1,96,101,1,11,2};
+static uint8_t oid_wrpcShellCmdGroup[] =    {0x2B,6,1,4,1,96,101,1,12};
 /* In below OIDs zeros will be replaced in the snmp_init function by values
  * read from FPA */
 static uint8_t oid_wrpcAuxRoTable[] =       {0x2B,6,1,4,1,96,101,2,0,0,1,1};
@@ -395,6 +411,12 @@ static uint8_t oid_wrpcNetconsoleGetPeerPort[] = {4,0};
 
 /* oid_wrpcNetconsoleSetGroup */
 static uint8_t oid_wrpcNetconsoleSetApply[] =    {1,0};
+
+/* oid_wrpcShellCmdGroup */
+static uint8_t oid_wrpcShellCmdRun[] =           {1,0};
+static uint8_t oid_wrpcShellCmdLine[] =          {2,0};
+static uint8_t oid_wrpcShellCmdMagic[] =         {3,0};
+static uint8_t oid_wrpcShellCmdReturnCode[] =    {4,0};
 
 /* NOTE: to have SNMP_GET_NEXT working properly this array has to be sorted by
 	 OIDs */
@@ -520,6 +542,15 @@ static struct snmp_oid oid_array_wrpcNetconsoleSetGroup[] = {
 	{ 0, }
 };
 
+/* wrpcShellCmdGroup */
+static struct snmp_oid oid_array_wrpcShellCmdGroup[] = {
+	OID_FIELD_VAR(   oid_wrpcShellCmdRun,        get_p, set_shell_cmd, ASN_INTEGER,   &shell_cmd_apply_status),
+	OID_FIELD_VAR(   oid_wrpcShellCmdLine,       get_p, set_p,         ASN_OCTET_STR, &shell_cmd_line),
+	OID_FIELD_VAR(   oid_wrpcShellCmdMagic,      get_p, set_p,         ASN_INTEGER,   &shell_cmd_magic),
+	OID_FIELD_VAR(   oid_wrpcShellCmdReturnCode, get_p, set_p,         ASN_INTEGER,   &shell_cmd_return_code),
+	{ 0, }
+};
+
 static struct snmp_oid oid_array_wrpcAuxRoTable[] = {
 	OID_FIELD_VAR(NULL, get_aux_diag, NO_SET, ASN_UNSIGNED, AUX_DIAG_RO),
 	{ 0, }
@@ -552,6 +583,9 @@ static struct snmp_oid_limb oid_limb_array[] = {
 #endif
 #if defined(CONFIG_SNMP_NETCONSOLE) && defined(CONFIG_SNMP_SET)
 	OID_LIMB_FIELD(oid_wrpcNetconsoleSetGroup,  func_group, oid_array_wrpcNetconsoleSetGroup),
+#endif
+#if defined(CONFIG_SNMP_CMD) && defined(CONFIG_SNMP_SET)
+	OID_LIMB_FIELD(oid_wrpcShellCmdGroup,    func_group, oid_array_wrpcShellCmdGroup),
 #endif
 #ifdef CONFIG_SNMP_AUX_DIAG
 	OID_LIMB_FIELD(oid_wrpcAuxRoTable,       func_aux_diag, oid_array_wrpcAuxRoTable),
@@ -1597,6 +1631,49 @@ static int set_netconsole(uint8_t *buf, struct snmp_oid *obj)
 	return ret;
 }
 
+static int set_shell_cmd(uint8_t *buf, struct snmp_oid *obj)
+{
+	int ret;
+	int32_t *apply_mode;
+
+	apply_mode = obj->p;
+	ret = set_value(buf, obj, apply_mode);
+	if (ret <= 0)
+		return ret;
+	snmp_verbose("%s enter\n", __func__);
+
+	switch (*apply_mode) {
+	case execute:
+		if (shell_cmd_line[0]=='\0') {
+			snmp_verbose("%s empty command\n", __func__);
+			*apply_mode = executionFailedEmptyLine;
+			break;
+		}
+		if (shell_cmd_magic != shellCmdReturnCodeMAGIC) {
+			snmp_verbose("%s wrong magic %d in "
+				     "wrpcShellCmdMagic\n",
+				     __func__, shell_cmd_magic);
+			*apply_mode = executionFailedSetMagicTo44451;
+			break;
+			}
+		pp_printf("Execute command from SNMP: \"%s\"\n",
+			    shell_cmd_line);
+		/* make sure cmd is null terminated */
+		shell_cmd_line[SH_MAX_LINE_LEN] = '\0';
+		shell_cmd_return_code = shell_exec(shell_cmd_line);
+		/* clean shell_cmd_magic */
+		shell_cmd_magic = 0;
+		*apply_mode = applySuccessful;
+		break;
+
+	default:
+		*apply_mode = executionFailed;
+	}
+
+	return ret;
+}
+
+
 /*
  * Perverse...  snmpwalk does getnext anyways.
  *
@@ -1777,6 +1854,8 @@ static int snmp_respond(uint8_t *buf)
 		(void) oid_wrpcNetconsoleGetGroup;
 		oid_array_wrpcNetconsoleSetGroup[0].oid_len = 0;
 		(void) oid_wrpcNetconsoleSetGroup;
+		oid_array_wrpcShellCmdGroup[0].oid_len = 0;
+		(void) oid_wrpcShellCmdGroup;
 	}
 
 	for (a_i = 0, h_i = 0; a_i < sizeof(match_array); a_i++, h_i++) {
