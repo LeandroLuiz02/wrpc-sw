@@ -400,9 +400,26 @@ config NETCONSOLE
 	help
 	  Include netconsole to be run via UDP
 
+choice
+	prompt "Default mode of netconsole"
+	depends on NETCONSOLE
+	default NETCONSOLE_DEF_DISABLE
+
+config NETCONSOLE_DEF_WAIT
+	boolean "Netconsole is waiting for peer"
+	help
+	  Netconsole is waiting for peer to send a command
+
+config NETCONSOLE_DEF_DISABLE
+	boolean "Netconsole is disabled"
+	help
+	  Use SNMP or shell command to enable netconsole
+
+endchoice
+
 config CMD_NETCONSOLE
 	depends on NETCONSOLE
-	boolean "Include command to configure netconsole"
+	boolean "Include shell command to configure netconsole"
 	default y
 	help
 	  Include command to configure netconsole

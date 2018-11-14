@@ -15,6 +15,12 @@
 #include "shell.h"
 #include "netconsole.h"
 
+#ifdef CONFIG_NETCONSOLE_DEF_WAIT
+#define NETCONSOLE_DEF_VAL NETCONSOLE_WAIT
+#else
+#define NETCONSOLE_DEF_VAL NETCONSOLE_DISABLED
+#endif
+
 static uint8_t __netconsole_queue[152];
 static struct wrpc_socket __static_netconsole_socket = {
 	.queue.buff = __netconsole_queue,
@@ -27,7 +33,7 @@ static unsigned char *cmd_rx_p = NULL;
 static uint8_t tx_buf[UDP_END + SH_MAX_LINE_LEN + 1];
 static uint8_t rx_buf[UDP_END + SH_MAX_LINE_LEN + 1];
 struct wr_sockaddr netconsole_sock_addr;
-int netconsole_status = NETCONSOLE_WAIT;
+int netconsole_status = NETCONSOLE_DEF_VAL;
 struct wr_udp_addr netconsole_udp_addr;
 
 

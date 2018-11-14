@@ -889,6 +889,10 @@ To exit from \texttt{gui} when using the netconsole, please type
 \texttt{<Esc>} followed by \texttt{<Enter>}.}
 using UDP packets (port 55) to a remote host in the network via WR port. To use such
 functionality WRPC has to have compiled in option \texttt{CONFIG\_NETCONSOLE}.
+If option \texttt{NETCONSOLE\_DEF\_WAIT} is enabled WRPC after the start will
+wait for peer to comunicate with it. On the other hand if option
+\texttt{NETCONSOLE\_DEF\_DISABLE} is activated, then WRPC will not respond
+to any netconsole requests.
 
 To be able to configure netconsole from WRPC's command line the option
 \texttt{CONFIG\_CMD\_NETCONSOLE} has to be set in the dot-config.
