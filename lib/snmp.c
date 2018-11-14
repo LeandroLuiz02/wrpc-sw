@@ -1618,9 +1618,9 @@ static int set_netconsole(uint8_t *buf, struct snmp_oid *obj)
 		*apply_mode = applySuccessful;
 		break;
 
-	case NETCONSOLE_OFF:
-		snmp_verbose("%s off netconsole\n", __func__);
-		netconsole_status = NETCONSOLE_OFF;
+	case NETCONSOLE_WAIT:
+		snmp_verbose("%s wait netconsole\n", __func__);
+		netconsole_status = NETCONSOLE_WAIT;
 		*apply_mode = applySuccessful;
 		break;
 

@@ -897,7 +897,7 @@ To make sure that netconsole is enabled, please execute \texttt{netconsole}
 command in the WRPC's shell:
 \begin{lstlisting}
 wrc# netconsole
-netconsole turned off
+netconsole is waiting for peer
 \end{lstlisting}
 The above means that netconsole is ready to accept connections from a remote
 host. On the remote host, please execute the \texttt{nc}
@@ -948,8 +948,8 @@ netconsole disabled
 To make netconsole to listen for incoming messages please execute the folling
 command:
 \begin{lstlisting}
-wrc# netconsole off
-netconsole turned off
+wrc# netconsole wait
+netconsole is waiting for peer
 \end{lstlisting}
 Alternatively IP, MAC and port number of netconsole's peer can be entered
 manually, so netconsole will start sending packets to a given location.
@@ -1295,12 +1295,12 @@ WR-WRPC-MIB::wrpcNetconsoleGetPeerPort.0 = INTEGER: 53364
 \end{lstlisting}
 
 If SNMP sets are enabled with option \texttt{CONFIG\_SNMP\_SET}, it is possible
-to change netconsole's mode to \texttt{disable} and \texttt{off} via SNMP.
+to change netconsole's mode to \texttt{disable} and \texttt{wait} via SNMP.
 For more details please check section~\ref{Netconsole}.
 
-Set netconsole's mode to \texttt{off}:
+Set netconsole's mode to \texttt{wait}:
 \begin{lstlisting}
-$ snmpset $SNMP_OPT wrpcNetconsoleSetApply.0 = off
+$ snmpset $SNMP_OPT wrpcNetconsoleSetApply.0 = wait
 WR-WRPC-MIB::wrpcNetconsoleSetApply.0 = INTEGER: applySuccessful(100)
 \end{lstlisting}
 
@@ -2105,8 +2105,9 @@ tools used to build and run it, you can write to our mailing list
   \code{netconsole <MAC> <IP> <PORT>} & sets peer's MAC, IP and port number for
     the netconsole \\
 
-  \code{netconsole off} & turn off the netconsole, will be turned on again when
-    next netconsole's packet arrives to WRPC \\
+  \code{netconsole wait} & let the netconsole to wait for communication from
+    peer; netconsole will transmit when the next netconsole's packet arrives to
+    WRPC \\
 
   \code{netconsole disable} & disable netconsole until enabled manually \\
 

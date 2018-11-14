@@ -29,8 +29,8 @@ static void print_netconsole_status(void) {
 		pp_printf("IP: %s ", buf);
 		pp_printf("port: %d\n", netconsole_udp_addr.dport);
 		break;
-	case NETCONSOLE_OFF:
-		pp_printf("netconsole turned off\n");
+	case NETCONSOLE_WAIT:
+		pp_printf("netconsole is waiting for peer\n");
 		break;
 	case NETCONSOLE_DISABLED:
 		pp_printf("netconsole disabled\n");
@@ -44,9 +44,9 @@ static int cmd_netconsole(const char *args[])
 {
 	if (!args[0]) {
 		/* do nothing here, later print status */
-	} else if (!strcasecmp(args[0], "off")) {
+	} else if (!strcasecmp(args[0], "wait")) {
 		/* Disable netconsole */
-		netconsole_status = NETCONSOLE_OFF;
+		netconsole_status = NETCONSOLE_WAIT;
 	} else if (!strcasecmp(args[0], "disable")) {
 		/* Disable permanently netconsole */
 		netconsole_status = NETCONSOLE_DISABLED;
@@ -57,7 +57,7 @@ static int cmd_netconsole(const char *args[])
 		netconsole_udp_addr.dport = atoi(args[2]);
 		netconsole_status = NETCONSOLE_ENABLED;
 	} else {
-		pp_printf("uage: netconsole off | disable | "
+		pp_printf("uage: netconsole wait | disable | "
 			  "<MAC> <IP> <port> \n");
 		return -EINVAL;
 	}

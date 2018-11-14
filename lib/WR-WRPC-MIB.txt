@@ -839,15 +839,15 @@ wrpcNetconsoleGetStatus        OBJECT-TYPE
                                    na(0),
                                    enabled(1),
                                    disable(2),
-                                   off(3)
+                                   wait(3)
                                }
     MAX-ACCESS                 read-only
     STATUS                     current
     DESCRIPTION
             "Status of netconsole
             enabled - serial console is copied to a host in the network
-            disabled - netconsole is not working, to resume it, please set it to _off_
-            off - node is listening for commands to arrive from host, but nothing
+            disabled - netconsole is not working, to resume it, please set it to _wait_
+            wait - node is listening for commands to arrive from host, but nothing
                   is send; when netconsole packet arrives all further messages
                   from serial console will be copied to netconsole
             "
@@ -882,7 +882,7 @@ wrpcNetconsoleSetApply         OBJECT-TYPE
     SYNTAX                     INTEGER {
                                    na(0),
                                    disable(2),
-                                   off(3),
+                                   wait(3),
                                    applySuccessful(100),
                                    applyFailed(200),
                                }
@@ -891,7 +891,7 @@ wrpcNetconsoleSetApply         OBJECT-TYPE
     DESCRIPTION
             "Make a change to a netconsole setting:
             disable - don't send anything via netconsole nor wait for any input
-            off - don't send anything via netconsole, but wait for any input to start sending
+            wait - don't send anything via netconsole, but wait for any input to start sending
             applySuccessful - successful to change state of netconsole
             applyFailed - failed to change state of netconsole
             "

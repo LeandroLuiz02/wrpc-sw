@@ -27,7 +27,7 @@ static unsigned char *cmd_rx_p = NULL;
 static uint8_t tx_buf[UDP_END + SH_MAX_LINE_LEN + 1];
 static uint8_t rx_buf[UDP_END + SH_MAX_LINE_LEN + 1];
 struct wr_sockaddr netconsole_sock_addr;
-int netconsole_status = NETCONSOLE_OFF;
+int netconsole_status = NETCONSOLE_WAIT;
 struct wr_udp_addr netconsole_udp_addr;
 
 
