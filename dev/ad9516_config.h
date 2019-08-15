@@ -78,7 +78,7 @@ const struct ad9516_reg ad9516_base_config_34[] = {
 {0x0003, 0xC3},
 {0x0004, 0x00},
 {0x0010, 0x7C},
-{0x0011, 0x04},
+{0x0011, 0x05},
 {0x0012, 0x00},
 {0x0013, 0x0C},
 {0x0014, 0x12},
@@ -220,7 +220,7 @@ const struct ad9516_reg ad9516_ext_base_config[] = {
 
 /* Config for 25 MHz VCTCXO reference (RDiv = 5, use REF1) */
 const struct ad9516_reg ad9516_ref_tcxo[] = {
-{0x0011, 0x04},
+{0x0011, 0x05},
 {0x0012, 0x00}, /* RDiv = 4 */
 {0x001C, 0x06}  /* Use REF1 */
 };
