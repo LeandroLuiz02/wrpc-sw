@@ -7,4 +7,6 @@
 #define GPIO_EXT_OSC_FRED_D1	7
 #define GPIO_EXT_OSC_FRED_D2	8
 
+extern int ljd_present;
+
 #endif
