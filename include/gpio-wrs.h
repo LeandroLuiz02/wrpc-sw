@@ -10,6 +10,17 @@
 
 #include "board.h"
 
+#define GPIO_SYS_CLK_SEL	0
+#define GPIO_PLL_RESET_N	1
+#define GPIO_PERIPH_RESET_N	3
+#define GPIO_EXT_PLL_RESET_N	4
+#define GPIO_EXT_BOARD_DETECT	5
+#define GPIO_EXT_OSC_FRED_D0	6
+#define GPIO_EXT_OSC_FRED_D1	7
+#define GPIO_EXT_OSC_FRED_D2	8
+
+extern int ljd_present;
+
 struct GPIO_WB
 {
   uint32_t CODR;  /*Clear output register*/

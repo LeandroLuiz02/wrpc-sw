@@ -14,7 +14,6 @@
 #include "softpll_ng.h"
 #include "irq.h"
 #include "gpio-wrs.h"
-#include "ext-board.h"
 
 #define ALIGN_SAMPLE_PERIOD 100000
 #define ALIGN_TARGET 0

@@ -20,7 +20,6 @@
 #include "board.h"
 #include "syscon.h"
 #include "gpio-wrs.h"
-#include "ext-board.h"
 
 #include "rt_ipc.h"
 
@@ -69,10 +68,6 @@ struct ad9516_reg {
 #define SPI_CTRL_RXNEG		(1<<9)
 #define SPI_CTRL_GO_BSY		(1<<8)
 #define SPI_CTRL_CHAR_LEN(x)	((x) & 0x7f)
-
-#define GPIO_PLL_RESET_N 1
-#define GPIO_SYS_CLK_SEL 0
-#define GPIO_PERIPH_RESET_N 3
 
 #define CS_PLL	0 /* AD9516 on SPI CS0 */
 

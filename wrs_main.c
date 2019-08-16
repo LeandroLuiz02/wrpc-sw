@@ -14,7 +14,6 @@
 #include "revision.h"
 #include "system_checks.h"
 #include "gpio-wrs.h"
-#include "ext-board.h"
 
 
 int scb_ver = 33;		/* SCB version */
