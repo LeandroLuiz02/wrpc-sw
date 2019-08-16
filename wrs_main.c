@@ -55,7 +55,7 @@ int main(void)
 		/* for sure problem is in calling second time ad9516_init,
 		 * but not only */
 	}
-	ad9516_init(scb_ver);
+	ad9516_init(scb_ver, ljd_present);
 	rts_init();
 	rtipc_init();
 	spll_very_init();

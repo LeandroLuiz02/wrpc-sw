@@ -22,6 +22,8 @@ extern void spll_log_dac(int y);
 static inline void spll_log_dac(int y) {}
 #endif
 
+extern int ljd_present;
+
 void mpll_init(struct spll_main_state *s, int id_ref,
 		      int id_out)
 {
@@ -31,8 +33,13 @@ void mpll_init(struct spll_main_state *s, int id_ref,
 	s->pi.anti_windup = 1;
 	s->pi.bias = 30000;
 #if defined(CONFIG_WR_SWITCH)
-	s->pi.kp = 1100;		// / 2;
-	s->pi.ki = 30;			// / 2;
+	if (ljd_present) {
+		s->pi.kp = 2000;
+		s->pi.ki = 15;
+	} else {
+		s->pi.kp = 1100;		// / 2;
+		s->pi.ki = 30;			// / 2;
+	}
 #elif defined(CONFIG_WR_NODE)
 	s->pi.kp = -1100;		// / 2;
 	s->pi.ki = -30;			// / 2;

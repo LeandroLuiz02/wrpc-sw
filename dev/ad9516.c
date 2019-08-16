@@ -229,7 +229,7 @@ int ext_ad9516_locked (void)
 	return 0;
 }
 
-int ad9516_init(int scb_version)
+int ad9516_init(int scb_version, int ljd_present)
 {
 	pp_printf("Initializing AD9516 PLL...\n");
 
@@ -259,7 +259,11 @@ int ad9516_init(int scb_version)
 	else 				//Old one
 		ad9516_load_regset(spi_base, ad9516_base_config_33, ARRAY_SIZE(ad9516_base_config_33), 0);
 
-	ad9516_load_regset(spi_base, ad9516_ref_tcxo, ARRAY_SIZE(ad9516_ref_tcxo), 1);
+	/* Set R divider value depending on Low-Jitter Daughterboard presence */
+	if (ljd_present)
+		ad9516_load_regset(spi_base, ad9516_ref_ljd, ARRAY_SIZE(ad9516_ref_tcxo), 1);
+	else
+		ad9516_load_regset(spi_base, ad9516_ref_tcxo, ARRAY_SIZE(ad9516_ref_tcxo), 1);
 	ad9516_wait_lock(spi_base);
 
 	ad9516_sync_outputs(spi_base);
