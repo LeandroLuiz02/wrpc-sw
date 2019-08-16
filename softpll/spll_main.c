@@ -22,8 +22,6 @@ extern void spll_log_dac(int y);
 static inline void spll_log_dac(int y) {}
 #endif
 
-extern int ljd_present;
-
 void mpll_init(struct spll_main_state *s, int id_ref,
 		      int id_out)
 {

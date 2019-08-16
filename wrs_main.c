@@ -17,7 +17,6 @@
 
 
 int scb_ver = 33;		/* SCB version */
-int ljd_present = 0;		/* Low-jitter Daughterboard presence indicator */
 
 extern struct spll_stats stats;
 
