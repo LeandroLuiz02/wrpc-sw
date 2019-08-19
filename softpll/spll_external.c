@@ -14,6 +14,7 @@
 #include "softpll_ng.h"
 #include "irq.h"
 #include "gpio-wrs.h"
+#include "syscon.h"
 
 #define ALIGN_SAMPLE_PERIOD 100000
 #define ALIGN_TARGET 0
@@ -53,16 +54,10 @@ void external_start(struct spll_external_state *s)
 
 int external_locked(volatile struct spll_external_state *s)
 {
-	if (!s->helper->ld.locked || !s->main->ld.locked)
-	  return 0;
-	
-	if (!ljd_present && (!(SPLL->ECCR & SPLL_ECCR_EXT_REF_LOCKED) ||  // ext PLL became unlocked
-		 (SPLL->ECCR & SPLL_ECCR_EXT_REF_STOPPED)))   // 10MHz unplugged (only SPEC)
+	if (!s->helper->ld.locked || !s->main->ld.locked ||
+			!(SPLL->ECCR & SPLL_ECCR_EXT_REF_LOCKED) ||  // ext PLL became unlocked
+			(SPLL->ECCR & SPLL_ECCR_EXT_REF_STOPPED))   // 10MHz unplugged (only SPEC)
 		return 0;
-//FIXME A bug prevents the correct locking if the external lock check is executed
-//	Correct way to solve it: export the LOCK signal from the gateware and check it
-//	if (ljd_present && ext_ad9516_locked())
-//		return 1;
 	
 	switch(s->align_state) {
 		case ALIGN_STATE_EXT_OFF:
@@ -105,6 +100,8 @@ int external_align_fsm(volatile struct spll_external_state *s)
 {
 	int v, done_sth = 0;
 	uint32_t f_ext = 0;
+	int ljd_ad9516_stat;
+	static int timeout;
 
 	switch(s->align_state) {
 		case ALIGN_STATE_EXT_OFF:
@@ -115,15 +112,21 @@ int external_align_fsm(volatile struct spll_external_state *s)
 				SPLL->ECCR |= SPLL_ECCR_EXT_REF_PLLRST;
 				s->align_state = ALIGN_STATE_WAIT_PLOCK;
 				done_sth++;
+			} else if (ljd_present) {
+				/* reset ljd ad9516 */
+				SPLL->ECCR |= SPLL_ECCR_EXT_REF_PLLRST;
+				timer_delay(10);
+				SPLL->ECCR &= (~SPLL_ECCR_EXT_REF_PLLRST);
+				timer_delay(10);
+				ljd_ad9516_stat = ext_ad9516_init();
+				f_ext = spll_measure_frequency(SPLL_OSC_EXT);
+				if (!ljd_ad9516_stat && (f_ext > 9999000) && (f_ext < 10001000)) {
+					s->align_state = ALIGN_STATE_WAIT_PLOCK;
+					pp_printf("External AD9516 locked\n");
+				}
 			}
-			f_ext = spll_measure_frequency(SPLL_OSC_EXT);
-			if (ljd_present && (f_ext > 9999000) && (f_ext < 10001000))
-			       if (!ext_ad9516_init()) {
-				  s->align_state = ALIGN_STATE_WAIT_PLOCK;
-			          pp_printf("External AD9516 locked\n");
-			       }
-			
-			break;
+				
+				break;
 
 		case ALIGN_STATE_WAIT_PLOCK:
 			SPLL->ECCR &= (~SPLL_ECCR_EXT_REF_PLLRST);
@@ -141,6 +144,9 @@ int external_align_fsm(volatile struct spll_external_state *s)
 				enable_irq();
 				s->align_state = ALIGN_STATE_START_MAIN;
 				done_sth++;
+			} else if (time_after(timer_get_tics(), timeout + 5*TICS_PER_SECOND)) {
+				pll_verbose("EXT: timeout, restarting\n");
+				s->align_state = ALIGN_STATE_WAIT_CLKIN;
 			}
 			break;
 
@@ -153,6 +159,9 @@ int external_align_fsm(volatile struct spll_external_state *s)
 				s->align_state = ALIGN_STATE_INIT_CSYNC;
 				pll_verbose("EXT: DMTD locked.\n");
 				done_sth++;
+			} else if (time_after(timer_get_tics(), timeout + 5*TICS_PER_SECOND)) {
+				pll_verbose("EXT: timeout, restarting\n");
+				s->align_state = ALIGN_STATE_WAIT_CLKIN;
 			}
 			break;
 
@@ -222,6 +231,9 @@ int external_align_fsm(volatile struct spll_external_state *s)
 
 		default:
 			break;
+	}
+	if (done_sth > 0) {
+		timeout = timer_get_tics();
 	}
 	return done_sth != 0;
 }

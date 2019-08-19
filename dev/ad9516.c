@@ -216,14 +216,6 @@ static void ad9516_sync_outputs(void *spi_base)
 
 }
 
-int ext_ad9516_locked (void)
-{
-	if ((ad9516_read_reg((void *)BASE_SPI_EXT_BOARD,  0x1f) & 1))
-	    return 1;
-
-	return 0;
-}
-
 int ad9516_init(int scb_version, int ljd_present)
 {
 	pp_printf("Initializing AD9516 PLL...\n");
@@ -303,13 +295,6 @@ int ext_ad9516_init (void) {
 	oc_spi_init((void *)BASE_SPI_EXT_BOARD);
 	void *spi_base = (void *)BASE_SPI_EXT_BOARD;
 
-	
-	/* reset the PLL */
-	gpio_out(GPIO_EXT_PLL_RESET_N, 0);
-	timer_delay(10);
-	gpio_out(GPIO_EXT_PLL_RESET_N, 1);
-	timer_delay(10);
-	
 	/* Use unidirectional SPI mode */
 	ad9516_write_reg((void *)spi_base, 0x000, 0x99);
 
