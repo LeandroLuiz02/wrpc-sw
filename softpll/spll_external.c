@@ -13,8 +13,6 @@
 #include <wrc.h>
 #include "softpll_ng.h"
 #include "irq.h"
-#include "gpio-wrs.h"
-#include "syscon.h"
 
 #define ALIGN_SAMPLE_PERIOD 100000
 #define ALIGN_TARGET 0
@@ -99,8 +97,6 @@ static inline int get_pps_latency(int sel)
 int external_align_fsm(volatile struct spll_external_state *s)
 {
 	int v, done_sth = 0;
-	uint32_t f_ext = 0;
-	int ljd_ad9516_stat;
 	static int timeout;
 
 	switch(s->align_state) {
@@ -112,7 +108,11 @@ int external_align_fsm(volatile struct spll_external_state *s)
 				SPLL->ECCR |= SPLL_ECCR_EXT_REF_PLLRST;
 				s->align_state = ALIGN_STATE_WAIT_PLOCK;
 				done_sth++;
-			} else if (ljd_present) {
+			}
+#if defined(CONFIG_WR_SWITCH)
+			else if (ljd_present) {
+				uint32_t f_ext;
+				int ljd_ad9516_stat;
 				/* reset ljd ad9516 */
 				SPLL->ECCR |= SPLL_ECCR_EXT_REF_PLLRST;
 				timer_delay(10);
@@ -125,8 +125,8 @@ int external_align_fsm(volatile struct spll_external_state *s)
 					pp_printf("External AD9516 locked\n");
 				}
 			}
-				
-				break;
+#endif
+			break;
 
 		case ALIGN_STATE_WAIT_PLOCK:
 			SPLL->ECCR &= (~SPLL_ECCR_EXT_REF_PLLRST);
