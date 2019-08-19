@@ -127,10 +127,9 @@ int external_align_fsm(volatile struct spll_external_state *s)
 
 		case ALIGN_STATE_WAIT_PLOCK:
 			SPLL->ECCR &= (~SPLL_ECCR_EXT_REF_PLLRST);
-			if(!ljd_present && SPLL->ECCR & SPLL_ECCR_EXT_REF_STOPPED )
+			if(SPLL->ECCR & SPLL_ECCR_EXT_REF_STOPPED )
 				s->align_state = ALIGN_STATE_WAIT_CLKIN;
-			else if((!ljd_present && SPLL->ECCR & SPLL_ECCR_EXT_REF_LOCKED ) ||
-			  (ljd_present && ext_ad9516_locked()))
+			else if(SPLL->ECCR & SPLL_ECCR_EXT_REF_LOCKED)
 				s->align_state = ALIGN_STATE_START;
 			done_sth++;
 			break;
