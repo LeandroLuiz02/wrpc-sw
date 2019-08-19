@@ -146,7 +146,7 @@ const struct ad9516_reg ad9516_base_config_34[] = {
 
 
 /* Configuration for the SCB version greater than or equal 3.4: Base + 6, 7, 8, 9 outputs*/
-const struct ad9516_reg ad9516_ext_base_config[] = {
+const struct ad9516_reg ad9516_ljd_base_config[] = {
 {0x0000, 0x99},
 {0x0001, 0x00},
 {0x0002, 0x10},

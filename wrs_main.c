@@ -42,7 +42,7 @@ int main(void)
 	pp_printf("SCB version: %d. %s\n", scb_ver,(scb_ver>=34)?"10 MHz SMC Output.":"" );
 	pp_printf("Start counter %d\n", stats.start_cnt);
 	/* Low-jitter Daughterboard detection */
-	ljd_present = gpio_in(GPIO_EXT_BOARD_DETECT);
+	ljd_present = gpio_in(GPIO_LJD_BOARD_DETECT);
 	if (ljd_present)
 		pp_printf("\n--- WRS Low jitter board detected. ---\nAllow 1 hour of warming \
 				up before starting measurements\n");

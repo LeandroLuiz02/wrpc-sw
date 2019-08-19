@@ -290,17 +290,17 @@ int ad9516_init(int scb_version, int ljd_present)
 	return 0;
 }
 
-int ext_ad9516_init (void) {
- 	pp_printf("Initializing external AD9516 PLL...\n");
-	oc_spi_init((void *)BASE_SPI_EXT_BOARD);
-	void *spi_base = (void *)BASE_SPI_EXT_BOARD;
+int ljd_ad9516_init (void) {
+ 	pp_printf("Initializing Low-Jitter Daughterboard AD9516 PLL...\n");
+	oc_spi_init((void *)BASE_SPI_LJD_BOARD);
+	void *spi_base = (void *)BASE_SPI_LJD_BOARD;
 
 	/* Use unidirectional SPI mode */
 	ad9516_write_reg((void *)spi_base, 0x000, 0x99);
 
 	/* Check the presence of the chip */
 	if (ad9516_read_reg((void *)spi_base, 0x3) != 0xc3) {
-		pp_printf("Error: External AD9516 PLL not responding.\n");
+		pp_printf("Error: Low-Jitter Daughterboard AD9516 PLL not responding.\n");
 		return -1;
 	}
 	ad9516_write_reg(spi_base, 0x018, 0x0); // reset VCO calibration
@@ -309,7 +309,7 @@ int ext_ad9516_init (void) {
 	ad9516_write_reg(spi_base, 0x232, 0x0);
 	
   	ad9516_set_vco_divider(spi_base, 3);
-	ad9516_load_regset(spi_base, ad9516_ext_base_config, ARRAY_SIZE(ad9516_ext_base_config), 1);
+	ad9516_load_regset(spi_base, ad9516_ljd_base_config, ARRAY_SIZE(ad9516_ljd_base_config), 1);
 	 
 	ad9516_set_output_divider(spi_base, 6, 8, 0);  	// OUT6. 62.5MHz
 	ad9516_set_output_divider(spi_base, 8, 20, 0);  // OUT6. 62.5MHz
