@@ -43,9 +43,10 @@ int main(void)
 	pp_printf("Start counter %d\n", stats.start_cnt);
 	/* Low-jitter Daughterboard detection */
 	ljd_present = gpio_in(GPIO_LJD_BOARD_DETECT);
-	if (ljd_present)
-		pp_printf("\n--- WRS Low jitter board detected. ---\nAllow 1 hour of warming \
-				up before starting measurements\n");
+	if (ljd_present) {
+		pp_printf("\n--- WRS Low jitter board detected. ---\n");
+		pp_printf("Allow 1 hour of warming up before starting measurements\n");
+	}
 	pp_printf("--\n");
 
 	if (stats.start_cnt > 1) {
