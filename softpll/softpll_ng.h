@@ -107,6 +107,7 @@ void spll_set_dac(int out_channel, int value);
 int spll_get_dac(int out_channel);
 
 void check_vco_frequencies(void);
+int spll_measure_frequency(int osc);
 
 /*
  * Aux and main state:
@@ -148,6 +149,7 @@ struct spll_fifo_log {
 };
 #define FIFO_LOG_LEN 16
 
+extern int ljd_present;
 
 #endif // __SOFTPLL_NG_H
 
