@@ -10,6 +10,7 @@
 
 #define CPU_CLOCK             62500000
 #define REF_CLOCK_FREQ_HZ     62500000
+#define NS_PER_CLOCK          16
 #define REF_CLOCK_PERIOD_PS   16000
 
 #define UART_BAUDRATE 115200
