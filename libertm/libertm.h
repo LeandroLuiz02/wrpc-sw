@@ -41,6 +41,13 @@ struct ertm_status;
 struct ertm_status *ertm_init(void);	/* opaque handle to keep status of connect */
 struct ertm_status *ertm_exit(struct ertm_status *handle);
 
+/* FIXME: error handling via errno, specific lib codes, or some
+   other schema?
+   Here, all functions return an error code. I vote for < 0 plus
+   errno, specific error codes, or a status in the handle, in this order
+ */
+/* FIXME: locking? */
+
 /* all methods below have an implicit first arg struct ertm_status *
  * argument, omitted for brevity's sake
  */
