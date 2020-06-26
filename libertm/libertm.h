@@ -39,6 +39,11 @@ struct ertm_temperatures {
 struct ertm_status;
 
 struct ertm_status *ertm_init(void);	/* opaque handle to keep status of connect */
+struct ertm_status *ertm_exit(struct ertm_status *handle);
+
+/* all methods below have an implicit first arg struct ertm_status *
+ * argument, omitted for brevity's sake
+ */
 
 #define ERTM_LO_DEFAULT_FREQ	0x3341BFBD	/* 200.222 MHz */
 #define ERTM_REF_DEFAULT_FREQ	0x39374BC6	/* 223.499999 MHz */
