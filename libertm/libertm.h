@@ -57,13 +57,14 @@ struct ertm_status *ertm_exit(struct ertm_status *handle);
 
 /* clock distribution properties */
 int ertm_set_clka_freq(enum ertm_clkab_freq freq);		/* better with a narrow interface FIXME */
+/* FIXME: add channel parameter, it's channelwise */
 int ertm_get_clka_freq(enum ertm_clkab_freq *freq);
 int ertm_set_clkb_freq(enum ertm_clkab_freq freq);
 int ertm_get_clkb_freq(enum ertm_clkab_freq *freq);
 
 /* RF distribution properties */
-int ertm_set_lo_freq(uint32_t freq);				/* not per channel, all 9ch created equal FIXME */
-int ertm_get_lo_freq(uint32_t *freq);				/* not per channel, all 9ch created equal FIXME */
+int ertm_set_lo_freq(uint32_t freq);				/* not per channel, all 9ch created equal */
+int ertm_get_lo_freq(uint32_t *freq);				/* not per channel, all 9ch created equal */
 int ertm_lo_channel_enable(int channel, int enable);		/* default disabled */
 int ertm_lo_set_level_adjust(int channel, double level);	/* level in [0,1] FIXME per channel? */
 int ertm_lo_get_power(double *power);				/* power level in dBm */
