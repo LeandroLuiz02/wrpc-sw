@@ -5,6 +5,7 @@
 #include <stdint.h>
 
 enum ertm_clkab_freq {
+	ERTM_CLKAB_1000MHz,
 	ERTM_CLKAB_500MHz,
 	ERTM_CLKAB_250MHz,
 	ERTM_CLKAB_125MHz,
@@ -22,12 +23,15 @@ enum ertm_connector {
 	ERTM_REF,
 };
 
-struct ertm_unique_ids {
+struct ertm_board_info {
 	uint64_t	ertm14_storage;
 	uint64_t	ertm14_mac1;
 	uint64_t	ertm14_mac2;
 	uint64_t	ertm15;
+			firmware_version;
+	FIXME:		wrpc_sw_version;
 };
+// FIXME: add the functions for this thing.
 
 struct ertm_temperatures {
 	double	lo;		/* celsius */
@@ -38,7 +42,7 @@ struct ertm_temperatures {
 
 struct ertm_status;
 
-struct ertm_status *ertm_init(void);	/* opaque handle to keep status of connect */
+struct ertm_status *ertm_init(FIXME: addressing);	/* opaque handle to keep status of connect */
 struct ertm_status *ertm_exit(struct ertm_status *handle);
 
 /* FIXME: error handling via errno, specific lib codes, or some
@@ -75,10 +79,10 @@ int ertm_lo_power_channel_select(int slot);			/* slot in 4..12 */
 int ertm_set_ref_freq(uint32_t freq);				/* not per channel, all 9ch created equal FIXME */
 int ertm_get_ref_freq(uint32_t *freq);				/* not per channel, all 9ch created equal FIXME */
 int ertm_ref_channel_enable(int channel, int enable);		/* default disabled */
-int ertm_ref_set_level_adjust(int channel, double level);	/* level in [0,1] FIXME per channel? */
 int ertm_ref_get_power(double *power);				/* power level in dBm */
 int ertm_ref_get_channel_power(int channel, double *power);	/* power per channel in dBm */
 
+int ertm_dds_set_level_adjust(int channel, double level);	/* level in [0,1] per channel? */
 /* RF distribution properties, alio modo */
 int ertm_set_freq(enum ertm_connector conn, uint32_t freq);	/* conn = CLKA,CLKB,LO,REF summarize 12 functions FIXME */
 int ertm_get_freq(enum ertm_connector conn, uint32_t *freq);
@@ -93,7 +97,15 @@ int ertm_get_temperatures(struct ertm_temperatures *temps);	/* LO and REF, more?
 int ertm_rf_nco_reset_enable(int enable);		/* default disabled */
 int ertm_rf_nco_reset(void);				/* do a reset */
 
+/* suggested by Tom */
+int ertm_rf_nco_reset_subscribe(enum ertm_connector, int enable, int channel, uint32_t stream_id); /* default disabled */
+// get status (currently subscribed ID, rx count, reset count)
+int ertm_rf_nco_reset_get_status(status);
+
 /* WR enable/diagnostics */
 struct ertm_wr_status;					/* to be defined with rabbits */
 int ertm_wr_enable(int enable);				/* free-running OCXO if disabled */
+// add auxiliaries for diagnostics of basics of wr link/lock
 int ertm_wr_diags(struct ertm_wr_status);		/* to be defined with rabbits */
+
+
