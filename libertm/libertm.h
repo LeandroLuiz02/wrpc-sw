@@ -12,9 +12,6 @@ enum ertm_clkab_freq {
 	ERTM_CLKAB_62_5MHz,
 };
 
-/* alternatively, add a parameter to refer to LO or FREQ
- * for settings
- */
 enum ertm_connector {
 	ERTM_CLKA,
 	ERTM_CLKB,
