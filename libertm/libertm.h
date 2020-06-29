@@ -62,7 +62,6 @@ struct ertm_temperatures {
 struct ertm_status;
 
 struct ertm_status *ertm_init(FIXME: addressing);	/* opaque handle to keep status of connect */
-struct ertm_status *ertm_exit(struct ertm_status *handle);
 
 /* FIXME: error handling via errno, specific lib codes, or some
    other schema?
@@ -70,6 +69,7 @@ struct ertm_status *ertm_exit(struct ertm_status *handle);
    errno, specific error codes, or a status in the handle, in this order
  */
 /* FIXME: locking? */
+void ertm_exit(struct ertm_status *handle);		/* end connection, destroy handle */
 int ertm_get_board_info(struct ertm_board_info *info);
 
 /* all methods below have an implicit first arg struct ertm_status *
