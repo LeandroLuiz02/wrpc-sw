@@ -23,13 +23,32 @@ enum ertm_connector {
 	ERTM_REF,
 };
 
+/* firmware metadata according to The Convention (see
+ * https://www.ohwr.org/project/fpga-dev-id/blob/master/device-structure.rst
+ */
+struct ertm_device_metadata {
+	uint32_t	vendor_id;
+	uint32_t	device_id;
+	uint32_t	version;
+	uint32_t	byte_order_mark;
+	unsigned char	source_id[16];
+	uint32_t	capability_mask;
+	unsigned char	vendor_uuid[16];
+};
+
 struct ertm_board_info {
 	uint64_t	ertm14_storage;
 	uint64_t	ertm14_mac1;
 	uint64_t	ertm14_mac2;
 	uint64_t	ertm15;
-			firmware_version;
-	FIXME:		wrpc_sw_version;
+	char		firmware_version[32];
+	char		wrpc_sw_version[32];
+        char		wrpc_sw_commit_id[32];
+        char		wrpc_sw_build_date[16];
+        char		wrpc_sw_build_time[16];
+        char		wrpc_sw_build_by[32];
+	struct ertm_device_metadata
+			firmware_metadata;
 };
 // FIXME: add the functions for this thing.
 
@@ -51,6 +70,7 @@ struct ertm_status *ertm_exit(struct ertm_status *handle);
    errno, specific error codes, or a status in the handle, in this order
  */
 /* FIXME: locking? */
+int ertm_get_board_info(struct ertm_board_info *info);
 
 /* all methods below have an implicit first arg struct ertm_status *
  * argument, omitted for brevity's sake
