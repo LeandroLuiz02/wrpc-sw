@@ -47,7 +47,6 @@ struct ertm_board_info {
 	struct ertm_device_metadata
 			firmware_metadata;
 };
-// FIXME: add the functions for this thing.
 
 struct ertm_temperatures {
 	double	lo;		/* celsius */
