@@ -111,33 +111,39 @@ int ertm_get_board_info(struct ertm_board_info *info);
  * one of the ertm_clkab_freq values, while for REF/LO, it is an actual
  * uint32_t where 2**32 = 1GHz
  */
-int ertm_get_freq(enum ertm_connector connector, int channel, uint32_t *freq);
-int ertm_set_freq(enum ertm_connector connector, int channel, uint32_t freq);
+int ertm_get_freq(struct ertm_status *handle,
+		enum ertm_connector connector, int channel, uint32_t *freq);
+int ertm_set_freq(struct ertm_status *handle,
+		enum ertm_connector connector, int channel, uint32_t freq);
 
 /* the following refer only to REF/LO connectors */
-int ertm_channel_enable(enum ertm_connector connector, int channel, int enable);		/* default disabled */
-int ertm_get_power(enum ertm_connector connector, double *power);				/* power level in dBm */
-int ertm_get_channel_power(enum ertm_connector connector, int channel, double *power);		/* power per channel in dBm */
-int ertm_get_channel_power_all(enum ertm_connector connector, uint32_t valid_mask, double *power);	/* powers in dBm */
-int ertm_dds_set_level_adjust(enum ertm_connector connector, double level);			/* level in [0,1] */
-int ertm_dds_get_level_adjust(enum ertm_connector connector, double *level);			/* level in [0,1] */
+int ertm_channel_enable(struct ertm_status *handle,
+		enum ertm_connector connector, int channel, int enable);		/* default disabled */
+int ertm_get_power(struct ertm_status *handle,
+		enum ertm_connector connector, double *power);				/* power level in dBm */
+int ertm_get_channel_power(struct ertm_status *handle,
+		enum ertm_connector connector, int channel, double *power);		/* power per channel in dBm */
+int ertm_get_channel_power_all(struct ertm_status *handle,
+		enum ertm_connector connector, uint32_t valid_mask, double *power);	/* powers in dBm */
+int ertm_dds_set_level_adjust(struct ertm_status *handle,
+		enum ertm_connector connector, double level);			/* level in [0,1] */
+int ertm_dds_get_level_adjust(struct ertm_status *handle,
+		enum ertm_connector connector, double *level);			/* level in [0,1] */
 
 /* monitoring */
-int ertm_get_ocxo_current(double *current);			/* amperes */
-int ertm_get_temperatures(struct ertm_temperatures *temps);	/* all celsius */
-int ertm_get_voltages(struct ertm_voltages *volts);		/* all volt */
+int ertm_get_ocxo_current(struct ertm_status *handle, double *current);			/* amperes */
+int ertm_get_temperatures(struct ertm_status *handle, struct ertm_temperatures *temps);	/* all celsius */
+int ertm_get_voltages(struct ertm_status *handle, struct ertm_voltages *volts);		/* all volt */
 
-/* system-wide actions */
-int ertm_rf_nco_reset_enable(int enable);		/* default disabled */
-int ertm_rf_nco_reset(void);				/* do a reset */
-
-/* suggested by Tom */
-int ertm_nco_reset_subscribe(enum ertm_connector, int enable, int channel, uint32_t stream_id);
-							/* default disabled */
-int ertm_nco_reset_get_status(struct ertm_nco_reset *status);
+/* system-wide NCO reset */
+int ertm_rf_nco_reset_enable(struct ertm_status *handle, int enable);
+int ertm_rf_nco_reset(struct ertm_status *handle);
+int ertm_nco_reset_subscribe(struct ertm_status *handle,
+		enum ertm_connector, int enable, int channel, uint32_t stream_id);
+int ertm_nco_reset_get_status(struct ertm_status *handle, struct ertm_nco_reset *status);
 
 /* WR enable/diagnostics */
-struct ertm_wr_status;					/* to be defined with rabbits */
-int ertm_wr_enable(int enable);				/* free-running OCXO if disabled */
-int ertm_wr_status(int *link_up, int *is_locked);
-int ertm_wr_diags(struct ertm_wr_status *status);
+struct ertm_wr_status;						/* to be defined with rabbits */
+int ertm_wr_enable(struct ertm_status *handle, int enable);	/* free-running OCXO if disabled */
+int ertm_wr_status(struct ertm_status *handle, int *link_up, int *is_locked);
+int ertm_wr_diags(struct ertm_status *handle, struct ertm_wr_status *status);
