@@ -15,7 +15,6 @@ enum ertm_clkab_freq {
 enum ertm_connector {
 	ERTM_CLKA,
 	ERTM_CLKB,
-	ERTM_CLKAB,
 	ERTM_LO,
 	ERTM_REF,
 };
@@ -64,7 +63,6 @@ struct ertm_temperatures {	/* celsius SVP */
 	double  unused[4];		/* future extensions */
 };
 
-struct ertm_status;
 
 struct ertm_status *ertm_init(FIXME: addressing);	/* opaque handle to keep status of connect */
 
