@@ -76,6 +76,14 @@ struct ertm_voltages {		/* volts SVP */
 	double	unused[16];
 };
 
+struct ertm_nco_reset {
+	int		enabled;
+	int		subscribed;
+	uint32_t	current_stream_id;
+	uint32_t	rx_count;
+	uint32_t	reset_count;
+};
+
 /* as a general rule, all methods in libertm return an integer exit
  * code 0 in case of success and < 0 in case of error, the type of error
  * mapped to an errno value
@@ -124,9 +132,9 @@ int ertm_rf_nco_reset_enable(int enable);		/* default disabled */
 int ertm_rf_nco_reset(void);				/* do a reset */
 
 /* suggested by Tom */
-int ertm_rf_nco_reset_subscribe(enum ertm_connector, int enable, int channel, uint32_t stream_id); /* default disabled */
-// get status (currently subscribed ID, rx count, reset count)
-int ertm_rf_nco_reset_get_status(status);
+int ertm_nco_reset_subscribe(enum ertm_connector, int enable, int channel, uint32_t stream_id);
+							/* default disabled */
+int ertm_nco_reset_get_status(struct ertm_nco_reset *status);
 
 /* WR enable/diagnostics */
 struct ertm_wr_status;					/* to be defined with rabbits */
