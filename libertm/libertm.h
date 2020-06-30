@@ -75,15 +75,20 @@ struct ertm_voltages {
 	double	unused[16];
 };
 
-struct ertm_status *ertm_init(FIXME: addressing);	/* opaque handle to keep status of connect */
 
 /* FIXME: error handling via errno, specific lib codes, or some
    other schema?
    Here, all functions return an error code. I vote for < 0 plus
    errno, specific error codes, or a status in the handle, in this order
+/* FIXME: address shall define uniquely a ttyUSB -> UART, an IP address
+ * in the WR network or further unique address of eRTM/host
+ * The handle is an opaque pointer to keep status of the connection
  */
 /* FIXME: locking? */
+struct ertm_status;
+struct ertm_status *ertm_init(char *address);
 void ertm_exit(struct ertm_status *handle);		/* end connection, destroy handle */
+
 int ertm_get_board_info(struct ertm_board_info *info);
 
 /* all methods below have an implicit first arg struct ertm_status *
