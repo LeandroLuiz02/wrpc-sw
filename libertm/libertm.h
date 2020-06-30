@@ -75,16 +75,15 @@ struct ertm_voltages {
 	double	unused[16];
 };
 
+/* as a general rule, all methods in libertm return an integer exit
+ * code 0 in case of success and < 0 in case of error, the type of error
+ * mapped to an errno value
+ */
 
-/* FIXME: error handling via errno, specific lib codes, or some
-   other schema?
-   Here, all functions return an error code. I vote for < 0 plus
-   errno, specific error codes, or a status in the handle, in this order
 /* FIXME: address shall define uniquely a ttyUSB -> UART, an IP address
  * in the WR network or further unique address of eRTM/host
  * The handle is an opaque pointer to keep status of the connection
  */
-/* FIXME: locking? */
 struct ertm_status;
 struct ertm_status *ertm_init(char *address);
 void ertm_exit(struct ertm_status *handle);		/* end connection, destroy handle */
