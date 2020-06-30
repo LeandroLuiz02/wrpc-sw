@@ -1,5 +1,5 @@
 /*
- *
+ * eRTM14/15 library interface
  */
 
 #include <stdint.h>
@@ -21,6 +21,7 @@ enum ertm_connector {
 
 /* firmware metadata according to The Convention (see
  * https://www.ohwr.org/project/fpga-dev-id/blob/master/device-structure.rst
+ * probably, only version and source_id are useful here
  */
 struct ertm_device_metadata {
 	uint32_t	vendor_id;
@@ -63,7 +64,7 @@ struct ertm_temperatures {	/* celsius SVP */
 	double  unused[4];		/* future extensions */
 };
 
-struct ertm_voltages {
+struct ertm_voltages {		/* volts SVP */
 	double	p12v_ertm15;
 	double	p3v3_ertm15;
 	double	pocxo;
