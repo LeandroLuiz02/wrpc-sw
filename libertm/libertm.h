@@ -63,6 +63,17 @@ struct ertm_temperatures {	/* celsius SVP */
 	double  unused[4];		/* future extensions */
 };
 
+struct ertm_voltages {
+	double	p12v_ertm15;
+	double	p3v3_ertm15;
+	double	pocxo;
+	double	p9v0_lo;
+	double	p9v0_ref;
+	double	ocxo_curr;
+	double	p12v_ertm14;
+	double	p3v3_ertm14;
+	double	unused[16];
+};
 
 struct ertm_status *ertm_init(FIXME: addressing);	/* opaque handle to keep status of connect */
 
@@ -115,6 +126,7 @@ int ertm_set_level_adjust(int channel, double level);
 /* monitoring */
 int ertm_get_ocxo_current(double *current);			/* amperes */
 int ertm_get_temperatures(struct ertm_temperatures *temps);	/* all celsius */
+int ertm_get_voltages(struct ertm_voltages *volts);		/* all volt */
 
 /* system-wide actions */
 int ertm_rf_nco_reset_enable(int enable);		/* default disabled */
