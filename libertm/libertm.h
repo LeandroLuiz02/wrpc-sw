@@ -48,11 +48,20 @@ struct ertm_board_info {
 			firmware_metadata;
 };
 
-struct ertm_temperatures {
-	double	lo;		/* celsius */
-	double	ref;
-	double	ext[15];
-	/* FIXME what else? */
+struct ertm_temperatures {	/* celsius SVP */
+	double	fpga;			/* eRTM 14 I2C temp  0x49 */
+	double	power_supplies14;	/* eRTM 14 I2C temp  0x48 */
+	double	dds_lo;			/* eRTM 15 I2C temp1 0x4a */
+	double	dds_ref;		/* eRTM 15 I2C temp1 0x4d */
+	double	lo_amp;			/* eRTM 15 I2C temp1 0x49 */
+	double	ltc6150;		/* eRTM 15 I2C temp1 0x4b */
+	double	ocxo_near;		/* eRTM 15 I2C temp1 0x4e */
+	double	ocxo_under;		/* eRTM 15 I2C temp1 0x4f */
+	double	power_supplies15;	/* eRTM 15 I2C temp1 0x48 */
+	double	ref_amp;		/* eRTM 15 I2C temp1 0x4c */
+	double	clka;			/* eRTM 15 I2C temp2 0x4c */
+	double	clkb;			/* eRTM 15 I2C temp2 0x49 */
+	double  unused[4];		/* future extensions */
 };
 
 struct ertm_status;
@@ -107,7 +116,7 @@ int ertm_set_level_adjust(int channel, double level);
 
 /* monitoring */
 int ertm_get_ocxo_current(double *current);			/* amperes */
-int ertm_get_temperatures(struct ertm_temperatures *temps);	/* LO and REF, more? FIXME */
+int ertm_get_temperatures(struct ertm_temperatures *temps);	/* all celsius */
 
 /* system-wide actions */
 int ertm_rf_nco_reset_enable(int enable);		/* default disabled */
