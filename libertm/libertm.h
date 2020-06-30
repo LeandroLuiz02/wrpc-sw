@@ -97,35 +97,21 @@ int ertm_get_board_info(struct ertm_board_info *info);
 #define ERTM_LO_DEFAULT_FREQ	0x3341BFBD	/* 200.222 MHz */
 #define ERTM_REF_DEFAULT_FREQ	0x39374BC6	/* 223.499999 MHz */
 
-/* clock distribution properties */
-int ertm_set_clka_freq(enum ertm_clkab_freq freq);		/* better with a narrow interface FIXME */
-/* FIXME: add channel parameter, it's channelwise */
-int ertm_get_clka_freq(enum ertm_clkab_freq *freq);
-int ertm_set_clkb_freq(enum ertm_clkab_freq freq);
-int ertm_get_clkb_freq(enum ertm_clkab_freq *freq);
+/* connector can be any of ERTM_{CLKA,CLKB,REF,LO}. For REF and LO, the
+ * channel parameter is ignored; for CLKA/CLKB, the freq parameter is
+ * one of the ertm_clkab_freq values, while for REF/LO, it is an actual
+ * uint32_t where 2**32 = 1GHz
+ */
+int ertm_get_freq(enum ertm_connector connector, int channel, uint32_t *freq);
+int ertm_set_freq(enum ertm_connector connector, int channel, uint32_t freq);
 
-/* RF distribution properties */
-int ertm_set_lo_freq(uint32_t freq);				/* not per channel, all 9ch created equal */
-int ertm_get_lo_freq(uint32_t *freq);				/* not per channel, all 9ch created equal */
-int ertm_lo_channel_enable(int channel, int enable);		/* default disabled */
-int ertm_lo_set_level_adjust(int channel, double level);	/* level in [0,1] FIXME per channel? */
-int ertm_lo_get_power(double *power);				/* power level in dBm */
-int ertm_lo_get_channel_power(int channel, double *power);	/* power per channel in dBm */
-int ertm_lo_power_channel_select(int slot);			/* slot in 4..12 */
-	/* FIXME: duplicated entry in table for the above function? */
-
-int ertm_set_ref_freq(uint32_t freq);				/* not per channel, all 9ch created equal FIXME */
-int ertm_get_ref_freq(uint32_t *freq);				/* not per channel, all 9ch created equal FIXME */
-int ertm_ref_channel_enable(int channel, int enable);		/* default disabled */
-int ertm_ref_get_power(double *power);				/* power level in dBm */
-int ertm_ref_get_channel_power(int channel, double *power);	/* power per channel in dBm */
-
-int ertm_dds_set_level_adjust(int channel, double level);	/* level in [0,1] per channel? */
-/* RF distribution properties, alio modo */
-int ertm_set_freq(enum ertm_connector conn, uint32_t freq);	/* conn = CLKA,CLKB,LO,REF summarize 12 functions FIXME */
-int ertm_get_freq(enum ertm_connector conn, uint32_t *freq);
-int ertm_channel_enable(enum ertm_connector, int channel, int enable);	
-int ertm_set_level_adjust(int channel, double level);
+/* the following refer only to REF/LO connectors */
+int ertm_channel_enable(enum ertm_connector connector, int channel, int enable);		/* default disabled */
+int ertm_get_power(enum ertm_connector connector, double *power);				/* power level in dBm */
+int ertm_get_channel_power(enum ertm_connector connector, int channel, double *power);		/* power per channel in dBm */
+int ertm_get_channel_power_all(enum ertm_connector connector, uint32_t valid_mask, double *power);	/* powers in dBm */
+int ertm_dds_set_level_adjust(enum ertm_connector connector, double level);			/* level in [0,1] */
+int ertm_dds_get_level_adjust(enum ertm_connector connector, double *level);			/* level in [0,1] */
 
 /* monitoring */
 int ertm_get_ocxo_current(double *current);			/* amperes */
