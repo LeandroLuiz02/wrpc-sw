@@ -130,7 +130,5 @@ int ertm_rf_nco_reset_get_status(status);
 /* WR enable/diagnostics */
 struct ertm_wr_status;					/* to be defined with rabbits */
 int ertm_wr_enable(int enable);				/* free-running OCXO if disabled */
-// add auxiliaries for diagnostics of basics of wr link/lock
-int ertm_wr_diags(struct ertm_wr_status);		/* to be defined with rabbits */
-
-
+int ertm_wr_status(int *link_up, int *is_locked);
+int ertm_wr_diags(struct ertm_wr_status *status);
