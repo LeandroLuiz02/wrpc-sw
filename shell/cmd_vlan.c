@@ -25,10 +25,10 @@ static int cmd_vlan(const char *args[])
 			return -EINVAL;
 		}
 		wrc_vlan_number = i;
-		pfilter_init_default();
+		ep_pfilter_init_default(&wrc_endpoint_dev);
 	} else if (!strcasecmp(args[0], "off")) {
 		wrc_vlan_number = 0;
-		pfilter_init_default();
+		ep_pfilter_init_default(&wrc_endpoint_dev);
 
 	} else {
 		return -EINVAL;

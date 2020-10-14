@@ -367,5 +367,7 @@ void shell_register_commands(void)
 	REGISTER_WRC_COMMAND(stat);
 	if (HAS_IP)
 		REGISTER_WRC_COMMAND(ip);
+	if (HAS_VLANS)
+		REGISTER_WRC_COMMAND(vlan);
 }
 
