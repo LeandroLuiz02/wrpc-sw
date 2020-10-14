@@ -59,24 +59,6 @@
 #define BOARD_MAX_CHAN_AUX		2
 #define BOARD_MAX_PTRACKERS		1
 
-#ifdef CONFIG_IP
-#define HAS_IP 1
-#else
-#define HAS_IP 0
-#endif
-
-#ifdef CONFIG_ABSCAL
-#define HAS_ABSCAL 1
-#else
-#define HAS_ABSCAL 0
-#endif
-
-#ifdef CONFIG_ETHERBONE
-#define HAS_EB 1
-#else
-#define HAS_EB 0
-#endif
-
 #define CONFIG_DISALLOW_LONG_DIVISION
 
 #define BOARD_MAX_CONSOLE_DEVICES 1

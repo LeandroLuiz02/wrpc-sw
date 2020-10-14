@@ -50,6 +50,24 @@
 #  define IS_WR_NODE_SIM 0
 #endif
 
+#ifdef CONFIG_IP
+#define HAS_IP 1
+#else
+#define HAS_IP 0
+#endif
+
+#ifdef CONFIG_ABSCAL
+#define HAS_ABSCAL 1
+#else
+#define HAS_ABSCAL 0
+#endif
+
+#ifdef CONFIG_ETHERBONE
+#define HAS_EB 1
+#else
+#define HAS_EB 0
+#endif
+
 extern int wrc_vlan_number;
 
 int wrc_mon_gui(void);

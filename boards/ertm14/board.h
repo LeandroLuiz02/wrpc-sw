@@ -61,20 +61,6 @@ int board_update(void);
 #define BOARD_MAX_CHAN_AUX		2
 #define BOARD_MAX_PTRACKERS		1
 
-#ifdef CONFIG_IP
-#define HAS_IP 1
-#else
-#define HAS_IP 0
-#endif
-
-#ifdef CONFIG_ABSCAL
-#define HAS_ABSCAL 1
-#else
-#define HAS_ABSCAL 0
-#endif
-
-#define HAS_EB 0
-
 #define ERTM14_MAX_CONFIGS 8
 
 extern unsigned char *BASE_MINIC;
