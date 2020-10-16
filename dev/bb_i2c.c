@@ -13,6 +13,8 @@
 #include "dev/bb_i2c.h"
 #include "dev/gpio.h"
 
+#include <errno.h>
+
 void bb_i2c_delay(uint32_t delay)
 {
 	int i;
@@ -45,7 +47,7 @@ void bb_i2c_stop(struct i2c_bus *bus)
 	M_SDA_OUT(1);
 }
 
-unsigned char bb_i2c_put_byte(struct i2c_bus *bus, uint8_t data)
+int bb_i2c_put_byte(struct i2c_bus *bus, uint8_t data)
 {
 	int i;
 	int ack;
@@ -59,11 +61,11 @@ unsigned char bb_i2c_put_byte(struct i2c_bus *bus, uint8_t data)
 	M_SDA_OUT(1);
 	M_SCL_OUT(1);
 
-	ack = M_SDA_IN;	/* ack: sda is pulled low ->success.     */
+	ack = M_SDA_IN;	/* ack: sda is pulled low -> success.     */
 	M_SCL_OUT(0);
 	M_SDA_OUT(0);
 
-	return ack != 0;
+	return ack == 0 ? 0 : -ENODEV;
 }
 
 void bb_i2c_get_byte(struct i2c_bus *bus, uint8_t *data, int last)

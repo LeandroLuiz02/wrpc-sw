@@ -23,6 +23,8 @@
 #include "dev/i2c.h"
 #include "dev/24aa025.h"
 
+#include <errno.h>
+
 int m24aa025_init(struct m24aa025_device *dev, struct i2c_bus *i2c, uint8_t addr)
 {
     dev->bus = i2c;
@@ -36,8 +38,13 @@ int m24aa025_read_mac(struct m24aa025_device *dev, uint8_t *mac)
     int i;
 
     bb_i2c_start( dev->bus );
-    
-    bb_i2c_put_byte (dev->bus, dev->addr << 1);
+
+    if ( bb_i2c_put_byte (dev->bus, dev->addr << 1) < 0)
+    {
+        bb_i2c_stop( dev->bus );
+        return -ENODEV;
+    }
+
     bb_i2c_put_byte (dev->bus, 0xfa );
     bb_i2c_repeat_start( dev->bus );
     bb_i2c_put_byte (dev->bus, (dev->addr << 1) | 1);
