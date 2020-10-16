@@ -28,7 +28,6 @@
 #include "dev/ad951x.h"
 #include "dev/ltc6950.h"
 #include "dev/ad9910.h"
-#include "dev/ad9520.h"
 #include "dev/clock_monitor.h"
 #include "dev/24aa025.h"
 #include "dev/ad7888.h"
@@ -116,11 +115,6 @@ static struct gpio_pin pin_pwrmon_adc_dout = {  &board.gpio_aux, 46 };
 static struct gpio_pin pin_pwrmon_adc_din = {  &board.gpio_aux, 47 };
 static struct gpio_pin pin_pwrmon_adc_sclk = {  &board.gpio_aux, 45 };
 
-static struct gpio_pin pin_ad9520_clka_scl = {  &board.gpio_aux, 57 };
-static struct gpio_pin pin_ad9520_clka_sda = {  &board.gpio_aux, 58 };
-static struct gpio_pin pin_ad9520_clkb_scl = {  &board.gpio_aux, 59 };
-static struct gpio_pin pin_ad9520_clkb_sda = {  &board.gpio_aux, 60 };
-
 static struct gpio_pin pin_sys_clk_sel_stb = {  &board.gpio_aux, 61 };
 static struct gpio_pin pin_sys_clk_sel_next = {  &board.gpio_aux, 62 };
 
@@ -128,6 +122,23 @@ static struct gpio_pin pin_pps_out_mode0 = {  &board.gpio_aux, 63 };
 static struct gpio_pin pin_pps_out_mode1 = {  &board.gpio_aux, 64 };
 static struct gpio_pin pin_pps_out_mode2 = {  &board.gpio_aux, 65 };
 
+static struct gpio_pin pin_led_sync_green = {  &board.gpio_aux, 69 };
+static struct gpio_pin pin_led_sync_red = {  &board.gpio_aux, 70 };
+
+static struct gpio_pin pin_ertm15_leds_ser = { &board.gpio_aux, 66 };
+static struct gpio_pin pin_ertm15_leds_updtclk = { &board.gpio_aux, 67 };
+static struct gpio_pin pin_ertm15_leds_shftclk = { &board.gpio_aux, 68 };
+
+
+// a/b/lo/ref, red->green
+static struct gpio_pin pin_ertm15_led_clka_red = { &board.gpio_ertm15_leds, 0 };
+static struct gpio_pin pin_ertm15_led_clka_green = { &board.gpio_ertm15_leds, 1 };
+static struct gpio_pin pin_ertm15_led_clkb_red = { &board.gpio_ertm15_leds, 2 };
+static struct gpio_pin pin_ertm15_led_clkb_green = { &board.gpio_ertm15_leds, 3 };
+static struct gpio_pin pin_ertm15_led_lo_red = { &board.gpio_ertm15_leds, 4 };
+static struct gpio_pin pin_ertm15_led_lo_green = { &board.gpio_ertm15_leds, 5 };
+static struct gpio_pin pin_ertm15_led_ref_red = { &board.gpio_ertm15_leds, 6 };
+static struct gpio_pin pin_ertm15_led_ref_green = { &board.gpio_ertm15_leds, 7 };
 
 static struct ad95xx_config pll_ext_10mhz_config = 
 #include "configs/ertm_14_pll_ext_10mhz.h"
@@ -139,12 +150,47 @@ static struct ad95xx_config pll_main_ocxo_config =
 #include "configs/ertm_14_pll_ocxo_config.h"
 
 static struct ltc6950_config pll_ertm15_bootstrap_config =
-#include "configs/ertm_15_ltc6950_config.h"
-
-static struct ad95xx_config clk_dist_ertm15_default_config =
-#include "configs/ertm_15_ad9520_default_config.h"
+#include "configs/ertm_15_ltc6950_config_rev2.h"
 
 static spll_gain_schedule_t spll_main_ocxo_gain_sched;
+
+#define ERTM14_BIST_LTC6950 0
+#define ERTM14_BIST_MAC_EEPROM 1
+#define ERTM14_BIST_AD951X_MAIN 2
+#define ERTM14_BIST_AD951X_EXT 3
+
+#define BIST_STATUS_DONE (1<<0)
+#define BIST_STATUS_ERROR (1<<1)
+
+struct bist_stage
+{
+    uint8_t id;
+    const char *name;
+    uint64_t status;
+};
+
+static struct bist_stage ertm_bist[] = {
+    { ERTM14_BIST_LTC6950, "LTC6950" },
+    { ERTM14_BIST_MAC_EEPROM, "MAC EEPROM" },
+    { ERTM14_BIST_AD951X_EXT, "AD9510 (Ext)" },
+    { ERTM14_BIST_AD951X_MAIN, "AD9510 (Main)" },
+    { 0, NULL }
+};
+
+void bist_checkpoint( struct bist_stage *bist, int id, int channel, int pass )
+{
+    int i;
+    for(i = 0; bist[i].name; i++ )
+        if( bist[i].id == id )
+        {
+            bist[i].status &= ~(3 << (channel * 2) );
+
+            if(!pass)
+                bist[i].status |= BIST_STATUS_ERROR << (channel * 2);
+            bist[i].status |= BIST_STATUS_DONE << (channel * 2);
+        }
+}
+
 
 static int ertm_init_complete = 0;
 
@@ -153,6 +199,8 @@ void ertm14_set_pps_out_mode(int mode);
 
 static timeout_t rf_nco_sync_tmo;
 
+#define LTC6950_ID_VALUE 0x65
+
 // fixme: use PRESENCE_A/B pins instead of LTC6950 PLL chip
 static int check_ertm15_presence(void)
 {
@@ -160,13 +208,14 @@ static int check_ertm15_presence(void)
 
     int id = ltc6950_read( &board.ltc6950_pll, 0x16 );
     
-    board_dbg("detect LTC6950: ID %x should be %x\n", id, 0x65 );
+    board_dbg("detect LTC6950: ID %x should be %x\n", id, LTC6950_ID_VALUE );
 
-    if( id != 0x65 )
+    if( id != LTC6950_ID_VALUE )
         return 0;
 
     return 1;
 }
+
 
 
 static void ertm14_spll_setup(void)
@@ -624,86 +673,163 @@ static void ertm14_dds_nco_sync_task(void)
     }
 }
 
+// fixme: factor out all this code to a common file (used by sis83k, afcz, ertm)
+static int calc_apr(int meas_min, int meas_max, int f_center )
+{
+	// apr_min is in PPM
+
+	if( f_center < meas_min || f_center > meas_max )
+		f_center = (meas_min + meas_max) / 2;
+
+	int64_t delta_low =  meas_min - f_center;
+	int64_t delta_hi = meas_max - f_center;
+	uint64_t u_delta_low, u_delta_hi;
+	int ppm_lo, ppm_hi;
+
+	if(delta_low >= 0)
+		return -1;
+	if(delta_hi <= 0)
+		return -1;
+
+	/* __div64_32 divides 64 by 32; result is in the 64 argument. */
+	u_delta_low = -delta_low * 1000000LL;
+	__div64_32(&u_delta_low, f_center);
+	ppm_lo = (int)u_delta_low;
+
+	u_delta_hi = delta_hi * 1000000LL;
+	__div64_32(&u_delta_hi, f_center);
+	ppm_hi = (int)u_delta_hi;
+
+	return ppm_lo < ppm_hi ? ppm_lo : ppm_hi;
+}
+
+static int measure_vcxo_freq( int cm_channel, int cm_ref, int gate_freq, int n_steps, uint32_t expected_freq, void (*dac_setter)(int), int *apr, uint32_t *base_freq )
+{
+	int f_min, f_max;
+	int tune_min = 0;
+	int tune_max = 65535;
+	int tune_step = (tune_max-tune_min) / n_steps;
+
+	wb_cm_configure( &board.ertm14_cmon, cm_ref, 5, gate_freq );
+	wb_cm_set_ref_frequency( &board.ertm14_cmon, CPU_CLOCK );
+
+	int tune = tune_min;
+
+	for(;;)
+	{
+
+		dac_setter( tune );
+		timer_delay_ms(1);
+		wb_cm_restart( &board.ertm14_cmon );
+		while( ! (wb_cm_read( &board.ertm14_cmon ) & ( 1<< cm_channel) ) );
+		
+		int f = board.ertm14_cmon.freqs[ cm_channel ];
+
+		if( tune == tune_min )
+			f_min = f;
+		else if ( tune == tune_max )
+			f_max = f;
+		
+		if(tune == tune_max)
+			break;
+
+		board_dbg("Tune: %d f = %d Hz (deltaF = %d Hz)\n", tune, f, f - expected_freq );
+
+		tune += tune_step;
+		if( tune > tune_max )
+			tune = tune_max;
+	}
+
+	dac_setter( 32768 );
+	timer_delay(1);
+
+    int l_apr = calc_apr(f_min, f_max, 62500000);
+
+    if( apr )
+        *apr = l_apr;
+
+    if( base_freq )
+        *base_freq = (f_min + f_max) / 2;
+
+    board_dbg("VCO ch %d:  Low=%d Hz Hi=%d Hz, APR = %d ppm.\n", cm_channel, f_min, f_max, l_apr );
+
+    return 0;
+}
+
+
+static void blink_led( struct gpio_pin *pin )
+{
+    gen_gpio_out( pin, 1 );
+    timer_delay_ms(150);
+    gen_gpio_out( pin, 0 );
+}
+
+static void ertm14_test_leds()
+{
+    blink_led( &pin_led_sync_green );
+    blink_led( &pin_led_sync_red );
+}
+
+static void ertm15_test_leds()
+{
+    blink_led(&pin_ertm15_led_ref_green);
+    blink_led(&pin_ertm15_led_lo_green);
+    blink_led(&pin_ertm15_led_clkb_green);
+    blink_led(&pin_ertm15_led_clka_green);
+    blink_led(&pin_ertm15_led_ref_red);
+    blink_led(&pin_ertm15_led_lo_red);
+    blink_led(&pin_ertm15_led_clkb_red);
+    blink_led(&pin_ertm15_led_clka_red);
+}
+
+static void set_main_dac( int value )
+{
+	spll_set_dac( 0, value );
+}
+
+static void set_dmtd_dac( int value )
+{
+	spll_set_dac( -1, value );
+}
+
+int ertm15_check_oscillators()
+{
+    board_dbg("Check REF OCXO\n");
+    measure_vcxo_freq( ERTM14_CMON_CLK_REF, ERTM14_CMON_CLK_DMTD, 10000000, 1, 62500000, set_main_dac, NULL, NULL );
+    board_dbg("Check DMTD VCXO\n");
+    measure_vcxo_freq( ERTM14_CMON_CLK_DMTD, ERTM14_CMON_CLK_REF, 100000, 10, 62500000, set_dmtd_dac, NULL, NULL );
+}
 
 // initializes the eRTM15 LTC6950 PLL & OCXO
-void ertm15_pll_init(void)
+int ertm15_pll_init(void)
 {
     ltc6950_init(&board.ltc6950_pll, &board.spi_ltc6950);
 
-    int id = ltc6950_read( &board.ltc6950_pll, 0x16 );
-    
-    if( id != 0x65 )
+    int id = ltc6950_read(&board.ltc6950_pll, 0x16);
+
+    if (id != LTC6950_ID_VALUE)
     {
-        board_dbg("Error initializing LTC6950 (read RevID: 0x%x, expected: 0x%x)\n", id, 0x65 );
+        board_dbg("Error initializing LTC6950 (read RevID: 0x%x, expected: 0x%x)\n", id, LTC6950_ID_VALUE);
+        return -1;
     }
+
+    bist_checkpoint(&ertm_bist, ERTM14_BIST_LTC6950, 0, id == LTC6950_ID_VALUE);
 
     // load default 'bootstrap' config and check what is the OCXO frequency
     ltc6950_configure(&board.ltc6950_pll, &pll_ertm15_bootstrap_config);
 
-    board_dbg("Probing OCXO frequency...");
+    board_dbg("Using 100 MHz OCXO\n");
+    //ltc6950_write( &board.ltc6950_pll, 0x15, 4 ); // RDIVOUT = 0, output div = 50
+    ltc6950_write(&board.ltc6950_pll, 0x8, 0x1); // reference divider = 1
 
-    // measure the OCXO freq
-    wb_cm_restart(&board.ertm14_cmon);
-    while( ( wb_cm_read( &board.ertm14_cmon ) & ( 1 << ERTM14_CMON_CLK_PLL_FB) ) == 0 )
-    {
-        pp_printf(".");
-        usleep(200000);
-    }
+    ltc6950_write(&board.ltc6950_pll, 0x15, 50); // RDIVOUT = 0, output div = 50
+    ltc6950_write(&board.ltc6950_pll, 0x0a, 10); // N divider = 10 (VCO @ 1GHz, PFD @ 10 MHz)
+    board.mode |= ERTM14_MODE_OCXO_100MHZ;
 
-    int ocxo_freq = board.ertm14_cmon.freqs[ERTM14_CMON_CLK_PLL_FB];
-    
-    pp_printf("%d MHz measured.\n", ocxo_freq);
-
-    int ocxo_10mhz = ocxo_freq > ( 10000000 - 20000 ) && ocxo_freq <  ( 10000000 + 20000 );
-    int ocxo_100mhz = ocxo_freq > ( 100000000 - 20000 ) && ocxo_freq <  ( 100000000 + 20000 );
-
-
-    if( ! (ocxo_100mhz || ocxo_10mhz) )
-    {
-        board_dbg("Error: the OCXO has neither 10 nor 100 MHz center frequency. WTF?\n");
-    }
-
-
-    if( ocxo_10mhz )
-    { // PLL: R div = 1, N div = 100, LV/CM div: 50 (20 MHz output)
-        
-        ltc6950_write( &board.ltc6950_pll, 0x15, 50 ); // RDIVOUT = 0, output div = 50
-        board.mode |= ERTM14_MODE_OCXO_10MHZ;    
-    } else if (ocxo_100mhz)
-    {
-        board_dbg("Using 100 MHz OCXO\n");
-        //ltc6950_write( &board.ltc6950_pll, 0x15, 4 ); // RDIVOUT = 0, output div = 50
-        ltc6950_write( &board.ltc6950_pll, 0x8, 0x1 ); // reference divider = 1 
-
-        ltc6950_write( &board.ltc6950_pll, 0x15, 50 ); // RDIVOUT = 0, output div = 50
-        ltc6950_write( &board.ltc6950_pll, 0x0a, 10 ); // N divider = 10 (VCO @ 1GHz, PFD @ 10 MHz)
-        board.mode |= ERTM14_MODE_OCXO_100MHZ;
-    }
- 
-    //ertm14_align_ref_out_to_pps();
 }
 
 int ertm14_init_clkab_distribution()
 {
-    bb_i2c_create( &board.i2c_clka_distr, &pin_ad9520_clka_scl, &pin_ad9520_clka_sda );
-    bb_i2c_create( &board.i2c_clkb_distr, &pin_ad9520_clkb_scl, &pin_ad9520_clkb_sda );
-    bb_i2c_init( &board.i2c_clka_distr );
-    bb_i2c_init( &board.i2c_clkb_distr );
-
-    ad9520_init( &board.dev_clka_distr, &board.i2c_clka_distr, 0x5c );
-    ad9520_init( &board.dev_clkb_distr, &board.i2c_clkb_distr, 0x5c );
-
-    board_dbg("Init CLKAB distribution\n");
-    ad9520_configure( &board.dev_clka_distr, &clk_dist_ertm15_default_config);
-    ad9520_configure( &board.dev_clkb_distr, &clk_dist_ertm15_default_config);
-
-// set 250 MHz output on CLKA/CLKB on the front panel
-    ad9520_set_output_divider( &board.dev_clka_distr, ERTM14_CLKAB_OUT_FRONT_PANEL, 4 ); // divide by 4 -> 250 MHz
-    ad9520_set_output_divider( &board.dev_clkb_distr, ERTM14_CLKAB_OUT_FRONT_PANEL, 4 );
-
-    ad9520_enable_output( &board.dev_clka_distr, ERTM14_CLKAB_OUT_FRONT_PANEL, 1 );
-    ad9520_enable_output( &board.dev_clkb_distr, ERTM14_CLKAB_OUT_FRONT_PANEL, 1 );
-
 // force a SYNC pulse to make sure the SYNC_N pins of the AD9520s are high
 // (so that any clock output is possible)    
     fine_pulse_gen_force_pulse( &board.dds_sync_dev, ERTM14_PLL_SYNC_CLKA );
@@ -714,6 +840,9 @@ int ertm14_init_ref_clock_distribution(void)
 {
     int main_stat = ad951x_init(&board.ad9516_main, &board.spi_pll_main, &pin_pll_main_reset, &pin_pll_main_lock);
     int ext_stat = ad951x_init(&board.ad9516_ext, &board.spi_pll_ext, &pin_pll_ext_reset, &pin_pll_ext_lock);
+
+    bist_checkpoint( &ertm_bist, ERTM14_BIST_AD951X_MAIN, 0, main_stat == 0 );
+    bist_checkpoint( &ertm_bist, ERTM14_BIST_AD951X_EXT, 0, ext_stat == 0 );
 
     if( main_stat < 0 )
     {
@@ -768,8 +897,19 @@ int ertm14_init_mac_eeprom(void)
 
     uint8_t mac[6];
 
-    m24aa025_read_mac( &board.m24_mac_ids[0], mac );
+    int err = m24aa025_read_mac( &board.m24_mac_ids[0], mac );
+    //m24aa025_read_mac( &board.m24_mac_ids[1], mac );
+
+    bist_checkpoint( &ertm_bist, ERTM14_BIST_MAC_EEPROM, 0, !err );
+
+    if( err < 0 )
+        return err;
+
+    board_dbg("MAC address: Port 0 = %02x:%02x:%02x:%02x:%02x:%02x\n",
+        mac[0],mac[1],mac[2],mac[3],mac[4],mac[5] );
     ep_set_mac_addr( &wrc_endpoint_dev, mac );
+
+    return 0;
 }
 
 
@@ -808,6 +948,7 @@ int ertm14_low_level_init(void)
     gen_gpio_set_dir(&pin_main_xo_en_n, 1);
     gen_gpio_out(&pin_main_xo_en_n, 0);
 
+    x595_gpio_create ( &board.gpio_ertm15_leds, 1, &pin_ertm15_leds_updtclk, &pin_ertm15_leds_shftclk, NULL, &pin_ertm15_leds_ser);
 
     /* initialize the SPI bus for the main PLL (IC?) */
     bb_spi_create ( &board.spi_pll_main,
@@ -878,11 +1019,17 @@ int ertm14_low_level_init(void)
     /* Set up the eRTM14's PLLs (AD9516s) */
     ertm14_init_ref_clock_distribution();
 
+    ertm14_test_leds();
+    ertm15_test_leds();
+
+    // fixme: detect fail
+    //ertm15_check_oscillators();
+
     /* At this point, we should have a stable CLK_REF coming from the PLL. Tell the FPGA to use it also as the system clock */
     board_dbg("Switching system clock to CLK_SYS\n");
+
     ertm14_switch_sys_clock(1);
 
-    
     /* Disable bit-banged OCXO control (used for debug) */
     gen_gpio_out(&pin_ocxo_override, 0);
 
@@ -962,6 +1109,7 @@ int ertm14_low_level_init(void)
     board_dbg("eRTM14/15 early init done\n");
 
     ertm_init_complete = 1;
+
 
     return 0;
 }
@@ -1045,11 +1193,7 @@ static int ertm14_commit_config( struct  ertm14_board_state *cfg )
             board_dbg("CLKA%d: freq=%d Hz, divider=%d, enable=%d\n", i, freq_a, div_a, enable_a);
             board_dbg("CLKA%d: freq=%d Hz, divider=%d, enable=%d\n", i, freq_b, div_b, enable_b);
 
-            ad9520_set_output_divider( &board.dev_clka_distr, i, div_a ); // divide by 4 -> 250 MHz
-            ad9520_set_output_divider( &board.dev_clkb_distr, i, div_b );
-
-            ad9520_enable_output( &board.dev_clka_distr, i, enable_a );
-            ad9520_enable_output( &board.dev_clkb_distr, i, enable_b );
+            // FIXME
         }
 
             // DDSes
@@ -1137,10 +1281,17 @@ int ertm14_get_supported_clkab_freqs( int *freqs, int max_count )
 
 int wrc_board_early_init()
 {
-    int32_t flash_entry_points[64];
+    static int32_t flash_entry_points[64];
     int i;
+
     /* initialize SPI flash */
-	flash_init();
+    bb_spi_create( &spi_wrc_flash,
+		&pin_sysc_spi_ncs,
+		&pin_sysc_spi_mosi,
+		&pin_sysc_spi_miso,
+		&pin_sysc_spi_sclk, 10 );
+
+	spi_flash_create( &wrc_flash_dev, &spi_wrc_flash, 16384, 0x600000 );
 
 	/* initialize I2C bus */
 	bb_i2c_init( &dev_i2c_fmc );
@@ -1160,7 +1311,15 @@ int wrc_board_early_init()
     /* reset the networking part of the WRCore and start the WR Endpoint */
    	net_rst();
 
-    
+    ep_init( &wrc_endpoint_dev, (void *) BASE_EP );
+
+	netif_register_device( "wru0", "default", &wrc_endpoint_dev );
+
+	/* Sleep for 1s to make sure WRS v4.2 always realizes that
+	 * the link is down */
+	timer_delay_ms(200);
+	ep_enable( &wrc_endpoint_dev, 1, 1);
+	timer_delay_ms(200);
 
     return ertm14_low_level_init();
 }

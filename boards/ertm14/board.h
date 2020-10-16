@@ -23,6 +23,11 @@
 #include "dev/iuart.h"
 #include "rf_frame_transceiver.h"
 
+#define BOARD_HAS_CUSTOM_NETWORK_INIT 1
+
+#undef BOARD_ERTM14_REV_1
+#define BOARD_ERTM14_REV_2
+
 #define BOARD_MAX_CONSOLE_DEVICES 2
 
 /* Board-specific parameters */
@@ -167,6 +172,7 @@ struct ertm14_board
     struct fine_pulse_gen_device dds_sync_dev;
     struct iuart_device iuart_14;
     struct wr_rf_frame_transceiver_device rf_xcvr;
+    struct gpio_device gpio_ertm15_leds;
 
     int mode;
     int dds_resync_count;
