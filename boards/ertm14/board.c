@@ -26,7 +26,7 @@
 #include "dev/gpio.h"
 #include "dev/bb_spi.h"
 #include "dev/ad951x.h"
-#include "dev/ltc6950.h"
+#include "dev/ltc695x.h"
 #include "dev/ad9910.h"
 #include "dev/clock_monitor.h"
 #include "dev/24aa025.h"
@@ -51,6 +51,8 @@
 
 #include "hw/wb_10mhz_align_unit.h"
 #include "wrc-task.h"
+
+#include <errno.h>
 
 #define ERTM14_IUART_MAX_PAYLOAD 100
 
@@ -140,6 +142,12 @@ static struct gpio_pin pin_ertm15_led_lo_green = { &board.gpio_ertm15_leds, 5 };
 static struct gpio_pin pin_ertm15_led_ref_red = { &board.gpio_ertm15_leds, 6 };
 static struct gpio_pin pin_ertm15_led_ref_green = { &board.gpio_ertm15_leds, 7 };
 
+static struct gpio_pin pin_ertm15_clkab_mosi = { &board.gpio_aux, 57 };
+static struct gpio_pin pin_ertm15_clkab_miso = { &board.gpio_aux, 57 };
+static struct gpio_pin pin_ertm15_clkab_sck = { &board.gpio_aux, 58 };
+static struct gpio_pin pin_ertm15_clka_cs_n = { &board.gpio_aux, 59 };
+static struct gpio_pin pin_ertm15_clkb_cs_n = { &board.gpio_aux, 60 };
+
 static struct ad95xx_config pll_ext_10mhz_config = 
 #include "configs/ertm_14_pll_ext_10mhz.h"
 
@@ -149,8 +157,11 @@ static struct ad95xx_config pll_main_dot050_config =
 static struct ad95xx_config pll_main_ocxo_config =
 #include "configs/ertm_14_pll_ocxo_config.h"
 
-static struct ltc6950_config pll_ertm15_bootstrap_config =
+static struct ltc695x_config pll_ertm15_bootstrap_config =
 #include "configs/ertm_15_ltc6950_config_rev2.h"
+
+static struct ltc695x_config clkab_ertm15_bootstrap_config =
+#include "configs/ertm_15_ltc6953_bootstrap_config.h"
 
 static spll_gain_schedule_t spll_main_ocxo_gain_sched;
 
@@ -158,6 +169,12 @@ static spll_gain_schedule_t spll_main_ocxo_gain_sched;
 #define ERTM14_BIST_MAC_EEPROM 1
 #define ERTM14_BIST_AD951X_MAIN 2
 #define ERTM14_BIST_AD951X_EXT 3
+#define ERTM14_BIST_MAIN_OCXO 4
+#define ERTM14_BIST_DMTD_VCXO 5
+#define ERTM14_BIST_CLKA 6
+#define ERTM14_BIST_CLKB 7
+#define ERTM14_BIST_DDS_REF 8
+#define ERTM14_BIST_DDS_LO 9
 
 #define BIST_STATUS_DONE (1<<0)
 #define BIST_STATUS_ERROR (1<<1)
@@ -166,16 +183,20 @@ struct bist_stage
 {
     uint8_t id;
     const char *name;
+    uint8_t n_channels;
     uint64_t status;
 };
 
 static struct bist_stage ertm_bist[] = {
-    { ERTM14_BIST_LTC6950, "LTC6950" },
-    { ERTM14_BIST_MAC_EEPROM, "MAC EEPROM" },
-    { ERTM14_BIST_AD951X_EXT, "AD9510 (Ext)" },
-    { ERTM14_BIST_AD951X_MAIN, "AD9510 (Main)" },
-    { 0, NULL }
-};
+    {ERTM14_BIST_LTC6950, "LTC6950", 1},
+    {ERTM14_BIST_MAC_EEPROM, "MAC EEPROM", 1},
+    {ERTM14_BIST_AD951X_EXT, "AD9510 (Ext)", 1},
+    {ERTM14_BIST_AD951X_MAIN, "AD9510 (Main)", 1},
+    {ERTM14_BIST_CLKA, "LTC6953 (CLKA fanout)", 1},
+    {ERTM14_BIST_CLKB, "LTC6953 (CLKB fanout)", 1},
+    {ERTM14_BIST_DDS_LO, "DDS comm (LO)", 1},
+    {ERTM14_BIST_DDS_REF, "DDS comm (REF)", 1},
+    {0, NULL}};
 
 void bist_checkpoint( struct bist_stage *bist, int id, int channel, int pass )
 {
@@ -191,6 +212,34 @@ void bist_checkpoint( struct bist_stage *bist, int id, int channel, int pass )
         }
 }
 
+void bist_init( struct bist_stage *bist )
+{
+    int i;
+    for(i = 0; bist[i].name; i++ )
+        bist[i].status = 0;
+}
+
+int bist_summary( struct bist_stage *bist )
+{
+    int i;
+    int n_ok, n_errors;
+    pp_printf("Built-in Self Test Summary\n------------------------------\n");
+    pp_printf("Id  | Test name                       | Channel | Status       ");
+
+    for(i = 0; bist[i].name; i++ )
+    {
+        int ch;
+        struct bist_stage *s = &bist[i];
+
+        for( ch = 0; ch < s->n_channels; ch++ )
+        {
+            pp_printf("%-2d | %-30s | ", i + 1, bist[i].name);
+        }
+
+    }
+
+    return n_errors > 0 ? -1 : 0;
+}
 
 static int ertm_init_complete = 0;
 
@@ -204,10 +253,10 @@ static timeout_t rf_nco_sync_tmo;
 // fixme: use PRESENCE_A/B pins instead of LTC6950 PLL chip
 static int check_ertm15_presence(void)
 {
-    ltc6950_init(&board.ltc6950_pll, &board.spi_ltc6950);
+    ltc695x_init(&board.ltc6950_pll, &board.spi_ltc6950);
 
-    int id = ltc6950_read( &board.ltc6950_pll, 0x16 );
-    
+    int id = ltc695x_read( &board.ltc6950_pll, 0x16 );
+
     board_dbg("detect LTC6950: ID %x should be %x\n", id, LTC6950_ID_VALUE );
 
     if( id != LTC6950_ID_VALUE )
@@ -216,6 +265,78 @@ static int check_ertm15_presence(void)
     return 1;
 }
 
+/* CLKA inverted outputs: 0, 1, 4, 5, 6 (LTC6953 ordering) */
+/* CLKB inverted outputs: 2, 7, 8, 9 (LTC6953 ordering) */
+
+struct clkab_output_map_entry
+{
+    int8_t id_ltc6953;
+    int8_t id_backplane;
+    uint8_t invert;
+};
+
+/* Backplane output mapping:
+
+   LTC6953 Output        BP Output      Invert
+   0                     CLKA10            x
+   1                     CLKA11            x
+   2                     CLKA9
+   3                     CLKA8
+   4                     CLKA7             x
+   5                     CLKA6             x
+   6                     CLKA12            x
+   7                     CLKA5
+   8                     CLKA4
+   9                     CLKA14
+   10                    CLKA-FP
+*/
+
+static const struct clkab_output_map_entry clka_out_map[] =
+    {
+        {0, 10, 1},
+        {1, 11, 1},
+        {2, 9, 0},
+        {3, 8, 0},
+        {4, 7, 1},
+        {5, 6, 1},
+        {6, 12, 1},
+        {7, 5, 0},
+        {8, 4, 0},
+        {9, 14, 0},
+        {10, ERTM14_CLKAB_OUT_FRONT_PANEL, 0},
+        {-1, -1, 0}
+};
+
+/* LTC6953 Output        BP Output      Invert
+   0                     CLKB14
+   1                     CLKB10
+   2                     CLKB12             x
+   3                     CLKB11
+   4                     CLKB9
+   5                     CLKB8
+   6                     CLKB7
+   7                     CLKB6             x
+   8                     CLKB5             x
+   9                     CLKB4             x
+   10                    CLKB-FP
+*/
+
+
+static const struct clkab_output_map_entry clkb_out_map[] =
+    {
+        {0, 14, 0},
+        {1, 10, 0},
+        {2, 12, 1},
+        {3, 11, 0},
+        {4, 9, 0},
+        {5, 8, 0},
+        {6, 7, 0},
+        {7, 6, 1},
+        {8, 5, 1},
+        {9, 4, 1},
+        {10, ERTM14_CLKAB_OUT_FRONT_PANEL, 0},
+        {-1, -1, 0}
+};
 
 
 static void ertm14_spll_setup(void)
@@ -254,7 +375,7 @@ static void ertm14_spll_setup(void)
     gs->stages[0].shift = 12;
 #endif
 
-	//spll_set_gain_schedule( gs );
+	spll_set_gain_schedule( gs );
 }
 
 
@@ -803,9 +924,9 @@ int ertm15_check_oscillators()
 // initializes the eRTM15 LTC6950 PLL & OCXO
 int ertm15_pll_init(void)
 {
-    ltc6950_init(&board.ltc6950_pll, &board.spi_ltc6950);
+    ltc695x_init(&board.ltc6950_pll, &board.spi_ltc6950);
 
-    int id = ltc6950_read(&board.ltc6950_pll, 0x16);
+    int id = ltc695x_read(&board.ltc6950_pll, 0x16);
 
     if (id != LTC6950_ID_VALUE)
     {
@@ -816,22 +937,105 @@ int ertm15_pll_init(void)
     bist_checkpoint(&ertm_bist, ERTM14_BIST_LTC6950, 0, id == LTC6950_ID_VALUE);
 
     // load default 'bootstrap' config and check what is the OCXO frequency
-    ltc6950_configure(&board.ltc6950_pll, &pll_ertm15_bootstrap_config);
+    ltc695x_configure(&board.ltc6950_pll, &pll_ertm15_bootstrap_config);
 
     board_dbg("Using 100 MHz OCXO\n");
     //ltc6950_write( &board.ltc6950_pll, 0x15, 4 ); // RDIVOUT = 0, output div = 50
-    ltc6950_write(&board.ltc6950_pll, 0x8, 0x1); // reference divider = 1
+    ltc695x_write(&board.ltc6950_pll, 0x8, 0x1); // reference divider = 1
 
-    ltc6950_write(&board.ltc6950_pll, 0x15, 50); // RDIVOUT = 0, output div = 50
-    ltc6950_write(&board.ltc6950_pll, 0x0a, 10); // N divider = 10 (VCO @ 1GHz, PFD @ 10 MHz)
+    ltc695x_write(&board.ltc6950_pll, 0x15, 50); // RDIVOUT = 0, output div = 50
+    ltc695x_write(&board.ltc6950_pll, 0x0a, 10); // N divider = 10 (VCO @ 1GHz, PFD @ 10 MHz)
     board.mode |= ERTM14_MODE_OCXO_100MHZ;
 
 }
 
+static struct clkab_output_map_entry *clkab_find_map_entry(  int clka_or_clkb, int output )
+{
+    struct clkab_output_map_entry *omap = (clka_or_clkb == ERTM14_OUT_CLKA) ? &clka_out_map : &clkb_out_map;
+    int i;
+    for( i = 0; omap[i].id_backplane >= 0; i++ )
+    {
+        if( omap[i].id_backplane  == output )
+            return &omap[i];
+    }
+
+    return NULL;
+}
+
+static int clkab_set_output_divider( int clka_or_clkb, int output, int divider )
+{
+    struct clkab_output_map_entry *o = clkab_find_map_entry( clka_or_clkb, output );
+    struct ltc695x_device* dev = (clka_or_clkb == ERTM14_OUT_CLKA) ? &board.dev_clka_distr : &board.dev_clkb_distr;
+
+    if(!o)
+        return -EINVAL;
+
+    ltc6953_configure_output( dev, o->id_ltc6953, divider, o->invert );
+
+    return 0;
+}
+
+
+static int clkab_enable_output( int clka_or_clkb, int output, int enable )
+{
+    struct clkab_output_map_entry *o = clkab_find_map_entry( clka_or_clkb, output );
+    struct ltc695x_device* dev = (clka_or_clkb == ERTM14_OUT_CLKA) ? &board.dev_clka_distr : &board.dev_clkb_distr;
+
+    if(!o)
+        return -EINVAL;
+
+    ltc6953_enable_output( dev, o->id_ltc6953, enable );
+
+    return 0;
+}
+
+
 int ertm14_init_clkab_distribution()
 {
+    /* initialize the SPI bus for the CLKA fanout (LTC6953) */
+    bb_spi_create( &board.spi_ltc6953_clka,
+        &pin_ertm15_clka_cs_n,
+        &pin_ertm15_clkab_mosi,
+        &pin_ertm15_clkab_miso,
+        &pin_ertm15_clkab_sck,
+        100 );
+
+    ltc695x_init(&board.dev_clka_distr, &board.spi_ltc6953_clka);
+
+    /* initialize the SPI bus for the CLKA fanout (LTC6953) */
+    bb_spi_create( &board.spi_ltc6953_clkb,
+        &pin_ertm15_clkb_cs_n,
+        &pin_ertm15_clkab_mosi,
+        &pin_ertm15_clkab_miso,
+        &pin_ertm15_clkab_sck,
+        100 );
+
+    ltc695x_init(&board.dev_clkb_distr, &board.spi_ltc6953_clkb);
+
+#define LTC6953_EXPECTED_ID 0x93
+
+    int id_a = ltc695x_read(&board.dev_clka_distr, 0xa);
+    int id_b = ltc695x_read(&board.dev_clkb_distr, 0xa);
+
+    int result_a = ltc695x_configure( &board.dev_clka_distr, &clkab_ertm15_bootstrap_config );
+    int result_b = ltc695x_configure( &board.dev_clkb_distr, &clkab_ertm15_bootstrap_config );
+
+    bist_checkpoint( &ertm_bist, ERTM14_BIST_CLKA, 0, (id_a == LTC6953_EXPECTED_ID) && !result_a );
+    bist_checkpoint( &ertm_bist, ERTM14_BIST_CLKB, 0, (id_b == LTC6953_EXPECTED_ID) && !result_b );
+
+    if( id_a != LTC6953_EXPECTED_ID || id_b != LTC6953_EXPECTED_ID )
+        return -ENODEV;
+
+
+// set 250 MHz output on CLKA/CLKB on the front panel
+    clkab_set_output_divider( &board.dev_clka_distr, ERTM14_CLKAB_OUT_FRONT_PANEL, 4 ); // divide by 4 -> 250 MHz
+    clkab_set_output_divider( &board.dev_clkb_distr, ERTM14_CLKAB_OUT_FRONT_PANEL, 4 );
+
+    clkab_enable_output( &board.dev_clka_distr, ERTM14_CLKAB_OUT_FRONT_PANEL, 1 );
+    clkab_enable_output( &board.dev_clkb_distr, ERTM14_CLKAB_OUT_FRONT_PANEL, 1 );
+
 // force a SYNC pulse to make sure the SYNC_N pins of the AD9520s are high
-// (so that any clock output is possible)    
+// (so that any clock output is possible)
     fine_pulse_gen_force_pulse( &board.dds_sync_dev, ERTM14_PLL_SYNC_CLKA );
     fine_pulse_gen_force_pulse( &board.dds_sync_dev, ERTM14_PLL_SYNC_CLKB );
 }
@@ -1103,6 +1307,9 @@ int ertm14_low_level_init(void)
 
     iuart_init_bare( &board.iuart_14, BASE_IUART_14, 115200 );
 
+    //ertm15_rf_distr_self_test( &board.rf_distr ;
+
+
     board_dbg("Init RF transceiver\n");
     wr_rf_frame_transceiver_create( &board.rf_xcvr, BASE_ERTM14_RF_FRAME_TRANSCEIVER );
     
@@ -1176,7 +1383,7 @@ int ertm14_get_current_config_id()
 }
 
 static int ertm14_commit_config( struct  ertm14_board_state *cfg )
-{  
+{
     int i;
         for( i = 0; i <= ERTM14_CLKAB_OUT_MAX_ID; i++)
         {
@@ -1193,7 +1400,10 @@ static int ertm14_commit_config( struct  ertm14_board_state *cfg )
             board_dbg("CLKA%d: freq=%d Hz, divider=%d, enable=%d\n", i, freq_a, div_a, enable_a);
             board_dbg("CLKA%d: freq=%d Hz, divider=%d, enable=%d\n", i, freq_b, div_b, enable_b);
 
-            // FIXME
+            clkab_set_output_divider( ERTM14_OUT_CLKA, i, div_a );
+            clkab_set_output_divider( ERTM14_OUT_CLKB, i, div_b );
+            clkab_enable_output( ERTM14_OUT_CLKA, i, enable_a );
+            clkab_enable_output( ERTM14_OUT_CLKB, i, enable_b );
         }
 
             // DDSes
