@@ -24,7 +24,7 @@ obj-$(CONFIG_EMBEDDED_NODE) += \
 	dev/clock_monitor.o \
 	dev/spi_flash.o \
 	dev/iuart.o \
-	dev/ltc6950.o \
+	dev/ltc695x.o \
 	dev/ad9520.o \
 	dev/i2c_eeprom.o \
 	dev/storage.o \
