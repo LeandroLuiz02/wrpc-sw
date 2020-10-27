@@ -10,9 +10,8 @@
 #include "dev/gpio.h"
 #include "dev/bb_spi.h"
 #include "dev/ad951x.h"
-#include "dev/ltc6950.h"
+#include "dev/ltc695x.h"
 #include "dev/ad9910.h"
-#include "dev/ad9520.h"
 #include "dev/clock_monitor.h"
 #include "dev/24aa025.h"
 #include "dev/ad7888.h"
@@ -99,8 +98,13 @@ extern unsigned char *BASE_EP;
 #define ERTM14_RF_OUT_MIN_ID 4
 #define ERTM14_RF_OUT_MAX_ID 12
 
-#define ERTM14_CLKAB_OUT_MIN_ID 0
-#define ERTM14_CLKAB_OUT_MAX_ID 11
+#define ERTM14_OUT_CLKA 0
+#define ERTM14_OUT_CLKB 1
+
+#define ERTM14_CLKAB_OUT_MIN_ID 4
+#define ERTM14_CLKAB_OUT_MAX_ID 15
+
+#define ERTM14_CLKAB_OUT_FRONT_PANEL 15
 
 // clock monitor core channels (see ertm14_top.vhd for assignment to the clock monitor core)
 #define ERTM14_CMON_CLK_SYS 0       /* system clock */
@@ -109,7 +113,6 @@ extern unsigned char *BASE_EP;
 #define ERTM14_CMON_CLK_REF 3       /* WR REF clock (from the VCXO/OCXO) */
 #define ERTM14_CMON_CLK_RX 4        /* RX clock (recovered by the WR PHY) */
 
-#define ERTM14_CLKAB_OUT_FRONT_PANEL 11
 
 // #define ERTM14_CALIBRATION_DEBUG 1
 
@@ -153,6 +156,8 @@ struct ertm14_board
     struct spi_bus spi_pll_main;
     struct spi_bus spi_pll_ext;
     struct spi_bus spi_ltc6950;
+    struct spi_bus spi_ltc6953_clka;
+    struct spi_bus spi_ltc6953_clkb;
     struct spi_bus spi_ad9910_ref;
     struct spi_bus spi_ad9910_lo;
     struct spi_bus spi_ocxo_dac;
@@ -162,13 +167,13 @@ struct ertm14_board
 
     struct ad951x_device ad9516_main;
     struct ad951x_device ad9516_ext;
-    struct ltc6950_device ltc6950_pll;
+    struct ltc695x_device ltc6950_pll;
     struct ad9910_device dds_ad9910_ref;
     struct ad9910_device dds_ad9910_lo;
     struct ad7888_device pwrmon_adc;
     struct ertm15_rf_distribution_device rf_distr;
-    struct ad9520_device dev_clka_distr;
-    struct ad9520_device dev_clkb_distr;
+    struct ltc695x_device dev_clka_distr;
+    struct ltc695x_device dev_clkb_distr;
     struct i2c_bus i2c_mac_addr;
     struct m24aa025_device m24_mac_ids[2];
     struct fine_pulse_gen_device dds_sync_dev;
