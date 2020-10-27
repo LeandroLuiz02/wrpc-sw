@@ -18,8 +18,8 @@
  * with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef __LTC6950_H
-#define __LTC6950_H
+#ifndef __LTC695X_H
+#define __LTC695X_H
 
 #include <stdint.h>
 #include <stdio.h>
@@ -27,24 +27,27 @@
 #include "dev/gpio.h"
 #include "dev/bb_spi.h"
 
-struct ltc6950_device {
+struct ltc695x_device {
     struct spi_bus *bus;
 };
 
-struct ltc6950_config_reg {
+struct ltc695x_config_reg {
     uint16_t addr;
     uint8_t value;
 };
 
-struct ltc6950_config {
+struct ltc695x_config {
     int n_regs;
-    struct ltc6950_config_reg regs[];
+    struct ltc695x_config_reg regs[];
 };
 
 
-int ltc6950_init( struct ltc6950_device *dev, struct spi_bus *bus );
-uint8_t ltc6950_read(struct ltc6950_device *dev, uint32_t reg);
-void ltc6950_write(struct ltc6950_device *dev, uint32_t reg, uint8_t value);
-int ltc6950_configure(struct ltc6950_device *dev, struct ltc6950_config* cfg);
+int ltc695x_init( struct ltc695x_device *dev, struct spi_bus *bus );
+uint8_t ltc695x_read(struct ltc695x_device *dev, uint32_t reg);
+void ltc695x_write(struct ltc695x_device *dev, uint32_t reg, uint8_t value);
+int ltc695x_configure(struct ltc695x_device *dev, struct ltc695x_config* cfg);
+
+int ltc6953_enable_output( struct ltc695x_device *dev, int output, int enabled );
+int ltc6953_configure_output( struct ltc695x_device *dev, int output, int divider, int invert );
 
 #endif
