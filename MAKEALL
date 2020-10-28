@@ -5,6 +5,7 @@
 T=$(mktemp /tmp/wrpc-config.XXXXXX)
 TW=$(mktemp /tmp/save-dotconfig-wrpc.XXXXXX)
 TP=$(mktemp /tmp/save-dotconfig-ppsi.XXXXXX)
+FAILED_LIST=
 test -f .config && cp .config $TW
 test -f ppsi/.config && cp ppsi/.config $TP
 
@@ -59,6 +60,10 @@ for c in $configs; do
     if [ x"$compare_mode" = x"y" ]; then
 	make makeall_copy
     fi
+    output_name=`make -s output_name`
+    if ! [ -f "$output_name".bin ]; then
+	FAILED_LIST="$FAILED_LIST $c "
+    fi
 done
 make -s clean
 
@@ -76,4 +81,14 @@ if [ x"$compare_mode" = x"y" ]; then
 	mv "$size_db_file".tmp "$size_db_file"
     fi
     cat "$size_info_file" >> "$size_db_file"
+fi
+
+#print for which configs the build has failed
+if [ -n "$FAILED_LIST" ]; then
+    echo "Build failed for configs:"
+    for c in $FAILED_LIST; do
+	echo -- $c
+    done
+else
+    echo "Builds for all defconfigs were successful!"
 fi
