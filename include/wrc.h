@@ -36,7 +36,7 @@
 #define ARRAY_SIZE(arr) (sizeof(arr) / sizeof((arr)[0]))
 
 /* Allow "if" at C language level, to avoid ifdef */
-#ifdef CONFIG_WR_SWITCH
+#ifdef CONFIG_TARGET_WR_SWITCH
 #  define is_wr_switch 1
 #  define is_wr_node 0
 #else

@@ -33,7 +33,4 @@
 #define CONSOLE_UART_BAUDRATE 115200
 #define BOARD_MAX_CONSOLE_DEVICES 1
 
-// fixme:
-#define CONFIG_WR_SWITCH
-
 #endif

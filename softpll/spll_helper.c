@@ -89,7 +89,7 @@ void helper_start(struct spll_helper_state *s)
 {
 	/* Set the bias to the upper end of tuning range. This is to ensure that
 	   the HPLL will always lock on positive frequency offset. */
-#if defined(CONFIG_WR_SWITCH)
+#if defined(CONFIG_TARGET_WR_SWITCH)
 	s->pi.bias = s->pi.y_max;
 #else
 	s->pi.bias = s->pi.y_min;

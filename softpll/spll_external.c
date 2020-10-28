@@ -109,7 +109,7 @@ int external_align_fsm(volatile struct spll_external_state *s)
 				s->align_state = ALIGN_STATE_WAIT_PLOCK;
 				done_sth++;
 			}
-#if defined(CONFIG_WR_SWITCH)
+#if defined(CONFIG_TARGET_WR_SWITCH)
 			else if (spll_ljd_present) {
 				uint32_t f_ext;
 				int ljd_ad9516_stat;

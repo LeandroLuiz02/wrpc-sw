@@ -2,7 +2,7 @@
 # Automatically generated file; DO NOT EDIT.
 # WR PTP Core software configuration
 #
-CONFIG_WR_SWITCH=y
+CONFIG_TARGET_WR_SWITCH=y
 # CONFIG_WR_NODE is not set
 CONFIG_PPSI_FORCE_CONFIG=y
 CONFIG_PRINT_BUFSIZE=128
