@@ -55,7 +55,7 @@ static int cmd_delays(const char *args[])
 		sfp_deltaRx = rx;
 		/* Change the active value too (add bislide here) */
 		s->delta_tx_m = tx;
-		s->delta_rx_m = rx + ep_get_bitslide();
+		s->delta_rx_m = rx + ep_get_bitslide(&wrc_endpoint_dev);
 	} else {
 		pp_printf("tx: %i   rx: %i\n", sfp_deltaTx, sfp_deltaRx);
 	}
