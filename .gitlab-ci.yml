@@ -15,12 +15,27 @@ make_wrpc_sw:
   - make spec_defconfig
   - make
   artifacts:
-    name: WRPC_SW_CI_%CI_JOB_ID%
+    name: wrpc_sw_ci_${CI_JOB_NAME}_${CI_JOB_ID}
     paths:
     - wrc.bin
     - wrc.elf
     - wrc.bram
     - wrc.mif
+
+make_all:
+  stage: compile
+  tags:
+    - wrs_sw
+  script:
+    - echo "Using `grep -c ^processor /proc/cpuinfo` parallel jobs".
+    - MAKEFLAGS="-j `grep -c ^processor /proc/cpuinfo`" ./MAKEALL -c
+  artifacts:
+    name: wrpc_sw_ci_${CI_JOB_NAME}_${CI_JOB_ID}
+    paths:
+    - size_info.txt
+    - ./*.elf
+    - ./*.bin
+
 
 make_rt_cpu:
   stage: compile
@@ -30,6 +45,6 @@ make_rt_cpu:
   - make wr_switch_defconfig
   - make
   artifacts:
-    name: WRPC_SW_CI_%CI_JOB_ID%
+    name: wrpc_sw_ci_${CI_JOB_NAME}_${CI_JOB_ID}
     paths:
     - rt_cpu.elf
