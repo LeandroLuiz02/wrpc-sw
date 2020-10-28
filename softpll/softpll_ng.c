@@ -754,7 +754,7 @@ int spll_update()
 	return ret != 0;
 }
 
-static int spll_measure_frequency(int osc)
+int spll_measure_frequency(int osc)
 {
 	volatile uint32_t *reg;
 
