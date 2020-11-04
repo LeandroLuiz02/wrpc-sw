@@ -24,6 +24,9 @@ extern void __assert(const char *func, int line, int forever,
 		     const char *fmt, ...)
 	__attribute__((format(printf, 4, 5)));
 
+/* PPSi's dot-config also has the same option in dot-config as WRPC,
+ * undefine it to avoid conflicts */
+#undef CONFIG_HAS_ASSERT
 #ifdef CONFIG_ASSERT
 #  define CONFIG_HAS_ASSERT 1
 #else
