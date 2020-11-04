@@ -76,7 +76,7 @@
  */
 #define __ASSEMBLY__
 #include "include/revision.h"
-#include "ppsi/proto-ext-whiterabbit/wr-api.h"
+#include "ppsi/include/hw-specific/wrh.h"
 #include "arch/lm32/crt0.h"
 #include "include/generated/autoconf.h"
 /* From include/sys/signal.h */  
