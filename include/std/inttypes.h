@@ -24,4 +24,13 @@ typedef unsigned long intptr_t;
 
 #define UINT32_MAX 4294967295U
 
+/* gcc 4.5.3 used for wrpc does not have these */
+#ifndef INT64_MIN
+# define INT64_MIN	(-9223372036854775807LL-1)
+#endif
+
+#ifndef INT64_MAX
+# define INT64_MAX	(9223372036854775807LL)
+#endif
+
 #endif
