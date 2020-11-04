@@ -18,6 +18,7 @@ SIZE =		$(CROSS_COMPILE)size
 
 
 AUTOCONF = $(CURDIR)/include/generated/autoconf.h
+AUTOCONF_PPSI = $(CURDIR)/ppsi/include/generated/autoconf.h
 
 PPSI = ppsi
 
@@ -40,7 +41,7 @@ obj-y += dump-info.o
 	$(CC) -include $(AUTOCONF) -E -P $*.ld.S -o $@
 
 
-cflags-y =	-ffreestanding -include $(AUTOCONF) -Iinclude \
+cflags-y =	-ffreestanding -include $(AUTOCONF) -include $(AUTOCONF_PPSI) -Iinclude \
 			-I. -Isoftpll -Iipc
 cflags-y +=	-I$(CURDIR)/pp_printf
 cflags-$(CONFIG_LM32) +=  -Iinclude/std
