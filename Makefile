@@ -20,6 +20,9 @@ SIZE =		$(CROSS_COMPILE)size
 AUTOCONF = $(CURDIR)/include/generated/autoconf.h
 AUTOCONF_PPSI = $(CURDIR)/ppsi/include/generated/autoconf.h
 
+export AUTOCONF
+export AUTOCONF_PPSI
+
 PPSI = ppsi
 
 # list of file extensions to be copied for MAKEALL script

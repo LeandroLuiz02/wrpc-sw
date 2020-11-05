@@ -54,9 +54,9 @@ sdb-wrpc.bin: sdbfs
 	$(SDBFS)/gensdbfs $< $@
 
 wrpc-dump: wrpc-dump.c dump-info-host.o
-	$(CC) $(CFLAGS) -I../ppsi/include -I../ppsi/arch-wrpc/include -I.. \
+	$(CC) $(CFLAGS) -include $(AUTOCONF) -include $(AUTOCONF_PPSI) -I../ppsi/include -I../ppsi/arch-wrpc/include -I.. \
 	-I ../softpll \
-	$^ -o $@ \
+	$^ -o $@
 
 wr-streamers: wr-streamers.c
 	$(CC) $(CFLAGS)  $^ $(LDFLAGS) -o $@
