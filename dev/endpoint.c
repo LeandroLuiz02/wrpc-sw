@@ -188,26 +188,6 @@ int ep_get_deltas(struct wr_endpoint_device* dev, uint32_t * delta_tx, uint32_t 
 	return 0;
 }
 
-int ep_cal_pattern_enable(struct wr_endpoint_device* dev)
-{
-	uint32_t val;
-	val = ep_pcs_read(dev, MDIO_REG_WR_SPEC);
-	val |= MDIO_WR_SPEC_TX_CAL;
-	ep_pcs_write(dev, MDIO_REG_WR_SPEC, val);
-
-	return 0;
-}
-
-int ep_cal_pattern_disable(struct wr_endpoint_device* dev)
-{
-	uint32_t val;
-	val = ep_pcs_read(dev, MDIO_REG_WR_SPEC);
-	val &= (~MDIO_WR_SPEC_TX_CAL);
-	ep_pcs_write(dev, MDIO_REG_WR_SPEC, val);
-
-	return 0;
-}
-
 int ep_timestamper_cal_pulse(struct wr_endpoint_device* dev)
 {
 	ep_write(dev, EP_REG_TSCR, ep_read(dev, EP_REG_TSCR) | EP_TSCR_RX_CAL_START );
