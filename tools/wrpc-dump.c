@@ -317,13 +317,11 @@ int main(int argc, char **argv)
 
 		spll_off = wrpc_get_l32(mapaddr + SOFTPLL_PADDR);
 		fifo_off = wrpc_get_l32(mapaddr + FIFO_LOG_PADDR);
-		ppi_off = wrpc_get_l32(mapaddr + PPI_STATIC_PADDR);
+		ppg_off = wrpc_get_l32(mapaddr + PPG_STATIC_PADDR);
 		stats_off = wrpc_get_l32(mapaddr + STATS_PADDR);
-		if (ppi_off) { /* This is 0 for wrs */
-			ppg_off = wrpc_get_pointer(mapaddr + ppi_off,
-				   "pp_instance", "glbs");
-			servo_off = wrpc_get_pointer(mapaddr + ppg_off,
-				    "pp_globals", "global_ext_data");
+		if (ppg_off) { /* This is 0 for wrs */
+			ppi_off = wrpc_get_pointer(mapaddr + ppg_off,
+				   "pp_globals", "pp_instances");
 			ds_off = ppg_off;
 		}
 	}

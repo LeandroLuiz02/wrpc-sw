@@ -119,8 +119,8 @@ _true_reset:
 	.word softpll
 .org FIFO_LOG_PADDR
 	.word fifo_log
-.org PPI_STATIC_PADDR
-	.word ppi_static
+.org PPG_STATIC_PADDR
+	.word ppg_static
 .org STATS_PADDR
 	.word stats
 
