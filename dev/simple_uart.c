@@ -34,7 +34,7 @@ void suart_init(struct simple_uart_device *dev, uint32_t base_addr, int baudrate
 void suart_init_default_baudrate(struct simple_uart_device *dev, uint32_t base_addr)
 {
 	dev->base = (void*) base_addr;
-	writel( suart_calc_baud(CONSOLE_UART_BAUDRATE), dev->base + UART_REG_BCR );
+	writel( SUART_CALC_BAUD(CONSOLE_UART_BAUDRATE), dev->base + UART_REG_BCR );
 }
 
 void suart_write_byte(struct simple_uart_device *dev, int b)
