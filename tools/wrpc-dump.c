@@ -103,6 +103,9 @@ void dump_one_field(void *addr, struct dump_info *info)
 	case dump_type_UInteger64:
 		printf("%lld\n", wrpc_get_64(p));
 		break;
+	case dump_type_long_long:
+	case dump_type_TimeInterval:
+	case dump_type_RelativeDifference:
 	case dump_type_Integer64:
 		printf("%lld\n", wrpc_get_64(p));
 		break;
@@ -121,6 +124,7 @@ void dump_one_field(void *addr, struct dump_info *info)
 	case dump_type_UInteger8:
 	case dump_type_Integer8:
 	case dump_type_Enumeration8:
+	case dump_type_UInteger4:
 	case dump_type_Boolean:
 	case dump_type_uint8_t:
 		printf("%i\n", *(unsigned char *)p);

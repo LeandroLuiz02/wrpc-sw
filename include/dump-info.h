@@ -19,6 +19,7 @@ enum dump_type {
 	dump_type_uint32_t,
 	dump_type_uint16_t,
 	dump_type_int,
+	dump_type_long_long,
 	dump_type_unsigned_long,
 	dump_type_unsigned_char,
 	dump_type_unsigned_short,
@@ -35,10 +36,13 @@ enum dump_type {
 	dump_type_UInteger8,
 	dump_type_Integer8,
 	dump_type_Enumeration8,
+	dump_type_UInteger4,
 	dump_type_Boolean,
 	dump_type_ClockIdentity,
 	dump_type_PortIdentity,
 	dump_type_ClockQuality,
+	dump_type_TimeInterval,
+	dump_type_RelativeDifference,
 	/* and this is ours */
 	dump_type_pp_time,
 	dump_type_ip_address,
@@ -47,6 +51,7 @@ enum dump_type {
 /* because of the sizeof later on, we need these typedefs */
 typedef void *         pointer;
 typedef struct pp_time pp_time;
+typedef long long      long_long;
 typedef unsigned long  unsigned_long;
 typedef unsigned char  unsigned_char;
 typedef unsigned short unsigned_short;
@@ -64,7 +69,7 @@ struct dump_info {
 	uint32_t type;
 	uint32_t offset;
 	uint32_t size;
-	char name[48];
+	char name[60];
 };
 extern struct dump_info dump_info[]; /* wrpc-sw/dump-info.c -> bina -> elf */
 
