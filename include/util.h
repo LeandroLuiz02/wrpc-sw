@@ -15,6 +15,7 @@
 #define C_RED 1
 #define C_GREEN 2
 #define C_BLUE 4
+#define C_CYAN 6
 
 /* Return TAI date/time in human-readable form. Non-reentrant. */
 char *format_time(uint64_t sec, int format);
