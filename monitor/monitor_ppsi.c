@@ -27,17 +27,274 @@
 #include "shell.h"
 #include "revision.h"
 
+/* internal "last", exported to shell command */
+uint32_t wrc_stats_last;
 
 #define WRC_MONITOR_REFRESH_PERIOD (1 * TICS_PER_SECOND)
 #define WRC_DIAG_REFRESH_PERIOD (1 * TICS_PER_SECOND)
 
-extern struct pp_servo servo;
+
 extern struct pp_instance ppi_static;
-struct pp_instance *ppi = &ppi_static;
+extern struct pp_globals ppg_static;
+extern struct pp_globals *ppg;
+// static struct pp_instance *ppi = ppg_static.pp_instances;
+// static defaultDS_t *defaultDS = ppg_static.defaultDS;
 const char *ptp_unknown_str= "unknown";
+extern char wrc_hw_name[HW_NAME_LENGTH];
 
 static void wrc_mon_std_servo(void);
 int wrc_wr_diags(void);
+void show_servo(struct pp_instance *ppi);
+
+/* protocol extension data */
+#define IS_PROTO_EXT_INFO_AVAILABLE( proto_id ) \
+	((proto_id < sizeof(proto_ext_info)/sizeof(struct proto_ext_info_t)) \
+			&& (proto_ext_info[proto_id].valid==1))
+
+struct proto_ext_info_t {
+	int valid;
+	char *ext_name; /* Extension name */
+	char short_ext_name; /* Very short extension name - just one character */
+	int servo_ext_size; /* Size of the extension */
+	int ipc_cmd_tacking; /* Command to enable/disable servo tacking*/
+	int track_onoff;     /* Tracking on/off */
+	time_t lastt;
+	int last_count;
+};
+
+static struct proto_ext_info_t proto_ext_info [] = {
+		[PPSI_EXT_NONE] = {
+				.valid=1,
+				.ext_name="PTP",
+				.short_ext_name='P',
+				.ipc_cmd_tacking=-1, /* Invalid */
+		},
+
+#if CONFIG_HAS_EXT_WR
+		[PPSI_EXT_WR] = {
+				.valid=1,
+				.ext_name="White-Rabbit",
+				.short_ext_name='W',
+				.servo_ext_size=sizeof(struct wr_data),
+// 				.ipc_cmd_tacking=PTPDEXP_COMMAND_WR_TRACKING,
+				.track_onoff = 1,
+		},
+#endif
+#if CONFIG_HAS_EXT_L1SYNC
+		[PPSI_EXT_L1S] = {
+				.valid=1,
+				.ext_name="L1Sync",
+				.short_ext_name='L',
+				.servo_ext_size=sizeof(struct l1e_data),
+// 				.ipc_cmd_tacking=PTPDEXP_COMMAND_L1SYNC_TRACKING,
+				.track_onoff = 1,
+		},
+#endif
+
+};
+
+
+/* define size of pp_instance_state_to_name as a last element + 1 */
+#define PP_INSTANCE_STATE_MAX (sizeof(pp_instance_state_to_name)/sizeof(char *))
+
+/* define conversion array for the field state in the struct pp_instance */
+static char *pp_instance_state_to_name[] = {
+	/* from ppsi/include/ppsi/ieee1588_types.h, enum pp_std_states */
+	/* PPS_END_OF_TABLE = 0 */
+	[PPS_END_OF_TABLE] =      "EOT       ",
+	[PPS_INITIALIZING] =      "INITING   ",
+	[PPS_FAULTY] =            "FAULTY    ",
+	[PPS_DISABLED] =          "DISABLED  ",
+	[PPS_LISTENING] =         "LISTENING ",
+	[PPS_PRE_MASTER] =        "PRE_MASTER",
+	[PPS_MASTER] =            "MASTER    ",
+	[PPS_PASSIVE] =           "PASSIVE   ",
+	[PPS_UNCALIBRATED] =      "UNCALIBRAT",
+	[PPS_SLAVE] =             "SLAVE     ",
+	NULL
+	};
+
+#define EMPTY_EXTENSION_STATE_NAME "          "
+
+#if CONFIG_HAS_EXT_L1SYNC
+static char * l1e_instance_extension_state[]={
+		[__L1SYNC_MISSING   ] = "INVALID   ",
+		[L1SYNC_DISABLED    ] = "DISABLED  ",
+		[L1SYNC_IDLE        ] = "IDLE      ",
+		[L1SYNC_LINK_ALIVE  ] = "LINK ALIVE",
+		[L1SYNC_CONFIG_MATCH] = "CFG MATCH ",
+		[L1SYNC_UP          ] = "UP        ",
+		NULL
+};
+#define L1S_INSTANCE_EXTENSION_STATE_MAX (sizeof (l1e_instance_extension_state)/sizeof(char *) )
+
+#endif
+
+static char * timind_mode_state[] = {
+		[WRH_TM_GRAND_MASTER]=     "GM",
+		[WRH_TM_FREE_MASTER]=      "FR",
+		[WRH_TM_BOUNDARY_CLOCK]=   "BC",
+		[WRH_TM_DISABLED]=         "--",
+		NULL
+	};
+
+static char * pll_locking_state[] = {
+		[WRH_TM_LOCKING_STATE_NONE]=     "NONE    ",
+		[WRH_TM_LOCKING_STATE_LOCKING]=  "LOCKING ",
+		[WRH_TM_LOCKING_STATE_LOCKED]=   "LOCKED  ",
+		[WRH_TM_LOCKING_STATE_HOLDOVER]= "HOLDOVER",
+		[WRH_TM_LOCKING_STATE_ERROR]=    "ERROR   ",
+		NULL
+	};
+
+#if CONFIG_HAS_EXT_WR
+static char * wr_instance_extension_state[]={
+		[WRS_IDLE ]=              "IDLE      ",
+		[WRS_PRESENT] =           "WR_PRESENT",
+		[WRS_S_LOCK] =            "WR_S_LOCK ",
+		[WRS_M_LOCK] =            "WR_M_LOCK ",
+		[WRS_LOCKED] =            "WR_LOCKED ",
+		[WRS_CALIBRATION] =       "WR_CAL-ION",
+		[WRS_CALIBRATED] =        "WR_CAL-ED ",
+		[WRS_RESP_CALIB_REQ] =    "WR_RSP_CAL",
+		[WRS_WR_LINK_ON] =        "WR_LINK_ON",
+		NULL
+};
+#define WR_INSTANCE_EXTENSION_STATE_MAX (sizeof (wr_instance_extension_state)/sizeof(char *) )
+
+#endif
+
+static char *prot_detection_state_name[]={
+		"NONE   ", /* No meaning. No extension present */
+		"WA_MSG ", /* Waiting first message */
+		"PD_IPRG", /* Protocol detection  */
+		"EXT_ON ", /* Protocol detected */
+		"EXT_OFF" /* Protocol not detected */
+};
+
+static struct desired_state_t{
+	char *str_state;
+	int state;
+} 
+
+desired_states[] = {
+	{ "initializing", PPS_INITIALIZING},
+	{ "faulty", PPS_FAULTY},
+	{ "disabled", PPS_DISABLED},
+	{ "listening", PPS_LISTENING},
+	{ "pre-master", PPS_PRE_MASTER},
+	{ "master", PPS_MASTER},
+	{ "passive", PPS_PASSIVE},
+	{ "uncalibrated", PPS_UNCALIBRATED},
+	{ "slave", PPS_SLAVE},
+	{}
+};
+
+/* prototypes */
+int read_instances(void);
+
+char * timeIntervalToString(TimeInterval time,char *buf) {
+
+	int64_t sign,nanos,picos;
+
+	if ( time<0 && time !=INT64_MIN) {
+		sign=-1;
+		time=-time;
+	} else {
+		sign=1;
+	}
+	nanos = time >> TIME_INTERVAL_FRACBITS;
+	picos = (((time & TIME_INTERVAL_FRACMASK) * 1000) + TIME_INTERVAL_ROUNDING_VALUE ) >> TIME_INTERVAL_FRACBITS;
+	sprintf(buf,"%" PRId64 ".%03" PRId64, sign*nanos,picos);
+	return buf;
+}
+
+char * timeToString(struct pp_time *time, char *buf) {
+	char sign = '+';
+	int64_t scaled_nsecs = time->scaled_nsecs;
+	int64_t secs = time->secs, nanos, picos;
+
+	if (!is_incorrect(time)) {
+		if (scaled_nsecs < 0 || secs < 0) {
+			sign = '-';
+			scaled_nsecs = -scaled_nsecs;
+			secs = -secs;
+		}
+		nanos = scaled_nsecs >> TIME_FRACBITS;
+		picos = ((scaled_nsecs & TIME_FRACMASK) * 1000 + TIME_ROUNDING_VALUE)
+				>> TIME_FRACBITS;
+		sprintf(buf,"%c%" PRId64 ".%09" PRId64 "%03" PRId64,
+			sign,secs,nanos,picos);
+	} else {
+		sprintf(buf, "--Incorrect--");
+	}
+	return buf;
+}
+
+char * relativeDifferenceToString(RelativeDifference time, char *buf ) {
+	char sign;
+    int32_t nsecs;
+	uint64_t sub_yocto=0;
+    int64_t fraction;
+	uint64_t bitWeight=500000000000000000;
+	uint64_t mask;
+
+	if ( time<0 ) {
+		time=-time;
+		sign='-';
+	} else {
+		sign='+';
+	}
+
+	nsecs=time >> REL_DIFF_FRACBITS;
+    fraction=time & REL_DIFF_FRACMASK;
+	for (mask=(uint64_t) 1<< (REL_DIFF_FRACBITS-1);mask!=0; mask>>=1 ) {
+		if ( mask & fraction )
+			sub_yocto+=bitWeight;
+		bitWeight/=2;
+	}
+	sprintf(buf,"%c%"PRId32".%018"PRIu64, sign, nsecs, sub_yocto);
+	return buf;
+}
+
+static inline int extensionStateColor( struct pp_instance *ppi) {
+	if ( ppi->protocol_extension==PPSI_EXT_NONE) {
+		return C_GREEN; /* No extension */
+	}
+	switch (ppi->extState) {
+	case PP_EXSTATE_ACTIVE :
+		return C_GREEN;
+	case PP_EXSTATE_PTP :
+		return C_WHITE;
+	case PP_EXSTATE_DISABLE :
+	default:
+		return C_RED;
+	}
+}
+
+static char *getStateAsString(char *p[], int index) {
+	int i,len;
+	char *errMsg="?????????????????????";
+
+	len=strlen(p[0]);
+	for (i=0; ;i++) {
+		if ( p[i]==NULL )
+			return errMsg+strlen(errMsg)-len;
+		if ( i==index)
+			return p[index];
+	}
+}
+
+static char *optimized_pp_time_toString(struct pp_time *pptime, char *buf ) {
+	char lbuf[128];
+
+	if ( pptime->secs )
+		sprintf(buf,"%16s sec",timeToString(pptime,lbuf));
+	else
+		sprintf(buf,"%16s nsec",timeIntervalToString(pp_time_to_interval(pptime),lbuf));
+	return buf;
+}
+
 
 #define PRINT64_FACTOR	1000000000LL
 static char* print64(uint64_t x, int align)
@@ -61,38 +318,39 @@ static char* print64(uint64_t x, int align)
 	return buf;
 }
 
+/* pp_printf does not support %<num>s modifiers.
+ * len does not include null char */
+char * prepend_str_with_spaces(char *buff, uint8_t dest_len){
+	char *pos_dst = buff + dest_len;
+	char *pos_src = buff + strlen(buff);
+	
+	while (pos_src >= buff)
+		*(pos_dst--) = *(pos_src--);
 
-static const char* wrc_ptp_state(void)
-{
-	struct pp_state_table_item *ip = NULL;
-	for (ip = pp_state_table; ip->state != PPS_END_OF_TABLE; ip++) {
-		if (ip->state == ppi->state)
-			break;
-	}
+	while (pos_dst >= buff)
+		*(pos_dst--) = ' ';
 
-	if(!ip)
-		return ptp_unknown_str;
-	return ip->name;
+	return buff;
 }
 
-static int wrc_mon_status(void)
+/* pp_printf does not support %<num>s modifiers.
+ * len does not include null char */
+char * append_str_with_spaces(char *buff, uint8_t dest_len){
+
+	char *pos_buff = buff + strlen(buff);
+	char *pos_end = buff + dest_len;
+	
+	while (pos_buff < pos_end)
+		*(pos_buff++) = ' ';
+
+	*pos_buff = 0;
+
+	return buff;
+}
+
+int time(void *a)
 {
-	struct wr_servo_state *s =
-			&((struct wr_data *)ppi->ext_data)->servo_state;
-
-	cprintf(C_BLUE, "\n\nPTP status: ");
-	cprintf(C_WHITE, "%s", wrc_ptp_state());
-
-	if ((!s->flags & WR_FLAG_VALID) || (ppi->state != PPS_SLAVE)) {
-		cprintf(C_RED,
-			"\n\nSync info not valid\n");
-		return 0;
-	}
-
-	/* show_servo */
-	cprintf(C_BLUE, "\n\nSynchronization status:\n");
-
-	return 1;
+    return 1;
 }
 
 int wrc_mon_gui(void)
@@ -104,24 +362,30 @@ int wrc_mon_gui(void)
 	struct spll_aux_clock_status aux_stat;
 	uint64_t sec;
 	uint32_t nsec;
-	struct wr_servo_state *s =
-			&((struct wr_data *)ppi->ext_data)->servo_state;
+	struct pp_servo *s = SRV(ppg->pp_instances);
+// 			&((struct wr_data *)ppi->ext_data)->servo_state;
 	int64_t crtt;
 	int64_t total_asymmetry;
 	char buf[20];
+	uint8_t mac[ETH_ALEN];
 	int n_out, i;
+	char up_char;
+	int ndevs;
+	int j;
 
 	if (!last_jiffies)
 		last_jiffies = timer_get_tics() - 1 -  WRC_MONITOR_REFRESH_PERIOD;
 	if (time_before(timer_get_tics(), last_jiffies + WRC_MONITOR_REFRESH_PERIOD)
-		&& last_servo_count == s->update_count)
+	//)
+	    && last_servo_count == s->update_count)
 		return 0;
 	last_jiffies = timer_get_tics();
 	last_servo_count = s->update_count;
 
 	term_clear();
 
-	cprintf(C_BLUE, "WR PTP Core Sync Monitor %s", build_revision);
+	cprintf(C_BLUE, "%s WR PTP Core Sync Monitor %s",
+		wrc_hw_name, build_revision);
 	cprintf(C_GREY, "\nEsc = exit");
 
 	shw_pps_gen_get_time(&sec, &nsec);
@@ -129,99 +393,218 @@ int wrc_mon_gui(void)
 	cprintf(C_BLUE, "\n\nTAI Time:                  ");
 	cprintf(C_WHITE, "%s", format_time(sec, TIME_FORMAT_LEGACY));
 
+	cprintf(C_BLUE, "\nTiming mode: ");
+	cprintf(C_WHITE, "XX");
+	cprintf(C_BLUE, "    PLL locking state: ");
+	cprintf(C_WHITE, "XX\n");
+
+	ndevs = netif_get_device_count();
 	/*show_ports */
-	wrpc_get_port_state(&state, NULL);
-	cprintf(C_BLUE, "\n\nLink status:");
+	cprintf(C_CYAN, "------+-------------------+-------------------------+---------+---------+-----\n");
+	cprintf(C_CYAN, "Iface |        MAC        |       IP (source)       |    RX   |    TX   | VLAN\n");
+	cprintf(C_CYAN, "------+-------------------+-------------------------+---------+---------+-----\n");
 
-	int ndevs = netif_get_device_count();
 
-	for( i = 0 ; i < ndevs; i++ )
-	{
+	for( i = 0 ; i < ndevs; i++ ) {
 		struct wrc_netif_device *ndev = netif_get_device( i );
-		cprintf(C_WHITE, "\n%-5s: ", ndev->name );
-		if ( ndev->link_state == NETIF_LINK_UP )
-			cprintf(C_GREEN, "Link up   ");
-		else
-			cprintf(C_RED,   "Link down ");
+		uint8_t port_up = ndev->link_state == NETIF_LINK_UP;
 
-		if( i == 0 ) // fixme: independent rx/tx stats for each interface
+		if (port_up) {
+			cprintf(C_GREEN, " %-4s:", ndev->name );
+		} else {
+			cprintf(C_RED, "*%-4s:", ndev->name );
+		}
+
+		cprintf(C_CYAN, " | ");
+		if( i == 0 ) /* FIXME: should be independent for each interface */
 		{
+			ep_get_mac_addr(&wrc_endpoint_dev, mac);
+			format_mac(buf, mac);
+			cprintf(C_GREY, "%17s", buf);
+			cprintf(C_CYAN, " | ");
+			if (HAS_IP && port_up) {
+				uint8_t ip[INET_ALEN];
+
+
+				getIP(ip);
+				format_ip(buf, ip);
+				switch (ip_status) {
+				case IP_TRAINING:
+					cprintf(C_RED,   "BOOTP running          ");
+					break;
+				case IP_OK_BOOTP:
+					cprintf(C_GREEN, " %s(BOOTP)", prepend_str_with_spaces(buf, 15));
+					break;
+				case IP_OK_STATIC:
+					cprintf(C_GREEN, "%s(static)", prepend_str_with_spaces(buf, 15));
+					break;
+				}
+			} else
+				cprintf(C_GREEN, "                       ");
+
+			cprintf(C_CYAN, " | ");
 			minic_get_stats(&tx, &rx);
-			cprintf(C_GREY, "(RX: %d, TX: %d)", rx, tx);
+			cprintf(C_GREY, "%7d", rx);
+			cprintf(C_CYAN, " | ");
+			cprintf(C_GREY, "%7d", tx);
+			cprintf(C_CYAN, " | ");
+			cprintf(C_GREY, "%4d", wrc_vlan_number);
 		}
+		cprintf(C_CYAN, "\n");
 	}
 
-	
-	if (!state.state) {
-		return 1;
-	}
+	cprintf(C_CYAN, "\n----- HAL ---|---------------- PPSI --------------------------------------------------------\n");
+	cprintf(C_CYAN,   " Iface| Freq |    Config    | MAC of peer port  |    PTP/EXT/PDETECT States    | Pro | VLANs\n");
+	cprintf(C_CYAN,   "------+------+--------------+-------------------+------------------------------+-----+------\n");
+	for( i = 0 ; i < ndevs; i++ ) {
+		struct wrc_netif_device *ndev = netif_get_device( i );
+		uint8_t port_up = ndev->link_state == NETIF_LINK_UP;
+		uint8_t color;
 
-	if (HAS_IP) {
-		uint8_t ip[4];
-
-		cprintf(C_WHITE, " IPv4: ");
-		getIP(ip);
-		format_ip(buf, ip);
-		switch (ip_status) {
-		case IP_TRAINING:
-			cprintf(C_RED, "BOOTP running");
-			break;
-		case IP_OK_BOOTP:
-			cprintf(C_GREEN, "%s (from bootp)", buf);
-			break;
-		case IP_OK_STATIC:
-			cprintf(C_GREEN, "%s (static assignment)", buf);
-			break;
+		if (port_up) {
+			cprintf(C_GREEN, " %-4s:", ndev->name );
+		} else {
+			cprintf(C_RED,   "*%-4s:", ndev->name );
 		}
+
+		cprintf(C_CYAN, " | ");
+		/* FIXME: shoule be independent for each interface */
+		wrpc_get_port_state(&state, NULL);
+// 		if (!state.state) {
+// 			continue;
+// 		}
+
+		if (state.locked)
+			cprintf(C_GREEN, "Lock");
+		else
+			cprintf(C_RED,   "    ");
+
+		cprintf(C_CYAN, " | ");
+		
+/* ----------------------------------------------------------------------------------------------------------------------- */
+		/*
+		 * Actually, what is interesting is the PTP state.
+		 * For this lookup, the port in ppsi shmem
+		 */
+		/* Assume one instance per port */
+		/* FIXME: add support of more ports */
+//		for (j = 0; j < ppg->nlinks; j++) {
+			{
+			char str_config[15];
+			/* so far support only for one instance */
+			struct pp_instance *ppi_pt = ppg->pp_instances;
+			int proto_extension = ppi_pt->protocol_extension;
+			struct proto_ext_info_t *pe_info= IS_PROTO_EXT_INFO_AVAILABLE(proto_extension) ? &proto_ext_info[proto_extension] :  &proto_ext_info[0] ;
+			unsigned char *p = ppi_pt->activePeer;
+			char * extension_state_name=EMPTY_EXTENSION_STATE_NAME;
+
+#if 0 /* FIXME: only one instance so far */
+			if (strcmp(if_name,
+					ppi->cfg.iface_name)) {
+				/* Instance not for this interface
+				    * skip */
+				continue;
+			}
+#endif
+			// Evaluate the instance configuration
+			strcpy(str_config,"unknown");
+			if ( ppg->defaultDS->slaveOnly) {
+				strncpy(str_config,"slaveOnly",sizeof(str_config)-1);
+			} else {
+				if ( ppg->defaultDS->externalPortConfigurationEnabled ) {
+					int s=0;
+					for ( s=0; s<sizeof(desired_states)/sizeof(struct desired_state_t); s++ ) {
+						if (desired_states[s].state == ppi_pt->externalPortConfigurationPortDS.desiredState) {
+							strncpy(str_config,desired_states[s].str_state,sizeof(str_config)-1);
+							break;
+						}
+					}
+
+				} else {
+					if ( ppi_pt->portDS->masterOnly ) {
+						strncpy(str_config,"masterOnly",sizeof(str_config)-1);
+					} else {
+						strncpy(str_config,"auto",sizeof(str_config)-1);
+					}
+				}
+			}
+			str_config[sizeof(str_config)-1]=0; // Force the string to be well terminated
+			cprintf(C_WHITE, "%s", append_str_with_spaces(str_config,12));
+			cprintf(C_CYAN, " | ");
+
+
+			cprintf(C_WHITE, "%02x:%02x"
+					    ":%02x:%02x:%02x:%02x ",
+					    p[0], p[1], p[2], p[3],
+					    p[4], p[5]);
+			cprintf(C_CYAN, "| ");
+			cprintf(C_GREEN, "%s/",getStateAsString(pp_instance_state_to_name,ppi_pt->state));
+			/* print extension state */
+			switch (ppi_pt->protocol_extension ) {
+#if CONFIG_HAS_EXT_WR
+			case PPSI_EXT_WR :
+			{
+				portDS_t *portDS = ppi_pt->portDS;
+				struct wr_dsport *extPortDS;
+
+				extension_state_name=getStateAsString(wr_instance_extension_state,-1); // Default value
+
+				if (portDS) {
+					if ( (extPortDS = portDS->ext_dsport) )
+						extension_state_name=getStateAsString(wr_instance_extension_state,extPortDS->state);
+				}
+				break;
+			}
+#endif
+#if CONFIG_HAS_EXT_L1SYNC
+			case PPSI_EXT_L1S :
+			{
+				portDS_t *portDS;
+
+				extension_state_name=getStateAsString(l1e_instance_extension_state,-1); // Default value
+				if ( (portDS = wrs_shm_follow(ppsi_head, ppi->portDS) ) ) {
+					l1e_ext_portDS_t *extPortDS;
+
+					if ( (extPortDS = wrs_shm_follow(ppsi_head, portDS->ext_dsport) ) ) {
+							extension_state_name=getStateAsString(l1e_instance_extension_state,extPortDS->basic.L1SyncState);
+					}
+				}
+				break;
+			}
+#endif
+			}
+			cprintf(C_GREEN, "%s/%s",extension_state_name,getStateAsString(prot_detection_state_name,ppi_pt->pdstate));
+
+
+			cprintf(C_CYAN, "| ");
+			if (ppi_pt->proto == PPSI_PROTO_RAW) {
+				cprintf(C_WHITE, "R");
+			} else if (ppi_pt->proto
+				    == PPSI_PROTO_UDP) {
+				cprintf(C_WHITE, "U");
+			} else if (ppi_pt->proto
+				    == PPSI_PROTO_VLAN) {
+				cprintf(C_WHITE, "V");
+			} else {
+				cprintf(C_WHITE, "?");
+			}
+			color=extensionStateColor(ppi_pt);
+			cprintf(color, "-%c",pe_info->short_ext_name);
+
+			cprintf(C_CYAN, " | ");
+			if (ppi_pt->nvlans)
+				cprintf(C_WHITE, "%d", ppi_pt->vlans[0]);
+		}
+/* ----------------------------------------------------------------------------------------------------------------------- */
 	}
+	cprintf(C_BLUE, "\n Pro - Protocol mapping: V-Ethernet over "
+			"VLAN; U-UDP; R-Ethernet\n");
 
-	cprintf(C_GREY, "\nMode: ");
-
-	if (!WR_DSPOR(ppi)->wrModeOn) {
-		cprintf(C_RED, "WR Off");
-		wrc_mon_std_servo();
-		return 1;
-	}
-
-	switch (ptp_mode) {
-	case WRC_MODE_GM:
-	case WRC_MODE_MASTER:
-		cprintf(C_WHITE, "WR Master  ");
-		break;
-	case WRC_MODE_SLAVE:
-		cprintf(C_WHITE, "WR Slave   ");
-		break;
-	default:
-		cprintf(C_RED,   "WR Unknown ");
-	}
-
-	if (state.locked)
-		cprintf(C_GREEN, "Locked ");
-	else
-		cprintf(C_RED,   "NoLock ");
-	if (state.calib.rx_calibrated && state.calib.tx_calibrated)
-		cprintf(C_GREEN, "Calibrated");
-	else
-		cprintf(C_RED, "Uncalibrated");
-
-
-	if (wrc_mon_status() == 0)
-		return 0;
-
-	cprintf(C_GREY, "Servo state:               ");
-	cprintf(C_WHITE, "%s\n", s->servo_state_name);
-	cprintf(C_GREY, "Phase tracking:            ");
-	if (s->tracking_enabled)
-		cprintf(C_GREEN, "ON\n");
-	else
-		cprintf(C_RED, "OFF\n");
-	/* sync source not implemented */
-	/*cprintf(C_GREY, "Synchronization source:    ");
-	cprintf(C_WHITE, "%s\n", cur_servo_state.sync_source);*/
+	/* Print servo */
+	/* FIXME: add support of multiple instances */
+	show_servo(ppg->pp_instances);
 
 	spll_get_num_channels(NULL, &n_out);
-
-
 
 	for(i = 0; i < n_out - 1; i++) {
 		cprintf(C_GREY, "Aux clock %d status:        ", i);
@@ -247,47 +630,139 @@ int wrc_mon_gui(void)
 
 	}
 
-	cprintf(C_BLUE, "\nTiming parameters:\n");
-
-	cprintf(C_GREY, "Round-trip time (mu): ");
-	cprintf(C_WHITE, "%s ps\n", print64(s->picos_mu, 1));
-	cprintf(C_GREY, "Master-slave delay:   ");
-	cprintf(C_WHITE, "%s ps\n", print64(s->delta_ms, 1));
-
-	cprintf(C_GREY, "Master PHY delays:           ");
-	cprintf(C_WHITE, "TX: %9d ps, RX: %9d ps\n",
-		(int32_t) s->delta_tx_m,
-		(int32_t) s->delta_rx_m);
-
-	cprintf(C_GREY, "Slave PHY delays:            ");
-	cprintf(C_WHITE, "TX: %9d ps, RX: %9d ps\n",
-		(int32_t) s->delta_tx_s,
-		(int32_t) s->delta_rx_s);
-	total_asymmetry = s->picos_mu - 2LL * s->delta_ms;
-	cprintf(C_GREY, "Total link asymmetry:");
-	cprintf(C_WHITE, "%21d ps\n", (int32_t) (total_asymmetry));
-
-	crtt = s->picos_mu - s->delta_tx_m - s->delta_rx_m
-		- s->delta_tx_s - s->delta_rx_s;
-	cprintf(C_GREY, "Cable rtt delay:      ");
-	cprintf(C_WHITE, "%s ps\n", print64(crtt, 1));
-
-	cprintf(C_GREY, "Clock offset:");
-	cprintf(C_WHITE, "%29d ps\n", (int32_t) (s->offset));
-
-	cprintf(C_GREY, "Phase setpoint:");
-	cprintf(C_WHITE, "%27d ps\n", (s->cur_setpoint));
-
-	cprintf(C_GREY, "Skew:     ");
-	/* precision is limited to 32 */
-	cprintf(C_WHITE, "%32d ps\n", (int32_t) (s->skew));
-
-	cprintf(C_GREY, "Update counter:");
-	cprintf(C_WHITE, "%27d\n", (int32_t) (s->update_count));
-
 	return 0;
 }
 
+void show_servo(struct pp_instance *ppi)
+{
+	wrh_servo_t * wr_servo;
+	wr_servo_ext_t * wr_servo_ext=NULL;
+
+	char buf[128];
+	wrh_servo_t * l1e_servo;
+	int proto_extension=ppi->extState!=PP_EXSTATE_DISABLE ? ppi->protocol_extension : PPSI_EXT_NONE;
+	struct proto_ext_info_t *pe_info= IS_PROTO_EXT_INFO_AVAILABLE(proto_extension) ? &proto_ext_info[proto_extension] :  &proto_ext_info[0] ;
+
+	wr_servo= (ppi->protocol_extension==PPSI_EXT_WR && ppi->extState==PP_EXSTATE_ACTIVE) ?
+			( wrh_servo_t* ) ppi->servo : NULL;
+	if ( wr_servo ) {
+		wr_servo_ext= &((struct wr_data *)wr_servo)->servo_ext;
+	}
+	l1e_servo= (ppi->protocol_extension==PPSI_EXT_L1S && ppi->extState==PP_EXSTATE_ACTIVE) ?
+			( wrh_servo_t * ) ppi->servo : NULL;
+
+	cprintf(C_CYAN, "\n--------------------------- Synchronization status ----------------------------\n");
+
+
+	if (!(ppi->servo->flags & PP_SERVO_FLAG_VALID)) {
+		cprintf(C_RED,
+				"Master mode or sync info not valid\n");
+		return 0;
+	}
+
+	cprintf(C_BLUE, "Servo state:          ");
+	if (pe_info->lastt && time(NULL) - pe_info->lastt > 5) {
+		cprintf(C_RED, "--- not updating ---\n");
+	} else {
+		cprintf(C_WHITE, "%s:%s: %s%s\n",
+				ppi->cfg.iface_name,
+				    pe_info->ext_name,
+				    ppi->servo->servo_state_name,
+				    ppi->servo->flags & PP_SERVO_FLAG_WAIT_HW ?
+				" (wait for hw)" : "");
+	}
+
+	/* "tracking disabled" is just a testing tool */
+	if (wr_servo  && !wr_servo->tracking_enabled)
+		cprintf(C_RED, "Tracking forcibly disabled\n");
+	cprintf(C_CYAN, "\n +- Timing parameters ---------------------------------------------------------\n");
+
+	cprintf(C_CYAN," | ");cprintf(C_BLUE,  "meanDelay        : ");
+	cprintf(C_WHITE, "%16s nsec\n", timeIntervalToString(ppg->currentDS->meanDelay,buf) );
+
+	cprintf(C_CYAN," | ");cprintf(C_BLUE,  "delayMS          : ");
+	cprintf(C_WHITE,"%s\n",optimized_pp_time_toString(&ppi->servo->delayMS,buf));
+	{
+		struct pp_time *delayMM= wr_servo_ext ?
+				&wr_servo_ext->rawDelayMM :
+				&ppi->servo->delayMM;
+		cprintf(C_CYAN," | ");cprintf(C_BLUE,  "delayMM          : ");
+		cprintf(C_WHITE,"%s\n",optimized_pp_time_toString(delayMM,buf));
+	}
+
+	//cprintf(C_BLUE, "Estimated link length:     ");
+	/* (RTT - deltas) / 2 * c / ri
+	    c = 299792458 - speed of light in m/s
+	    ri = 1.4682 - refractive index for fiber g.652. However,
+			experimental measurements using long (~5km) and
+			short (few m) fibers gave a value 1.4827
+	    */
+	//cprintf(C_WHITE, "%10.2f meters\n",
+	//	crtt / 2 / 1e6 * 299.792458 / 1.4827);
+
+
+	cprintf(C_CYAN," | ");cprintf(C_BLUE,  "delayAsymmetry   : ");
+	cprintf(C_WHITE, "%16s nsec\n",   timeIntervalToString(ppi->portDS->delayAsymmetry,buf));
+	cprintf(C_CYAN," | ");cprintf(C_BLUE,  "delayCoefficient : ");
+	cprintf(C_WHITE, "%s", relativeDifferenceToString(ppi->asymmetryCorrectionPortDS.scaledDelayCoefficient,buf));
+	cprintf(C_BLUE,  " fpa : ");
+	cprintf(C_WHITE, "%lld",ppi->asymmetryCorrectionPortDS.scaledDelayCoefficient);
+	cprintf(C_WHITE, "\n");
+	cprintf(C_CYAN," | ");cprintf(C_BLUE,  "ingressLatency   : ");
+	cprintf(C_WHITE, "%16s nsec\n",   timeIntervalToString(ppi->timestampCorrectionPortDS.ingressLatency,buf));
+	cprintf(C_CYAN," | ");cprintf(C_BLUE,  "egressLatency    : ");
+	cprintf(C_WHITE, "%16s nsec\n",   timeIntervalToString(ppi->timestampCorrectionPortDS.egressLatency,buf));
+	cprintf(C_CYAN," | ");cprintf(C_BLUE,  "semistaticLatency: ");
+	cprintf(C_WHITE, "%16s nsec\n",   timeIntervalToString(ppi->timestampCorrectionPortDS.semistaticLatency,buf));
+
+	/*if (0) {
+		cprintf(C_BLUE, "Fiber asymmetry:   ");
+		cprintf(C_WHITE, "%.3f nsec\n",
+			ss.fiber_asymmetry/1000.0);
+	}*/
+
+	cprintf(C_CYAN," | ");cprintf(C_BLUE, "offsetFromMaster : ");
+	cprintf(C_WHITE, "%16s nsec\n", timeIntervalToString (ppg->currentDS->offsetFromMaster,buf));
+
+	if ( wr_servo ) {
+		cprintf(C_CYAN," | ");cprintf(C_BLUE, "Phase setpoint   : ");
+		cprintf(C_WHITE, "%16.3f nsec\n",wr_servo->cur_setpoint_ps/1000.0);
+
+		cprintf(C_CYAN," | ");cprintf(C_BLUE, "Skew             : ");
+		cprintf(C_WHITE, "%16.3f nsec\n",wr_servo->skew_ps/1000.0);
+	}
+
+	if ( l1e_servo ) {
+		cprintf(C_CYAN," | ");cprintf(C_BLUE, "Phase setpoint   : ");
+		cprintf(C_WHITE, "%16.3f nsec\n",l1e_servo->cur_setpoint_ps/1000.0);
+
+		cprintf(C_CYAN," | ");cprintf(C_BLUE, "Skew             : ");
+		cprintf(C_WHITE, "%16.3f nsec\n",l1e_servo->skew_ps/1000.0);
+	}
+	cprintf(C_CYAN," | ");cprintf(C_BLUE, "Update counter   : ");
+	cprintf(C_WHITE, "%16u times\n", ppi->servo->update_count);
+	if (ppi->servo->update_count != pe_info->last_count) {
+		pe_info->lastt = time(NULL);
+		pe_info->last_count = ppi->servo->update_count;
+	}
+
+	if ( wr_servo ) {
+		cprintf(C_CYAN," | ");cprintf(C_BLUE, "Master PHY delays ");
+		cprintf(C_BLUE, "TX: ");
+		cprintf(C_WHITE,"%s",optimized_pp_time_toString(&wr_servo_ext->delta_txm,buf));
+		cprintf(C_BLUE, "  RX: ");
+		cprintf(C_WHITE,"%s\n",optimized_pp_time_toString(&wr_servo_ext->delta_rxm,buf));
+
+		cprintf(C_CYAN," | ");cprintf(C_BLUE, "Slave  PHY delays ");
+		cprintf(C_BLUE, "TX: ");
+		cprintf(C_WHITE,"%s",optimized_pp_time_toString(&wr_servo_ext->delta_txs,buf));
+		cprintf(C_BLUE, "  RX: ");
+		cprintf(C_WHITE,"%s\n",optimized_pp_time_toString(&wr_servo_ext->delta_rxs,buf));
+		cprintf(C_WHITE,"\n");
+	}
+}
+
+#if 0
 static inline void cprintf_time(int color, struct pp_time *time)
 {
 	int s, ns;
@@ -303,35 +778,11 @@ static inline void cprintf_time(int color, struct pp_time *time)
 			cprintf(color, "%i.%09i s", s, -ns);
 	}
 }
-
-static void wrc_mon_std_servo(void)
-{
-	if (wrc_mon_status() == 0)
-		return;
-
-	cprintf(C_GREY, "\nClock offset:                 ");
-
-	if (DSCUR(ppi)->offsetFromMaster.secs)
-		cprintf_time(C_WHITE, &DSCUR(ppi)->offsetFromMaster);
-	else {
-		cprintf(C_WHITE, "%9i ns",
-			(int)(DSCUR(ppi)->offsetFromMaster.scaled_nsecs >> 16));
-
-		cprintf(C_GREY, "\nOne-way delay averaged:       ");
-		cprintf(C_WHITE, "%9i ns",
-			(int)(DSCUR(ppi)->meanPathDelay.scaled_nsecs >> 16));
-
-		cprintf(C_GREY, "\nObserved drift:               ");
-		cprintf(C_WHITE, "%9i ns",SRV(ppi)->obs_drift);
-	}
-}
-
-
-/* internal "last", exported to shell command */
-uint32_t wrc_stats_last;
+#endif
 
 int wrc_log_stats(void)
 {
+#if 0
 	struct hal_port_state state;
 	int tx, rx;
 	struct spll_aux_clock_status aux_stat;
@@ -416,13 +867,14 @@ int wrc_log_stats(void)
 	}
 
 	pp_printf("\n");
-
+#endif
 	return 1;
 }
 
 
 int wrc_wr_diags(void)
 {
+#if 0
 	struct hal_port_state ps;
 	static uint32_t last_jiffies;
 	int tx, rx;
@@ -522,7 +974,7 @@ int wrc_wr_diags(void)
 
 	/* **************** unlock data from reading by user  ************** */
 	wdiag_set_valid(1);
-	
+#endif
 	return 1;
 }
 
