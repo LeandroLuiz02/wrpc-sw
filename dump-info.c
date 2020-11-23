@@ -5,14 +5,12 @@
 #include "dump-info.h"
 
 struct dump_info  dump_info[] = {
-
 /* map for fields of ppsi structures */
 #undef DUMP_STRUCT
 #define DUMP_STRUCT struct pp_globals
 
 	DUMP_HEADER("pp_globals"),
-	DUMP_FIELD(pointer, pp_instances),	/* FIXME: follow this */
-	DUMP_FIELD(pointer, servo),		/* FIXME: follow this */
+	DUMP_FIELD(pointer, pp_instances),
 	DUMP_FIELD(pointer, rt_opts),
 	DUMP_FIELD(pointer, defaultDS),
 	DUMP_FIELD(pointer, currentDS),
@@ -22,16 +20,20 @@ struct dump_info  dump_info[] = {
 	DUMP_FIELD(int, ebest_updated),
 	DUMP_FIELD(int, nlinks),
 	DUMP_FIELD(int, max_links),
-	//DUMP_FIELD(struct pp_globals_cfg cfg),
+	/* substructure pp_globals_cfg */ 
+	DUMP_FIELD(int, cfg.cfg_items),
+	DUMP_FIELD(int, cfg.cur_ppi_n),
+
 	DUMP_FIELD(int, rxdrop),
 	DUMP_FIELD(int, txdrop),
 	DUMP_FIELD(pointer, arch_data),
 	DUMP_FIELD(pointer, global_ext_data),
 
-#undef DUMP_STRUCT
-#define DUMP_STRUCT DSDefault /* Horrible typedef */
 
-	DUMP_HEADER("DSDefault"),
+#undef DUMP_STRUCT
+#define DUMP_STRUCT defaultDS_t /* Horrible typedef */
+
+	DUMP_HEADER("defaultDS_t"),
 	DUMP_FIELD(Boolean, twoStepFlag),
 	DUMP_FIELD(ClockIdentity, clockIdentity),
 	DUMP_FIELD(UInteger16, numberPorts),
@@ -40,20 +42,29 @@ struct dump_info  dump_info[] = {
 	DUMP_FIELD(UInteger8, priority2),
 	DUMP_FIELD(UInteger8, domainNumber),
 	DUMP_FIELD(Boolean, slaveOnly),
+	/** Optional (IEEE1588-2019) */
+//	FIXME: DUMP_FIELD(Timestamp, currentTime),
+	DUMP_FIELD(Boolean, instanceEnable),
+	DUMP_FIELD(Boolean, externalPortConfigurationEnabled),
+	DUMP_FIELD(Enumeration8, maxStepsRemoved),
+	DUMP_FIELD(Enumeration8, SdoId),
+	DUMP_FIELD(Enumeration8, instanceType),
+
 
 #undef DUMP_STRUCT
-#define DUMP_STRUCT DSCurrent /* Horrible typedef */
+#define DUMP_STRUCT currentDS_t /* Horrible typedef */
 
-	DUMP_HEADER("DSCurrent"),
+	DUMP_HEADER("currentDS_t"),
 	DUMP_FIELD(UInteger16, stepsRemoved),
-	DUMP_FIELD(pp_time, offsetFromMaster),
-	DUMP_FIELD(pp_time, meanPathDelay), /* oneWayDelay */
+	DUMP_FIELD(TimeInterval, offsetFromMaster),
+	DUMP_FIELD(TimeInterval, meanDelay), /* oneWayDelay */
 	DUMP_FIELD(UInteger16, primarySlavePortNumber),
 
-#undef DUMP_STRUCT
-#define DUMP_STRUCT DSParent /* Horrible typedef */
 
-	DUMP_HEADER("DSParent"),
+#undef DUMP_STRUCT
+#define DUMP_STRUCT parentDS_t /* Horrible typedef */
+
+	DUMP_HEADER("parentDS_t"),
 	DUMP_FIELD(PortIdentity, parentPortIdentity),
 	DUMP_FIELD(UInteger16, observedParentOffsetScaledLogVariance),
 	DUMP_FIELD(Integer32, observedParentClockPhaseChangeRate),
@@ -61,11 +72,13 @@ struct dump_info  dump_info[] = {
 	DUMP_FIELD(ClockQuality, grandmasterClockQuality),
 	DUMP_FIELD(UInteger8, grandmasterPriority1),
 	DUMP_FIELD(UInteger8, grandmasterPriority2),
+	DUMP_FIELD(Boolean, newGrandmaster),
+
 
 #undef DUMP_STRUCT
-#define DUMP_STRUCT DSTimeProperties /* Horrible typedef */
+#define DUMP_STRUCT timePropertiesDS_t /* Horrible typedef */
 
-	DUMP_HEADER("DSTimeProperties"),
+	DUMP_HEADER("timePropertiesDS_t"),
 	DUMP_FIELD(Integer16, currentUtcOffset),
 	DUMP_FIELD(Boolean, currentUtcOffsetValid),
 	DUMP_FIELD(Boolean, leap59),
@@ -75,31 +88,51 @@ struct dump_info  dump_info[] = {
 	DUMP_FIELD(Boolean, ptpTimescale),
 	DUMP_FIELD(Enumeration8, timeSource),
 
-#undef DUMP_STRUCT
-#define DUMP_STRUCT struct wr_servo_state
 
-	DUMP_HEADER("servo_state"),
-	DUMP_FIELD_SIZE(char, if_name, 16),
+#undef DUMP_STRUCT
+#define DUMP_STRUCT portDS_t
+
+	DUMP_HEADER("portDS_t"),
+	DUMP_FIELD(PortIdentity, portIdentity),
+	DUMP_FIELD(Integer8, logMinDelayReqInterval),
+	DUMP_FIELD(Integer8, logAnnounceInterval),
+	DUMP_FIELD(UInteger8, announceReceiptTimeout),
+	DUMP_FIELD(Integer8, logSyncInterval),
+	DUMP_FIELD(pointer, ext_dsport),
+	DUMP_FIELD(Integer8, logMinPdelayReqInterval),
+	DUMP_FIELD(TimeInterval, meanLinkDelay),
+	DUMP_FIELD(UInteger4, versionNumber),
+	DUMP_FIELD(UInteger4, minorVersionNumber),
+	DUMP_FIELD(TimeInterval, delayAsymmetry),
+	DUMP_FIELD(RelativeDifference, delayAsymCoeff),
+	DUMP_FIELD(Boolean, portEnable),
+	DUMP_FIELD(Boolean, masterOnly),
+
+
+#undef DUMP_STRUCT
+#define DUMP_STRUCT struct pp_servo
+
+	DUMP_HEADER("pp_servo"),
+	DUMP_FIELD(long_long, obs_drift),
+	DUMP_FIELD(Integer64, mpd_fltr.m),
+	DUMP_FIELD(Integer64, mpd_fltr.y),
+	DUMP_FIELD(Integer64, mpd_fltr.s_exp),
+
+	/* Data shared with extension servo */
+	DUMP_FIELD(pp_time, delayMM), /* Shared with extension servo */
+	DUMP_FIELD(pp_time, delayMS), /* Shared with extension servo */
+	DUMP_FIELD(pp_time, meanDelay), /* Shared with extension servo */
+	DUMP_FIELD(pp_time, offsetFromMaster), /* Shared with extension servo */
 	DUMP_FIELD(unsigned_long, flags),
+
+	DUMP_FIELD(int, reset_address),
+
+	/* Data used only by extensions */
 	DUMP_FIELD(int, state),
-	DUMP_FIELD(Integer32, delta_tx_m),
-	DUMP_FIELD(Integer32, delta_rx_m),
-	DUMP_FIELD(Integer32, delta_tx_s),
-	DUMP_FIELD(Integer32, delta_rx_s),
-	DUMP_FIELD(Integer32, fiber_fix_alpha),
-	DUMP_FIELD(Integer32, clock_period_ps),
-	DUMP_FIELD(pp_time, mu),		/* half of the RTT */
-	DUMP_FIELD(Integer64, picos_mu),
-	DUMP_FIELD(Integer32, cur_setpoint),
-	DUMP_FIELD(Integer64, delta_ms),
-	DUMP_FIELD(UInteger32, update_count),
-	DUMP_FIELD(int, tracking_enabled),
 	DUMP_FIELD_SIZE(char, servo_state_name, 32),
-	DUMP_FIELD(Integer64, skew),
-	DUMP_FIELD(Integer64, offset),
-	DUMP_FIELD(UInteger32, n_err_state),
-	DUMP_FIELD(UInteger32, n_err_offset),
-	DUMP_FIELD(UInteger32, n_err_delta_rtt),
+
+	/* Data shared with extension servo */
+	DUMP_FIELD(UInteger32, update_count),
 	DUMP_FIELD(pp_time, update_time),
 	DUMP_FIELD(pp_time, t1),
 	DUMP_FIELD(pp_time, t2),
@@ -107,8 +140,9 @@ struct dump_info  dump_info[] = {
 	DUMP_FIELD(pp_time, t4),
 	DUMP_FIELD(pp_time, t5),
 	DUMP_FIELD(pp_time, t6),
-	DUMP_FIELD(Integer64, delta_ms_prev),
-	DUMP_FIELD(int, missed_iters),
+
+	DUMP_FIELD(int, servo_locked),
+	DUMP_FIELD(int, got_sync),
 
 #undef DUMP_STRUCT
 #define DUMP_STRUCT struct pp_instance
@@ -121,11 +155,12 @@ struct dump_info  dump_info[] = {
 	DUMP_FIELD(pointer, current_state_item),
 	DUMP_FIELD(pointer, arch_data),
 	DUMP_FIELD(pointer, ext_data),
+	DUMP_FIELD(int, protocol_extension),
+	DUMP_FIELD(pointer, ext_hooks),
 	DUMP_FIELD(unsigned_long, d_flags),
 	DUMP_FIELD(unsigned_char, flags),
-	DUMP_FIELD(int, role),
 	DUMP_FIELD(int, proto),
-	DUMP_FIELD(int, mech),
+	DUMP_FIELD(int, delayMechanism),
 	DUMP_FIELD(pointer, glbs),
 	DUMP_FIELD(pointer, n_ops),
 	DUMP_FIELD(pointer, t_ops),
@@ -161,33 +196,64 @@ struct dump_info  dump_info[] = {
 	DUMP_FIELD(pp_time, t4),
 	DUMP_FIELD(pp_time, t5),
 	DUMP_FIELD(pp_time, t6),
+	DUMP_FIELD(Integer32, t4_cf),
+	DUMP_FIELD(Integer32, t6_cf),
 	DUMP_FIELD(UInteger64, syncCF),
 	DUMP_FIELD(pp_time, last_rcv_time),
 	DUMP_FIELD(pp_time, last_snt_time),
 	DUMP_FIELD(UInteger16, frgn_rec_num),
 	DUMP_FIELD(Integer16,  frgn_rec_best),
+	DUMP_FIELD(UInteger32, frgn_master_time_window_ms),
 	//DUMP_FIELD(struct pp_frgn_master frgn_master[PP_NR_FOREIGN_RECORDS]),
 	DUMP_FIELD(pointer, portDS),
-	//DUMP_FIELD(unsigned long timeouts[__PP_TO_ARRAY_SIZE]),
+	DUMP_FIELD(pointer, servo),
+
+	/*  dump of substructure asymmetryCorrectionPortDS_t; draft P1588_v_29: page 99*/
+	DUMP_FIELD(TimeInterval, asymmetryCorrectionPortDS.constantAsymmetry),
+	DUMP_FIELD(RelativeDifference, asymmetryCorrectionPortDS.scaledDelayCoefficient),
+	DUMP_FIELD(Boolean, asymmetryCorrectionPortDS.enable),
+
+	/* dump of substructure timestampCorrectionPortDS_t; draft P1588_v_29: page 99 */
+	DUMP_FIELD(TimeInterval, timestampCorrectionPortDS.egressLatency),
+	DUMP_FIELD(TimeInterval, timestampCorrectionPortDS.ingressLatency),
+	DUMP_FIELD(TimeInterval, timestampCorrectionPortDS.messageTimestampPointLatency),
+	DUMP_FIELD(TimeInterval, timestampCorrectionPortDS.semistaticLatency),
+
+	/* dump of substructure externalPortConfigurationPortDS_t; draft P1588: Clause 17.6.3*/
+	DUMP_FIELD(Enumeration8, externalPortConfigurationPortDS.desiredState),
+	
+// 	timeOutInstCnt_t tmo_cfg[PP_TO_COUNT];
 	DUMP_FIELD(UInteger16, recv_sync_sequence_id),
+
 	//DUMP_FIELD(UInteger16 sent_seq[__PP_NR_MESSAGES_TYPES]),
+
 	DUMP_FIELD_SIZE(bina, received_ptp_header, sizeof(MsgHeader)),
-	//DUMP_FIELD(pointer, iface_name),
-	//DUMP_FIELD(pointer, port_name),
+
+	DUMP_FIELD(Boolean, link_up),
+	DUMP_FIELD_SIZE(char, iface_name, 16), /* for direct actions on hardware */
+	DUMP_FIELD_SIZE(char, port_name, 16), /* for diagnostics, mainly */
 	DUMP_FIELD(int, port_idx),
 	DUMP_FIELD(int, vlans_array_len),
 	/* FIXME: array */
+// 	int vlans[CONFIG_VLAN_ARRAY_SIZE];
 	DUMP_FIELD(int, nvlans),
 
 	/* sub structure */
 	DUMP_FIELD_SIZE(char, cfg.port_name, 16),
 	DUMP_FIELD_SIZE(char, cfg.iface_name, 16),
-	DUMP_FIELD(int, cfg.ext),
-	DUMP_FIELD(int, cfg.ext),
-	DUMP_FIELD(int, cfg.mech),
+	DUMP_FIELD(int, cfg.profile),
+	DUMP_FIELD(int, cfg.delayMechanism),
+	/* FIXME: other fields from cfg */
 
 	DUMP_FIELD(unsigned_long, ptp_tx_count),
 	DUMP_FIELD(unsigned_long, ptp_rx_count),
+	DUMP_FIELD(Boolean, received_dresp), /* Count the number of delay response messages received for a given delay request */
+	DUMP_FIELD(Boolean, received_dresp_fup), /* Count the number of delay response follow up messages received for a given delay request */
+	DUMP_FIELD(Boolean, ptp_support), /* True if allow pure PTP support */
+	DUMP_FIELD(Boolean, bmca_execute), /* True: Ask fsm to run bmca state decision */
+	DUMP_FIELD(int, /* FIXME:pp_pdstate_t */ pdstate),  /* Protocol detection state */
+	DUMP_FIELD(int, /* FIXME:pp_exstate_t */ extState), /* Extension state */
+
 
 #undef DUMP_STRUCT
 #define DUMP_STRUCT struct softpll_state

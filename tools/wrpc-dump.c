@@ -371,17 +371,24 @@ int main(int argc, char **argv)
 		printf("ppg at 0x%lx\n", ppg_off);
 		dump_many_fields(mapaddr + ppg_off, "pp_globals");
 	}
+	/* FIXME: support multiple instances */
 	if (!strcmp(dumpname, "ppi"))
 		ppi_off = offset;
 	if (ppi_off) {
 		printf("ppi at 0x%lx\n", ppi_off);
 		dump_many_fields(mapaddr + ppi_off, "pp_instance");
-	}
-	if (!strcmp(dumpname, "servo_state"))
-		servo_off = offset;
-	if (servo_off) {
-		printf("servo_state at 0x%lx\n", servo_off);
-		dump_many_fields(mapaddr + servo_off, "servo_state");
+
+		/* FIXME: support multiple servo */
+		servo_off = wrpc_get_pointer(mapaddr + ppi_off,
+			    "pp_instance", "servo");
+		printf("pp_servo at 0x%lx\n", servo_off);
+			dump_many_fields(mapaddr + servo_off, "pp_servo");
+
+		/* FIXME: support multiple servo */
+		servo_off = wrpc_get_pointer(mapaddr + ppi_off,
+			    "pp_instance", "portDS");
+		printf("portDS at 0x%lx\n", servo_off);
+			dump_many_fields(mapaddr + servo_off, "portDS_t");
 	}
 
 	/* This "all" gets the ppg pointer. It's not really all: no pll */
@@ -390,25 +397,25 @@ int main(int argc, char **argv)
 	if (ds_off) {
 		unsigned long newoffset;
 
-		ppg_off = ds_off;
-		newoffset = wrpc_get_pointer(mapaddr + ppg_off,
+		newoffset = wrpc_get_pointer(mapaddr + ds_off,
 					     "pp_globals", "defaultDS");
-		printf("DSDefault at 0x%lx\n", newoffset);
-		dump_many_fields(mapaddr + newoffset, "DSDefault");
+		printf("defaultDS at 0x%lx\n", newoffset);
+		dump_many_fields(mapaddr + newoffset, "defaultDS_t");
 
-		newoffset = wrpc_get_pointer(mapaddr + ppg_off,
+		newoffset = wrpc_get_pointer(mapaddr + ds_off,
 					     "pp_globals", "currentDS");
-		printf("DSCurrent at 0x%lx\n", newoffset);
-		dump_many_fields(mapaddr + newoffset, "DSCurrent");
+		printf("currentDS at 0x%lx\n", newoffset);
+		dump_many_fields(mapaddr + newoffset, "currentDS_t");
 
-		newoffset = wrpc_get_pointer(mapaddr + ppg_off,
+		newoffset = wrpc_get_pointer(mapaddr + ds_off,
 					     "pp_globals", "parentDS");
-		dump_many_fields(mapaddr + newoffset, "DSParent");
+		printf("parentDS at 0x%lx\n", newoffset);
+		dump_many_fields(mapaddr + newoffset, "parentDS_t");
 
-		newoffset = wrpc_get_pointer(mapaddr + ppg_off,
+		newoffset = wrpc_get_pointer(mapaddr + ds_off,
 					     "pp_globals", "timePropertiesDS");
-		printf("DSTimeProperties at 0x%lx\n", newoffset);
-		dump_many_fields(mapaddr + newoffset, "DSTimeProperties");
+		printf("timePropertiesDS at 0x%lx\n", newoffset);
+		dump_many_fields(mapaddr + newoffset, "timePropertiesDS_t");
 	}
 
 	if (!strcmp(dumpname, "stats"))
