@@ -56,6 +56,8 @@ int ltc695x_configure(struct ltc695x_device *dev, struct ltc695x_config* cfg)
     for(i = 0; i < cfg->n_regs; i++) {
         ltc695x_write(dev, cfg->regs[i].addr, cfg->regs[i].value);
     }
+
+    return 0;
 }
 
 #define LTC6953_PD_NORMAL (0)
@@ -87,7 +89,7 @@ int ltc6953_set_pdown( struct ltc695x_device *dev, int out, int pd )
     r &= ~( 0x3 << shift );
     r |= pd << shift;
 
-    dev_dbg("ltc6953 out %d [addr %x mask %x r %x] PD = %d\n", out, reg, shift, r, pd );
+    //dev_dbg("ltc6953 out %d [addr %x mask %x r %x] PD = %d\n", out, reg, shift, r, pd );
 
     ltc695x_write(dev, reg, r );
     return 0;
@@ -125,7 +127,6 @@ int ltc6953_configure_output( struct ltc695x_device *dev, int output, int divide
 
     dev_dbg("ltc6953 r%02x = %02x\n", base+0, or0 );
     dev_dbg("ltc6953 r%02x = %02x\n", base+1, or1 );
-
     ltc695x_write( dev, base + 0, or0 );
     ltc695x_write( dev, base + 1, or1 );
 
