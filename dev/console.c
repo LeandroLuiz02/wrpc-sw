@@ -96,7 +96,7 @@ static int con_uart_put_string(struct console_device* dev, const char *s)
     if( dev->flags & CONSOLE_FLAGS_MODE_BINARY )
         return 0;
 
-    while ( (c = *s++) )
+    while ( (c = *s++) != 0 )
     {
 	    if( (dev->flags & CONSOLE_FLAGS_INSERT_CRLF) &&  c == '\n')
     		suart_write_byte(&priv->uart_dev, '\r');
@@ -110,8 +110,8 @@ static int con_uart_put_string(struct console_device* dev, const char *s)
 
 static int con_uart_getc(struct console_device* dev)
 {
-    //if( dev->flags & CONSOLE_FLAGS_MODE_BINARY )
-        //return 0;
+    if( dev->flags & CONSOLE_FLAGS_MODE_BINARY )
+        return 0;
 
     return con_rx_internal( dev );
 }
@@ -150,7 +150,7 @@ struct ring_buffer
     int head, tail, size, count;
 };
 
-struct console_ipmi_priv_data 
+struct console_ipmi_priv_data
 {
     uint8_t tx_buf_mem[IPMI_CON_TX_BUF_SIZE];
     uint8_t rx_buf_mem[IPMI_CON_RX_BUF_SIZE];
@@ -208,6 +208,7 @@ static inline int rbuf_full(struct ring_buffer *buf)
 static inline int rbuf_purge(struct ring_buffer *buf)
 {
     buf->head = buf->tail = buf->count = 0;
+    return 0;
 }
 
 
@@ -215,7 +216,7 @@ static int con_ipmi_put_string(struct console_device* dev, const char *s)
 {
     struct console_ipmi_priv_data* priv = (struct console_ipmi_priv_data*) dev->priv;
     int c, n = 0;
-    while( c = *s++ )
+    while( (c = *s++) != 0 )
     {
         rbuf_put( &priv->tx_buf, c );
         n++;
@@ -238,7 +239,6 @@ int console_ipmi_process_request(struct console_device* dev,  uint8_t *req, int 
     struct console_ipmi_priv_data* priv = (struct console_ipmi_priv_data*) dev->priv;
 
     int i;
-    int cnt = priv->tx_buf.count;
 
     for(i = 0; i < size; i++ )
     {
@@ -263,13 +263,13 @@ int console_ipmi_process_request(struct console_device* dev,  uint8_t *req, int 
     return i;
 }
 
-void console_ipmi_init( )
+void console_ipmi_init( void )
 {
     console_ipmi_dev.priv = &console_ipmi_priv;
     console_ipmi_dev.get_char = con_ipmi_getc;
     console_ipmi_dev.put_string = con_ipmi_put_string;
-    rbuf_init(&console_ipmi_priv.rx_buf, IPMI_CON_RX_BUF_SIZE, &console_ipmi_priv.rx_buf_mem);
-    rbuf_init(&console_ipmi_priv.tx_buf, IPMI_CON_TX_BUF_SIZE, &console_ipmi_priv.tx_buf_mem);
+    rbuf_init(&console_ipmi_priv.rx_buf, IPMI_CON_RX_BUF_SIZE, console_ipmi_priv.rx_buf_mem);
+    rbuf_init(&console_ipmi_priv.tx_buf, IPMI_CON_TX_BUF_SIZE, console_ipmi_priv.tx_buf_mem);
     console_register_device( &console_ipmi_dev );
 }
 
@@ -360,11 +360,11 @@ void console_init()
     console_uart_dev.priv = &console_uart_priv;
     console_uart_dev.get_char = con_uart_getc;
     console_uart_dev.put_string = con_uart_put_string;
-    
+
     console_uart_priv.prev_char = 0;
     console_uart_priv.state = CON_STATE_IDLE;
-    
-    
+
+
     console_register_device( &console_uart_dev );
 
 #ifdef CONFIG_IPMI_CONSOLE
@@ -394,44 +394,36 @@ int console_get_mode( struct console_device *dev )
     return dev->flags & ( CONSOLE_FLAGS_MODE_BINARY | CONSOLE_FLAGS_MODE_TTY );
 }
 
-int console_binary_send( struct console_device *dev, void *buf, int size )
+int console_binary_send_byte( struct console_device *dev, uint8_t b )
 {
     struct console_uart_priv_data* priv = (struct console_uart_priv_data*) dev->priv;
+
+    if( dev->flags & CONSOLE_FLAGS_MODE_TTY )
+        return 0;
 
     int has_fifo = suart_is_fifo_supported( &priv->uart_dev );
 
     if( !has_fifo )
         return -ENODEV;
 
-    // fixme: FIFO threshold check?
+    suart_write_byte( &priv->uart_dev, b );
 
-    uint8_t *ptr = (uint8_t*) buf;
-    int i;
-    for(i = 0; i< size; i++)
-        suart_write_byte( &priv->uart_dev, ptr[i] );
-
-    return size;
+    return 0;
 }
 
-int console_binary_recv( struct console_device *dev, void *buf, int size )
+int console_binary_recv_byte( struct console_device *dev )
 {
     struct console_uart_priv_data* priv = (struct console_uart_priv_data*) dev->priv;
+
+    if( dev->flags & CONSOLE_FLAGS_MODE_TTY )
+        return -1;
 
     int has_fifo = suart_is_fifo_supported( &priv->uart_dev );
 
     if( !has_fifo )
         return -ENODEV;
 
-    int rx_count = suart_poll( &priv->uart_dev );
+    int rx_byte = con_rx_internal( dev );
 
-    if( rx_count < size )
-        return -EAGAIN;
-
-    uint8_t *ptr = (uint8_t*) buf;
-    int i;
-    for(i = 0; i< size; i++)
-        ptr[i] = suart_read_byte(&priv->uart_dev );
-
-    return size;
+    return rx_byte;
 }
-
