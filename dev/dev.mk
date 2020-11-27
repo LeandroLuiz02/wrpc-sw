@@ -25,6 +25,7 @@ obj-$(CONFIG_EMBEDDED_NODE) += \
 	dev/netif.o
 
 obj-$(CONFIG_WR_NODE) += \
+	dev/sensors.o \
 	dev/pps_gen.o
 
 obj-$(CONFIG_TARGET_WR_SWITCH) += dev/timer-wrs.o dev/gpio.o

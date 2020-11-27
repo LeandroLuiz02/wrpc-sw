@@ -9,7 +9,7 @@
 
 #include <wrc.h>
 #include <dev/w1.h>
-#include <temperature.h>
+#include "sensors.h"
 
 static struct wrc_temp_sensor temp_w1_data[] = {
 	{"pcb", TEMP_INVALID},
@@ -52,7 +52,7 @@ static int temp_w1_refresh(struct wrc_temp_group *t)
 	return 1;
 }
 
-void temp_w1_init(void) 
+void temp_w1_init(void)
 {
 	struct wrc_temp_group tbr;
 
