@@ -464,4 +464,7 @@ void shell_register_commands(void)
 		REGISTER_WRC_COMMAND(w1r);
 		REGISTER_WRC_COMMAND(w1w);
 	}
+	REGISTER_WRC_COMMAND(sensors);
+	if (HAS_IP)
+		REGISTER_WRC_COMMAND(ip);
 }
