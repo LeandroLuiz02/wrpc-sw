@@ -20,7 +20,7 @@
 #include <dev/onewire.h>
 #include <dev/endpoint.h>
 #include <dev/netif.h>
-#include <temperature.h>
+#include "sensors.h"
 #include "wrc_ptp.h"
 #include "hal_exports.h"
 #include "lib/ipv4.h"
@@ -181,7 +181,7 @@ static char *prot_detection_state_name[]={
 static struct desired_state_t{
 	char *str_state;
 	int state;
-} 
+}
 
 desired_states[] = {
 	{ "initializing", PPS_INITIALIZING},
@@ -354,7 +354,7 @@ void print_main_description(void)
 
 	cprintf(C_BLUE, "Pro - Protocol mapping: V-Ethernet over "
 			"VLAN; U-UDP; R-Ethernet\n");
-	
+
 	cprintf(C_CYAN, "\n--------------------------- Synchronization status ----------------------------");
 }
 
@@ -376,7 +376,7 @@ void print_main_data(void)
 	/* TAI Time */
 	pcprintf(4, 11, C_WHITE, "%s", format_time(sec, TIME_FORMAT_SORTED));
 
-	
+
 	/* UTC offset */
 	wrc_ptp_get_leapsec(&leap_sec , &tmp /* dummy */);
 	pprintf(4, 44, "%d", leap_sec);
@@ -441,9 +441,9 @@ void print_main_data(void)
 		}
 
 	}
-	/* 
+	/*
 	----- HAL ---|---------------- PPSI -------------------------------------------------
-	 Iface| Freq |    Config    | MAC of peer port  |    PTP/EXT/PDETECT States    | Pro 
+	 Iface| Freq |    Config    | MAC of peer port  |    PTP/EXT/PDETECT States    | Pro
 	------+------+--------------+-------------------+------------------------------+----- */
 
 	for (i = 0 ; i < ndevs; i++) {
@@ -465,7 +465,7 @@ void print_main_data(void)
 		else
 			pcprintf(14, 9, C_RED,   "    ");
 
-		
+
 /* ----------------------------------------------------------------------------------------------------------------------- */
 		/*
 		 * Actually, what is interesting is the PTP state.
@@ -675,11 +675,11 @@ void print_servo_data(struct pp_instance *ppi)
 
 	/* should print WR servio description */
 	gui_description |= wrh_servo ? DESCRIPTION_WR_SERVO : 0;
-	
+
 	/* Avoid printing new data if change in description is expected.
 	 * This avoids extra redraw of data values */
 	if(prev_gui_description
-		!= (gui_description 
+		!= (gui_description
 		    & (DESCRIPTION_MAIN
 		       | DESCRIPTION_SERVO
 		       | DESCRIPTION_WR_SERVO)
@@ -703,14 +703,14 @@ void print_servo_data(struct pp_instance *ppi)
 		cprintf(C_RED, "Tracking forcibly disabled\n");
 	else
 		pp_printf("\e[K"); /* clear till the end of a line */
-		
+
 
 	/* +- Timing parameters --------------------------------------------------------- */
 
 	pcprintf(21, 20, C_WHITE, "%19s nsec", interval_to_string(ppg->currentDS->meanDelay));
 
 	/*delayMS */
-	pcprintf(22, 20, C_WHITE,"%24s", optimized_pp_time_toString_ps_as_ns(&ppi->servo->delayMS, buf));	
+	pcprintf(22, 20, C_WHITE,"%24s", optimized_pp_time_toString_ps_as_ns(&ppi->servo->delayMS, buf));
 	{
 		struct pp_time *delayMM = wr_servo_ext ?
 				&wr_servo_ext->rawDelayMM :
@@ -927,7 +927,7 @@ int wrc_wr_diags(void)
 
 	/* ***************** lock data from reading by user **************** */
 	wdiag_set_valid(0);
-	
+
 	/* frame statistics */
 	minic_get_stats(&tx, &rx);
 	wdiags_write_cnts(tx, rx);
@@ -955,7 +955,7 @@ int wrc_wr_diags(void)
 	*/
 	wdiags_write_ptp_state((uint8_t)ppi->state);
 
-	
+
 	/* servo state (if slave)s */
 	if (ptp_mode == WRC_MODE_SLAVE) {
 		struct pp_servo *s = SRV(ppg->pp_instances);
@@ -1013,4 +1013,3 @@ int wrc_wr_diags(void)
 	wdiag_set_valid(1);
 	return 1;
 }
-
