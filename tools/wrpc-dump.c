@@ -90,6 +90,23 @@ void dump_one_field(void *addr, struct dump_info *info)
 	size = wrpc_get_i32(&info->size);
 	sprintf(localname, "%s:", info->name);
 	printf("        %-30s ", localname);
+
+	/* check the size of Boolean, which is declared as Enum */
+	if (type == dump_type_Boolean) {
+		switch(size) {
+		case 1:
+			type = dump_type_UInteger8;
+			break;
+		case 2:
+			type = dump_type_UInteger16;
+			break;
+		case 4:
+		default:
+			type = dump_type_UInteger32;
+			break;
+		}
+	}
+
 	switch(type) {
 	case dump_type_char:
 		sprintf(format,"\"%%.%is\"\n", size);
@@ -125,11 +142,11 @@ void dump_one_field(void *addr, struct dump_info *info)
 	case dump_type_Integer8:
 	case dump_type_Enumeration8:
 	case dump_type_UInteger4:
-	case dump_type_Boolean:
 	case dump_type_uint8_t:
 		printf("%i\n", *(unsigned char *)p);
 		break;
 	case dump_type_UInteger16:
+	case dump_type_Integer16:
 	case dump_type_uint16_t:
 	case dump_type_unsigned_short:
 		printf("%i\n", wrpc_get_16(p));
@@ -145,9 +162,6 @@ void dump_one_field(void *addr, struct dump_info *info)
 			printf("%08lx\n", wrpc_get_l32(p));
 		else
 			printf("%016llx\n", wrpc_get_64(p));
-		break;
-	case dump_type_Integer16:
-		printf("%i\n", wrpc_get_16(p));
 		break;
 	case dump_type_pp_time:
 	{
