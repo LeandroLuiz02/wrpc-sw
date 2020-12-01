@@ -62,7 +62,7 @@ class SerialIF:
                 if state == None or len(state) == 0:
                     continue
                 #print ("************************ ST", state)
-                return state
+                return ord(state)
             except:
                 #print("Sleep")
                 time.sleep(1)
@@ -71,7 +71,7 @@ class SerialIF:
     def recv_nonblock(self):
         try:
             state = self.ser.read(1)
-            return state
+            return ord(state)
         except:
             return None
 
@@ -98,11 +98,11 @@ class SerialIF:
         frame = []
 
         while True:
-            b = ord(self.recv())
+            b = self.recv()
             if (b != 0x55):
                 #    		sys.stderr.write("%c" % b)
                 continue
-            b = ord(self.recv())
+            b = self.recv()
             if (b != 0xaa):
                 #		sys.stderr.write("%c" % b)
                 continue
@@ -110,19 +110,17 @@ class SerialIF:
 
         frame = [0x55, 0xaa]
 
-        rsp = ord(self.recv())
-        l = ord(self.recv())
+        rsp = self.recv()
+        l = self.recv()
         l <<= 8
-        l |= ord(self.recv())
-
-        #print("Rx %d" % l )
+        l |= self.recv()
 
         for i in range(0, l):
-            frame.append(ord(self.recv()))
+            frame.append(self.recv())
 
-        crc = ord(self.recv())
+        crc = self.recv()
         crc <<= 8
-        crc |= ord(self.recv())
+        crc |= self.recv()
 
         return (rsp, frame[2:])
 
@@ -143,9 +141,7 @@ class SerialIF:
         frame.append((crc >> 8) & 0xff)
         frame.append((crc & 0xff))
 
-        #print("FRAME: %d" % len(frame))
         for b in frame:
-            #print("Tx %x" % b)
             self.send(b)
 
 
@@ -273,7 +269,7 @@ class DSIBootloader:
         else:
             raise Exception("Unknown flash target: %s" % target)
         return self.do_program_flash(image, offset)
-    
+        
     def program_flash(self, fw, target):
         #print("PGM", target)
         if self.target_board == "ertm14m0" or self.target_board == "ertm14m1":
@@ -298,6 +294,8 @@ class DSIBootloader:
             for b in fw[p:p + n]:
                 data.append(ord(b))
 
+            #print("b0 %x" % data[0])
+
             self.cmd_program_page(p + offset, data)
             p += n
             remaining -= n
@@ -318,7 +316,7 @@ class DSIBootloader:
             n = 256 if remaining > 256 else remaining
             data = []
             for b in image[p:p + n]:
-                data.append(ord(b))
+                data.append(b)
 
 
 #	    print("addr %x l %d" %( p+addr, len(data)))
@@ -370,15 +368,16 @@ def run_terminal(ser):
 
     while True:
         a = ser.recv_nonblock()
-        if (a != None and len(a) > 0):
-            sys.stderr.write("%c" % a)
+        if (a != None):
+            sys.stderr.write(chr(a))
+            # flush is needed FIXME:
+            # sys.stderr.flush()
 
         a = os.read(sys.stdin.fileno(), 1)
-        if a != None and len(a) > 0:
-            if (ord(a) == 1):
-                return
+        if a and ord(a) == 1:
+            return      # exit on Ctrl-A
             else:
-                ser.send(ord(a))
+            ser.send(a)
 
 
 
@@ -433,7 +432,7 @@ def main(argv):
         sys.exit(2)
 
     boot = DSIBootloader(our_port, target_board=board_target,baudrate=ser_speed)
-    fw = open(args[0], "rb").read()
+    fw = bytearray(open(args[0], "rb").read())
 
 
 
@@ -449,11 +448,3 @@ def main(argv):
 
 if __name__ == "__main__":
     main(sys.argv)
-    #boot = DSIBootloader("/dev/ttyUSB0",baudrate=115200)
-    #boot.cmd_reset_to_boot_mode()
-    #run_terminal(boot.sock)
-    #os.exit(0)
-    #time.sleep(1)
-    #boot.boot_enter(expected_board_id="ertm14m0")
-    #run_terminal(boot.sock)
-
