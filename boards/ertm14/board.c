@@ -226,11 +226,91 @@ static struct wrc_sensor ertm_sensors[] = {
         .id = ERTM14_VOLTAGE_P12V
     },
     {
+        .flags = WRC_SENSOR_TEMP_CELSIUS,
+        .name = "eRTM15 Main PSU",
+        .id = ERTM15_TEMP_PSU
+    },
+    {
+        .flags = WRC_SENSOR_TEMP_CELSIUS,
+        .name = "eRTM15 RF Distr LO",
+        .id = ERTM15_TEMP_LO_RF
+    },
+    {
+        .flags = WRC_SENSOR_TEMP_CELSIUS,
+        .name = "eRTM15 RF Distr REF",
+        .id = ERTM15_TEMP_REF_RF
+    },
+    {
+        .flags = WRC_SENSOR_TEMP_CELSIUS,
+        .name = "eRTM15 DDS LO",
+        .id = ERTM15_TEMP_LO_DDS
+    },
+    {
+        .flags = WRC_SENSOR_TEMP_CELSIUS,
+        .name = "eRTM15 DDS REF",
+        .id = ERTM15_TEMP_REF_DDS
+    },
+    {
+        .flags = WRC_SENSOR_TEMP_CELSIUS,
+        .name = "eRTM15 LTC6950 PLL",
+        .id = ERTM15_TEMP_LTC6150
+    },
+    {
+        .flags = WRC_SENSOR_TEMP_CELSIUS,
+        .name = "eRTM15 OCXO 1",
+        .id = ERTM15_TEMP_OCXO1
+    },
+    {
+        .flags = WRC_SENSOR_TEMP_CELSIUS,
+        .name = "eRTM15 OCXO 2",
+        .id = ERTM15_TEMP_OCXO2
+    },
+    {
+        .flags = WRC_SENSOR_TEMP_CELSIUS,
+        .name = "eRTM15 CLKA Fanout",
+        .id = ERTM15_TEMP_CLKA_FANOUT
+    },
+    {
+        .flags = WRC_SENSOR_TEMP_CELSIUS,
+        .name = "eRTM15 CLKB Fanout",
+        .id = ERTM15_TEMP_CLKB_FANOUT
+    },
+    {
+        .flags = WRC_SENSOR_VOLTAGE_MV,
+        .name = "eRTM15 P3V3",
+        .id = ERTM15_VOLTAGE_P3V3
+    },
+    {
+        .flags = WRC_SENSOR_VOLTAGE_MV,
+        .name = "eRTM15 P12V",
+        .id = ERTM15_VOLTAGE_P12V
+    },
+    {
+        .flags = WRC_SENSOR_VOLTAGE_MV,
+        .name = "eRTM15 P9V0_LO",
+        .id = ERTM15_VOLTAGE_P9V0_LO
+    },
+    {
+        .flags = WRC_SENSOR_VOLTAGE_MV,
+        .name = "eRTM15 P9V0_REF",
+        .id = ERTM15_VOLTAGE_P9V0_REF
+    },
+    {
+        .flags = WRC_SENSOR_VOLTAGE_MV,
+        .name = "eRTM15 OCXO Voltage",
+        .id = ERTM15_VOLTAGE_POCXO
+    },
+    {
+        .flags = WRC_SENSOR_CURRENT_MA,
+        .name = "eRTM15 OCXO Current",
+        .id = ERTM15_CURRENT_OCXO
+    },
+    {
         .flags = 0
     }
 };
 
-static struct uart_packet* mmc_get_status ( struct uart_link *link );
+static struct ertm14_mmc_state* mmc_get_status ( struct uart_link *link );
 static void mmc_show_version_info( const char *brdname, struct ertm14_mmc_state *st );
 
 uint32_t bswap32(uint32_t v)
@@ -1203,6 +1283,33 @@ int ertm14_init_mac_eeprom(void)
     return 0;
 }
 
+static void mmc_comm_init(void)
+{
+    board_dbg("Init MMC14 UART Link\n");
+    suart_init( &board.mmc_14_uart, BASE_MMC_UART_14, 115200 );
+    uart_link_create_wrpc_suart( &board.mmc_14_link, &board.mmc_14_uart );
+
+    struct ertm14_mmc_state *st14 = mmc_get_status( &board.mmc_14_link );
+    bist_checkpoint( ertm_bist, ERTM14_BIST_MMC_14, 0, st14 != NULL );
+
+    board_dbg("Init MMC15 UART Link\n");
+    suart_init( &board.mmc_15_uart, BASE_MMC_UART_15, 115200 );
+    uart_link_create_wrpc_suart( &board.mmc_15_link, &board.mmc_15_uart );
+
+    struct ertm14_mmc_state *st15 = mmc_get_status( &board.mmc_15_link );
+    bist_checkpoint( ertm_bist, ERTM14_BIST_MMC_15, 0, st15 != NULL );
+
+
+    if( st14 )
+    {
+        mmc_show_version_info( "eRTM14", st14 );
+    }
+
+    if( st15 )
+    {
+        mmc_show_version_info( "eRTM15", st15 );
+    }
+}
 
 void ertm14_set_pps_out_mode(int mode)
 {
@@ -1396,17 +1503,7 @@ int ertm14_low_level_init(void)
     board_dbg("Init Control UART Link\n");
     uart_link_create_wrpc_console( &board.control_uart_link );
 
-    board_dbg("Init MMC14 UART Link\n");
-    suart_init( &board.mmc_14_uart, BASE_MMC_UART_14, 115200 );
-    uart_link_create_wrpc_suart( &board.mmc_14_link, &board.mmc_14_uart );
-
-    struct ertm14_mmc_state *st = mmc_get_status( &board.mmc_14_link );
-    bist_checkpoint( ertm_bist, ERTM14_BIST_MMC_14, 0, st != NULL );
-
-    if( st )
-    {
-        mmc_show_version_info( "eRTM14", st );
-    }
+    mmc_comm_init();
 
     board_dbg("Init RF transceiver\n");
     wr_rf_frame_transceiver_create( &board.rf_xcvr, BASE_ERTM14_RF_FRAME_TRANSCEIVER );
@@ -1674,74 +1771,97 @@ int wrc_board_early_init()
 extern int phy_calibration_poll(void);
 extern void phy_calibration_init(void);
 
-timeout_t mmc14_tmo;
+static timeout_t mmc14_tmo;
+static timeout_t mmc15_tmo;
 
 static void mmc_show_version_info( const char *brdname, struct ertm14_mmc_state *st )
 {
     pp_printf("MMC Build Info for %s:\n", brdname );
     pp_printf("  - Git build commit : %32s\n", st->info.git_sha );
     pp_printf("  - Git build tag    : %32s\n", st->info.git_tag );
-    pp_printf("  - Build date       : %d\n",   bswap32( st->info.build_date ) );
+    pp_printf("  - Build date       : %d (Unix)\n",   bswap32( st->info.build_date ) );
 }
 
-static struct uart_packet* mmc_get_status ( struct uart_link *link )
+static struct ertm14_mmc_state* mmc_get_status ( struct uart_link *link )
 {
     struct uart_packet tx_pkt;
     struct uart_packet *rx_pkt;
 
     tx_pkt.ptype = ERTM14_UART_PTYPE_MMC_STATUS_REQ;
     tx_pkt.length = 0;
-    uart_link_send( &board.mmc_14_link, &tx_pkt );
+    uart_link_send( link, &tx_pkt );
 
-    if( uart_link_recv( &board.mmc_14_link, &rx_pkt, 100 ) == 1 )
+    if( uart_link_recv( link, &rx_pkt, 100 ) == 1 )
     {
         if ( rx_pkt->ptype != ERTM14_UART_PTYPE_MMC_STATUS_RESP )
             return NULL;
-        return rx_pkt;
+        if ( rx_pkt->length != sizeof( struct ertm14_mmc_state ) )
+            return NULL;
+        return (struct ertm14_mmc_state*) rx_pkt->payload;
     }
 
     return NULL;
 }
 
+void poll_mmc_sensors(struct uart_link *link)
+{
+    struct ertm14_mmc_state *state = mmc_get_status(link);
 
-void mmc14_link_init(void)
+    if (!state) // fixme: report error?
+        return 0;
+
+    int i;
+
+    for (i = 0; i < ERTM14_MAX_SENSORS_COUNT; i++)
+    {
+        struct ertm14_mmc_sensor_state *s;
+        s = &state->sensors[i];
+
+        if (!(s->flags & ERTM14_SENSOR_VALID))
+            continue;
+
+        struct wrc_sensor *sensor = wrc_sensor_find_by_id(s->id);
+
+        if (!sensor)
+            continue;
+
+        //pp_printf("upd s %d v %d\n", s->id, bswap16( s->value ) );
+
+        // ARMs are little endian, LM32 is big endian.... Such is life...
+        sensor->value = bswap16(s->value);
+        sensor->flags |= WRC_SENSOR_VALID;
+    }
+}
+
+static void mmc14_link_init(void)
 {
     tmo_init( &mmc14_tmo, 1000 );
     return 0;
 }
 
-int mmc14_link_poll(void)
+static void mmc15_link_init(void)
+{
+    tmo_init( &mmc15_tmo, 1000 );
+    return 0;
+}
+
+static int mmc14_link_poll(void)
 {
     if (tmo_expired(&mmc14_tmo))
     {
         tmo_restart(&mmc14_tmo);
-        struct uart_packet *rx_pkt = mmc_get_status(&board.mmc_14_link);
+        poll_mmc_sensors( &board.mmc_14_link );
+    }
 
-        if (!rx_pkt) // fixme: report error?
-            return 0;
+    return 0;
+}
 
-        struct ertm14_mmc_state *state = (struct ertm14_mmc_state *)rx_pkt->payload;
-        int i;
-
-        for (i = 0; i < ERTM14_MAX_SENSORS_COUNT; i++)
-        {
-            struct ertm14_mmc_sensor_state *s;
-            s = &state->sensors[i];
-
-            if (!(s->flags & ERTM14_SENSOR_VALID))
-                continue;
-
-            struct wrc_sensor *sensor = wrc_sensor_find_by_id(s->id);
-
-            if (!sensor)
-                continue;
-
-            //pp_printf("upd s %d v %d\n", s->id, bswap16( s->value ) );
-
-            // ARMs are little endian, LM32 is big endian.... Such is life...
-            sensor->value = bswap16(s->value);
-            sensor->flags |= WRC_SENSOR_VALID;
-        }
+static int mmc15_link_poll(void)
+{
+    if (tmo_expired(&mmc15_tmo))
+    {
+        tmo_restart(&mmc15_tmo);
+        poll_mmc_sensors( &board.mmc_15_link );
     }
 
     return 0;
@@ -1763,6 +1883,7 @@ int wrc_board_init()
     wrc_task_create( "ertm-config", ertm14_config_update_init, ertm14_config_update_task );
     wrc_task_create( "phy-cal", phy_calibration_init, phy_calibration_poll );
     wrc_task_create( "mmc14", mmc14_link_init, mmc14_link_poll );
+    wrc_task_create( "mmc15", mmc15_link_init, mmc15_link_poll );
 
     ertm14_apply_config( 0 );
 
