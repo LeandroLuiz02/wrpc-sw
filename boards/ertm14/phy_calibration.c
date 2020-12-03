@@ -153,10 +153,13 @@ static int tx_fsm_update()
 
 //        pp_printf("Qpll: ");
         // wait for lock
+        int lock_cycles=0;
         while( !( ep_pcs_read(&wrc_endpoint_dev, MDIO_DBG0) & MDIO_DBG0_GTX_QPLL_LOCKED ) )
-            usleep(1);
+            lock_cycles++;
+
         
-        //pp_printf("QPLL OK\n"); 
+        
+//        pp_printf("QPLL OK [%d]\n", lock_cycles); 
 
         // QPLL ok: un-reset TX path (+ UsrClk PLL)
         dbg1 &= ~MDIO_DBG1_RESET_TX;
