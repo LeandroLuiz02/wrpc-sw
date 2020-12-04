@@ -2,6 +2,8 @@
 #include <ppsi/ppsi.h>
 #include <softpll_ng.h>
 
+#include <wrpc.h>
+
 #include "dump-info.h"
 
 struct dump_info  dump_info[] = {
@@ -90,26 +92,6 @@ struct dump_info  dump_info[] = {
 
 
 #undef DUMP_STRUCT
-#define DUMP_STRUCT portDS_t
-
-	DUMP_HEADER("portDS_t"),
-	DUMP_FIELD(PortIdentity, portIdentity),
-	DUMP_FIELD(Integer8, logMinDelayReqInterval),
-	DUMP_FIELD(Integer8, logAnnounceInterval),
-	DUMP_FIELD(UInteger8, announceReceiptTimeout),
-	DUMP_FIELD(Integer8, logSyncInterval),
-	DUMP_FIELD(pointer, ext_dsport),
-	DUMP_FIELD(Integer8, logMinPdelayReqInterval),
-	DUMP_FIELD(TimeInterval, meanLinkDelay),
-	DUMP_FIELD(UInteger4, versionNumber),
-	DUMP_FIELD(UInteger4, minorVersionNumber),
-	DUMP_FIELD(TimeInterval, delayAsymmetry),
-	DUMP_FIELD(RelativeDifference, delayAsymCoeff),
-	DUMP_FIELD(Boolean, portEnable),
-	DUMP_FIELD(Boolean, masterOnly),
-
-
-#undef DUMP_STRUCT
 #define DUMP_STRUCT struct pp_servo
 
 	DUMP_HEADER("pp_servo"),
@@ -143,6 +125,60 @@ struct dump_info  dump_info[] = {
 
 	DUMP_FIELD(int, servo_locked),
 	DUMP_FIELD(int, got_sync),
+
+#if CONFIG_HAS_EXT_L1SYNC || CONFIG_HAS_EXT_WR
+#undef DUMP_STRUCT
+#define DUMP_STRUCT wrh_servo_t
+	DUMP_HEADER("wrh_servo_t"),
+	DUMP_FIELD(Integer32, clock_period_ps),
+	DUMP_FIELD(Integer64, delayMM_ps),
+	DUMP_FIELD(Integer32, cur_setpoint_ps),
+	DUMP_FIELD(Integer64, delayMS_ps),
+	DUMP_FIELD(int,       tracking_enabled),
+	DUMP_FIELD(Integer64, skew_ps),
+	DUMP_FIELD(Integer64, offsetMS_ps),
+	DUMP_FIELD(UInteger32, n_err_state),
+	DUMP_FIELD(UInteger32, n_err_offset),
+	DUMP_FIELD(UInteger32, n_err_delta_rtt),
+	DUMP_FIELD(Integer64, prev_delayMS_ps),
+	DUMP_FIELD(int, missed_iters),
+#endif
+
+#if CONFIG_HAS_EXT_WR == 1
+#undef DUMP_STRUCT
+#define DUMP_STRUCT wr_servo_ext_t
+	DUMP_HEADER("wr_servo_ext_t"),
+	DUMP_FIELD(pp_time, delta_txm),
+	DUMP_FIELD(pp_time, delta_rxm),
+	DUMP_FIELD(pp_time, delta_txs),
+	DUMP_FIELD(pp_time, delta_rxs),
+	DUMP_FIELD(pp_time, rawT1),
+	DUMP_FIELD(pp_time, rawT2),
+	DUMP_FIELD(pp_time, rawT3),
+	DUMP_FIELD(pp_time, rawT4),
+	DUMP_FIELD(pp_time, rawT5),
+	DUMP_FIELD(pp_time, rawT6),
+	DUMP_FIELD(pp_time, rawDelayMM),
+#endif
+
+#undef DUMP_STRUCT
+#define DUMP_STRUCT portDS_t
+
+	DUMP_HEADER("portDS_t"),
+	DUMP_FIELD(PortIdentity, portIdentity),
+	DUMP_FIELD(Integer8, logMinDelayReqInterval),
+	DUMP_FIELD(Integer8, logAnnounceInterval),
+	DUMP_FIELD(UInteger8, announceReceiptTimeout),
+	DUMP_FIELD(Integer8, logSyncInterval),
+	DUMP_FIELD(pointer, ext_dsport),
+	DUMP_FIELD(Integer8, logMinPdelayReqInterval),
+	DUMP_FIELD(TimeInterval, meanLinkDelay),
+	DUMP_FIELD(UInteger4, versionNumber),
+	DUMP_FIELD(UInteger4, minorVersionNumber),
+	DUMP_FIELD(TimeInterval, delayAsymmetry),
+	DUMP_FIELD(RelativeDifference, delayAsymCoeff),
+	DUMP_FIELD(Boolean, portEnable),
+	DUMP_FIELD(Boolean, masterOnly),
 
 #undef DUMP_STRUCT
 #define DUMP_STRUCT struct pp_instance
@@ -188,6 +224,7 @@ struct dump_info  dump_info[] = {
 	DUMP_FIELD(int, tx_offset),
 	DUMP_FIELD(int, rx_offset),
 	DUMP_FIELD_SIZE(bina, peer, 6),
+	DUMP_FIELD_SIZE(bina, activePeer, 6),
 	DUMP_FIELD(uint16_t, peer_vid),
 
 	DUMP_FIELD(pp_time, t1),
@@ -254,6 +291,41 @@ struct dump_info  dump_info[] = {
 	DUMP_FIELD(int, /* FIXME:pp_pdstate_t */ pdstate),  /* Protocol detection state */
 	DUMP_FIELD(int, /* FIXME:pp_exstate_t */ extState), /* Extension state */
 
+
+#if CONFIG_HAS_EXT_WR == 1
+#undef DUMP_STRUCT
+#define DUMP_STRUCT struct wr_dsport
+	DUMP_HEADER("wr_dsport"),
+	DUMP_FIELD(int,state),
+	DUMP_FIELD(Boolean,wrModeOn),
+	DUMP_FIELD(Boolean,parentWrModeOn),
+	DUMP_FIELD(FixedDelta, deltaTx),
+	DUMP_FIELD(FixedDelta, deltaRx),
+	DUMP_FIELD(UInteger16, otherNodeCalSendPattern),
+	DUMP_FIELD(UInteger8, otherNodeCalRetry),
+	DUMP_FIELD(UInteger32, otherNodeCalPeriod),
+	DUMP_FIELD(FixedDelta, otherNodeDeltaTx),
+	DUMP_FIELD(FixedDelta, otherNodeDeltaRx),
+	DUMP_FIELD(Enumeration8, wrConfig),
+	DUMP_FIELD(Enumeration8, wrMode),
+	DUMP_FIELD(Enumeration8, wrPortState),
+#endif
+
+
+#if CONFIG_ARCH_IS_WRPC
+#undef DUMP_STRUCT
+#define DUMP_STRUCT struct wrpc_arch_data_t
+	DUMP_HEADER("wrpc_arch_data_t"),
+	DUMP_FIELD(int,timingMode),
+#endif
+
+#undef DUMP_STRUCT
+#define DUMP_STRUCT struct wr_data
+
+	DUMP_HEADER("wr_data"),
+	/* These are structs not pointers, but we need to know the offset in wr_data structure */
+	DUMP_FIELD(pointer,servo),
+	DUMP_FIELD(pointer,servo_ext),
 
 #undef DUMP_STRUCT
 #define DUMP_STRUCT struct softpll_state

@@ -265,6 +265,32 @@ unsigned long wrpc_get_pointer(void *base, char *s_name, char *f_name)
 	return 0;
 }
 
+/* get an offset of a field in a structure */
+unsigned long wrpc_get_offset(char *s_name, char *f_name)
+{
+	struct dump_info *p = dump_info;
+	int offset;
+
+	for (; strcmp(p->name, "end"); p++)
+		if (!strcmp(p->name, s_name))
+			break;
+
+	if (!strcmp(p->name, "end")) {
+		fprintf(stderr, "structure \"%s\" not described\n", s_name);
+		return 0;
+	}
+	endian_flag = p->endian_flag;
+	/* Look for the field: we find the offset,  */
+	for (p++; p->endian_flag == 0; p++) {
+		if (!strcmp(p->name, f_name)) {
+			offset = wrpc_get_i32(&p->offset);
+			return offset;
+		}
+	}
+	fprintf(stderr, "can't find \"%s\" in \"%s\"\n", f_name, s_name);
+	return 0;
+}
+
 void print_version(void)
 {
 	fprintf(stderr, "Built in wrpc-sw repo ver:%s, by %s on %s %s\n",
@@ -401,29 +427,16 @@ int main(int argc, char **argv)
 	if (!strcmp(dumpname, "ppg"))
 		ppg_off = offset;
 	if (ppg_off) {
+		unsigned long arch_data_offset;
+
 		printf("ppg at 0x%lx\n", ppg_off);
 		dump_many_fields(mapaddr + ppg_off, "pp_globals");
+		
+		arch_data_offset = wrpc_get_pointer(mapaddr + ppg_off,
+					     "pp_globals", "arch_data");
+		printf("arch_data at 0x%lx\n", arch_data_offset);
+		dump_many_fields(mapaddr + arch_data_offset, "wrpc_arch_data_t");
 	}
-	/* FIXME: support multiple instances */
-	if (!strcmp(dumpname, "ppi"))
-		ppi_off = offset;
-	if (ppi_off) {
-		printf("ppi at 0x%lx\n", ppi_off);
-		dump_many_fields(mapaddr + ppi_off, "pp_instance");
-
-		/* FIXME: support multiple servo */
-		servo_off = wrpc_get_pointer(mapaddr + ppi_off,
-			    "pp_instance", "servo");
-		printf("pp_servo at 0x%lx\n", servo_off);
-			dump_many_fields(mapaddr + servo_off, "pp_servo");
-
-		/* FIXME: support multiple servo */
-		servo_off = wrpc_get_pointer(mapaddr + ppi_off,
-			    "pp_instance", "portDS");
-		printf("portDS at 0x%lx\n", servo_off);
-			dump_many_fields(mapaddr + servo_off, "portDS_t");
-	}
-
 	/* This "all" gets the ppg pointer. It's not really all: no pll */
 	if (!strcmp(dumpname, "ds"))
 		ds_off = offset;
@@ -450,6 +463,58 @@ int main(int argc, char **argv)
 		printf("timePropertiesDS at 0x%lx\n", newoffset);
 		dump_many_fields(mapaddr + newoffset, "timePropertiesDS_t");
 	}
+
+	/* FIXME: support multiple instances */
+	if (!strcmp(dumpname, "ppi"))
+		ppi_off = offset;
+	if (ppi_off) {
+		int protocol_extension;
+		unsigned long portds_off;
+		printf("ppi at 0x%lx\n", ppi_off);
+		dump_many_fields(mapaddr + ppi_off, "pp_instance");
+
+		/* FIXME: support multiple servo */
+		servo_off = wrpc_get_pointer(mapaddr + ppi_off,
+			    "pp_instance", "servo");
+		printf("pp_servo at 0x%lx\n", servo_off);
+		dump_many_fields(mapaddr + servo_off, "pp_servo");
+		protocol_extension = wrpc_get_i32(mapaddr + ppi_off + wrpc_get_offset("pp_instance", "protocol_extension"));
+
+#if CONFIG_HAS_EXT_WR == 1
+		if ( protocol_extension == PPSI_EXT_WR) {
+			unsigned long ext_data_off;
+			unsigned long ext_data_servo_off;
+			unsigned long ext_data_servo_ext_off;
+
+			ext_data_off = wrpc_get_pointer(mapaddr + ppi_off,
+						"pp_instance", "ext_data");
+			ext_data_servo_off = wrpc_get_offset("wr_data", "servo"); /* should be 0, but check it anyway */
+			ext_data_servo_ext_off = wrpc_get_offset("wr_data", "servo_ext");
+			printf("ext_data at 0x%lx\n", ext_data_off);
+			printf("servo.wr at 0x%lx\n", ext_data_off + ext_data_servo_off);
+			dump_many_fields(mapaddr + ext_data_off + ext_data_servo_off, "wrh_servo_t");
+			printf("servo_ext.wr at 0x%lx\n", ext_data_off + ext_data_servo_ext_off);
+			dump_many_fields(mapaddr + ext_data_off + ext_data_servo_ext_off, "wr_servo_ext_t");
+		}
+#endif
+		/* FIXME: support multiple servo */
+		portds_off = wrpc_get_pointer(mapaddr + ppi_off,
+			    "pp_instance", "portDS");
+		printf("portDS at 0x%lx\n", portds_off);
+		dump_many_fields(mapaddr + portds_off, "portDS_t");
+#if CONFIG_HAS_EXT_WR == 1
+		if ( protocol_extension == PPSI_EXT_WR) {
+			unsigned long ext_dsport_off;
+
+			ext_dsport_off = wrpc_get_pointer(mapaddr + portds_off,
+						"portDS_t", "ext_dsport");
+			printf("dsport.wr at 0x%lx\n", ext_dsport_off);
+			dump_many_fields(mapaddr + ext_dsport_off, "wr_dsport");
+		}
+#endif
+
+	}
+
 
 	if (!strcmp(dumpname, "stats"))
 		stats_off = offset;
