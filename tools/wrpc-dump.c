@@ -17,6 +17,8 @@
 #include <arch/lm32/crt0.h>
 
 #include <dump-info.h>
+#include "time_lib.h"
+
 /* We have a problem: ppsi is built for wrpc, so it has ntoh[sl] wrong */
 #undef ntohl
 #undef ntohs
@@ -81,15 +83,19 @@ void dump_one_field(void *addr, struct dump_info *info)
 	struct pp_time *t = p;
 	struct PortIdentity *pi = p;
 	struct ClockQuality *cq = p;
+	TimeInterval *ti=p;
+	RelativeDifference *rd=p;
 	char format[16];
 	char localname[64];
 	int i, type, size;
+	char buf[128];
+
 
 	/* now, info may be in wrong-endian. so fix it */
 	type = wrpc_get_i32(&info->type);
 	size = wrpc_get_i32(&info->size);
 	sprintf(localname, "%s:", info->name);
-	printf("        %-30s ", localname);
+	printf("        %-55s ", localname);
 
 	/* check the size of Boolean, which is declared as Enum */
 	if (type == dump_type_Boolean) {
@@ -121,8 +127,6 @@ void dump_one_field(void *addr, struct dump_info *info)
 		printf("%lld\n", wrpc_get_64(p));
 		break;
 	case dump_type_long_long:
-	case dump_type_TimeInterval:
-	case dump_type_RelativeDifference:
 	case dump_type_Integer64:
 		printf("%lld\n", wrpc_get_64(p));
 		break;
@@ -169,11 +173,11 @@ void dump_one_field(void *addr, struct dump_info *info)
 		localt.secs = wrpc_get_64(&t->secs);
 		localt.scaled_nsecs = wrpc_get_64(&t->scaled_nsecs);
 
-		printf("correct %i: %10lli.%09li:0x%04x\n",
+		printf("correct %i: %25s rawps: 0x%04x\n",
 		       !is_incorrect(&localt),
-		       (long long)localt.secs,
-		       (long)(localt.scaled_nsecs >> 16),
-		       (int)(localt.scaled_nsecs & 0xffff));
+		       timeToString(&localt,buf),
+		       (int)(localt.scaled_nsecs & 0xffff)
+		      );
 		break;
 	}
 
@@ -200,6 +204,21 @@ void dump_one_field(void *addr, struct dump_info *info)
 		printf("class %i, accuracy %02x (%i), logvariance %i\n",
 		       cq->clockClass, cq->clockAccuracy, cq->clockAccuracy,
 		       wrpc_get_16(&cq->offsetScaledLogVariance));
+		break;
+	case dump_type_TimeInterval:
+		printf("%15s, ", timeIntervalToString(wrpc_get_64(ti), buf));
+		printf("raw:  %15lld\n", wrpc_get_64(p));
+		break;
+	case dump_type_RelativeDifference:
+		printf("%15s, ", relativeDifferenceToString(*rd, buf));
+		printf("raw:  %15lld\n", wrpc_get_64(p));
+		break;
+	case dump_type_FixedDelta:
+		/* FixedDelta has defined order of msb and lsb,
+		 * which is different than in 64bit type (e.g. uint64_t) on host */
+		printf("%lld\n", ((unsigned long long)wrpc_get_l32(p)
+				  |((unsigned long long)wrpc_get_l32(p+4))<<32
+				 )>>16);
 		break;
 	}
 }

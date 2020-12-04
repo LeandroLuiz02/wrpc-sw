@@ -43,6 +43,7 @@ enum dump_type {
 	dump_type_ClockQuality,
 	dump_type_TimeInterval,
 	dump_type_RelativeDifference,
+	dump_type_FixedDelta,
 	/* and this is ours */
 	dump_type_pp_time,
 	dump_type_ip_address,
