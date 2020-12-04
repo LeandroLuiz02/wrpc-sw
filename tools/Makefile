@@ -53,10 +53,16 @@ gensdbfs:
 sdb-wrpc.bin: sdbfs
 	$(SDBFS)/gensdbfs $< $@
 
-wrpc-dump: wrpc-dump.c dump-info-host.o
+wrpc-dump: wrpc-dump.c dump-info-host.o time_lib.o
 	$(CC) $(CFLAGS) -include $(AUTOCONF) -include $(AUTOCONF_PPSI) -I../ppsi/include -I../ppsi/arch-wrpc/include -I.. \
 	-I ../softpll \
 	$^ -o $@
+
+time_lib.o: time_lib.c
+	$(CC) $(CFLAGS) -include $(AUTOCONF) -include $(AUTOCONF_PPSI) -I../ppsi/include -I../ppsi/arch-wrpc/include -I.. \
+	-I ../softpll -c \
+	$^ -o $@
+
 
 wr-streamers: wr-streamers.c
 	$(CC) $(CFLAGS)  $^ $(LDFLAGS) -o $@
