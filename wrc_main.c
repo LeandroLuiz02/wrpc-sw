@@ -111,7 +111,7 @@ static void wrc_initialize(void)
 	_endram = ENDRAM_MAGIC;
 
 	wrc_ptp_set_mode(WRC_MODE_SLAVE);
-	//wrc_ptp_start();
+	wrc_ptp_start();
 
 	wrc_tasks_accounting_init();
 	wrc_board_create_tasks();
@@ -135,7 +135,7 @@ static int wrc_check_link(void)
 		event_post( WRC_EVENT_LINK_UP );
 		gen_gpio_out(&pin_sysc_led_link, 1);
 		sfp_match(0);
-		//wrc_ptp_start();
+		wrc_ptp_start();
 		link_status = NETIF_LINK_WENT_UP;
 		rv = 1;
 	} else if (prev_state && !state) {
