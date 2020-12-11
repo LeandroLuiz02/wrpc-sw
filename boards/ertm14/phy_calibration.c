@@ -1,4 +1,4 @@
-#include "board.h"
+#include <board.h>
 #include "dev/syscon.h"
 #include "dev/endpoint.h"
 #include <softpll_ng.h>
