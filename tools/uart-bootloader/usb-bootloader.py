@@ -376,7 +376,7 @@ def run_terminal(ser):
         a = os.read(sys.stdin.fileno(), 1)
         if a and ord(a) == 1:
             return      # exit on Ctrl-A
-            else:
+        else:
             ser.send(a)
 
 
