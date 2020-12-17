@@ -35,9 +35,9 @@ def signal_handler(sig, frame):
         sys.exit(0)
 
 class SerialIF:
-    def __init__(self, device="/dev/ttyUSB0"):
+    def __init__(self, device="/dev/ttyUSB0",baudrate=115200):
         self.ser = serial.Serial(
-            port=device, baudrate=921600, timeout=0, rtscts=False)
+            port=device, baudrate=baudrate, timeout=0, rtscts=False)
 
     def reset_board(self):
         print ("Resetting...\n")
@@ -115,6 +115,8 @@ class SerialIF:
         l <<= 8
         l |= ord(self.recv())
 
+        #print("Rx %d" % l )
+
         for i in range(0, l):
             frame.append(ord(self.recv()))
 
@@ -122,7 +124,7 @@ class SerialIF:
         crc <<= 8
         crc |= ord(self.recv())
 
-        return rsp
+        return (rsp, frame[2:])
 
     def tx_frame(self, command, data):
 
@@ -141,19 +143,23 @@ class SerialIF:
         frame.append((crc >> 8) & 0xff)
         frame.append((crc & 0xff))
 
+        #print("FRAME: %d" % len(frame))
         for b in frame:
+            #print("Tx %x" % b)
             self.send(b)
 
 
 class DSIBootloader:
-    def __init__(self, device="/dev/ttyUSB0"):
-        self.sock = SerialIF(device)
+    def __init__(self, device="/dev/ttyUSB0",baudrate=115200,target_board=None):
+        self.sock = SerialIF(device,baudrate)
+        self.target_board=target_board
 
     CMD_WRITE_RAM = 4
     CMD_FLASH_ERASE_SECTOR = 2
     CMD_FLASH_PROGRAM_PAGE = 3
     CMD_GO = 5
     CMD_BOOT_INIT = 1
+    CMD_ENTER_BOOT_MODE = 8
 
     RSP_OK = 1
     RSP_CRC_ERROR = 2
@@ -164,15 +170,18 @@ class DSIBootloader:
     def command(self, cmd, data):
         while True:
             self.sock.tx_frame(cmd, data)
-            status = self.sock.rx_frame()
+            status = self.sock.rx_frame()[0]
 
             if (status != self.RSP_CRC_ERROR):
                 break
             time.sleep(0.1)
         return status
 
-    def cmd_boot_enter(self):
+    def cmd_boot_init(self):
         return self.command(self.CMD_BOOT_INIT, [])
+
+    def cmd_reset_to_boot_mode(self):
+        return self.sock.tx_frame(self.CMD_ENTER_BOOT_MODE, [])
 
     def cmd_read_flash_id(self):
         data = [(addr >> 24) & 0xff, (addr >> 16) & 0xff, (addr >> 8) & 0xff,
@@ -207,15 +216,44 @@ class DSIBootloader:
 
     def boot_enter(self):
         self.sock.reset_board()
-        while (self.sock.rx_frame() != self.RSP_HELLO):
-            pass
-        self.cmd_boot_enter()
+        self.cmd_reset_to_boot_mode()
 
-    SECTOR_SIZE = 0x10000
+        while True:
+            r = self.sock.rx_frame()
+            if r[0] != self.RSP_HELLO:
+                return None
+            break
+        board_id=""
+        for i in range(0,8):
+            c = r[1][i]
+            if( c == 0 ):
+                break;
+            board_id += chr(c)
+
+        print("Board ID: %s" % board_id)
+
+        if board_id != self.target_board:
+            raise Exception('Board identity mismatch. Expected: "%s", got: "%s"' % (self.target_board, board_id))
+
+        self.cmd_boot_init()
+
+    SECTOR_SIZE_SPI = 0x10000
+    SECTOR_SIZE_MMC = 0x800
     PAGE_SIZE = 0x100
     
-    def program_flash(self, fw, target):
-        #print("PGM", target)
+    def program_ertm14_mmc(self, fw, target):
+        if target.lower() == "mcu":
+            offset = 0x8000000
+            image = fw
+        elif target.lower() == "fru":
+            offset = 0x10000000
+            image = fw
+        else:
+            raise Exception("Unknown flash target: %s" % target)
+        self.do_program_flash(image, offset, sector_size=0x400)
+        self.cmd_jump( 0x0 )
+
+    def program_ertm14_wrc(self, fw, target):
         if target.lower() == "fpga":
             offset = 0
             image = fw
@@ -230,20 +268,25 @@ class DSIBootloader:
             offset = 0x600000
             image = fw
         else:
-            print("Unknown flash target: %s" % target)
-            return
-
+            raise Exception("Unknown flash target: %s" % target)
         return self.do_program_flash(image, offset)
-        
-    def do_program_flash(self, fw, offset = 0):
+    
+    def program_flash(self, fw, target):
+        #print("PGM", target)
+        if self.target_board == "ertm14m0" or self.target_board == "ertm14m1":
+            return self.program_ertm14_mmc(fw, target)
+        elif self.target_board == "ertm14fp":
+            return self.program_ertm14_wrc(fw, target)
+
+    def do_program_flash(self, fw, offset = 0, sector_size = 0x10000):
         remaining = len(fw)
 
-        for i in range(offset / self.SECTOR_SIZE,
-                       (offset + (remaining + self.SECTOR_SIZE - 1)) / self.SECTOR_SIZE):
+        for i in range(offset / sector_size,
+                       (offset + (remaining + sector_size - 1)) / sector_size):
             sys.stdout.write("\rErasing sector 0x%x          " %
-                             (i * self.SECTOR_SIZE))
+                             (i * sector_size))
             sys.stdout.flush()
-            self.cmd_erase_sector(i * self.SECTOR_SIZE)
+            self.cmd_erase_sector(i * sector_size)
 
         p = 0
         while (remaining > 0):
@@ -251,8 +294,6 @@ class DSIBootloader:
             data = []
             for b in fw[p:p + n]:
                 data.append(ord(b))
-
-            #print("b0 %x" % data[0])
 
             self.cmd_program_page(p + offset, data)
             p += n
@@ -345,8 +386,10 @@ def main(argv):
     our_port = "/dev/ttyUSB0"
     do_flash = False
     run_term = False
+    flash_target = None
+    board_target = None
     try:
-        opts, args = getopt.getopt(argv[1:], "hf:p:t", ["uart"])
+        opts, args = getopt.getopt(argv[1:], "hb:f:p:t", ["uart"])
     except getopt.GetoptError:
         print('Usage: %s [-f] [-p serial_port_device] file.bin' % argv[0])
         sys.exit(2)
@@ -363,6 +406,8 @@ def main(argv):
             print(
                 '-t / --term:  - runs a serial terminal on the specified port after programming')
             sys.exit()
+        elif opt in ("-b", "--board"):
+            board_target = arg
         elif opt in ("-f", "--flash"):
     	    flash_target = arg
             do_flash = True
@@ -377,8 +422,14 @@ def main(argv):
         print("No filename specified.")
         sys.exit(2)
 
-    boot = DSIBootloader(our_port)
+    if board_target == None:
+        print("Please specify the target board")
+        sys.exit(2)
+
+    boot = DSIBootloader(our_port, target_board=board_target)
     fw = open(args[0], "rb").read()
+
+
 
     boot.boot_enter()
     if do_flash:
@@ -392,3 +443,11 @@ def main(argv):
 
 if __name__ == "__main__":
     main(sys.argv)
+    #boot = DSIBootloader("/dev/ttyUSB0",baudrate=115200)
+    #boot.cmd_reset_to_boot_mode()
+    #run_terminal(boot.sock)
+    #os.exit(0)
+    #time.sleep(1)
+    #boot.boot_enter(expected_board_id="ertm14m0")
+    #run_terminal(boot.sock)
+
