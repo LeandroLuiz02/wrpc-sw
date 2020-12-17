@@ -223,12 +223,15 @@ class DSIBootloader:
             if r[0] != self.RSP_HELLO:
                 return None
             break
-        board_id=""
-        for i in range(0,8):
-            c = r[1][i]
-            if( c == 0 ):
-                break;
-            board_id += chr(c)
+        board_id="default"
+        if len( r[1] ) < 8:
+            print("Assuming default board ID. Old WRCore bootloader?")
+        else:
+            for i in range(0,8):
+                c = r[1][i]
+                if( c == 0 ):
+                    break;
+                board_id += chr(c)
 
         print("Board ID: %s" % board_id)
 
@@ -388,8 +391,9 @@ def main(argv):
     run_term = False
     flash_target = None
     board_target = None
+    ser_speed=115200
     try:
-        opts, args = getopt.getopt(argv[1:], "hb:f:p:t", ["uart"])
+        opts, args = getopt.getopt(argv[1:], "hb:f:s:p:t", ["uart"])
     except getopt.GetoptError:
         print('Usage: %s [-f] [-p serial_port_device] file.bin' % argv[0])
         sys.exit(2)
@@ -413,6 +417,8 @@ def main(argv):
             do_flash = True
         elif opt in ("-p", "--port"):
             our_port = arg
+        elif opt in ("-s", "--speed"):
+            ser_speed = int(arg)
         elif opt in ("-t", "--term"):
             run_term = True
         else:
@@ -426,7 +432,7 @@ def main(argv):
         print("Please specify the target board")
         sys.exit(2)
 
-    boot = DSIBootloader(our_port, target_board=board_target)
+    boot = DSIBootloader(our_port, target_board=board_target,baudrate=ser_speed)
     fw = open(args[0], "rb").read()
 
 
