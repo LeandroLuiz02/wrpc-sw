@@ -17,11 +17,11 @@ struct subcmd {
 } subcmd[] = {
 	{"start", wrc_ptp_run, 1},
 	{"stop", wrc_ptp_run, 0},
-	{"e2e", wrc_ptp_sync_mech, PP_E2E_MECH},
-	{"delay", wrc_ptp_sync_mech, PP_E2E_MECH},
+	{"e2e", wrc_ptp_sync_mech, E2E},
+	{"delay", wrc_ptp_sync_mech, E2E},
 #ifdef CONFIG_P2P
-	{"p2p", wrc_ptp_sync_mech, PP_P2P_MECH},
-	{"pdelay", wrc_ptp_sync_mech, PP_P2P_MECH},
+	{"p2p", wrc_ptp_sync_mech, P2P},
+	{"pdelay", wrc_ptp_sync_mech, P2P},
 #endif
 	{"gm", wrc_ptp_set_mode, WRC_MODE_GM},
 	{"master", wrc_ptp_set_mode, WRC_MODE_MASTER},
@@ -32,7 +32,7 @@ struct subcmd {
 };
 
 static char *is_run[] = {"stopped", "running"};
-static char *is_mech[] = {[PP_E2E_MECH] = "e2e", [PP_P2P_MECH] = "p2p"};
+static char *is_mech[] = {[E2E] = "e2e", [P2P] = "p2p"};
 static char *is_mode[] = {[WRC_MODE_GM] = "gm", [WRC_MODE_MASTER] = "master",
 			  [WRC_MODE_SLAVE] = "slave"
 #ifdef CONFIG_ABSCAL
