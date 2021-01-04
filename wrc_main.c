@@ -89,6 +89,7 @@ static void wrc_initialize(void)
 #ifndef BOARD_HAS_CUSTOM_NETWORK_INIT
 	net_rst();
 	ep_init( &wrc_endpoint_dev, (void *) BASE_EP );
+	netif_register_device( "wr0", "default", &wrc_endpoint_dev );
 	/* Sleep for 1s to make sure WRS v4.2 always realizes that
 	 * the link is down */
 	timer_delay_ms(200);
