@@ -105,7 +105,7 @@ struct dump_info  dump_info[] = {
 	DUMP_FIELD(pp_time, delayMS), /* Shared with extension servo */
 	DUMP_FIELD(pp_time, meanDelay), /* Shared with extension servo */
 	DUMP_FIELD(pp_time, offsetFromMaster), /* Shared with extension servo */
-	DUMP_FIELD(unsigned_long, flags),
+	DUMP_FIELD(pp_servo_flag, flags),
 
 	DUMP_FIELD(int, reset_address),
 
