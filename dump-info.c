@@ -278,7 +278,7 @@ struct dump_info  dump_info[] = {
 	/* sub structure */
 	DUMP_FIELD_SIZE(char, cfg.port_name, 16),
 	DUMP_FIELD_SIZE(char, cfg.iface_name, 16),
-	DUMP_FIELD(int, cfg.profile),
+	DUMP_FIELD(ppi_profile, cfg.profile),
 	DUMP_FIELD(delay_mechanism, cfg.delayMechanism),
 	/* FIXME: other fields from cfg */
 
