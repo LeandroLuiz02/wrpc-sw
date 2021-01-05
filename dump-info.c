@@ -296,7 +296,8 @@ struct dump_info  dump_info[] = {
 #undef DUMP_STRUCT
 #define DUMP_STRUCT struct wr_dsport
 	DUMP_HEADER("wr_dsport"),
-	DUMP_FIELD(int,state),
+	DUMP_FIELD(wr_state, state),
+	DUMP_FIELD(wr_state, next_state),
 	DUMP_FIELD(yes_no_Boolean, wrModeOn),
 	DUMP_FIELD(yes_no_Boolean, parentWrModeOn),
 	DUMP_FIELD(FixedDelta, deltaTx),
@@ -309,7 +310,7 @@ struct dump_info  dump_info[] = {
 	DUMP_FIELD(wr_config_Enumeration8, wrConfig),
 	DUMP_FIELD(wr_config_Enumeration8, parentWrConfig),
 	DUMP_FIELD(wr_role_Enumeration8, wrMode),
-	DUMP_FIELD(Enumeration8, wrPortState),
+	/* DUMP_FIELD(Enumeration8, wrPortState), not used*/
 #endif
 
 

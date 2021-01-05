@@ -134,6 +134,7 @@ void dump_one_field(void *addr, struct dump_info *info, char *info_prefix)
 	case dump_type_exstate:
 	case dump_type_pp_servo_flag:
 	case dump_type_pp_servo_state:
+	case dump_type_wr_state:
 		if (size == 1)
 			i = *(uint8_t *)p;
 		else if (size == 2)
@@ -440,6 +441,27 @@ void dump_one_field(void *addr, struct dump_info *info, char *info_prefix)
 		ENUM_TO_P_IN_CASE(WRH_SYNC_PHASE, char_p);
 		ENUM_TO_P_IN_CASE(WRH_TRACK_PHASE, char_p);
 		ENUM_TO_P_IN_CASE(WRH_WAIT_OFFSET_STABLE, char_p);
+		default:
+			char_p = "Unknown";
+		}
+		printf("%d", i);
+		print_str(char_p);
+		printf("\n");
+		break;
+
+	case dump_type_wr_state:
+		switch(i) {
+		ENUM_TO_P_IN_CASE(WRS_IDLE, char_p);
+		ENUM_TO_P_IN_CASE(WRS_PRESENT, char_p);
+		ENUM_TO_P_IN_CASE(WRS_S_LOCK, char_p);
+		ENUM_TO_P_IN_CASE(WRS_M_LOCK, char_p);
+		ENUM_TO_P_IN_CASE(WRS_LOCKED, char_p);
+		ENUM_TO_P_IN_CASE(WRS_CALIBRATION, char_p);
+		ENUM_TO_P_IN_CASE(WRS_CALIBRATED, char_p);
+		ENUM_TO_P_IN_CASE(WRS_RESP_CALIB_REQ, char_p);
+		ENUM_TO_P_IN_CASE(WRS_WR_LINK_ON, char_p);
+		ENUM_TO_P_IN_CASE(WRS_ABSCAL, char_p);
+		ENUM_TO_P_IN_CASE(WRS_MAX_STATES, char_p);
 		default:
 			char_p = "Unknown";
 		}
