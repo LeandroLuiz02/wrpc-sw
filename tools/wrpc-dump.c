@@ -399,6 +399,29 @@ void dump_one_field(void *addr, struct dump_info *info, char *info_prefix)
 		print_str(char_p);
 		printf("\n");
 		break;
+
+	case dump_type_pdstate:
+		/* check the size of type, e.g. Boolean is not 8 bits! */
+		if (size == 1)
+			i = *(uint8_t *)p;
+		else if (size == 2)
+			i = wrpc_get_16(p);
+		else
+			i = wrpc_get_l32(p);
+
+		switch(i) {
+		ENUM_TO_P_IN_CASE(PP_PDSTATE_NONE, char_p);
+		ENUM_TO_P_IN_CASE(PP_PDSTATE_WAIT_MSG, char_p);
+		ENUM_TO_P_IN_CASE(PP_PDSTATE_PDETECTION, char_p);
+		ENUM_TO_P_IN_CASE(PP_PDSTATE_PDETECTED, char_p);
+		ENUM_TO_P_IN_CASE(PP_PDSTATE_FAILURE, char_p);
+		default:
+			char_p = "Unknown";
+		}
+		printf("%d", i);
+		print_str(char_p);
+		printf("\n");
+		break;
 	}
 }
 void dump_many_fields(void *addr, char *name, char *prefix)

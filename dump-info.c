@@ -288,7 +288,7 @@ struct dump_info  dump_info[] = {
 	DUMP_FIELD(yes_no_Boolean, received_dresp_fup), /* Count the number of delay response follow up messages received for a given delay request */
 	DUMP_FIELD(yes_no_Boolean, ptp_support), /* True if allow pure PTP support */
 	DUMP_FIELD(yes_no_Boolean, bmca_execute), /* True: Ask fsm to run bmca state decision */
-	DUMP_FIELD(int, /* FIXME:pp_pdstate_t */ pdstate),  /* Protocol detection state */
+	DUMP_FIELD(pdstate, pdstate),  /* Protocol detection state */
 	DUMP_FIELD(int, /* FIXME:pp_exstate_t */ extState), /* Extension state */
 
 

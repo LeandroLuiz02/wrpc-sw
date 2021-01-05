@@ -59,7 +59,7 @@ enum dump_type {
 	dump_type_wr_config_Enumeration8,
 	dump_type_wr_role,
 	dump_type_wr_role_Enumeration8,
-
+	dump_type_pdstate,
 };
 
 /* because of the sizeof later on, we need these typedefs */
@@ -82,6 +82,7 @@ typedef int            wr_config;
 typedef Enumeration8   wr_config_Enumeration8;
 typedef int            wr_role;
 typedef Enumeration8   wr_role_Enumeration8;
+typedef pp_pdstate_t   pdstate;
 
 /*
  * This is generated with the target compiler, and then linked
