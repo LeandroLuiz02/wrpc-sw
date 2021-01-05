@@ -289,7 +289,7 @@ struct dump_info  dump_info[] = {
 	DUMP_FIELD(yes_no_Boolean, ptp_support), /* True if allow pure PTP support */
 	DUMP_FIELD(yes_no_Boolean, bmca_execute), /* True: Ask fsm to run bmca state decision */
 	DUMP_FIELD(pp_pdstate, pdstate),  /* Protocol detection state */
-	DUMP_FIELD(int, /* FIXME:pp_exstate_t */ extState), /* Extension state */
+	DUMP_FIELD(exstate, extState), /* Extension state */
 
 
 #if CONFIG_HAS_EXT_WR == 1

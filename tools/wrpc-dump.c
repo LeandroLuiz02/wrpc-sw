@@ -131,6 +131,7 @@ void dump_one_field(void *addr, struct dump_info *info, char *info_prefix)
 	case dump_type_wr_role:
 	case dump_type_wr_role_Enumeration8:
 	case dump_type_pp_pdstate:
+	case dump_type_exstate:
 		if (size == 1)
 			i = *(uint8_t *)p;
 		else if (size == 2)
@@ -395,6 +396,19 @@ void dump_one_field(void *addr, struct dump_info *info, char *info_prefix)
 		ENUM_TO_P_IN_CASE(PP_PDSTATE_PDETECTION, char_p);
 		ENUM_TO_P_IN_CASE(PP_PDSTATE_PDETECTED, char_p);
 		ENUM_TO_P_IN_CASE(PP_PDSTATE_FAILURE, char_p);
+		default:
+			char_p = "Unknown";
+		}
+		printf("%d", i);
+		print_str(char_p);
+		printf("\n");
+		break;
+
+	case dump_type_exstate:
+		switch(i) {
+		ENUM_TO_P_IN_CASE(PP_EXSTATE_DISABLE, char_p);
+		ENUM_TO_P_IN_CASE(PP_EXSTATE_ACTIVE, char_p);
+		ENUM_TO_P_IN_CASE(PP_EXSTATE_PTP, char_p);
 		default:
 			char_p = "Unknown";
 		}
