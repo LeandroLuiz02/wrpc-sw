@@ -50,6 +50,7 @@ enum dump_type {
 	dump_type_pp_time,
 	dump_type_ip_address,
 	dump_type_delay_mechanism,
+	dump_type_protocol_extension,
 };
 
 /* because of the sizeof later on, we need these typedefs */
@@ -63,6 +64,7 @@ typedef struct {unsigned char addr[4];} ip_address;
 typedef Boolean        yes_no_Boolean;
 typedef uint8_t        yes_no;
 typedef int            delay_mechanism;
+typedef int            protocol_extension;
 
 /*
  * This is generated with the target compiler, and then linked

@@ -191,7 +191,7 @@ struct dump_info  dump_info[] = {
 	DUMP_FIELD(pointer, current_state_item),
 	DUMP_FIELD(pointer, arch_data),
 	DUMP_FIELD(pointer, ext_data),
-	DUMP_FIELD(int, protocol_extension),
+	DUMP_FIELD(protocol_extension, protocol_extension),
 	DUMP_FIELD(pointer, ext_hooks),
 	DUMP_FIELD(unsigned_long, d_flags),
 	DUMP_FIELD(unsigned_char, flags),

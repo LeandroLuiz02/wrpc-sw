@@ -26,7 +26,13 @@
 #define ntohs(x) __do_not_use
 #define ntohl(x) __do_not_use
 #define ntohll(x) __do_not_use
-#define STR_VALUE(arg)      #arg
+
+/* create fancy macro to shorten the switch statements, assign val as a string to p */
+#define ENUM_TO_P_IN_CASE(val, p) \
+				case val: \
+				    p = #val;\
+				    break;
+
 
 uint32_t endian_flag; /* from dump_info[0], lazily */
 
@@ -257,13 +263,6 @@ void dump_one_field(void *addr, struct dump_info *info, char *info_prefix)
 				 )>>16);
 		break;
 	case dump_type_delay_mechanism:
-
-	/* create fancy macro to shorten the switch statement */
-#define ENUM_TO_P_IN_CASE(val, p) \
-				case val: \
-				    p = STR_VALUE(val);\
-				    break;
-
 		i = wrpc_get_i32(p);
 		switch(i) {
 		ENUM_TO_P_IN_CASE(E2E, char_p);
@@ -271,6 +270,22 @@ void dump_one_field(void *addr, struct dump_info *info, char *info_prefix)
 		ENUM_TO_P_IN_CASE(COMMON_P2P, char_p);
 		ENUM_TO_P_IN_CASE(SPECIAL, char_p);
 		ENUM_TO_P_IN_CASE(NO_MECHANISM, char_p);
+		default:
+			char_p = "Unknown";
+		}
+		print_str(char_p);
+		print_str("(");
+		printf("%d", i);
+		print_str(")");
+		printf("\n");
+		break;
+
+	case dump_type_protocol_extension:
+		i = wrpc_get_i32(p);
+		switch(i) {
+		ENUM_TO_P_IN_CASE(PPSI_EXT_NONE, char_p);
+		ENUM_TO_P_IN_CASE(PPSI_EXT_WR, char_p);
+		ENUM_TO_P_IN_CASE(PPSI_EXT_L1S, char_p);
 		default:
 			char_p = "Unknown";
 		}
