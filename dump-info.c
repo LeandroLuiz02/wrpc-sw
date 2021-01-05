@@ -110,7 +110,7 @@ struct dump_info  dump_info[] = {
 	DUMP_FIELD(int, reset_address),
 
 	/* Data used only by extensions */
-	DUMP_FIELD(int, state),
+	DUMP_FIELD(pp_servo_state, state),
 	DUMP_FIELD_SIZE(char, servo_state_name, 32),
 
 	/* Data shared with extension servo */

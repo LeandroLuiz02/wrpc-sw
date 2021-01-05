@@ -133,6 +133,7 @@ void dump_one_field(void *addr, struct dump_info *info, char *info_prefix)
 	case dump_type_pp_pdstate:
 	case dump_type_exstate:
 	case dump_type_pp_servo_flag:
+	case dump_type_pp_servo_state:
 		if (size == 1)
 			i = *(uint8_t *)p;
 		else if (size == 2)
@@ -423,6 +424,22 @@ void dump_one_field(void *addr, struct dump_info *info, char *info_prefix)
 		ENUM_TO_P_IN_CASE(PP_SERVO_FLAG_VALID, char_p);
 		ENUM_TO_P_IN_CASE(PP_SERVO_FLAG_WAIT_HW, char_p);
 		ENUM_TO_P_IN_CASE(PP_SERVO_FLAG_VALID | PP_SERVO_FLAG_WAIT_HW, char_p);
+		default:
+			char_p = "Unknown";
+		}
+		printf("%d", i);
+		print_str(char_p);
+		printf("\n");
+		break;
+
+	case dump_type_pp_servo_state:
+		switch(i) {
+		ENUM_TO_P_IN_CASE(WRH_UNINITIALIZED, char_p);
+		ENUM_TO_P_IN_CASE(WRH_SYNC_TAI, char_p);
+		ENUM_TO_P_IN_CASE(WRH_SYNC_NSEC, char_p);
+		ENUM_TO_P_IN_CASE(WRH_SYNC_PHASE, char_p);
+		ENUM_TO_P_IN_CASE(WRH_TRACK_PHASE, char_p);
+		ENUM_TO_P_IN_CASE(WRH_WAIT_OFFSET_STABLE, char_p);
 		default:
 			char_p = "Unknown";
 		}
