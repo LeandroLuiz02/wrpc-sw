@@ -360,6 +360,28 @@ void dump_one_field(void *addr, struct dump_info *info, char *info_prefix)
 		print_str(char_p);
 		printf("\n");
 		break;
+
+	case dump_type_wr_role:
+	case dump_type_wr_role_Enumeration8:
+		/* check the size of type, e.g. Boolean is not 8 bits! */
+		if (size == 1)
+			i = *(uint8_t *)p;
+		else if (size == 2)
+			i = wrpc_get_16(p);
+		else
+			i = wrpc_get_l32(p);
+
+		switch(i) {
+		ENUM_TO_P_IN_CASE(WR_ROLE_NONE, char_p);
+		ENUM_TO_P_IN_CASE(WR_MASTER, char_p);
+		ENUM_TO_P_IN_CASE(WR_SLAVE, char_p);
+		default:
+			char_p = "Unknown";
+		}
+		printf("%d", i);
+		print_str(char_p);
+		printf("\n");
+		break;
 	}
 }
 void dump_many_fields(void *addr, char *name, char *prefix)
