@@ -196,7 +196,7 @@ struct dump_info  dump_info[] = {
 	DUMP_FIELD(unsigned_long, d_flags),
 	DUMP_FIELD(unsigned_char, flags),
 	DUMP_FIELD(int, proto),
-	DUMP_FIELD(int, delayMechanism),
+	DUMP_FIELD(delay_mechanism, delayMechanism),
 	DUMP_FIELD(pointer, glbs),
 	DUMP_FIELD(pointer, n_ops),
 	DUMP_FIELD(pointer, t_ops),
@@ -279,7 +279,7 @@ struct dump_info  dump_info[] = {
 	DUMP_FIELD_SIZE(char, cfg.port_name, 16),
 	DUMP_FIELD_SIZE(char, cfg.iface_name, 16),
 	DUMP_FIELD(int, cfg.profile),
-	DUMP_FIELD(int, cfg.delayMechanism),
+	DUMP_FIELD(delay_mechanism, cfg.delayMechanism),
 	/* FIXME: other fields from cfg */
 
 	DUMP_FIELD(unsigned_long, ptp_tx_count),

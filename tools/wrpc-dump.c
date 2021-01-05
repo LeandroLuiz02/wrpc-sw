@@ -26,6 +26,7 @@
 #define ntohs(x) __do_not_use
 #define ntohl(x) __do_not_use
 #define ntohll(x) __do_not_use
+#define STR_VALUE(arg)      #arg
 
 uint32_t endian_flag; /* from dump_info[0], lazily */
 
@@ -98,6 +99,7 @@ void dump_one_field(void *addr, struct dump_info *info, char *info_prefix)
 	char pname[128];
 	int i, type, size;
 	char buf[128];
+	char *char_p;
 
 	if (info_prefix!=NULL )
 		sprintf(pname, "%s.%s", info_prefix, info->name);
@@ -253,6 +255,30 @@ void dump_one_field(void *addr, struct dump_info *info, char *info_prefix)
 		printf("%lld\n", ((unsigned long long)wrpc_get_l32(p)
 				  |((unsigned long long)wrpc_get_l32(p+4))<<32
 				 )>>16);
+		break;
+	case dump_type_delay_mechanism:
+
+	/* create fancy macro to shorten the switch statement */
+#define ENUM_TO_P_IN_CASE(val, p) \
+				case val: \
+				    p = STR_VALUE(val);\
+				    break;
+
+		i = wrpc_get_i32(p);
+		switch(i) {
+		ENUM_TO_P_IN_CASE(E2E, char_p);
+		ENUM_TO_P_IN_CASE(P2P, char_p);
+		ENUM_TO_P_IN_CASE(COMMON_P2P, char_p);
+		ENUM_TO_P_IN_CASE(SPECIAL, char_p);
+		ENUM_TO_P_IN_CASE(NO_MECHANISM, char_p);
+		default:
+			char_p = "Unknown";
+		}
+		print_str(char_p);
+		print_str("(");
+		printf("%d", i);
+		print_str(")");
+		printf("\n");
 		break;
 	}
 }
