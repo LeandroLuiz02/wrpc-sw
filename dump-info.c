@@ -43,11 +43,11 @@ struct dump_info  dump_info[] = {
 	DUMP_FIELD(UInteger8, priority1),
 	DUMP_FIELD(UInteger8, priority2),
 	DUMP_FIELD(UInteger8, domainNumber),
-	DUMP_FIELD(Boolean, slaveOnly),
+	DUMP_FIELD(yes_no_Boolean, slaveOnly),
 	/** Optional (IEEE1588-2019) */
 //	FIXME: DUMP_FIELD(Timestamp, currentTime),
-	DUMP_FIELD(Boolean, instanceEnable),
-	DUMP_FIELD(Boolean, externalPortConfigurationEnabled),
+	DUMP_FIELD(yes_no_Boolean, instanceEnable),
+	DUMP_FIELD(yes_no_Boolean, externalPortConfigurationEnabled),
 	DUMP_FIELD(Enumeration8, maxStepsRemoved),
 	DUMP_FIELD(Enumeration8, SdoId),
 	DUMP_FIELD(Enumeration8, instanceType),
@@ -74,7 +74,7 @@ struct dump_info  dump_info[] = {
 	DUMP_FIELD(ClockQuality, grandmasterClockQuality),
 	DUMP_FIELD(UInteger8, grandmasterPriority1),
 	DUMP_FIELD(UInteger8, grandmasterPriority2),
-	DUMP_FIELD(Boolean, newGrandmaster),
+	DUMP_FIELD(yes_no_Boolean, newGrandmaster),
 
 
 #undef DUMP_STRUCT
@@ -82,12 +82,12 @@ struct dump_info  dump_info[] = {
 
 	DUMP_HEADER("timePropertiesDS_t"),
 	DUMP_FIELD(Integer16, currentUtcOffset),
-	DUMP_FIELD(Boolean, currentUtcOffsetValid),
-	DUMP_FIELD(Boolean, leap59),
-	DUMP_FIELD(Boolean, leap61),
-	DUMP_FIELD(Boolean, timeTraceable),
-	DUMP_FIELD(Boolean, frequencyTraceable),
-	DUMP_FIELD(Boolean, ptpTimescale),
+	DUMP_FIELD(yes_no_Boolean, currentUtcOffsetValid),
+	DUMP_FIELD(yes_no_Boolean, leap59),
+	DUMP_FIELD(yes_no_Boolean, leap61),
+	DUMP_FIELD(yes_no_Boolean, timeTraceable),
+	DUMP_FIELD(yes_no_Boolean, frequencyTraceable),
+	DUMP_FIELD(yes_no_Boolean, ptpTimescale),
 	DUMP_FIELD(Enumeration8, timeSource),
 
 
@@ -177,8 +177,8 @@ struct dump_info  dump_info[] = {
 	DUMP_FIELD(UInteger4, minorVersionNumber),
 	DUMP_FIELD(TimeInterval, delayAsymmetry),
 	DUMP_FIELD(RelativeDifference, delayAsymCoeff),
-	DUMP_FIELD(Boolean, portEnable),
-	DUMP_FIELD(Boolean, masterOnly),
+	DUMP_FIELD(yes_no_Boolean, portEnable),
+	DUMP_FIELD(yes_no_Boolean, masterOnly),
 
 #undef DUMP_STRUCT
 #define DUMP_STRUCT struct pp_instance
@@ -187,7 +187,7 @@ struct dump_info  dump_info[] = {
 	DUMP_FIELD(int, state),
 	DUMP_FIELD(int, next_state),
 	DUMP_FIELD(int, next_delay),
-	DUMP_FIELD(int, is_new_state),
+	DUMP_FIELD(yes_no, is_new_state),
 	DUMP_FIELD(pointer, current_state_item),
 	DUMP_FIELD(pointer, arch_data),
 	DUMP_FIELD(pointer, ext_data),
@@ -212,12 +212,12 @@ struct dump_info  dump_info[] = {
 	DUMP_FIELD(pointer, ch[0].custom),
 	DUMP_FIELD(pointer, ch[0].arch_data),
 	DUMP_FIELD_SIZE(bina, ch[0].addr, 6),
-	DUMP_FIELD(int, ch[0].pkt_present),
+	DUMP_FIELD(yes_no, ch[0].pkt_present),
 	DUMP_FIELD(int, ch[1].fd),
 	DUMP_FIELD(pointer, ch[1].custom),
 	DUMP_FIELD(pointer, ch[1].arch_data),
 	DUMP_FIELD_SIZE(bina, ch[1].addr, 6),
-	DUMP_FIELD(int, ch[1].pkt_present),
+	DUMP_FIELD(yes_no, ch[1].pkt_present),
 
 	DUMP_FIELD(ip_address, mcast_addr[0]),
 	DUMP_FIELD(ip_address, mcast_addr[1]),
@@ -248,7 +248,7 @@ struct dump_info  dump_info[] = {
 	/*  dump of substructure asymmetryCorrectionPortDS_t; draft P1588_v_29: page 99*/
 	DUMP_FIELD(TimeInterval, asymmetryCorrectionPortDS.constantAsymmetry),
 	DUMP_FIELD(RelativeDifference, asymmetryCorrectionPortDS.scaledDelayCoefficient),
-	DUMP_FIELD(Boolean, asymmetryCorrectionPortDS.enable),
+	DUMP_FIELD(yes_no_Boolean, asymmetryCorrectionPortDS.enable),
 
 	/* dump of substructure timestampCorrectionPortDS_t; draft P1588_v_29: page 99 */
 	DUMP_FIELD(TimeInterval, timestampCorrectionPortDS.egressLatency),
@@ -266,7 +266,7 @@ struct dump_info  dump_info[] = {
 
 	DUMP_FIELD_SIZE(bina, received_ptp_header, sizeof(MsgHeader)),
 
-	DUMP_FIELD(Boolean, link_up),
+	DUMP_FIELD(yes_no_Boolean, link_up),
 	DUMP_FIELD_SIZE(char, iface_name, 16), /* for direct actions on hardware */
 	DUMP_FIELD_SIZE(char, port_name, 16), /* for diagnostics, mainly */
 	DUMP_FIELD(int, port_idx),
@@ -284,10 +284,10 @@ struct dump_info  dump_info[] = {
 
 	DUMP_FIELD(unsigned_long, ptp_tx_count),
 	DUMP_FIELD(unsigned_long, ptp_rx_count),
-	DUMP_FIELD(Boolean, received_dresp), /* Count the number of delay response messages received for a given delay request */
-	DUMP_FIELD(Boolean, received_dresp_fup), /* Count the number of delay response follow up messages received for a given delay request */
-	DUMP_FIELD(Boolean, ptp_support), /* True if allow pure PTP support */
-	DUMP_FIELD(Boolean, bmca_execute), /* True: Ask fsm to run bmca state decision */
+	DUMP_FIELD(yes_no_Boolean, received_dresp), /* Count the number of delay response messages received for a given delay request */
+	DUMP_FIELD(yes_no_Boolean, received_dresp_fup), /* Count the number of delay response follow up messages received for a given delay request */
+	DUMP_FIELD(yes_no_Boolean, ptp_support), /* True if allow pure PTP support */
+	DUMP_FIELD(yes_no_Boolean, bmca_execute), /* True: Ask fsm to run bmca state decision */
 	DUMP_FIELD(int, /* FIXME:pp_pdstate_t */ pdstate),  /* Protocol detection state */
 	DUMP_FIELD(int, /* FIXME:pp_exstate_t */ extState), /* Extension state */
 
@@ -297,8 +297,8 @@ struct dump_info  dump_info[] = {
 #define DUMP_STRUCT struct wr_dsport
 	DUMP_HEADER("wr_dsport"),
 	DUMP_FIELD(int,state),
-	DUMP_FIELD(Boolean,wrModeOn),
-	DUMP_FIELD(Boolean,parentWrModeOn),
+	DUMP_FIELD(yes_no_Boolean, wrModeOn),
+	DUMP_FIELD(yes_no_Boolean, parentWrModeOn),
 	DUMP_FIELD(FixedDelta, deltaTx),
 	DUMP_FIELD(FixedDelta, deltaRx),
 	DUMP_FIELD(UInteger16, otherNodeCalSendPattern),
@@ -343,7 +343,7 @@ struct dump_info  dump_info[] = {
 	DUMP_FIELD(int, helper.ref_src),
 	DUMP_FIELD(int, helper.sample_n),
 	/* FIXME: missing helper.pi etc.. */
-	DUMP_FIELD(int, ext.enabled),
+	DUMP_FIELD(yes_no, ext.enabled),
 	DUMP_FIELD(int, ext.align_state),
 	DUMP_FIELD(int, ext.align_timer),
 	DUMP_FIELD(int, ext.align_target),
@@ -363,7 +363,7 @@ struct dump_info  dump_info[] = {
 	DUMP_FIELD(int, mpll.id_out),
 	DUMP_FIELD(int, mpll.sample_n),
 	DUMP_FIELD(int, mpll.dac_index),
-	DUMP_FIELD(int, mpll.enabled),
+	DUMP_FIELD(yes_no, mpll.enabled),
 
 #undef DUMP_STRUCT
 #define DUMP_STRUCT struct spll_fifo_log
