@@ -184,8 +184,8 @@ struct dump_info  dump_info[] = {
 #define DUMP_STRUCT struct pp_instance
 
 	DUMP_HEADER("pp_instance"),
-	DUMP_FIELD(int, state),
-	DUMP_FIELD(int, next_state),
+	DUMP_FIELD(ppi_state, state),
+	DUMP_FIELD(ppi_state, next_state),
 	DUMP_FIELD(int, next_delay),
 	DUMP_FIELD(yes_no, is_new_state),
 	DUMP_FIELD(pointer, current_state_item),
@@ -257,7 +257,7 @@ struct dump_info  dump_info[] = {
 	DUMP_FIELD(TimeInterval, timestampCorrectionPortDS.semistaticLatency),
 
 	/* dump of substructure externalPortConfigurationPortDS_t; draft P1588: Clause 17.6.3*/
-	DUMP_FIELD(Enumeration8, externalPortConfigurationPortDS.desiredState),
+	DUMP_FIELD(ppi_state_Enumeration8, externalPortConfigurationPortDS.desiredState),
 	
 // 	timeOutInstCnt_t tmo_cfg[PP_TO_COUNT];
 	DUMP_FIELD(UInteger16, recv_sync_sequence_id),

@@ -52,6 +52,8 @@ enum dump_type {
 	dump_type_delay_mechanism,
 	dump_type_protocol_extension,
 	dump_type_timing_mode,
+	dump_type_ppi_state,
+	dump_type_ppi_state_Enumeration8,
 };
 
 /* because of the sizeof later on, we need these typedefs */
@@ -67,6 +69,8 @@ typedef uint8_t        yes_no;
 typedef int            delay_mechanism;
 typedef int            protocol_extension;
 typedef int            timing_mode;
+typedef int            ppi_state;
+typedef Enumeration8   ppi_state_Enumeration8;
 
 /*
  * This is generated with the target compiler, and then linked

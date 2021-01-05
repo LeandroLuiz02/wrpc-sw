@@ -306,6 +306,34 @@ void dump_one_field(void *addr, struct dump_info *info, char *info_prefix)
 		print_str(char_p);
 		printf("\n");
 		break;
+	case dump_type_ppi_state:
+	case dump_type_ppi_state_Enumeration8:
+		/* check the size of type, e.g. Boolean is not 8 bits! */
+		if (size == 1)
+			i = *(uint8_t *)p;
+		else if (size == 2)
+			i = wrpc_get_16(p);
+		else
+			i = wrpc_get_l32(p);
+
+		switch(i) {
+		ENUM_TO_P_IN_CASE(PPS_END_OF_TABLE, char_p);
+		ENUM_TO_P_IN_CASE(PPS_INITIALIZING, char_p);
+		ENUM_TO_P_IN_CASE(PPS_FAULTY, char_p);
+		ENUM_TO_P_IN_CASE(PPS_DISABLED, char_p);
+		ENUM_TO_P_IN_CASE(PPS_LISTENING, char_p);
+		ENUM_TO_P_IN_CASE(PPS_PRE_MASTER, char_p);
+		ENUM_TO_P_IN_CASE(PPS_MASTER, char_p);
+		ENUM_TO_P_IN_CASE(PPS_PASSIVE, char_p);
+		ENUM_TO_P_IN_CASE(PPS_UNCALIBRATED, char_p);
+		ENUM_TO_P_IN_CASE(PPS_SLAVE, char_p);
+		default:
+			char_p = "Unknown";
+		}
+		printf("%d", i);
+		print_str(char_p);
+		printf("\n");
+		break;
 	}
 }
 void dump_many_fields(void *addr, char *name, char *prefix)
