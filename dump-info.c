@@ -316,7 +316,7 @@ struct dump_info  dump_info[] = {
 #undef DUMP_STRUCT
 #define DUMP_STRUCT struct wrpc_arch_data_t
 	DUMP_HEADER("wrpc_arch_data_t"),
-	DUMP_FIELD(int,timingMode),
+	DUMP_FIELD(timing_mode, timingMode),
 #endif
 
 #undef DUMP_STRUCT

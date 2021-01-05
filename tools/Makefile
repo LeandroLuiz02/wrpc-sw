@@ -54,7 +54,7 @@ sdb-wrpc.bin: sdbfs
 	$(SDBFS)/gensdbfs $< $@
 
 wrpc-dump: wrpc-dump.c dump-info-host.o time_lib.o
-	$(CC) $(CFLAGS) -include $(AUTOCONF) -include $(AUTOCONF_PPSI) -I../ppsi/include -I../ppsi/arch-wrpc/include -I.. \
+	$(CC) $(CFLAGS) -include $(AUTOCONF) -include $(AUTOCONF_PPSI) -I../ppsi/include -I../ppsi/arch-wrpc -I../ppsi/arch-wrpc/include -I.. \
 	-I ../softpll \
 	$^ -o $@
 

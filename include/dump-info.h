@@ -51,6 +51,7 @@ enum dump_type {
 	dump_type_ip_address,
 	dump_type_delay_mechanism,
 	dump_type_protocol_extension,
+	dump_type_timing_mode,
 };
 
 /* because of the sizeof later on, we need these typedefs */
@@ -65,6 +66,7 @@ typedef Boolean        yes_no_Boolean;
 typedef uint8_t        yes_no;
 typedef int            delay_mechanism;
 typedef int            protocol_extension;
+typedef int            timing_mode;
 
 /*
  * This is generated with the target compiler, and then linked

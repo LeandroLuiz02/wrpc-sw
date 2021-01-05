@@ -17,6 +17,7 @@
 #include <arch/lm32/crt0.h>
 
 #include <dump-info.h>
+#include <wrpc.h>
 #include "time_lib.h"
 
 /* We have a problem: ppsi is built for wrpc, so it has ntoh[sl] wrong */
@@ -283,6 +284,21 @@ void dump_one_field(void *addr, struct dump_info *info, char *info_prefix)
 		ENUM_TO_P_IN_CASE(PPSI_EXT_NONE, char_p);
 		ENUM_TO_P_IN_CASE(PPSI_EXT_WR, char_p);
 		ENUM_TO_P_IN_CASE(PPSI_EXT_L1S, char_p);
+		default:
+			char_p = "Unknown";
+		}
+		printf("%d", i);
+		print_str(char_p);
+		printf("\n");
+		break;
+	case dump_type_timing_mode:
+		i = wrpc_get_i32(p);
+		switch(i) {
+		ENUM_TO_P_IN_CASE(WRC_MODE_UNKNOWN, char_p);
+		ENUM_TO_P_IN_CASE(WRC_MODE_GM, char_p);
+		ENUM_TO_P_IN_CASE(WRC_MODE_MASTER, char_p);
+		ENUM_TO_P_IN_CASE(WRC_MODE_SLAVE, char_p);
+		ENUM_TO_P_IN_CASE(WRC_MODE_ABSCAL, char_p);
 		default:
 			char_p = "Unknown";
 		}
