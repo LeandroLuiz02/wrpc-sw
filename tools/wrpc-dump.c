@@ -28,6 +28,15 @@
 #define ntohll(x) __do_not_use
 
 uint32_t endian_flag; /* from dump_info[0], lazily */
+
+int print_labels = 1;
+
+void print_str(char *s)
+{
+    if (print_labels == 0)
+	return;
+    printf("%s", s);
+}
 /*
  * This picks items from memory, converting as needed. No ntohl any more.
  * Next, we'll detect the byte order from the code itself.
