@@ -209,6 +209,23 @@ void dump_one_field(void *addr, struct dump_info *info, char *info_prefix)
 		printf("\n");
 		break;
 
+	case dump_type_spll_mode:
+		/* check the size of type, e.g. Boolean is not 8 bits! */
+		i = wrpc_get_l32(p);
+
+		switch(i) {
+		ENUM_TO_P_IN_CASE(SPLL_MODE_GRAND_MASTER, char_p);
+		ENUM_TO_P_IN_CASE(SPLL_MODE_FREE_RUNNING_MASTER, char_p);
+		ENUM_TO_P_IN_CASE(SPLL_MODE_SLAVE, char_p);
+		ENUM_TO_P_IN_CASE(SPLL_MODE_DISABLED, char_p);
+		default:
+			char_p = "Unknown";
+		}
+		printf("%d", i);
+		print_str(char_p);
+		printf("\n");
+		break;
+
 	case dump_type_pp_time:
 	{
 		struct pp_time localt;

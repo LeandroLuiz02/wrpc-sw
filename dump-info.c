@@ -332,7 +332,7 @@ struct dump_info  dump_info[] = {
 #define DUMP_STRUCT struct softpll_state
 
 	DUMP_HEADER("softpll"),
-	DUMP_FIELD(int, mode),
+	DUMP_FIELD(spll_mode, mode),
 	DUMP_FIELD(int, seq_state),
 	DUMP_FIELD(int, dac_timeout),
 	DUMP_FIELD(int, delock_count),
@@ -384,7 +384,7 @@ struct dump_info  dump_info[] = {
 	DUMP_FIELD(uint32_t, magic),
 	DUMP_FIELD(int, ver),
 	DUMP_FIELD(int, sequence),
-	DUMP_FIELD(int, mode),
+	DUMP_FIELD(spll_mode, mode),
 	DUMP_FIELD(int, irq_cnt),
 	DUMP_FIELD(int, seq_state),
 	DUMP_FIELD(int, align_state),

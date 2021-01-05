@@ -47,6 +47,7 @@ enum dump_type {
 	/* and this is ours */
 	dump_type_yes_no,
 	dump_type_yes_no_Boolean,
+	dump_type_spll_mode,
 	dump_type_pp_time,
 	dump_type_ip_address,
 	dump_type_delay_mechanism,
@@ -71,6 +72,7 @@ typedef unsigned short unsigned_short;
 typedef struct {unsigned char addr[4];} ip_address;
 typedef Boolean        yes_no_Boolean;
 typedef uint8_t        yes_no;
+typedef int            spll_mode;
 typedef int            delay_mechanism;
 typedef int            protocol_extension;
 typedef int            timing_mode;
