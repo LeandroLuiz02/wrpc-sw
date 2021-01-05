@@ -118,6 +118,27 @@ void dump_one_field(void *addr, struct dump_info *info, char *info_prefix)
 	type = wrpc_get_i32(&info->type);
 	size = wrpc_get_i32(&info->size);
 //	printf("%3d|%2d|", wrpc_get_i32(&info->offset), size);
+
+	/* For some (mostly enum like types) the size may vary. Check the size
+	 * and assign a proper value to variable i */
+	switch(type) {
+	case dump_type_yes_no:
+	case dump_type_yes_no_Boolean:
+	case dump_type_ppi_state:
+	case dump_type_ppi_state_Enumeration8:
+	case dump_type_wr_config:
+	case dump_type_wr_config_Enumeration8:
+	case dump_type_wr_role:
+	case dump_type_wr_role_Enumeration8:
+	case dump_type_pp_pdstate:
+		if (size == 1)
+			i = *(uint8_t *)p;
+		else if (size == 2)
+			i = wrpc_get_16(p);
+		else
+			i = wrpc_get_l32(p);
+	}
+
 	/* check the size of Boolean, which is declared as Enum */
 	if (type == dump_type_Boolean) {
 		switch(size) {
@@ -190,15 +211,6 @@ void dump_one_field(void *addr, struct dump_info *info, char *info_prefix)
 		break;
 	case dump_type_yes_no:
 	case dump_type_yes_no_Boolean:
-
-		/* check the size of type, e.g. Boolean is not 8 bits! */
-		if (size == 1)
-			i = *(uint8_t *)p;
-		else if (size == 2)
-			i = wrpc_get_16(p);
-		else
-			i = wrpc_get_l32(p);
-
 		printf("%d", i);
 		if (i == 0)
 			print_str("no");
@@ -327,14 +339,6 @@ void dump_one_field(void *addr, struct dump_info *info, char *info_prefix)
 
 	case dump_type_ppi_state:
 	case dump_type_ppi_state_Enumeration8:
-		/* check the size of type, e.g. Boolean is not 8 bits! */
-		if (size == 1)
-			i = *(uint8_t *)p;
-		else if (size == 2)
-			i = wrpc_get_16(p);
-		else
-			i = wrpc_get_l32(p);
-
 		switch(i) {
 		ENUM_TO_P_IN_CASE(PPS_END_OF_TABLE, char_p);
 		ENUM_TO_P_IN_CASE(PPS_INITIALIZING, char_p);
@@ -356,14 +360,6 @@ void dump_one_field(void *addr, struct dump_info *info, char *info_prefix)
 
 	case dump_type_wr_config:
 	case dump_type_wr_config_Enumeration8:
-		/* check the size of type, e.g. Boolean is not 8 bits! */
-		if (size == 1)
-			i = *(uint8_t *)p;
-		else if (size == 2)
-			i = wrpc_get_16(p);
-		else
-			i = wrpc_get_l32(p);
-
 		switch(i) {
 		ENUM_TO_P_IN_CASE(NON_WR, char_p);
 		ENUM_TO_P_IN_CASE(WR_M_ONLY, char_p);
@@ -380,14 +376,6 @@ void dump_one_field(void *addr, struct dump_info *info, char *info_prefix)
 
 	case dump_type_wr_role:
 	case dump_type_wr_role_Enumeration8:
-		/* check the size of type, e.g. Boolean is not 8 bits! */
-		if (size == 1)
-			i = *(uint8_t *)p;
-		else if (size == 2)
-			i = wrpc_get_16(p);
-		else
-			i = wrpc_get_l32(p);
-
 		switch(i) {
 		ENUM_TO_P_IN_CASE(WR_ROLE_NONE, char_p);
 		ENUM_TO_P_IN_CASE(WR_MASTER, char_p);
@@ -400,15 +388,7 @@ void dump_one_field(void *addr, struct dump_info *info, char *info_prefix)
 		printf("\n");
 		break;
 
-	case dump_type_pdstate:
-		/* check the size of type, e.g. Boolean is not 8 bits! */
-		if (size == 1)
-			i = *(uint8_t *)p;
-		else if (size == 2)
-			i = wrpc_get_16(p);
-		else
-			i = wrpc_get_l32(p);
-
+	case dump_type_pp_pdstate:
 		switch(i) {
 		ENUM_TO_P_IN_CASE(PP_PDSTATE_NONE, char_p);
 		ENUM_TO_P_IN_CASE(PP_PDSTATE_WAIT_MSG, char_p);
