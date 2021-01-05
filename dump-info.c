@@ -306,7 +306,8 @@ struct dump_info  dump_info[] = {
 	DUMP_FIELD(UInteger32, otherNodeCalPeriod),
 	DUMP_FIELD(FixedDelta, otherNodeDeltaTx),
 	DUMP_FIELD(FixedDelta, otherNodeDeltaRx),
-	DUMP_FIELD(Enumeration8, wrConfig),
+	DUMP_FIELD(wr_config_Enumeration8, wrConfig),
+	DUMP_FIELD(wr_config_Enumeration8, parentWrConfig),
 	DUMP_FIELD(Enumeration8, wrMode),
 	DUMP_FIELD(Enumeration8, wrPortState),
 #endif

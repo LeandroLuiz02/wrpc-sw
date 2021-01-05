@@ -54,6 +54,8 @@ enum dump_type {
 	dump_type_timing_mode,
 	dump_type_ppi_state,
 	dump_type_ppi_state_Enumeration8,
+	dump_type_wr_config,
+	dump_type_wr_config_Enumeration8,
 };
 
 /* because of the sizeof later on, we need these typedefs */
@@ -71,6 +73,8 @@ typedef int            protocol_extension;
 typedef int            timing_mode;
 typedef int            ppi_state;
 typedef Enumeration8   ppi_state_Enumeration8;
+typedef int            wr_config,
+typedef Enumeration8   wr_config_Enumeration8
 
 /*
  * This is generated with the target compiler, and then linked
