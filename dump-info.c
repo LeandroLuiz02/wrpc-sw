@@ -123,8 +123,8 @@ struct dump_info  dump_info[] = {
 	DUMP_FIELD(pp_time, t5),
 	DUMP_FIELD(pp_time, t6),
 
-	DUMP_FIELD(int, servo_locked),
-	DUMP_FIELD(int, got_sync),
+	DUMP_FIELD(yes_no, servo_locked),
+	DUMP_FIELD(yes_no, got_sync),
 
 #if CONFIG_HAS_EXT_L1SYNC || CONFIG_HAS_EXT_WR
 #undef DUMP_STRUCT

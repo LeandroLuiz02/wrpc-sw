@@ -45,6 +45,8 @@ enum dump_type {
 	dump_type_RelativeDifference,
 	dump_type_FixedDelta,
 	/* and this is ours */
+	dump_type_yes_no,
+	dump_type_yes_no_Boolean,
 	dump_type_pp_time,
 	dump_type_ip_address,
 };
@@ -57,6 +59,8 @@ typedef unsigned long  unsigned_long;
 typedef unsigned char  unsigned_char;
 typedef unsigned short unsigned_short;
 typedef struct {unsigned char addr[4];} ip_address;
+typedef Boolean        yes_no_Boolean;
+typedef uint8_t        yes_no;
 
 /*
  * This is generated with the target compiler, and then linked

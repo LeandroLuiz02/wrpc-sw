@@ -179,6 +179,28 @@ void dump_one_field(void *addr, struct dump_info *info, char *info_prefix)
 		else
 			printf("%016llx\n", wrpc_get_64(p));
 		break;
+	case dump_type_yes_no:
+	case dump_type_yes_no_Boolean:
+
+		/* check the size of type, e.g. Boolean is not 8 bits! */
+		if (size == 1)
+			i = *(uint8_t *)p;
+		else if (size == 2)
+			i = wrpc_get_16(p);
+		else
+			i = wrpc_get_l32(p);
+
+		if (i == 0)
+			print_str("no(");
+		else if (i == 1)
+			print_str("yes(");
+		else
+			print_str("Unknown(");
+		printf("%d", i);
+		print_str(")");
+		printf("\n");
+		break;
+
 	case dump_type_pp_time:
 	{
 		struct pp_time localt;
