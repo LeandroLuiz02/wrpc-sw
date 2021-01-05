@@ -65,6 +65,7 @@ enum dump_type {
 	dump_type_pp_servo_state,
 	dump_type_wr_state,
 	dump_type_ppi_profile,
+	dump_type_ppi_proto,
 };
 
 /* because of the sizeof later on, we need these typedefs */
@@ -93,6 +94,7 @@ typedef unsigned long  pp_servo_flag;
 typedef int            pp_servo_state;
 typedef wr_state_t     wr_state;
 typedef int            ppi_profile;
+typedef int            ppi_proto;
 
 /*
  * This is generated with the target compiler, and then linked

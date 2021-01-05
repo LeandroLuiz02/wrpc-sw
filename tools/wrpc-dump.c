@@ -136,6 +136,7 @@ void dump_one_field(void *addr, struct dump_info *info, char *info_prefix)
 	case dump_type_pp_servo_state:
 	case dump_type_wr_state:
 	case dump_type_ppi_profile:
+	case dump_type_ppi_proto:
 		if (size == 1)
 			i = *(uint8_t *)p;
 		else if (size == 2)
@@ -477,6 +478,19 @@ void dump_one_field(void *addr, struct dump_info *info, char *info_prefix)
 		ENUM_TO_P_IN_CASE(PPSI_PROFILE_WR, char_p);
 		ENUM_TO_P_IN_CASE(PPSI_PROFILE_HA, char_p);
 		ENUM_TO_P_IN_CASE(PPSI_PROFILE_CUSTOM, char_p);
+		default:
+			char_p = "Unknown";
+		}
+		printf("%d", i);
+		print_str(char_p);
+		printf("\n");
+		break;
+
+	case dump_type_ppi_proto:
+		switch(i) {
+		ENUM_TO_P_IN_CASE(PPSI_PROTO_RAW, char_p);
+		ENUM_TO_P_IN_CASE(PPSI_PROTO_UDP, char_p);
+		ENUM_TO_P_IN_CASE(PPSI_PROTO_VLAN, char_p);
 		default:
 			char_p = "Unknown";
 		}

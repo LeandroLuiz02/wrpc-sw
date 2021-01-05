@@ -195,7 +195,7 @@ struct dump_info  dump_info[] = {
 	DUMP_FIELD(pointer, ext_hooks),
 	DUMP_FIELD(unsigned_long, d_flags),
 	DUMP_FIELD(unsigned_char, flags),
-	DUMP_FIELD(int, proto),
+	DUMP_FIELD(ppi_proto, proto),
 	DUMP_FIELD(delay_mechanism, delayMechanism),
 	DUMP_FIELD(pointer, glbs),
 	DUMP_FIELD(pointer, n_ops),
