@@ -42,7 +42,7 @@ void print_str(char *s)
 {
     if (print_labels == 0)
 	return;
-    printf("%s", s);
+    printf(" (%s)", s);
 }
 /*
  * This picks items from memory, converting as needed. No ntohl any more.
@@ -198,14 +198,13 @@ void dump_one_field(void *addr, struct dump_info *info, char *info_prefix)
 		else
 			i = wrpc_get_l32(p);
 
-		if (i == 0)
-			print_str("no(");
-		else if (i == 1)
-			print_str("yes(");
-		else
-			print_str("Unknown(");
 		printf("%d", i);
-		print_str(")");
+		if (i == 0)
+			print_str("no");
+		else if (i == 1)
+			print_str("yes");
+		else
+			print_str("unknown");
 		printf("\n");
 		break;
 
@@ -273,10 +272,8 @@ void dump_one_field(void *addr, struct dump_info *info, char *info_prefix)
 		default:
 			char_p = "Unknown";
 		}
-		print_str(char_p);
-		print_str("(");
 		printf("%d", i);
-		print_str(")");
+		print_str(char_p);
 		printf("\n");
 		break;
 
@@ -289,10 +286,8 @@ void dump_one_field(void *addr, struct dump_info *info, char *info_prefix)
 		default:
 			char_p = "Unknown";
 		}
-		print_str(char_p);
-		print_str("(");
 		printf("%d", i);
-		print_str(")");
+		print_str(char_p);
 		printf("\n");
 		break;
 	}
