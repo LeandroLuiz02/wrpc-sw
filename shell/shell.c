@@ -367,6 +367,7 @@ void shell_register_commands(void)
 	REGISTER_WRC_COMMAND(stat);
 	REGISTER_WRC_COMMAND(ver);
 	REGISTER_WRC_COMMAND(ptrack);
+	REGISTER_WRC_COMMAND(time);
 	if (HAS_IP)
 		REGISTER_WRC_COMMAND(ip);
 	if (HAS_VLANS)
