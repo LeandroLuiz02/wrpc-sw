@@ -241,7 +241,7 @@ struct dump_info  dump_info[] = {
 	DUMP_FIELD(UInteger16, frgn_rec_num),
 	DUMP_FIELD(Integer16,  frgn_rec_best),
 	DUMP_FIELD(UInteger32, frgn_master_time_window_ms),
-	//DUMP_FIELD(struct pp_frgn_master frgn_master[PP_NR_FOREIGN_RECORDS]),
+	DUMP_FIELD(dummy /*struct pp_frgn_master */, frgn_master), /* use dummy type just to save the offset */
 	DUMP_FIELD(pointer, portDS),
 	DUMP_FIELD(pointer, servo),
 
@@ -291,6 +291,22 @@ struct dump_info  dump_info[] = {
 	DUMP_FIELD(pp_pdstate, pdstate),  /* Protocol detection state */
 	DUMP_FIELD(exstate, extState), /* Extension state */
 
+#undef DUMP_STRUCT
+#define DUMP_STRUCT struct pp_frgn_master
+	DUMP_HEADER("pp_frgn_master"),
+	DUMP_FIELD(PortIdentity, sourcePortIdentity),
+	DUMP_FIELD(PortIdentity, receivePortIdentity),
+	DUMP_FIELD(ClockQuality, grandmasterClockQuality),
+	DUMP_FIELD(ClockIdentity, grandmasterIdentity),
+	DUMP_FIELD(UInteger8, grandmasterPriority1),
+	DUMP_FIELD(UInteger8, grandmasterPriority2),
+	DUMP_FIELD_SIZE(UInteger8, flagField,2),
+	DUMP_FIELD(Enumeration8, timeSource),
+	DUMP_FIELD(UInteger16, sequenceId),
+	DUMP_FIELD(UInteger16, stepsRemoved),
+	DUMP_FIELD(Integer16, currentUtcOffset),
+	DUMP_FIELD(yes_no_Boolean, qualified),
+	DUMP_FIELD(unsigned_long, lastAnnounceMsgMs),
 
 #if CONFIG_HAS_EXT_WR == 1
 #undef DUMP_STRUCT

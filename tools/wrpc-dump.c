@@ -783,6 +783,10 @@ int main(int argc, char **argv)
 	if (ppi_off) {
 		int protocol_extension;
 		unsigned long portds_off;
+		unsigned long frgn_m_off;
+		int frgn_rec_num;
+		int frgn_m_i;
+		char buff[50];
 		prefix = "ppsi.inst.0";
 		printf("%s at 0x%lx\n", prefix, ppi_off);
 		dump_many_fields(mapaddr + ppi_off, "pp_instance", prefix);
@@ -793,8 +797,21 @@ int main(int argc, char **argv)
 		prefix = "ppsi.inst.0.servo";
 		printf("%s at 0x%lx\n", prefix, servo_off);
 		dump_many_fields(mapaddr + servo_off, "pp_servo", prefix);
-		protocol_extension = wrpc_get_i32(mapaddr + ppi_off + wrpc_get_offset("pp_instance", "protocol_extension"));
 
+		/* dump foreign masters */
+		frgn_rec_num = wrpc_get_16(mapaddr + ppi_off + wrpc_get_offset("pp_instance", "frgn_rec_num"));
+		frgn_m_off = ppi_off + wrpc_get_offset("pp_instance", "frgn_master");
+
+		prefix = "ppsi.inst.0.frgn_master";
+		printf("%s at 0x%lx\n", prefix, frgn_m_off);
+
+		for (frgn_m_i = 0; frgn_m_i < frgn_rec_num && frgn_m_i < PP_NR_FOREIGN_RECORDS; frgn_m_i++) {
+			snprintf(buff , sizeof(buff), "ppsi.inst.0.frgn_master.%i", frgn_m_i);
+			dump_many_fields(mapaddr + frgn_m_off + frgn_m_i * sizeof(struct pp_frgn_master),
+					 "pp_frgn_master", buff);
+		}
+
+		protocol_extension = wrpc_get_i32(mapaddr + ppi_off + wrpc_get_offset("pp_instance", "protocol_extension"));
 #if CONFIG_HAS_EXT_WR == 1
 		if ( protocol_extension == PPSI_EXT_WR) {
 			unsigned long ext_data_off;
