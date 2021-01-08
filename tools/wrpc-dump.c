@@ -283,7 +283,8 @@ void dump_one_field(void *addr, struct dump_info *info, char *info_prefix)
 		for (i = 0; i < sizeof(ClockIdentity); i++)
 			printf("%02x%c", ((unsigned char *)p)[i],
 			       i == sizeof(ClockIdentity) - 1 ? '.' : ':');
-		printf("%04x (%i)\n", pi->portNumber, pi->portNumber);
+		printf("%04x (%i)\n", wrpc_get_16(&pi->portNumber),
+				      wrpc_get_16(&pi->portNumber));
 		break;
 
 	case dump_type_ClockQuality:
