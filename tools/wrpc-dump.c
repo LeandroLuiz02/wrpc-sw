@@ -279,8 +279,9 @@ int main(int argc, char **argv)
 			argv[0], argv[1]);
 		exit(1);
 	}
-	if (st.st_size > 128 * 1024) /* support /sys/..../resource0 */
-		st.st_size = 128 * 1024;
+
+	if (st.st_size > 256 * 1024) /* support /sys/..../resource0 */
+		st.st_size = 256 * 1024;
 
 	if (argc == 4 && sscanf(argv[2], "%lx%c", &offset, &c) != 1) {
 		fprintf(stderr, "%s: \"%s\" not a hex offset\n", argv[0],
