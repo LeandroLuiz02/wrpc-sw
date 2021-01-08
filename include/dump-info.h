@@ -44,6 +44,7 @@ enum dump_type {
 	dump_type_TimeInterval,
 	dump_type_RelativeDifference,
 	dump_type_FixedDelta,
+	dump_type_dummy,
 	/* and this is ours */
 	dump_type_yes_no,
 	dump_type_yes_no_Boolean,
@@ -76,6 +77,7 @@ typedef long long      long_long;
 typedef unsigned long  unsigned_long;
 typedef unsigned char  unsigned_char;
 typedef unsigned short unsigned_short;
+typedef uint8_t        dummy; /* use the smallest */
 typedef struct {unsigned char addr[4];} ip_address;
 typedef Boolean        yes_no_Boolean;
 typedef uint8_t        yes_no;

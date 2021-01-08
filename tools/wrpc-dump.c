@@ -108,15 +108,23 @@ void dump_one_field(void *addr, struct dump_info *info, char *info_prefix)
 	char buf[128];
 	char *char_p;
 
+	/* now, info may be in wrong-endian. so fix it */
+	type = wrpc_get_i32(&info->type);
+	size = wrpc_get_i32(&info->size);
+
+	if (type == dump_type_dummy) {
+		/* dummy type used to store address of e.g. complex structure.
+		 * It makes no point to print such address.*/
+		return;
+	}
+
 	if (info_prefix!=NULL )
 		sprintf(pname, "%s.%s", info_prefix, info->name);
 	else
 		strcpy(pname, info->name);
 
 	printf("%-60s ", pname); /* name includes trailing ':' */
-	/* now, info may be in wrong-endian. so fix it */
-	type = wrpc_get_i32(&info->type);
-	size = wrpc_get_i32(&info->size);
+
 //	printf("%3d|%2d|", wrpc_get_i32(&info->offset), size);
 
 	/* For some (mostly enum like types) the size may vary. Check the size
