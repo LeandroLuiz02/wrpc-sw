@@ -1843,6 +1843,11 @@ tools used to build and run it, you can write to our mailing list
 
   \code{pll stop <channel>} & stops SoftPLL for the channel \\
 
+  \code{pps} & check status of a PPS generation independent of PPSI state \\
+
+  \code{pps force <on|off>} & enable/disable PPS generation independent of
+    PPSI state. It is usefull mostly for testing purposes \\
+
   \code{ps} & prints the list of running tasks (processes) in the CPU. For
     each task you get the number of iterations, the maximum execution time
     (measured with the monotonic clock) and the CPU time consumed (using
