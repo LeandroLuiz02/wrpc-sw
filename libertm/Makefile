@@ -1,4 +1,11 @@
+.PHONY: all objects clean
+
 TARGET = libertm
 
-all: libertm.o
-libertm.o: libertm.h
+all: objects
+
+objects: $(TARGET).o
+$(TARGET).o: $(TARGET).h
+
+clean:
+	rm -f $(TARGET).o
