@@ -74,6 +74,12 @@
 #define HAS_VLANS 0
 #endif
 
+#ifdef CONFIG_CMD_LL
+#define HAS_LL 1
+#else
+#define HAS_LL 0
+#endif
+
 extern int wrc_vlan_number;
 
 int wrc_mon_gui(void);

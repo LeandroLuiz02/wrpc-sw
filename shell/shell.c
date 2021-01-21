@@ -369,5 +369,9 @@ void shell_register_commands(void)
 		REGISTER_WRC_COMMAND(ip);
 	if (HAS_VLANS)
 		REGISTER_WRC_COMMAND(vlan);
+  if (HAS_LL) {
+    REGISTER_WRC_COMMAND(devmem);
+    REGISTER_WRC_COMMAND(delays);
+  }
 }
 
