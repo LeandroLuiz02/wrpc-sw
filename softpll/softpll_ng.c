@@ -326,7 +326,6 @@ void spll_init(int mode, int slave_ref_channel, int flags)
 	SPLL->EIC_IDR = 1;
 
 	SPLL->DAC_HPLL = 0;
-	SPLL->DAC_MAIN = 0;
 
 	SPLL->CSR = 0;
 	SPLL->OCER = 0;
@@ -718,7 +717,7 @@ void spll_set_dac(int index, int value)
 		SPLL->DAC_HPLL = value;
 	} else {
 		SPLL->DAC_MAIN =
-		    SPLL_DAC_MAIN_DAC_SEL_W(index) | (value & 0xffff);
+				    SPLL_DAC_MAIN_DAC_SEL_W(index) | (value & 0xffff);
 
 		if (index == 0)
 			softpll.mpll.pi.y = value;
