@@ -109,7 +109,7 @@ void ep_pfilter_init_default(struct wr_endpoint_device *dev)
 	 * Patch the local MAC address in place,
 	 * in the first three instructions after NOP
 	 */
-	ep_get_mac_addr(dev, mac);
+	memcpy(mac, dev->mac_addr, 6);
 	v[2] &= ~(0xffff << 13);
 	v[4] &= ~(0xffff << 13);
 	v[6] &= ~(0xffff << 13);
