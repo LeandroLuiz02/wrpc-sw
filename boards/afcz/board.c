@@ -284,6 +284,9 @@ static int si57x_set_frequency( struct wr_si57x_interface_device *dev, uint32_t 
 	regs[8] = ((dev->rfreq >>32) & 0x3f) | (((dev->n1-1) & 0xff) << 6);
 	regs[7] = (dev->hsdiv << 5) | ((dev->n1-1) >> 2);
 
+	board_dbg("Si57x: New RFREQ %08x %08x n1 %d hsdiv %d\n", (uint32_t) (dev->rfreq >> 32), (uint32_t) dev->rfreq, (int)dev->n1, (int)dev->hsdiv );
+
+
 	uint8_t r137, r135;
 
 	timer_delay_ms(10);
@@ -682,13 +685,13 @@ int wrc_board_early_init()
 
 	sfp_setup();
 
-	afcz_read_persistent_mac();
-
 	net_rst();
 	ep_init( &wrc_endpoint_dev, (void *) BASE_WR_ENDPOINT_MAIN );
 	ep_init( &board.ep_btrain, (void *) BASE_WR_ENDPOINT_BTRAIN );
 	netif_register_device( "wru0", "default", &wrc_endpoint_dev );
 	netif_register_device( "wru1", "btrain", &board.ep_btrain );
+
+	afcz_read_persistent_mac();
 
 	/* Sleep for 1s to make sure WRS v4.2 always realizes that
 	 * the link is down */
@@ -753,7 +756,7 @@ int afcz_check_clocks()
 
 int wrc_board_init()
 {
-    int32_t flash_entry_points[2];
+    static int32_t flash_entry_points[2];
 
 	/* initialize I2C bus */
 	bb_i2c_init(&dev_i2c_fmc);
