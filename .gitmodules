@@ -1,3 +1,5 @@
 [submodule "ppsi"]
 	path = ppsi
 	url = https://ohwr.org/project/ppsi.git
+[ppsi "Submod"]
+	url = https://ohwr.org/project/ppsi.git
