@@ -15,5 +15,6 @@ int wrc_ptp_start(void);
 int wrc_ptp_stop(void);
 int wrc_ptp_update(void);
 int wrc_ptp_bmc_update(void);
+int wrc_ptp_link_down(void);
 
 #endif
