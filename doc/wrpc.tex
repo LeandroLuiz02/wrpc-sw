@@ -1801,6 +1801,12 @@ tools used to build and run it, you can write to our mailing list
   \code{ip set <ip>} & reports or sets the IPv4 address of the WRPC (only
     available if \texttt{CONFIG\_IP} is set at build time \\
 
+  \code{leapsec} & \\
+  \code{leapsec get} & get number of leap seconds from PTP and from the system \\
+
+  \code{leapsec set <num>} & get number of leap seconds for PTP. This settings
+    make sense only for GM mode \\
+
   \code{ltest} & \\
   \code{ltest fake <nsecs>} & fakes delay to trigger latency failures (for
     testing). \\
