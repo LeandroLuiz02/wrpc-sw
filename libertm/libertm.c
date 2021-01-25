@@ -4,6 +4,7 @@
 
 #include <limits.h>
 #include <stdint.h>
+#include <string.h>
 #include "libertm.h"
 
 /* translate enum to kHz if needed */
@@ -18,14 +19,15 @@ const clkab_nfreqs = sizeof(clkab_freq_table)/sizeof(clkab_freq_table[0]);
 
 struct ertm_clk {
 	uint32_t		enabled_mask;
-	enum ertm_clkab_freq	chfreq[15];	/* only 4..14 legal */
+	enum ertm_clkab_freq	chfreq[ERTM_CLKAB_MAX_CH+1];
+					/* only 4..14 legal */
 	uint32_t		reserved[16];
 };
 
 struct ertm_lo_ref {
 	uint32_t	enabled_mask;
-	uint32_t	chfreq[15];	/* only 4..14 legal */
-	double		chpower[15];	/* only 4..14 legal */
+	uint32_t	freq;		/* only 4..12 legal */
+	double		chpower[ERTM_LOREF_MAX_CH+1];	/* only 4..12 legal */
 	uint32_t	pll_output_power;
 	double		level_adjust;	/* full-scale DDS = 1.0 */
 	uint32_t	reserved[16];
@@ -56,6 +58,56 @@ struct ertm_status {
 };
 struct ertm_status *ertm_init(char *address);
 void ertm_exit(struct ertm_status *handle);		/* end connection, destroy handle */
+
+static void clkab_defaults(struct ertm_clk *clk)
+{
+	int i;
+	memset(clk, 0, sizeof(*clk));
+	clk->enabled_mask = 0;
+	for (i = ERTM_CLKAB_MIN_CH; i <= ERTM_CLKAB_MAX_CH; i++)
+		clk->chfreq[i] = ERTM_CLKAB_DEFAULT_FREQ;
+}
+
+/* any sensible value will do, simulation-only stuff */
+#define	ERTM_LOREF_DEFAULT_CHPOWER	15.0	/* dBm, random dflt */;
+
+static void lo_ref_defaults(struct ertm_lo_ref *lo_ref, uint32_t default_freq)
+{
+	int i;
+
+	memset(lo_ref, 0, sizeof(*lo_ref));
+	lo_ref->enabled_mask= 0;
+	lo_ref->freq = default_freq;
+	for (i = ERTM_LOREF_MIN_CH; i <= ERTM_LOREF_MAX_CH; i++)
+		lo_ref->chpower[i] = ERTM_LOREF_DEFAULT_CHPOWER;
+	lo_ref->level_adjust = 1.0;
+	lo_ref->pll_output_power = ERTM_LOREF_DEFAULT_CHPOWER;
+}
+
+static struct ertm_temperatures temperatures_defaults = {
+	50, 50, 50, 50, 50, 50, 50, 50, 50, 50, 50, 50,
+	0, 0, 0, 0,
+};
+	
+static struct ertm_voltages voltages_defaults = {
+	11.9, 3.2, 1.0, 8.3, 8.3, 5.0, 11.95, 3.1,
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+};
+	
+/* provide sensible initial values for all params */
+static void *ertm_status_init(struct ertm_state *st)
+{
+	/* FIXME: st->board_info */
+	clkab_defaults(&st->clka);
+	clkab_defaults(&st->clkb);
+	lo_ref_defaults(&st->lo, ERTM_LO_DEFAULT_FREQ);
+	lo_ref_defaults(&st->ref, ERTM_REF_DEFAULT_FREQ);
+	memcpy(&st->temperatures, &temperatures_defaults,
+		sizeof(st->temperatures));
+	memcpy(&st->voltages, &voltages_defaults,
+		sizeof(st->voltages));
+	/* FIXME: st->nco_reset */
+}
 
 #if 0
 int ertm_get_board_info(struct ertm_board_info *info);
