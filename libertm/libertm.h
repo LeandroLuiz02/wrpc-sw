@@ -1,5 +1,10 @@
 /*
- * eRTM14/15 library interface
+ * SPDX-License-Identifier: GPL-3.0-or-later
+ *
+ * Copyright 2020-2021 CERN
+ * Author: Juan David Gonzalez Cobas
+ *
+ * This library interacts with a simulated eRTM14/15 combo
  */
 
 #include <stdint.h>
