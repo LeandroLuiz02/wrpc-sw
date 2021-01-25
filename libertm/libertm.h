@@ -19,6 +19,12 @@ enum ertm_connector {
 	ERTM_REF,
 };
 
+/* real available channels in connectors */
+#define ERTM_CLKAB_MIN_CH	4
+#define ERTM_LOREF_MIN_CH	4
+#define ERTM_CLKAB_MAX_CH	14
+#define ERTM_LOREF_MAX_CH	12
+
 /* firmware metadata according to The Convention (see
  * https://www.ohwr.org/project/fpga-dev-id/blob/master/device-structure.rst
  * probably, only version and source_id are useful here
@@ -106,6 +112,7 @@ int ertm_get_board_info(struct ertm_board_info *info);
 
 #define ERTM_LO_DEFAULT_FREQ	0x3341BFBD	/* 200.222 MHz */
 #define ERTM_REF_DEFAULT_FREQ	0x39374BC6	/* 223.499999 MHz */
+#define	ERTM_CLKAB_DEFAULT_FREQ	ERTM_CLKAB_125MHz	/* ditto */
 
 /* connector can be any of ERTM_{CLKA,CLKB,REF,LO}. For REF and LO, the
  * channel parameter is ignored; for CLKA/CLKB, the freq parameter is
