@@ -7,6 +7,13 @@
  * This library interacts with a simulated eRTM14/15 combo
  */
 
+#ifndef _LIBERTM_H_
+#define _LIBERTM_H_
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #include <stdint.h>
 
 enum ertm_clkab_freq {
@@ -160,3 +167,9 @@ struct ertm_wr_status;						/* to be defined with rabbits */
 int ertm_wr_enable(struct ertm_status *handle, int enable);	/* free-running OCXO if disabled */
 int ertm_wr_status(struct ertm_status *handle, int *link_up, int *is_locked);
 int ertm_wr_diags(struct ertm_status *handle, struct ertm_wr_status *status);
+
+#ifdef __cplusplus
+}
+#endif
+
+#endif /* _LIBERTM_H_ */
