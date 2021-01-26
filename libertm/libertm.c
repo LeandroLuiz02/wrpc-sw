@@ -98,11 +98,44 @@ static struct ertm_voltages voltages_defaults = {
 	11.9, 3.2, 1.0, 8.3, 8.3, 5.0, 11.95, 3.1,
 	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
 };
-	
+
+/* WARNING: mostly unused */
+struct ertm_device_metadata device_metadata_defaults = {
+	.vendor_id = 0x10dc,
+	.device_id = 0xbabe,
+	.version = 0xcafe,
+	.byte_order_mark = 0xFEFF,
+	.source_id = "sim-ertm14/15",
+	.capability_mask = 0,
+	.vendor_uuid = { 0xad, 0x38, 0xb6, 0xb6, 0x86, 0x48,
+			0x4a, 0x35, 0x98, 0x0e, 0xba, 0x93,
+			0x75, 0xbd, 0x27, 0x61, },
+};
+
+/* All fake values to clearly spot simulation */
+struct ertm_board_info board_info_defaults = {
+	.ertm14_storage = 0xbabecafea5a5a514,
+	.ertm14_mac1 = 0x00112233445566,
+	.ertm14_mac2 = 0x00223344556677,
+	.ertm15 = 0xbabecafea5a5a515,
+	.firmware_version = "sim-0.0",
+	.wrpc_sw_version = "wrpc_sw-sim-0.0",
+        .wrpc_sw_commit_id =
+		"8f087ad4e0aa8ede6736506bfdc1fbde",
+        .wrpc_sw_build_date = "Mon Jan 25 2021",
+        .wrpc_sw_build_time = "10:40:46 CET",
+        .wrpc_sw_build_by = "dcobas@cern.ch",
+	.firmware_metadata = {
+		    .vendor_id = 0x10dc,
+		    .device_id = 0xbabe,
+		},
+};
+
 /* provide sensible initial values for all params */
 static void *ertm_status_init(struct ertm_state *st)
 {
-	/* FIXME: st->board_info */
+	memcpy(&st->board_info, &board_info_defaults,
+		sizeof(st->board_info));
 	clkab_defaults(&st->clka);
 	clkab_defaults(&st->clkb);
 	lo_ref_defaults(&st->lo, ERTM_LO_DEFAULT_FREQ);
