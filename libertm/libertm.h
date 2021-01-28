@@ -116,7 +116,8 @@ struct ertm_status;
 struct ertm_status *ertm_init(char *address);
 void ertm_exit(struct ertm_status *handle);		/* end connection, destroy handle */
 
-int ertm_get_board_info(struct ertm_board_info *info);
+int ertm_get_board_info(struct ertm_status *handle,
+			struct ertm_board_info *info);
 
 /* all methods below have an implicit first arg struct ertm_status *
  * argument, omitted for brevity's sake
