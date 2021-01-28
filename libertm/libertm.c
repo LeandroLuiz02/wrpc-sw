@@ -9,6 +9,7 @@
 
 #include <limits.h>
 #include <stdint.h>
+#include <errno.h>
 #include <string.h>
 #include "libertm.h"
 
@@ -147,21 +148,17 @@ static void *ertm_status_init(struct ertm_state *st)
 	/* FIXME: st->nco_reset */
 }
 
+int ertm_get_board_info(struct ertm_status *handle, struct ertm_board_info *info)
+{
+	if (handle == NULL) {
+		errno = EINVAL;
+		return -1;
+	}
+	memcpy(info, &handle->state, sizeof(*info));
+	return 0;
+}
+
 #if 0
-int ertm_get_board_info(struct ertm_board_info *info);
-
-/* all methods below have an implicit first arg struct ertm_status *
- * argument, omitted for brevity's sake
- */
-
-#define ERTM_LO_DEFAULT_FREQ	0x3341BFBD	/* 200.222 MHz */
-#define ERTM_REF_DEFAULT_FREQ	0x39374BC6	/* 223.499999 MHz */
-
-/* connector can be any of ERTM_{CLKA,CLKB,REF,LO}. For REF and LO, the
- * channel parameter is ignored; for CLKA/CLKB, the freq parameter is
- * one of the ertm_clkab_freq values, while for REF/LO, it is an actual
- * uint32_t where 2**32 = 1GHz
- */
 int ertm_get_freq(struct ertm_status *handle,
 		enum ertm_connector connector, int channel, uint32_t *freq);
 int ertm_set_freq(struct ertm_status *handle,
