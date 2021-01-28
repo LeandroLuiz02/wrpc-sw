@@ -17,14 +17,14 @@
 #define ERTM_CH_OUT_OF_RANGE	(-2)
 
 /* translate enum to kHz if needed */
-static clkab_freq_table[] = {
-	[ERTM_CLKAB_1000MHz] = 1000000000,
-	[ERTM_CLKAB_500MHz]  =  500000000,
-	[ERTM_CLKAB_250MHz]  =  250000000,
-	[ERTM_CLKAB_125MHz]  =  125000000,
-	[ERTM_CLKAB_62_5MHz] =   62500000,
+static uint32_t clkab_freq_table[] = {
+	[ERTM_CLKAB_1000MHz] = 1000000000UL,
+	[ERTM_CLKAB_500MHz]  =  500000000UL,
+	[ERTM_CLKAB_250MHz]  =  250000000UL,
+	[ERTM_CLKAB_125MHz]  =  125000000UL,
+	[ERTM_CLKAB_62_5MHz] =   62500000UL,
 };
-const clkab_nfreqs = sizeof(clkab_freq_table)/sizeof(clkab_freq_table[0]);
+const int clkab_nfreqs = sizeof(clkab_freq_table)/sizeof(clkab_freq_table[0]);
 
 struct ertm_clk {
 	uint32_t		enabled_mask;
@@ -55,7 +55,6 @@ struct ertm_state {
 	uint32_t		reserved[64];
 };
 
-static struct ertm_state sim_state;
 struct ertm_connection {
 	char	*address;
 	char	serial_connection[PATH_MAX];
@@ -95,12 +94,12 @@ static void lo_ref_defaults(struct ertm_lo_ref *lo_ref, uint32_t default_freq)
 
 static struct ertm_temperatures temperatures_defaults = {
 	50, 50, 50, 50, 50, 50, 50, 50, 50, 50, 50, 50,
-	0, 0, 0, 0,
+	{0, 0, 0, 0},
 };
 	
 static struct ertm_voltages voltages_defaults = {
 	11.9, 3.2, 1.0, 8.3, 8.3, 5.0, 11.95, 3.1,
-	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+	{ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, },
 };
 
 /* WARNING: mostly unused */
@@ -136,7 +135,7 @@ struct ertm_board_info board_info_defaults = {
 };
 
 /* provide sensible initial values for all params */
-static void *ertm_status_init(struct ertm_state *st)
+static void ertm_status_init(struct ertm_state *st)
 {
 	memcpy(&st->board_info, &board_info_defaults,
 		sizeof(st->board_info));

@@ -1,7 +1,7 @@
 .PHONY: all objects clean libs so-lib static-lib
 
 TARGET = libertm
-CFLAGS += -fPIC
+CFLAGS += -fPIC -Wall
 
 all: libs
 
