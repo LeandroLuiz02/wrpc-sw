@@ -13,6 +13,9 @@
 #include <string.h>
 #include "libertm.h"
 
+#define ERTM_BAD_CONNECTOR	(-1)
+#define ERTM_CH_OUT_OF_RANGE	(-2)
+
 /* translate enum to kHz if needed */
 static clkab_freq_table[] = {
 	[ERTM_CLKAB_1000MHz] = 1000000000,
