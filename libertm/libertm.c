@@ -161,9 +161,88 @@ int ertm_get_board_info(struct ertm_status *handle, struct ertm_board_info *info
 	return 0;
 }
 
-#if 0
+#define ERTM_WITHIN(ch, min, max)	\
+	((min <= (ch)) && ((ch) <= max))
+
+static struct ertm_ch_range {
+	int	min;
+	int	max;
+} ranges[] = {
+	[ERTM_CLKA] = { ERTM_CLKAB_MIN_CH, ERTM_CLKAB_MAX_CH },
+	[ERTM_CLKB] = { ERTM_CLKAB_MIN_CH, ERTM_CLKAB_MAX_CH },
+	[ERTM_REF]  = { ERTM_LOREF_MIN_CH, ERTM_LOREF_MAX_CH },
+	[ERTM_LO]   = { ERTM_LOREF_MIN_CH, ERTM_LOREF_MAX_CH },
+};
+
+/* sanity check connector/channel combinations */
+static int out_of_range(enum ertm_connector connector, int channel)
+{
+	int min, max;
+
+	switch (connector) {
+	case ERTM_CLKA:
+	case ERTM_CLKB:
+	case ERTM_REF:
+	case ERTM_LO:
+		min = ranges[connector].min;
+		max = ranges[connector].max;
+		if ((channel < min) || (channel > max)) {
+			errno = EINVAL;
+			return ERTM_CH_OUT_OF_RANGE;
+		}
+	default:
+		return ERTM_BAD_CONNECTOR;
+	}
+	return 0;
+}
+
 int ertm_get_freq(struct ertm_status *handle,
-		enum ertm_connector connector, int channel, uint32_t *freq);
+		enum ertm_connector connector, int channel, uint32_t *freq)
+{
+	int err = 0;
+	struct ertm_clk *clk;
+	struct ertm_lo_ref *loref;
+
+	if (handle == NULL) {
+		errno = EINVAL;
+		return -1;
+	}
+
+	/* channel param is irrelevant for lo/ref */
+	if (connector == ERTM_LO || connector == ERTM_REF) {
+		channel = ERTM_LOREF_MIN_CH;
+	}
+
+	/* but it must be within range for CLKA/B */
+	if ((err = out_of_range(connector, channel)) != 0)
+		return err;
+
+	switch (connector) {
+	case ERTM_CLKA:
+		clk = &handle->state->clka;
+		*freq = clk->chfreq[channel];
+		break;
+	case ERTM_CLKB:
+		clk = &handle->state->clkb;
+		*freq = clk->chfreq[channel];
+		break;
+	case ERTM_LO:
+		loref = &handle->state->lo;
+		*freq = loref->freq;
+		break;
+	case ERTM_REF:
+		loref = &handle->state->ref;
+		*freq = loref->freq;
+		break;
+	default:
+		errno = EINVAL;
+		return ERTM_BAD_CONNECTOR;
+	}
+
+	return 0;
+}
+
+#if 0
 int ertm_set_freq(struct ertm_status *handle,
 		enum ertm_connector connector, int channel, uint32_t freq);
 
