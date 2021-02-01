@@ -23,6 +23,7 @@ static uint32_t clkab_freq_table[] = {
 	[ERTM_CLKAB_250MHz]  =  250000000UL,
 	[ERTM_CLKAB_125MHz]  =  125000000UL,
 	[ERTM_CLKAB_62_5MHz] =   62500000UL,
+		/* FIXME: do we really need 62.5? */
 };
 const int clkab_nfreqs = sizeof(clkab_freq_table)/sizeof(clkab_freq_table[0]);
 
