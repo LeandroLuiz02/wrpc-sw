@@ -45,6 +45,7 @@ const char *ptp_unknown_str = "unknown";
 extern char wrc_hw_name[HW_NAME_LENGTH];
 static int redraw_gui_description = 1;
 static int redraw_servo_description = 1;
+static uint32_t next_update_ticks;
 
 int wrc_wr_diags(void);
 void show_servo(struct pp_instance *ppi);
@@ -328,7 +329,7 @@ void redraw_gui(void)
 	term_clear();
 	redraw_gui_description = 1;
 	redraw_servo_description = 1;
-	// make last_jiffies global and reset it
+	next_update_ticks = 0;
 }
 
 void print_gui_description(void)
@@ -372,7 +373,6 @@ void print_gui_description(void)
 
 int wrc_mon_gui(void)
 {
-	static uint32_t last_jiffies;
 	static uint32_t last_servo_count;
 	struct hal_port_state state;
 	int tx, rx;
@@ -387,13 +387,13 @@ int wrc_mon_gui(void)
 
 	const char *pll_locking_state_name;
 
-	if (!last_jiffies)
-		last_jiffies = timer_get_tics() - 1 -  WRC_MONITOR_REFRESH_PERIOD;
-	if (time_before(timer_get_tics(), last_jiffies + WRC_MONITOR_REFRESH_PERIOD)
+	/* print new values only if time elapsed or servo's update_count
+	 * increased */
+	if (time_before(timer_get_tics(), next_update_ticks)
 	    && last_servo_count == s->update_count)
 		return 0;
 
-	last_jiffies = timer_get_tics();
+	next_update_ticks = timer_get_tics() + WRC_MONITOR_REFRESH_PERIOD;
 	last_servo_count = s->update_count;
 
 	if (redraw_gui_description) {
