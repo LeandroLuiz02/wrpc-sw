@@ -128,6 +128,7 @@ struct ertm_board_info board_info_defaults = {
 	.ertm15 = 0xbabecafea5a5a515,
 	.firmware_version = "sim-0.0",
 	.wrpc_sw_version = "wrpc_sw-sim-0.0",
+	.wrpc_sw_version = "wrpc_sw-sim-0.0",
         .wrpc_sw_commit_id =
 		"8f087ad4e0aa8ede6736506bfdc1fbde",
         .wrpc_sw_build_date = "Mon Jan 25 2021",
@@ -281,10 +282,41 @@ int ertm_set_freq(struct ertm_status *handle,
 	return ertm_get_set_freq(handle, connector, channel, &freq, 1);
 }
 
-
-/* the following refer only to REF/LO connectors */
 int ertm_channel_enable(struct ertm_status *handle,
-		enum ertm_connector connector, int channel, int enable);		/* default disabled */
+		enum ertm_connector connector, int channel, int enable)
+{
+	uint32_t *mask;
+	int err;
+
+	if ((err = out_of_range(connector, channel)) != 0) {
+		return err;
+	}
+	switch (connector) {
+	case ERTM_CLKA:
+		mask = &handle->state->clka.enabled_mask;
+		break;
+	case ERTM_CLKB:
+		mask = &handle->state->clkb.enabled_mask;
+		break;
+	case ERTM_LO:
+		mask = &handle->state->lo.enabled_mask;
+		break;
+	case ERTM_REF:
+		mask = &handle->state->ref.enabled_mask;
+		break;
+	default:
+		errno = EINVAL;
+		return ERTM_BAD_CONNECTOR;
+	}
+	enable = (!!enable) << channel;
+	*mask &= ~(1<<channel);
+	*mask |= enable;
+
+	return 0;
+}
+
+#if 0
+/* the following refer only to REF/LO connectors */
 int ertm_get_power(struct ertm_status *handle,
 		enum ertm_connector connector, double *power);				/* power level in dBm */
 int ertm_get_channel_power(struct ertm_status *handle,
