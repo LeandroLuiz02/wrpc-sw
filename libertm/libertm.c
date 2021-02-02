@@ -214,8 +214,17 @@ static int out_of_range(enum ertm_connector connector, int channel)
 	return 0;
 }
 
-int ertm_get_freq(struct ertm_status *handle,
-		enum ertm_connector connector, int channel, uint32_t *freq)
+static void get_set(uint32_t *attr, uint32_t *val, int set)
+{
+	if (!set)
+		*attr = *val;
+	else
+		*val = *attr;
+}
+
+static int ertm_get_set_freq(struct ertm_status *handle,
+		enum ertm_connector connector,int channel, uint32_t *freq,
+		int set)
 {
 	int err = 0;
 	struct ertm_clk *clk;
@@ -238,19 +247,19 @@ int ertm_get_freq(struct ertm_status *handle,
 	switch (connector) {
 	case ERTM_CLKA:
 		clk = &handle->state->clka;
-		*freq = clk->chfreq[channel];
+		get_set(freq, &clk->chfreq[channel], set);
 		break;
 	case ERTM_CLKB:
 		clk = &handle->state->clkb;
-		*freq = clk->chfreq[channel];
+		get_set(freq, &clk->chfreq[channel], set);
 		break;
 	case ERTM_LO:
 		loref = &handle->state->lo;
-		*freq = loref->freq;
+		get_set(freq, &loref->freq, set);
 		break;
 	case ERTM_REF:
 		loref = &handle->state->ref;
-		*freq = loref->freq;
+		get_set(freq, &loref->freq, set);
 		break;
 	default:
 		errno = EINVAL;
@@ -258,6 +267,18 @@ int ertm_get_freq(struct ertm_status *handle,
 	}
 
 	return 0;
+}
+
+int ertm_get_freq(struct ertm_status *handle,
+		enum ertm_connector connector,int channel, uint32_t *freq)
+{
+	return ertm_get_set_freq(handle, connector, channel, freq, 0);
+}
+
+int ertm_set_freq(struct ertm_status *handle,
+		enum ertm_connector connector,int channel, uint32_t freq)
+{
+	return ertm_get_set_freq(handle, connector, channel, &freq, 1);
 }
 
 #if 0
