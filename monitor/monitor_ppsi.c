@@ -337,7 +337,7 @@ void print_gui_description(void)
 
 	pcprintf(1, 1, C_BLUE, "%s WR PTP Core Sync Monitor %s",
 		wrc_hw_name, build_revision);
-	cprintf(C_GREY, "\nEsc = exit");
+	cprintf(C_MAGENTA, "\nEsc = exit");
 
 	cprintf(C_BLUE, "\n\nTAI Time:%25sUTC offset:", "");
 
@@ -443,7 +443,7 @@ int wrc_mon_gui(void)
 		{
 			ep_get_mac_addr(&wrc_endpoint_dev, mac);
 			format_mac(buf, mac);
-			pcprintf(9, 9, C_GREY, "%s", buf);
+			pcprintf(9, 9, C_MAGENTA, "%s", buf);
 			if (HAS_IP && port_up) {
 				uint8_t ip[INET_ALEN];
 
@@ -464,7 +464,7 @@ int wrc_mon_gui(void)
 				pcprintf(9, 29, C_GREEN, "                       ");
 
 			minic_get_stats(&tx, &rx);
-			pcprintf(9, 55, C_GREY, "%7d", rx);
+			pcprintf(9, 55, C_MAGENTA, "%7d", rx);
 			pprintf(9, 65, "%7d", tx);
 			pprintf(9, 75, "%4d", wrc_vlan_number);
 		}
@@ -624,7 +624,7 @@ int wrc_mon_gui(void)
 	spll_get_num_channels(NULL, &n_out);
 
 	for (i = 0; i < n_out - 1; i++) {
-		cprintf(C_GREY, "Aux clock %d status:        ", i);
+		cprintf(C_MAGENTA, "Aux clock %d status:        ", i);
 
 		aux_stat = spll_get_aux_status(i);
 
