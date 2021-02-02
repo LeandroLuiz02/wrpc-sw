@@ -16,6 +16,7 @@
 
 #define ERTM_BAD_CONNECTOR	(-1)
 #define ERTM_CH_OUT_OF_RANGE	(-2)
+#define ERTM_NOT_IMPLEMENTED	(-3)
 
 /* translate enum to kHz if needed */
 static uint32_t clkab_freq_table[] = {
@@ -322,15 +323,70 @@ int ertm_get_channel_power(struct ertm_status *handle,
 		enum ertm_connector connector, int channel, double *power);		/* power per channel in dBm */
 int ertm_get_channel_power_all(struct ertm_status *handle,
 		enum ertm_connector connector, uint32_t valid_mask, double *power);	/* powers in dBm */
-int ertm_dds_set_level_adjust(struct ertm_status *handle,
-		enum ertm_connector connector, double level);			/* level in [0,1] */
-int ertm_dds_get_level_adjust(struct ertm_status *handle,
-		enum ertm_connector connector, double *level);			/* level in [0,1] */
+#endif
 
-/* monitoring */
-int ertm_get_ocxo_current(struct ertm_status *handle, double *current);			/* amperes */
-int ertm_get_temperatures(struct ertm_status *handle, struct ertm_temperatures *temps);	/* all celsius */
-int ertm_get_voltages(struct ertm_status *handle, struct ertm_voltages *volts);		/* all volt */
+int ertm_dds_set_level_adjust(struct ertm_status *handle,
+		enum ertm_connector connector, double level)
+{
+	struct ertm_lo_ref *clk;
+
+	switch (connector) {
+	case ERTM_LO:
+		clk = &handle->state->lo;
+		break;
+	case ERTM_REF:
+		clk = &handle->state->lo;
+		break;
+	default:
+		errno = EINVAL;
+		return ERTM_BAD_CONNECTOR;
+		break;
+	}
+
+	clk->level_adjust = level;
+	return 0;
+}
+
+int ertm_dds_get_level_adjust(struct ertm_status *handle,
+		enum ertm_connector connector, double *level)
+{
+	struct ertm_lo_ref *clk;
+
+	switch (connector) {
+	case ERTM_LO:
+		clk = &handle->state->lo;
+		break;
+	case ERTM_REF:
+		clk = &handle->state->lo;
+		break;
+	default:
+		errno = EINVAL;
+		return ERTM_BAD_CONNECTOR;
+		break;
+	}
+
+	*level = clk->level_adjust;
+	return 0;
+}
+
+int ertm_get_temperatures(struct ertm_status *handle, struct ertm_temperatures *temps)
+{
+	memcpy(temps, &handle->state->temperatures, sizeof(*temps));
+	return 0;
+}
+
+int ertm_get_voltages(struct ertm_status *handle, struct ertm_voltages *volts)
+{
+	memcpy(volts, &handle->state->voltages, sizeof(*volts));
+	return 0;
+}
+
+int ertm_get_ocxo_current(struct ertm_status *handle, double *current)
+{
+	/* not implemented */
+	return ERTM_NOT_IMPLEMENTED;
+}
+#if 0
 
 /* system-wide NCO reset */
 int ertm_rf_nco_reset_enable(struct ertm_status *handle, int enable);
