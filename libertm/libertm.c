@@ -281,9 +281,6 @@ int ertm_set_freq(struct ertm_status *handle,
 	return ertm_get_set_freq(handle, connector, channel, &freq, 1);
 }
 
-#if 0
-int ertm_set_freq(struct ertm_status *handle,
-		enum ertm_connector connector, int channel, uint32_t freq);
 
 /* the following refer only to REF/LO connectors */
 int ertm_channel_enable(struct ertm_status *handle,
