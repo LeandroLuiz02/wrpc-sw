@@ -315,12 +315,67 @@ int ertm_channel_enable(struct ertm_status *handle,
 	return 0;
 }
 
+static int get_dds(struct ertm_status *handle,
+		enum ertm_connector connector, struct ertm_lo_ref **dds)
+{
+	switch (connector) {
+	case ERTM_LO:
+		*dds = &handle->state->lo;
+		break;
+	case ERTM_REF:
+		*dds = &handle->state->ref;
+		break;
+	default:
+		return ERTM_BAD_CONNECTOR;
+		break;
+	}
+	return 0;
+}
+
+int ertm_get_power(struct ertm_status *handle,
+		enum ertm_connector connector, double *power)
+{
+	struct ertm_lo_ref *clk;
+	int err;
+
+	if ((err = get_dds(handle, connector, &clk)) != 0) {
+		errno = EINVAL;
+		return err;
+	}
+
+	*power = clk->pll_output_power;
+	return 0;
+}
+
+int ertm_get_channel_power(struct ertm_status *handle,
+		enum ertm_connector connector, int channel, double *power)
+{
+	uint32_t mask = (1<<channel);
+	return ertm_get_channel_power_all(handle,
+		connector, mask, power);
+}
+
+int ertm_get_channel_power_all(struct ertm_status *handle,
+		enum ertm_connector connector,
+		uint32_t valid_mask, double *power)
+{
+	struct ertm_lo_ref *clk;
+	int i, err;
+
+	if ((err = get_dds(handle, connector, &clk)) != 0) {
+		errno = EINVAL;
+		return err;
+	}
+	for (i = ERTM_LOREF_MIN_CH; i <= ERTM_LOREF_MAX_CH; i++) {
+		if (valid_mask & (1<<i))
+		    power[i] = clk->chpower[i];
+	}
+
+	return 0;
+}
+
 #if 0
 /* the following refer only to REF/LO connectors */
-int ertm_get_power(struct ertm_status *handle,
-		enum ertm_connector connector, double *power);				/* power level in dBm */
-int ertm_get_channel_power(struct ertm_status *handle,
-		enum ertm_connector connector, int channel, double *power);		/* power per channel in dBm */
 int ertm_get_channel_power_all(struct ertm_status *handle,
 		enum ertm_connector connector, uint32_t valid_mask, double *power);	/* powers in dBm */
 #endif
@@ -329,19 +384,10 @@ int ertm_dds_set_level_adjust(struct ertm_status *handle,
 		enum ertm_connector connector, double level)
 {
 	struct ertm_lo_ref *clk;
+	int err;
 
-	switch (connector) {
-	case ERTM_LO:
-		clk = &handle->state->lo;
-		break;
-	case ERTM_REF:
-		clk = &handle->state->lo;
-		break;
-	default:
-		errno = EINVAL;
-		return ERTM_BAD_CONNECTOR;
-		break;
-	}
+	if ((err = get_dds(handle, connector, &clk)) != 0)
+		return err;
 
 	clk->level_adjust = level;
 	return 0;
@@ -351,19 +397,10 @@ int ertm_dds_get_level_adjust(struct ertm_status *handle,
 		enum ertm_connector connector, double *level)
 {
 	struct ertm_lo_ref *clk;
+	int err;
 
-	switch (connector) {
-	case ERTM_LO:
-		clk = &handle->state->lo;
-		break;
-	case ERTM_REF:
-		clk = &handle->state->lo;
-		break;
-	default:
-		errno = EINVAL;
-		return ERTM_BAD_CONNECTOR;
-		break;
-	}
+	if ((err = get_dds(handle, connector, &clk)) != 0)
+		return err;
 
 	*level = clk->level_adjust;
 	return 0;
