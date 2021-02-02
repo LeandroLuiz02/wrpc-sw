@@ -325,6 +325,7 @@ int time(void *a)
 
 void redraw_gui(void)
 {
+	term_clear();
 	redraw_gui_description = 1;
 	redraw_servo_description = 1;
 	// make last_jiffies global and reset it

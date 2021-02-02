@@ -77,6 +77,7 @@
 extern int wrc_vlan_number;
 
 int wrc_mon_gui(void);
+void redraw_gui(void);
 int wrc_log_stats(void);
 void shell_init(void);
 

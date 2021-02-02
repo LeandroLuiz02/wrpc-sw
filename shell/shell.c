@@ -249,7 +249,11 @@ int shell_interactive()
 
 
 	case SH_EXEC_UI:
-		if( !shell_ui_callback || shell_ui_callback() < 0 || console_getc() == 27 )
+		c = console_getc();
+		if (c == 'r')
+			redraw_gui();
+
+		if (!shell_ui_callback || shell_ui_callback() < 0 || c == 27)
 		{
 			cmd_buf[cmd_len] = 0;
 			state = SH_PROMPT;
