@@ -128,7 +128,6 @@ struct ertm_board_info board_info_defaults = {
 	.ertm15 = 0xbabecafea5a5a515,
 	.firmware_version = "sim-0.0",
 	.wrpc_sw_version = "wrpc_sw-sim-0.0",
-	.wrpc_sw_version = "wrpc_sw-sim-0.0",
         .wrpc_sw_commit_id =
 		"8f087ad4e0aa8ede6736506bfdc1fbde",
         .wrpc_sw_build_date = "Mon Jan 25 2021",
