@@ -374,12 +374,6 @@ int ertm_get_channel_power_all(struct ertm_status *handle,
 	return 0;
 }
 
-#if 0
-/* the following refer only to REF/LO connectors */
-int ertm_get_channel_power_all(struct ertm_status *handle,
-		enum ertm_connector connector, uint32_t valid_mask, double *power);	/* powers in dBm */
-#endif
-
 int ertm_dds_set_level_adjust(struct ertm_status *handle,
 		enum ertm_connector connector, double level)
 {
