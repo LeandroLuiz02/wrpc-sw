@@ -11,6 +11,7 @@
 #include <stdint.h>
 #include <errno.h>
 #include <string.h>
+#include <stdlib.h>
 #include "libertm.h"
 
 #define ERTM_BAD_CONNECTOR	(-1)
@@ -152,6 +153,20 @@ static void ertm_status_init(struct ertm_state *st)
 	memcpy(&st->voltages, &voltages_defaults,
 		sizeof(st->voltages));
 	/* FIXME: st->nco_reset */
+}
+struct ertm_status *ertm_init(char *address)
+{
+	struct ertm_status *status = malloc(sizeof(*status));
+	status->state = malloc(sizeof(*status->state));
+	ertm_status_init(status->state);
+
+	return status;
+}
+
+void ertm_exit(struct ertm_status *handle)
+{
+	free(handle->state);
+	free(handle);
 }
 
 int ertm_get_board_info(struct ertm_status *handle, struct ertm_board_info *info)
