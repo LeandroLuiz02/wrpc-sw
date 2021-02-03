@@ -603,6 +603,8 @@ filename: mac-address       ; first: 310000; last: 310005
 filename: sfp-database      ; first: 320000; last: 32007f
 Formatting SDBFS in Flash(0x2e0000)...
 \end{lstlisting}
+From version 4.3, it is possible to trigger creation of SDBFS via SNMP.
+For more details please refer to section~\ref{Generation of SFBFS via SNMP}.
 
 The other two methods: through the PCIe bus and using a Xilinx JTAG cable are
 described in appendix \ref{appendix:writing_sdbfs}.
@@ -1111,6 +1113,84 @@ To verify that database is empty:
 \begin{lstlisting}
  wrc# sfp show
  SFP database empty
+\end{lstlisting}
+
+% ==========================================================================
+\subsubsection{Setting up init script via SNMP}
+\label{Setting up init script via SNMP}
+
+When options \texttt{CONFIG\_SNMP\_INIT}, \texttt{CONFIG\_FLASH\_INIT}
+and \texttt{CONFIG\_SNMP\_SET} are enabled in the dot-config, it is possible to
+add a command at the end of an \textit{init script}. For more information about
+the~\textit{init script} please refer to section~\ref{Init script} and
+description of an \texttt{init} command in
+\hyperlink{cmd init add}{appendix~\ref{WRPC Shell commands}}.
+
+To add a command at the end of an init script, first specify a command by
+filling OID \texttt{wrpcInitScriptConfigLine.0}, then trigger the write to
+a Flash by setting \texttt{writeToFlash} to
+OID \texttt{wrpcInitScriptConfigLine.0}.
+
+The following example adds \texttt{my\_init\_command} at the end of
+the init script:
+\begin{lstlisting}
+$ snmpset $SNMP_OPT wrpcInitScriptConfigLine.0 = "my_init_command"
+WR-WRPC-MIB::wrpcInitScriptConfigLine.0 = STRING: my_init_command
+$ snmpset $SNMP_OPT wrpcInitScriptConfigApply.0 = writeToFlash
+WR-WRPC-MIB::wrpcInitScriptConfigApply.0 = INTEGER: applySuccessful(100)
+\end{lstlisting}
+
+To erase the init script please write \texttt{eraseFlash} to
+OID \texttt{wrpcInitScriptConfigApply.0}. For example:
+\begin{lstlisting}
+$ snmpset $SNMP_OPT wrpcInitScriptConfigApply.0 = eraseFlash
+WR-WRPC-MIB::wrpcInitScriptConfigApply.0 = INTEGER: applySuccessful(100)
+\end{lstlisting}
+As in version 4.3, there is no way to dump init scrips via SNMP.
+
+% ==========================================================================
+\subsubsection{Generation of SFBFS via SNMP}
+\label{Generation of SFBFS via SNMP}
+When options \texttt{CONFIG\_SNMP\_SDB}, \texttt{CONFIG\_GENSDBFS}
+and \texttt{CONFIG\_SNMP\_SET}
+are enabled in the dot-config, it is possible to trigger creation and erase
+of SDBFS image in a Flash via SNMP. The final result is the same as executing
+a command \hyperlink{cmd sdb fs}{\texttt{sdb~fs~...}} for creation or
+\hyperlink{cmd sdb fse}{\texttt{sdb~fse~...}} for erase from a serial console.
+
+To create SDBFS image in the flash, please set first parameters of used Flash:
+\begin{lstlisting}
+$ snmpset $SNMP_OPT wrpcSdbMemType.0 = 0
+WR-WRPC-MIB::wrpcSdbMemType.0 = INTEGER: flash(0)
+$ snmpset $SNMP_OPT wrpcSdbBaseAddr.0 = 3014656
+WR-WRPC-MIB::wrpcSdbBaseAddr.0 = INTEGER: 3014656
+$ snmpset $SNMP_OPT wrpcSdbParam.0 = 64
+WR-WRPC-MIB::wrpcSdbParam.0 = INTEGER: 64
+\end{lstlisting}
+For details about \texttt{memtype}, \texttt{baseadr} and \texttt{param}, please
+refer to a description of a command
+\hyperlink{cmd sdb fs}{\texttt{sdb fs <memtype> <baseadr> <param>}}
+in the~\hyperlink{cmd sdb fs}{appendix~\ref{WRPC Shell commands}}.
+
+Then trigger the creation itself:
+\begin{lstlisting}
+$ snmpset -t 20 $SNMP_OPT wrpcSdbApply.0 = writeToFlash
+WR-WRPC-MIB::wrpcSdbApply.0 = INTEGER: applySuccessful(100)
+\end{lstlisting}
+When creating or erasing the Flash, it is important to set timeout longer than
+usual (in this case 20 seconds, parameter \texttt{-t 20} of \texttt{snmpset}),
+otherwise \texttt{snmpset} will resend request to write to memory.
+
+The way to erase flash is very similar to the creation:
+\begin{lstlisting}
+$ snmpset $SNMP_OPT wrpcSdbMemType.0 = 0
+WR-WRPC-MIB::wrpcSdbMemType.0 = INTEGER: flash(0)
+$ snmpset $SNMP_OPT wrpcSdbBaseAddr.0 = 3014656
+WR-WRPC-MIB::wrpcSdbBaseAddr.0 = INTEGER: 3014656
+$ snmpset $SNMP_OPT wrpcSdbParam.0 = 64
+WR-WRPC-MIB::wrpcSdbParam.0 = INTEGER: 64
+$ snmpset -t 20 $SNMP_OPT wrpcSdbApply.0 = eraseFlash
+WR-WRPC-MIB::wrpcSdbApply.0 = INTEGER: applySuccessful(100)
 \end{lstlisting}
 
 % ==========================================================================
@@ -1793,8 +1873,8 @@ tools used to build and run it, you can write to our mailing list
 
   \code{help} & lists available commands in this instance of the WRPC \\
 
-  \code{init add <cmd>} & adds shell command at the end of the initialization
-    script \\
+  \code{init add <cmd>}\hypertarget{cmd init add}{} & adds shell command at
+    the end of the initialization script \\
 
   \code{init boot} & executes the script stored in Flash/EEPROM (the same
     action is done automatically when WRPC starts after resetting LM32) \\
@@ -1896,8 +1976,8 @@ tools used to build and run it, you can write to our mailing list
     only generated one time. \\
 
   \code{sdb} & prints devices connected to the Wishbone bus inside WRPC \\
-
-  \code{sdb fs <memtype> <baseadr> <param>} & creates SDBFS image under
+  \code{sdb fs <memtype> <baseadr> <param>}\hypertarget{cmd sdb fs}{} & creates
+    SDBFS image under
     specified \code{<baseadr>} in selected storage depending on \code{<memtype>}
     ({\bf 0} - Flash, {\bf 1} - I2C EEPROM, {\bf 2} - 1-Wire EEPROM). The meaning
     of last parameter \code{<param>} depends on the type of selected storage. It
@@ -1911,7 +1991,8 @@ tools used to build and run it, you can write to our mailing list
     as VHDL generic parameters of the WR PTP Core. Command \code{sdb} is
     available if \texttt{CONFIG\_GENSDBFS} is set.\\
 
-  \code{sdb fse <memtype> <baseadr> <param>} & erases SDBFS image under
+  \code{sdb fse <memtype> <baseadr> <param>}\hypertarget{cmd sdb fse}{} &
+    erases SDBFS image under
     specified \code{<baseadr>} from selected storage depending on
     \code{<memtype>} ({\bf 0} - Flash, {\bf 1} - I2C EEPROM, {\bf 2} - 1-Wire
     EEPROM). The meaning of last parameter \code{<param>} depends on the type
