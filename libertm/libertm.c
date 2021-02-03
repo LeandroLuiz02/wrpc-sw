@@ -444,18 +444,41 @@ int ertm_get_ocxo_current(struct ertm_status *handle, double *current)
 	return ERTM_NOT_IMPLEMENTED;
 }
 #if 0
-
 /* system-wide NCO reset */
 int ertm_rf_nco_reset_enable(struct ertm_status *handle, int enable);
 int ertm_rf_nco_reset(struct ertm_status *handle);
 int ertm_nco_reset_subscribe(struct ertm_status *handle,
 		enum ertm_connector, int enable, int channel, uint32_t stream_id);
 int ertm_nco_reset_get_status(struct ertm_status *handle, struct ertm_nco_reset *status);
+#endif
 
+int ertm_wr_diags(struct ertm_status *handle, struct ertm_wr_status *status)
+{
+	memcpy(status, &handle->state->wr_status, sizeof(*status));
+	return 0;
+}
+
+int ertm_wr_enable(struct ertm_status *handle, int enable)
+{
+	return ERTM_NOT_IMPLEMENTED;
+}
+
+int ertm_wr_status(struct ertm_status *handle, int *link_up, int *is_locked)
+{
+	struct ertm_wr_status status;
+	int err;
+
+	if ((err = ertm_wr_diags(handle, &status)) != 0)
+		return err;
+	*link_up = status.WDIAG_PSTAT & 1;
+	*is_locked = status.WDIAG_PSTAT & 2;
+
+	return 0;
+}
+
+#if 0
 /* WR enable/diagnostics */
 struct ertm_wr_status;						/* to be defined with rabbits */
 int ertm_wr_enable(struct ertm_status *handle, int enable);	/* free-running OCXO if disabled */
-int ertm_wr_status(struct ertm_status *handle, int *link_up, int *is_locked);
-int ertm_wr_diags(struct ertm_status *handle, struct ertm_wr_status *status);
 
 #endif
