@@ -379,6 +379,13 @@ config CMD_LEAPSEC
 	  This enables leapsec command, which can be used to adjust leap seconds
 	  value.
 
+config NETCONSOLE
+	depends on WR_NODE && IP && !NET_VERBOSE
+	boolean "Include netconsole via UDP"
+	default y
+	help
+	  Include netconsole to be run via UDP
+
 #
 # This is a set of configuration options that should not be changed by
 # normal users. If the "developer" menu is used, the binary is tainted.

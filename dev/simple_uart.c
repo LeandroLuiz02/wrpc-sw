@@ -18,6 +18,16 @@
     ( ((( (unsigned long long)baudrate * 8ULL) << (16 - 7)) + \
       (CPU_CLOCK >> 8)) / (CPU_CLOCK >> 7) )
 
+#ifdef CONFIG_NETCONSOLE
+#define HAS_NETCONSOLE 1
+int netconsole_read_byte(void);
+int netconsole_write_string(const char *);
+#else
+#define HAS_NETCONSOLE 0
+static int netconsole_read_byte(void) {return -1;}
+static int netconsole_write_string(const char *s) {return -1;}
+#endif
+
 static inline uint32_t suart_calc_baud( int baudrate )
 {
 	uint64_t n = (((uint64_t) (baudrate)) << 12 ) + (CPU_CLOCK >> 8);
@@ -48,6 +58,9 @@ void suart_write_byte(struct simple_uart_device *dev, int b)
 int suart_write_string(struct simple_uart_device *dev, const char *s)
 {
 	const char *t = s;
+
+	if (HAS_NETCONSOLE)
+		netconsole_write_string(s);
 	while (*s)
 		suart_write_byte(dev, *(s++));
 	return s - t;
@@ -72,6 +85,12 @@ int suart_poll(struct simple_uart_device *dev)
 
 int suart_read_byte(struct simple_uart_device *dev)
 {
+	int ret;
+
+	/* check if there is anything from netconsole first */
+	if (HAS_NETCONSOLE && (ret = netconsole_read_byte()) >= 0)
+		return ret;
+
 	if (!suart_poll(dev))
 		return -1;
 
