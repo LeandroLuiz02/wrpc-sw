@@ -36,7 +36,7 @@ struct wr_sockaddr netconsole_sock_addr;
 int netconsole_status = NETCONSOLE_DEF_VAL;
 struct wr_udp_addr netconsole_udp_addr;
 
-
+/* init for netconsole task */
 void netconsole_init(void)
 {
 	netconsole_socket = ptpd_netif_create_socket(

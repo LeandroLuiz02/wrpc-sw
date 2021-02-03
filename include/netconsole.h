@@ -6,6 +6,12 @@
 #ifndef __NETCONSOLE_H__
 #define __NETCONSOLE_H__
 
+#ifdef CONFIG_NETCONSOLE
+#define HAS_NETCONSOLE 1
+#else
+#define HAS_NETCONSOLE 0
+#endif
+
 #define NETCONSOLE_ENABLED 1
 #define NETCONSOLE_DISABLED 2
 #define NETCONSOLE_WAIT 3

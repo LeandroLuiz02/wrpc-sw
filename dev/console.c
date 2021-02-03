@@ -13,6 +13,7 @@
 #include "board.h"
 #include "dev/simple_uart.h"
 #include "dev/console.h"
+#include <netconsole.h>
 
 static int puts_direct = 0;
 
@@ -30,6 +31,7 @@ struct console_uart_priv_data
 static struct console_uart_priv_data console_uart_priv;
 struct console_device console_uart_dev;
 struct console_device* console_devs[BOARD_MAX_CONSOLE_DEVICES];
+static struct console_device console_netconsole_dev;
 
 #define CON_ESCAPE_CODE 0x1b
 #define CON_SWITCH_BINARY_CODE 'B'
@@ -271,6 +273,23 @@ void console_ipmi_init( )
 
 #endif
 
+static int con_netconsole_getc(struct console_device* dev)
+{
+	return netconsole_read_byte();
+}
+
+static int con_netconsole_put_string(struct console_device* dev, const char *s)
+{
+	return netconsole_write_string(s);
+}
+
+static void console_netconsole_init(void)
+{
+	console_netconsole_dev.get_char = con_netconsole_getc;
+	console_netconsole_dev.put_string = con_netconsole_put_string;
+	console_register_device( &console_netconsole_dev );
+}
+
 int puts(const char *s)
 {
     if( puts_direct)
@@ -333,6 +352,9 @@ void console_init()
 #ifdef CONFIG_IPMI_CONSOLE
     console_ipmi_init();
 #endif
+
+    if (HAS_NETCONSOLE)
+	console_netconsole_init();
 
     pp_printf("Console UART FIFO:: %d\n", suart_is_fifo_supported( &console_uart_priv.uart_dev ) );
 }
