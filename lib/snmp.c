@@ -28,7 +28,7 @@
 #include "temperature.h"
 #include "sfp.h"
 #include "dev/syscon.h"
-
+#include "shell.h"
 #include "storage.h"
 
 #define ASN_BOOLEAN	((u_char)0x01)
@@ -971,6 +971,7 @@ static int get_value(uint8_t *buf, uint8_t asn, void *p)
 	uint64_t tmp_uint64;
 	uint8_t *oid_data = buf + 2;
 	uint8_t *len;
+	char str_buf[20];
 
 	buf[0] = asn;
 	len = &buf[1];
@@ -1000,6 +1001,12 @@ static int get_value(uint8_t *buf, uint8_t asn, void *p)
 	    *len = strnlen((char *)p, MAX_OCTET_STR_LEN - 1);
 	    memcpy(oid_data, p, *len + 1);
 	    snmp_verbose("%s: %s len %d\n", __func__, (char *)p, *len);
+	    break;
+	case ASN_IPADDRESS:
+	    *len = IP_ADDR_LEN;
+	    memcpy(oid_data, p, *len);
+	    format_ip(str_buf, p);
+	    snmp_verbose("%s: %s len %d\n", __func__, str_buf, len);
 	    break;
 	default:
 	    return 0;
@@ -1242,6 +1249,7 @@ static int set_value(uint8_t *set_buff, struct snmp_oid *obj, void *p)
 	uint8_t len = set_buff[1];
 	uint8_t *oid_data = set_buff + 2;
 	uint32_t tmp_u32;
+	char str_buf[20];
 
 	if (asn_incoming != asn_expected) { /* wrong asn */
 		snmp_verbose("%s: wrong asn 0x%02x, expected 0x%02x\n",
@@ -1272,6 +1280,13 @@ static int set_value(uint8_t *set_buff, struct snmp_oid *obj, void *p)
 	    memcpy(p, oid_data, len);
 	    *(char *)(p + len) = '\0';
 	    snmp_verbose("%s: %s len %d\n", __func__, (char *)p, len);
+	    break;
+	case ASN_IPADDRESS:
+	    if (len != IP_ADDR_LEN)
+		return -SNMP_ERR_BADVALUE;
+	    memcpy(p, oid_data, len);
+	    format_ip(str_buf, p);
+	    snmp_verbose("%s: %s len %d\n", __func__, str_buf, len);
 	    break;
 	default:
 	    return 0;
