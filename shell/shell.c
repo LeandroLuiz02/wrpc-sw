@@ -20,9 +20,6 @@
 #include "shell.h"
 #include "storage.h"
 
-#define SH_MAX_LINE_LEN 80
-#define SH_MAX_ARGS 8
-
 /* interactive shell state definitions */
 
 #define SHELL_MAX_COMMANDS 32
