@@ -821,17 +821,20 @@ WR synchronization status:
 wrc# gui
 \end{lstlisting}
 
-The information is presented in a clear, auto-refreshing screen (see the figure blow). 
+The information is presented in a clear, auto-refreshing screen (see the
+figure below).
 The information is refreshed at every WR iteration or periodically if
-nothing else happens (so you see an up-to-date timestamp). The period
-defaults to 1 second and can be changed using the \texttt{refresh} command. To
+nothing else happens (so you see an up-to-date timestamp). Only values are
+updated at every refresh. To force refresh of entire gui please press
+\texttt{r} key. To
 exit from this console mode press <Esc>. A full description of the information
 reporter by \textit{gui} is provided in Appendix \ref{WRPC GUI elements}.
 
 \noindent\textbf{Note:} the \textit{Synchronization status} and \textit{Timing
 parameters} in \texttt{gui} are available only in the WR Slave mode. When
-running as WR Master, you can see only the current date and time,
-link status, Tx and Rx packet counters, IP, lock and calibration status.
+running as \textit{WR Master} or \textit{WR Grand Master}, you can see only
+the part above \texttt{Synchronization status}.
+
 
 \vspace{1em}
 \includegraphics[width=12cm]{wrpc_mon.png}
