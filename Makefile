@@ -44,7 +44,7 @@ obj-$(CONFIG-PPSI) += dump-info.o
 	$(CC) -include $(AUTOCONF) -E -P $*.ld.S -o $@
 
 
-cflags-y =	-ffreestanding -include $(AUTOCONF) -include $(AUTOCONF_PPSI) -Iinclude \
+cflags-y =	-ffreestanding -include $(AUTOCONF) -Iinclude \
 			-I. -Isoftpll -Iipc
 cflags-y +=	-I$(CURDIR)/pp_printf
 cflags-$(CONFIG_LM32) +=  -Iinclude/std
@@ -207,6 +207,22 @@ pconfig.o: ppsi/.config
 
 $(AUTOCONF): silentoldconfig gitmodules
 
+$(AUTOCONF_PPSI): $(obj-ppsi)
+
+AUTOCONF_PPSI-$(CONFIG_PPSI) = $(AUTOCONF_PPSI)
+
+# below have dependency on $(AUTOCONF_PPSI) file
+REQUIRE_AUTOCONF_PPSI+= \
+	monitor/monitor_ppsi.o \
+	dump-info.o \
+	wrc_main.o \
+
+# some files require $(AUTOCONF_PPSI) to be present before build
+$(REQUIRE_AUTOCONF_PPSI): $(AUTOCONF_PPSI)
+# and wants to include $(AUTOCONF_PPSI) during the build
+$(REQUIRE_AUTOCONF_PPSI): CFLAGS+=-include $(AUTOCONF_PPSI)
+
+
 clean:
 	rm -f $(OBJS) config.o pconfig.o revision.o $(OUTPUT).elf \
 		$(LDS) \
@@ -233,7 +249,7 @@ liblinux:
 extest:
 	$(MAKE) -C liblinux/extest CC=cc
 
-tools: .config gitmodules liblinux extest
+tools: .config gitmodules liblinux extest $(AUTOCONF_PPSI-y)
 	$(MAKE) -C tools
 
 tools-diag: liblinux extest

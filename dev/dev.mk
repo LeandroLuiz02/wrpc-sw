@@ -58,6 +58,10 @@ dev/ep_pfilter.o: $(pfilter-y)
 
 dev/storage.o: $(sdbfsimg-y)
 
+# below have dependency on $(AUTOCONF_PPSI) file
+REQUIRE_AUTOCONF_PPSI += \
+			dev/minic.o \
+
 $(pfilter-y): tools
 	./tools/pfilter-builder include/generated/
 
