@@ -1,3 +1,4 @@
+include ../.config
 EB    ?= no
 SDBFS ?= no
 
@@ -8,11 +9,14 @@ LDFLAGS += -lreadline
 ALL    = genraminit genramvhd genrammif
 #ALL   += wrpc-w1-read wrpc-w1-write
 ALL   += pfilter-builder
-ALL   += wrpc-dump mapper
+ALL   += mapper
 ALL   += wrpc-vuart
 ALL   += wr-streamers
 ALL   += wrpc-diags
 ALL   += gensdbfs
+ALL-$(CONFIG_PPSI)  += wrpc-dump
+
+ALL+= $(ALL-y)
 
 ifneq ($(EB),no)
 ALL += eb-w1-write
