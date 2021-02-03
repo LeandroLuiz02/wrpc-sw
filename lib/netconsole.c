@@ -27,7 +27,7 @@ static unsigned char *cmd_rx_p = NULL;
 static uint8_t tx_buf[UDP_END + SH_MAX_LINE_LEN + 1];
 static uint8_t rx_buf[UDP_END + SH_MAX_LINE_LEN + 1];
 struct wr_sockaddr netconsole_sock_addr;
-static int netconsole_has_peer = 0;
+int netconsole_status = NETCONSOLE_OFF;
 struct wr_udp_addr netconsole_udp_addr;
 
 
@@ -35,8 +35,7 @@ void netconsole_init(void)
 {
 	netconsole_socket = ptpd_netif_create_socket(
 					&__static_netconsole_socket, NULL,
-					PTPD_SOCK_UDP, 55);
-					/* TODO: find a better port number */
+					PTPD_SOCK_UDP, NETCONSOLE_PORT);
 }
 
 int netconsole_read_byte(void)
@@ -54,13 +53,13 @@ int netconsole_write_string(const char *s)
 	const uint8_t *p;
 	static uint8_t *d = NULL;
 
-	if (!netconsole_has_peer)
+	if (netconsole_status != NETCONSOLE_ENABLED)
 		return 0;
 	/* Prevent recursive calls when net verbose configured.
 	 * NOTE: Even with the following if, NET_IS_VERBOSE does not work
 	 * with netconsole */
 	if (NET_IS_VERBOSE)
-		netconsole_has_peer = 0;
+		netconsole_status = NETCONSOLE_DISABLED;
 	p = (uint8_t *)s;
 	while (1) {
 		if (!d) {
@@ -75,6 +74,8 @@ int netconsole_write_string(const char *s)
 		len++;
 		if (*d == '\n' || len == SH_MAX_LINE_LEN) {
 			len += UDP_END;
+			netconsole_udp_addr.sport = htons(NETCONSOLE_PORT);
+			getIP((void *)&netconsole_udp_addr.saddr);
 			fill_udp((uint8_t *)tx_buf, len, &netconsole_udp_addr);
 			ptpd_netif_sendto(netconsole_socket,
 					  &netconsole_sock_addr, tx_buf, len,
@@ -89,7 +90,7 @@ int netconsole_write_string(const char *s)
 	}
 
 	if (NET_IS_VERBOSE)
-		netconsole_has_peer = 1;
+		netconsole_status = NETCONSOLE_ENABLED;
 	return 0;
 }
 
@@ -98,8 +99,12 @@ int netconsole_poll(void)
 {
 	int len;
 
-	if (ip_status == IP_TRAINING)
-		return 0;	/* can't do netconsole w/o an address... */
+	if (ip_status == IP_TRAINING
+	    || netconsole_status == NETCONSOLE_DISABLED) {
+		/* can't do netconsole w/o an address...
+		 * or netconsole disabled */
+		return 0;
+	}
 
 	if ((len = ptpd_netif_recvfrom(netconsole_socket,
 				       &netconsole_sock_addr, rx_buf,
@@ -112,15 +117,13 @@ int netconsole_poll(void)
 
 		rx_buf[len] = 0;
 
-		/* copy source and destination address */
+		/* copy peer's IP address and port */
 		memcpy(&netconsole_udp_addr.daddr, rx_buf + IP_SOURCE, 4);
-		memcpy(&netconsole_udp_addr.saddr, rx_buf + IP_DEST, 4);
 		memcpy(&netconsole_udp_addr.dport, rx_buf + UDP_SPORT, 2);
-		memcpy(&netconsole_udp_addr.sport, rx_buf + UDP_DPORT, 2);
 
 		cmd_rx_p = &rx_buf[UDP_END];
 
-		netconsole_has_peer = 1;
+		netconsole_status = NETCONSOLE_ENABLED;
 
 		return 1;
 	}

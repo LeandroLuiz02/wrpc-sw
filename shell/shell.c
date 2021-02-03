@@ -51,6 +51,14 @@
 #define HAS_CMD_LEAPSEC 0
 #endif
 
+#ifdef CONFIG_CMD_NETCONSOLE
+#define HAS_CMD_NETCONSOLE 1
+#else
+#define HAS_CMD_NETCONSOLE 0
+#endif
+
+
+
 
 static char cmd_buf[SH_MAX_LINE_LEN + 1];
 static int cmd_pos = 0, cmd_len = 0;
@@ -393,4 +401,6 @@ void shell_register_commands(void)
 		REGISTER_WRC_COMMAND(pps);
 	if (HAS_CMD_LEAPSEC)
 		REGISTER_WRC_COMMAND(leapsec);
+	if (HAS_CMD_NETCONSOLE)
+		REGISTER_WRC_COMMAND(netconsole);
 }

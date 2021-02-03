@@ -386,6 +386,13 @@ config NETCONSOLE
 	help
 	  Include netconsole to be run via UDP
 
+config CMD_NETCONSOLE
+	depends on NETCONSOLE
+	boolean "Include command to configure netconsole"
+	default y
+	help
+	  Include command to configure netconsole
+
 #
 # This is a set of configuration options that should not be changed by
 # normal users. If the "developer" menu is used, the binary is tainted.

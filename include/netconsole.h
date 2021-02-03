@@ -6,10 +6,21 @@
 #ifndef __NETCONSOLE_H__
 #define __NETCONSOLE_H__
 
+#define NETCONSOLE_ENABLED 0
+#define NETCONSOLE_DISABLED 1
+#define NETCONSOLE_OFF 2
+
+#define NETCONSOLE_PORT 55
+
+extern struct wr_sockaddr netconsole_sock_addr;
+extern int netconsole_status;
+extern struct wr_udp_addr netconsole_udp_addr;
+
 void netconsole_init(void);
 int netconsole_poll(void);
 
 int netconsole_read_byte(void);
 int netconsole_write_string(const char *s);
+
 
 #endif /* __NETCONSOLE_H__ */

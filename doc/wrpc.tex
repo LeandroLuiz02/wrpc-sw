@@ -1918,6 +1918,17 @@ tools used to build and run it, you can write to our mailing list
     clock (requires external 10MHz and 1-PPS reference), Master or Slave.
     After setting the mode, \texttt{ptp start} must be re-issued \\
 
+  \code{netconsole} & prints peer's MAC, IP and port number used by
+    the netconsole \\
+
+  \code{netconsole <MAC> <IP> <PORT>} & sets peer's MAC, IP and port number for
+    the netconsole \\
+
+  \code{netconsole off} & turn off the netconsole, will be turned on again when
+    next netconsole's packet arrives to WRPC \\
+
+  \code{netconsole disable} & disable netconsole until enabled manually \\
+
   \code{pll cl <channel>} & checks if SoftPLL is locked for the channel \\
 
   \code{pll gdac <index>} & gets dac's value \\
