@@ -176,7 +176,7 @@ int ep_get_bitslide(struct wr_endpoint_device* dev)
 }
 
 /* Returns the TX/RX latencies. They are valid only when the link is up. */
-int ep_get_deltas(struct wr_endpoint_device* dev, uint32_t * delta_tx, uint32_t * delta_rx)
+int ep_get_deltas(struct wr_endpoint_device* dev, int *delta_tx, int *delta_rx)
 {
 	/* fixme: these values should be stored in calibration block in the EEPROM on the FMC. Also, the TX/RX delays of a particular SFP
 	   should be added here */
