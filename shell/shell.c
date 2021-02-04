@@ -20,9 +20,6 @@
 #include "shell.h"
 #include "storage.h"
 
-#define SH_MAX_LINE_LEN 80
-#define SH_MAX_ARGS 8
-
 /* interactive shell state definitions */
 
 #define SHELL_MAX_COMMANDS 32
@@ -37,6 +34,7 @@
 #define KEY_LEFT (ESCAPE_FLAG | 68)
 #define KEY_RIGHT (ESCAPE_FLAG | 67)
 #define KEY_ENTER (13)
+#define KEY_ENTER10 (10)
 #define KEY_ESCAPE (27)
 #define KEY_BACKSPACE (127)
 #define KEY_DELETE (126)
@@ -52,6 +50,14 @@
 #else
 #define HAS_CMD_LEAPSEC 0
 #endif
+
+#ifdef CONFIG_CMD_NETCONSOLE
+#define HAS_CMD_NETCONSOLE 1
+#else
+#define HAS_CMD_NETCONSOLE 0
+#endif
+
+
 
 
 static char cmd_buf[SH_MAX_LINE_LEN + 1];
@@ -150,6 +156,8 @@ int shell_exec(const char *cmd)
 	shell_is_interacting = 1;
 	i = _shell_exec();
 	shell_is_interacting = 0;
+	/* clean cmd_buf */
+	cmd_buf[0] = '\0';
 	return i;
 }
 
@@ -200,6 +208,7 @@ int shell_interactive()
 				break;
 
 			case KEY_ENTER:
+			case KEY_ENTER10:
 				pp_printf("\n");
 				state = SH_EXEC;
 				break;
@@ -394,4 +403,6 @@ void shell_register_commands(void)
 		REGISTER_WRC_COMMAND(pps);
 	if (HAS_CMD_LEAPSEC)
 		REGISTER_WRC_COMMAND(leapsec);
+	if (HAS_CMD_NETCONSOLE)
+		REGISTER_WRC_COMMAND(netconsole);
 }

@@ -6,8 +6,8 @@ WR-WRPC-MIB DEFINITIONS ::= BEGIN
 -- IMPORTS: Include definitions from other mibs here
 IMPORTS
         OBJECT-TYPE, Integer32, Unsigned32, Counter32, Counter64,
-        MODULE-IDENTITY, enterprises, TimeTicks FROM SNMPv2-SMI
-        DisplayString                         FROM SNMPv2-TC;
+        MODULE-IDENTITY, enterprises, TimeTicks, IpAddress FROM SNMPv2-SMI
+        DisplayString, MacAddress                FROM SNMPv2-TC;
 
 wrWrpcMIB MODULE-IDENTITY
     LAST-UPDATED "201607061700Z"
@@ -773,7 +773,6 @@ wrpcInitScriptConfigLine       OBJECT-TYPE
             "Line to be added to the init script."
     ::= { wrpcInitScriptConfigGroup 2 }
 
-    
 -- ****************************************************************************
 wrpcSdbGroup             OBJECT IDENTIFIER ::= { wrpcCore 10 }
 
@@ -829,7 +828,130 @@ wrpcSdbParam       OBJECT-TYPE
             address (for I2C EEPROM)."
     ::= { wrpcSdbGroup 4 }
 
-    
+-- ****************************************************************************
+wrpcNetconsoleGroup             OBJECT IDENTIFIER ::= { wrpcCore 11 }
+wrpcNetconsoleGetGroup             OBJECT IDENTIFIER ::= { wrpcNetconsoleGroup 1 }
+wrpcNetconsoleSetGroup             OBJECT IDENTIFIER ::= { wrpcNetconsoleGroup 2 }
+
+-- **************************************
+wrpcNetconsoleGetStatus        OBJECT-TYPE
+    SYNTAX                     INTEGER {
+                                   na(0),
+                                   enabled(1),
+                                   disable(2),
+                                   wait(3)
+                               }
+    MAX-ACCESS                 read-only
+    STATUS                     current
+    DESCRIPTION
+            "Status of netconsole
+            enabled - serial console is copied to a host in the network
+            disabled - netconsole is not working, to resume it, please set it to _wait_
+            wait - node is listening for commands to arrive from host, but nothing
+                  is send; when netconsole packet arrives all further messages
+                  from serial console will be copied to netconsole
+            "
+    ::= { wrpcNetconsoleGetGroup 1 }
+
+wrpcNetconsoleGetPeerMac       OBJECT-TYPE
+    SYNTAX                     MacAddress
+    MAX-ACCESS                 read-only
+    STATUS                     current
+    DESCRIPTION
+             "MAC address of netconsole's peer"
+    ::= { wrpcNetconsoleGetGroup 2 }
+
+wrpcNetconsoleGetPeerIp        OBJECT-TYPE
+    SYNTAX                     IpAddress
+    MAX-ACCESS                 read-only
+    STATUS                     current
+    DESCRIPTION
+             "IP address of netconsole's peer"
+    ::= { wrpcNetconsoleGetGroup 3 }
+
+wrpcNetconsoleGetPeerPort      OBJECT-TYPE
+    SYNTAX                     Integer32
+    MAX-ACCESS                 read-only
+    STATUS                     current
+    DESCRIPTION
+             "Port of netconsole's peer"
+    ::= { wrpcNetconsoleGetGroup 4 }
+
+-- **************************************
+wrpcNetconsoleSetApply         OBJECT-TYPE
+    SYNTAX                     INTEGER {
+                                   na(0),
+                                   disable(2),
+                                   wait(3),
+                                   applySuccessful(100),
+                                   applyFailed(200),
+                               }
+    MAX-ACCESS                 read-write
+    STATUS                     current
+    DESCRIPTION
+            "Make a change to a netconsole setting:
+            disable - don't send anything via netconsole nor wait for any input
+            wait - don't send anything via netconsole, but wait for any input to start sending
+            applySuccessful - successful to change state of netconsole
+            applyFailed - failed to change state of netconsole
+            "
+    ::= { wrpcNetconsoleSetGroup 1 }
+
+-- ****************************************************************************
+wrpcShellCmdGroup              OBJECT IDENTIFIER ::= { wrpcCore 12 }
+
+wrpcShellCmdRun                OBJECT-TYPE
+    SYNTAX                     INTEGER {
+                                   na(0),
+                                   execute(12),
+                                   executionSuccessful(100),
+                                   executionFailed(200),
+                                   executionFailedEmptyLine(201)
+                                   executionFailedSetMagicTo44451(202)
+                               }
+    MAX-ACCESS                 read-write
+    STATUS                     current
+    DESCRIPTION
+            "Run a shell command stored in wrpcShellCmdLine. Before command is run
+             OID wrpcShellCmdMagic has to be filled with 44451. This oid can have
+             the following values:
+             execute - to run the command stored in wrpcShellCmdLine
+             executionSuccessful - trigger of a command was successful,
+                                   but this has no information whether the command itslef was successful!
+                                   Check the wrpcShellCmdReturnCode!
+             executionFailed - failed to trigger the command
+             executionFailedEmptyLine - empty wrpcShellCmdLine
+             executionFailedSetMagicTo44451 - wrong magic in wrpcShellCmdMagic
+            "
+    ::= { wrpcShellCmdGroup 1 }
+
+wrpcShellCmdLine               OBJECT-TYPE
+    SYNTAX                     DisplayString (SIZE(0..80))
+    MAX-ACCESS                 read-write
+    STATUS                     current
+    DESCRIPTION
+            "Specify the command to be run"
+    ::= { wrpcShellCmdGroup 2 }
+
+wrpcShellCmdMagic              OBJECT-TYPE
+    SYNTAX                     INTEGER {
+                                   na(0),
+                                   magic(44451)
+                               }
+    MAX-ACCESS                 read-write
+    STATUS                     current
+    DESCRIPTION
+            "To be able to execute command this OID has to contain 44451. After a run of a command this OID is zeroed"
+    ::= { wrpcShellCmdGroup 3 }
+
+wrpcShellCmdReturnCode         OBJECT-TYPE
+    SYNTAX                     Integer32
+    MAX-ACCESS                 read-write
+    STATUS                     current
+    DESCRIPTION
+            "Return code of last executed command"
+    ::= { wrpcShellCmdGroup 4 }
+
 -- ****************************************************************************
 
 END

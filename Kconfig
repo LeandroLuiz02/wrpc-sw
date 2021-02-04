@@ -219,19 +219,32 @@ config SNMP_SET
 	  This option enables support for SET requests for Mini SNMP responder
 
 config SNMP_INIT
-	depends on SNMP && BUILD_INIT
-	default y if BUILD_INIT
-	default n
+	depends on SNMP && SNMP_SET && FLASH_INIT
+	default y
 	boolean "Adds support of changing init script/commands via SNMP"
 	help
 	  This option adds a branch wrpcInitScriptConfigGroup to the SNMP
 
 config SNMP_SDB
-	depends on SNMP && GENSDBFS
+	depends on SNMP && SNMP_SET && GENSDBFS
 	default y
 	boolean "Adds support of generation of SDB via SNMP"
 	help
 	  This option adds a branch wrpcSdbGroup to the SNMP
+
+config SNMP_CMD
+	depends on SNMP && SNMP_SET
+	default y
+	boolean "Allow to run any shell command via SNMP"
+	help
+	  This option adds a branch wrpcShellCmdGroup to the SNMP
+
+config SNMP_NETCONSOLE
+	depends on SNMP && NETCONSOLE
+	default y
+	boolean "Adds support of enabling/disabling netconsole via SNMP"
+	help
+	  This option adds a branch wrpcNetconsoleGroup to the SNMP
 
 config SNMP_AUX_DIAG
 	depends on SNMP && AUX_DIAG
@@ -379,6 +392,37 @@ config CMD_LEAPSEC
 	help
 	  This enables leapsec command, which can be used to adjust leap seconds
 	  value.
+
+config NETCONSOLE
+	depends on WR_NODE && IP && !NET_VERBOSE
+	boolean "Include netconsole via UDP"
+	default y
+	help
+	  Include netconsole to be run via UDP
+
+choice
+	prompt "Default mode of netconsole"
+	depends on NETCONSOLE
+	default NETCONSOLE_DEF_DISABLE
+
+config NETCONSOLE_DEF_WAIT
+	boolean "Netconsole is waiting for peer"
+	help
+	  Netconsole is waiting for peer to send a command
+
+config NETCONSOLE_DEF_DISABLE
+	boolean "Netconsole is disabled"
+	help
+	  Use SNMP or shell command to enable netconsole
+
+endchoice
+
+config CMD_NETCONSOLE
+	depends on NETCONSOLE
+	boolean "Include shell command to configure netconsole"
+	default y
+	help
+	  Include command to configure netconsole
 
 #
 # This is a set of configuration options that should not be changed by

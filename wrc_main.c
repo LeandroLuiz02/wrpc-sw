@@ -34,6 +34,7 @@
 #include <dev/rxts_calibrator.h>
 #include <dev/flash.h>
 #include <dev/gpio.h>
+#include <netconsole.h>
 
 #include <wrc_ptp.h>
 #include <system_checks.h>
@@ -319,6 +320,11 @@ static void create_tasks(void)
 
 #ifdef CONFIG_WR_DIAG
 	wrc_task_create( "diags", NULL, wrc_wr_diags );
+#endif
+
+#ifdef CONFIG_NETCONSOLE
+	t = wrc_task_create( "netconsole", netconsole_init, netconsole_poll );
+	wrc_task_set_enable( t, is_link_up );
 #endif
 }
 
