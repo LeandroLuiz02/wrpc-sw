@@ -30,6 +30,14 @@
 	  _a < _b ? _a : _b; })
 #endif
 
+#ifndef htons
+#  define htons(x)      (x)
+#endif
+
+#ifndef htonl
+#  define htonl(x)      (x)
+#endif
+
 #undef offsetof
 #define offsetof(TYPE, MEMBER) ((long) &((TYPE *)0)->MEMBER)
 #undef ARRAY_SIZE
