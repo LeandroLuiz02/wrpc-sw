@@ -21,7 +21,6 @@
 #include "ipv4.h"
 #include "shell.h"
 #include "dev/syscon.h"
-#include <wrpc.h> /*needed for htons()*/
 
 static uint8_t lldpdu[LLDP_MAX_PKT_LEN];
 static uint16_t lldpdu_len;

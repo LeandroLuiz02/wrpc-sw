@@ -7,7 +7,6 @@
  * Released according to the GNU GPL, version 2 or any later version.
  */
 #include <wrc.h>
-#include <wrpc.h>
 #include <string.h>
 
 #include "dev/endpoint.h"
