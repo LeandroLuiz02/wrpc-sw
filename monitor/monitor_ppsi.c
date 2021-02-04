@@ -339,7 +339,7 @@ void print_gui_description(void)
 
 	pcprintf(1, 1, C_BLUE, "%s WR PTP Core Sync Monitor %s",
 		wrc_hw_name, build_revision);
-	cprintf(C_MAGENTA, "\nEsc = exit");
+	cprintf(C_MAGENTA, "\nEsc = exit; r = redraw GUI");
 
 	cprintf(C_BLUE, "\n\nTAI Time:%25sUTC offset:", "");
 
