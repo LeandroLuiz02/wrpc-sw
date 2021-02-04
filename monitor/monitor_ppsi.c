@@ -341,9 +341,9 @@ void print_gui_description(void)
 		wrc_hw_name, build_revision);
 	cprintf(C_MAGENTA, "\nEsc or q = exit; r = redraw GUI");
 
-	cprintf(C_BLUE, "\n\nTAI Time:%25sUTC offset:", "");
+	cprintf(C_BLUE, "\n\nTAI Time:%22sUTC offset:", "");
 
-	pp_printf("\nTiming mode:%22sPLL state:\n", "");
+	pp_printf("\nPLL mode:%22sPLL state:\n", "");
 
 	ndevs = netif_get_device_count();
 
@@ -404,15 +404,15 @@ int wrc_mon_gui(void)
 	shw_pps_gen_get_time(&sec, &nsec);
 
 	/* TAI Time */
-	pcprintf(4, 14, C_WHITE, "%s", format_time(sec, TIME_FORMAT_SORTED));
+	pcprintf(4, 11, C_WHITE, "%s", format_time(sec, TIME_FORMAT_SORTED));
 
 	
 	/* UTC offset */
 	wrc_ptp_get_leapsec(&i , &n_out /* dummy */);
-	pprintf(4, 47, "%d", i);
+	pprintf(4, 44, "%d", i);
 
 	/* Timing mode  */
-	pprintf(5, 14, getStateAsString(timing_mode_state, WRPC_ARCH_G(ppg)->timingMode));
+	pprintf(5, 11, getStateAsString(timing_mode_state, WRPC_ARCH_G(ppg)->timingMode));
 
 	/* PLL locking state */
 	if (spll_check_lock(0))
@@ -420,7 +420,7 @@ int wrc_mon_gui(void)
 	else {
 		pll_locking_state_name = "Locking";
 	}
-	pprintf(5, 47, "%s", pll_locking_state_name);
+	pprintf(5, 44, "%s", pll_locking_state_name);
 
 	ndevs = netif_get_device_count();
 
@@ -726,12 +726,12 @@ void show_servo(struct pp_instance *ppi)
 	if (pe_info->lastt && time(NULL) - pe_info->lastt > 5) {
 		pcprintf(18, 23, C_RED, "--- not updating ---\n");
 	} else {
-		pcprintf(18, 23, C_WHITE, "%s:%s: %s%10s\n",
+		pcprintf(18, 23, C_WHITE, "%s:%s: %s%-15s\n",
 				ppi->cfg.iface_name,
 				    pe_info->ext_name,
 				    ppi->servo->servo_state_name,
 				    ppi->servo->flags & PP_SERVO_FLAG_WAIT_HW ?
-				" (wait for hw)" : "    ");
+				" (wait for hw)" : "");
 	}
 
 	/* "tracking disabled" is just a testing tool */
