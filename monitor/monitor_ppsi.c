@@ -420,7 +420,7 @@ int wrc_mon_gui(void)
 	else {
 		pll_locking_state_name = "Locking";
 	}
-	pprintf(5, 47, "%s\n", pll_locking_state_name);
+	pprintf(5, 47, "%s", pll_locking_state_name);
 
 	ndevs = netif_get_device_count();
 
@@ -743,16 +743,16 @@ void show_servo(struct pp_instance *ppi)
 
 	/* +- Timing parameters --------------------------------------------------------- */
 
-	pcprintf(21, 20, C_WHITE, "%19s nsec\n", timeIntervalToString_ns_dot_ps(ppg->currentDS->meanDelay, buf));
+	pcprintf(21, 20, C_WHITE, "%19s nsec", timeIntervalToString_ns_dot_ps(ppg->currentDS->meanDelay, buf));
 
 	/*delayMS */
-	pcprintf(22, 20, C_WHITE,"%24s\n", optimized_pp_time_toString_ps_as_ns(&ppi->servo->delayMS, buf));	
+	pcprintf(22, 20, C_WHITE,"%24s", optimized_pp_time_toString_ps_as_ns(&ppi->servo->delayMS, buf));	
 	{
 		struct pp_time *delayMM = wr_servo_ext ?
 				&wr_servo_ext->rawDelayMM :
 				&ppi->servo->delayMM;
 		/* delayMM */
-		pcprintf(23, 20, C_WHITE,"%24s\n", optimized_pp_time_toString_ps_as_ns(delayMM, buf));
+		pcprintf(23, 20, C_WHITE,"%24s", optimized_pp_time_toString_ps_as_ns(delayMM, buf));
 	}
 
 	//cprintf(C_BLUE, "Estimated link length:     ");
@@ -767,18 +767,18 @@ void show_servo(struct pp_instance *ppi)
 
 
 	/* delayAsymmetry */
-	pcprintf(24, 20, C_WHITE, "%19s nsec\n",   timeIntervalToString_ns_dot_ps(ppi->portDS->delayAsymmetry, buf));
+	pcprintf(24, 20, C_WHITE, "%19s nsec",   timeIntervalToString_ns_dot_ps(ppi->portDS->delayAsymmetry, buf));
 	/* delayCoefficient */
 	pcprintf(25, 23, C_WHITE, "%s", relativeDifferenceToString(ppi->asymmetryCorrectionPortDS.scaledDelayCoefficient, buf));
 	/* fpa */
 	pcprintf(25, 51, C_WHITE, "%Lu", ppi->asymmetryCorrectionPortDS.scaledDelayCoefficient); /* print as unsigned! */
 
 	/* ingressLatency */
-	pcprintf(26, 20, C_WHITE, "%19s nsec\n",   timeIntervalToString_ns_dot_ps(ppi->timestampCorrectionPortDS.ingressLatency, buf));
+	pcprintf(26, 20, C_WHITE, "%19s nsec",   timeIntervalToString_ns_dot_ps(ppi->timestampCorrectionPortDS.ingressLatency, buf));
 	/* egressLatency */
-	pcprintf(27, 20, C_WHITE, "%19s nsec\n",   timeIntervalToString_ns_dot_ps(ppi->timestampCorrectionPortDS.egressLatency, buf));
+	pcprintf(27, 20, C_WHITE, "%19s nsec",   timeIntervalToString_ns_dot_ps(ppi->timestampCorrectionPortDS.egressLatency, buf));
 	/* semistaticLatency */
-	pcprintf(28, 20, C_WHITE, "%19s nsec\n",   timeIntervalToString_ns_dot_ps(ppi->timestampCorrectionPortDS.semistaticLatency, buf));
+	pcprintf(28, 20, C_WHITE, "%19s nsec",   timeIntervalToString_ns_dot_ps(ppi->timestampCorrectionPortDS.semistaticLatency, buf));
 
 	/*if (0) {
 		cprintf(C_BLUE, "Fiber asymmetry:   ");
@@ -787,20 +787,20 @@ void show_servo(struct pp_instance *ppi)
 	}*/
 
 	/* offsetFromMaster */
-	pcprintf(29, 20, C_WHITE, "%19s nsec\n", timeIntervalToString_ns_dot_ps (ppg->currentDS->offsetFromMaster, buf));
+	pcprintf(29, 20, C_WHITE, "%19s nsec", timeIntervalToString_ns_dot_ps (ppg->currentDS->offsetFromMaster, buf));
 	row_offset = 30;
 	if (wr_servo) {
 		/* Phase setpoint */
-		pcprintf(30, 20, C_WHITE, "%19s nsec\n", convert_ps_to_str_ns(buf, (int64_t) wr_servo->cur_setpoint_ps));
+		pcprintf(30, 20, C_WHITE, "%19s nsec", convert_ps_to_str_ns(buf, (int64_t) wr_servo->cur_setpoint_ps));
 
 
 		/* Skew */
-		pcprintf(31, 20, C_WHITE, "%19s nsec\n", convert_ps_to_str_ns(buf, wr_servo->skew_ps));
+		pcprintf(31, 20, C_WHITE, "%19s nsec", convert_ps_to_str_ns(buf, wr_servo->skew_ps));
 		row_offset += 2;
 	}
 
 	 /* Update counter */
-	pcprintf(row_offset, 23, C_WHITE, "%16u times\n", ppi->servo->update_count);
+	pcprintf(row_offset, 23, C_WHITE, "%16u times", ppi->servo->update_count);
 	if (ppi->servo->update_count != pe_info->last_count) {
 		pe_info->lastt = time(NULL);
 		pe_info->last_count = ppi->servo->update_count;
