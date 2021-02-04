@@ -339,7 +339,7 @@ void print_gui_description(void)
 
 	pcprintf(1, 1, C_BLUE, "%s WR PTP Core Sync Monitor %s",
 		wrc_hw_name, build_revision);
-	cprintf(C_MAGENTA, "\nEsc = exit; r = redraw GUI");
+	cprintf(C_MAGENTA, "\nEsc or q = exit; r = redraw GUI");
 
 	cprintf(C_BLUE, "\n\nTAI Time:%25sUTC offset:", "");
 
@@ -648,7 +648,7 @@ int wrc_mon_gui(void)
 
 	}
 	/* clear colors */
-	pp_printf("\e[m");
+	pp_printf("\e[m\n");
 	/* clear till the end of a screen */
 	term_clear_to_end();
 
@@ -811,13 +811,13 @@ void show_servo(struct pp_instance *ppi)
 		pcprintf(33, 26, C_WHITE,"%22s", optimized_pp_time_toString_ps_as_ns(&wr_servo_ext->delta_txm, buf));
 		cprintf(C_BLUE, "  RX:");
 		/* print and clear till the end of a line */
-		cprintf(C_WHITE,"%22s\e[K\n", optimized_pp_time_toString_ps_as_ns(&wr_servo_ext->delta_rxm, buf));
+		cprintf(C_WHITE,"%22s\e[K", optimized_pp_time_toString_ps_as_ns(&wr_servo_ext->delta_rxm, buf));
 
 		/* Slave  PHY delays TX */
 		pcprintf(34, 26, C_WHITE,"%22s", optimized_pp_time_toString_ps_as_ns(&wr_servo_ext->delta_txs, buf));
 		cprintf(C_BLUE, "  RX:");
 		/* print and clear till the end of a line */
-		cprintf(C_WHITE,"%22s\e[K\n", optimized_pp_time_toString_ps_as_ns(&wr_servo_ext->delta_rxs, buf));
+		cprintf(C_WHITE,"%22s\e[K", optimized_pp_time_toString_ps_as_ns(&wr_servo_ext->delta_rxs, buf));
 	}
 
 }

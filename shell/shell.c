@@ -262,7 +262,7 @@ int shell_interactive()
 		if (c == 'r')
 			redraw_gui();
 
-		if (!shell_ui_callback || shell_ui_callback() < 0 || c == 27)
+		if (!shell_ui_callback || shell_ui_callback() < 0 || c == 27 || c == 'q')
 		{
 			cmd_buf[cmd_len] = 0;
 			state = SH_PROMPT;
