@@ -104,7 +104,7 @@ static int bootp_poll(void)
 		return 0;
 
 	/* no extra traffic when abscal is in progress */
-	if (HAS_ABSCAL && ptp_mode == WRC_MODE_ABSCAL)
+	if (HAS_ABSCAL && wrc_ptp_is_abscal())
 		return 0;
 
 	if (len > 0)

@@ -16,5 +16,6 @@ int wrc_ptp_stop(void);
 int wrc_ptp_update(void);
 int wrc_ptp_bmc_update(void);
 int wrc_ptp_link_down(void);
+int wrc_ptp_is_abscal(void);
 
 #endif
