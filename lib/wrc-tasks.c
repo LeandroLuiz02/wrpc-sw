@@ -92,8 +92,9 @@ struct wrc_task* wrc_task_create( const char *name, void (*init)(void), int (*jo
 			t = &tasks[i];
 			break;
 		}
-	if(!t) {
-		pp_printf("Task %s not created!\n", name);
+	if(!t)
+	{
+		main_dbg("wrc_task_create() failed due to too many tasks (%d)\n", WRC_MAX_TASKS);
 		return NULL;
 	}
 

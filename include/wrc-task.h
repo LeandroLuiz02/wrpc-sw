@@ -6,7 +6,11 @@
 #ifndef __WRC_TASK_H__
 #define __WRC_TASK_H__
 
-#define WRC_MAX_TASKS 20
+#include <board.h>
+
+#ifndef WRC_MAX_TASKS
+# define WRC_MAX_TASKS 20
+#endif
 
 /*
  * A task is a data structure, but currently suboptimal.
