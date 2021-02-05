@@ -31,29 +31,37 @@
 #error ("WRPC monitor requires full version of pp_printf implementation")
 #endif
 
-/* internal "last", exported to shell command */
-uint32_t wrc_stats_last;
 
 #define WRC_MONITOR_REFRESH_PERIOD (1 * TICS_PER_SECOND)
 #define WRC_DIAG_REFRESH_PERIOD (1 * TICS_PER_SECOND)
 
-
-extern struct pp_instance ppi_static;
-extern struct pp_globals ppg_static;
-extern struct pp_globals *ppg;
-const char *ptp_unknown_str = "unknown";
-extern char wrc_hw_name[HW_NAME_LENGTH];
-static int redraw_gui_description = 1;
-static int redraw_servo_description = 1;
-static uint32_t next_update_ticks;
-
-int wrc_wr_diags(void);
-void show_servo(struct pp_instance *ppi);
+#define DESCRIPTION_MAIN 1
+#define DESCRIPTION_SERVO 2
+#define DESCRIPTION_WR_SERVO 4
 
 /* protocol extension data */
 #define IS_PROTO_EXT_INFO_AVAILABLE(proto_id) \
 	((proto_id < sizeof(proto_ext_info) / sizeof(struct proto_ext_info_t)) \
 			&& (proto_ext_info[proto_id].valid == 1))
+
+
+/* internal "last", exported to shell command */
+uint32_t wrc_stats_last;
+extern struct pp_instance ppi_static;
+extern struct pp_globals ppg_static;
+extern struct pp_globals *ppg;
+extern char wrc_hw_name[HW_NAME_LENGTH];
+static int prev_gui_description = 0;
+static int gui_description = 1;
+static uint32_t next_update_ticks;
+
+void print_main_description(void);
+void print_main_data(void);
+void print_servo_description(void);
+void print_servo_data(struct pp_instance *ppi);
+void print_aux_data(void);
+int wrc_wr_diags(void);
+
 
 struct proto_ext_info_t {
 	int valid;
@@ -326,13 +334,54 @@ int time(void *a)
 
 void redraw_gui(void)
 {
-	term_clear();
-	redraw_gui_description = 1;
-	redraw_servo_description = 1;
+	prev_gui_description = 0;
 	next_update_ticks = 0;
 }
 
-void print_gui_description(void)
+int wrc_mon_gui(void)
+{
+	static uint32_t last_servo_count;
+	struct pp_servo *s = SRV(ppg->pp_instances);
+	/* print new values only if time elapsed or servo's update_count
+	 * increased */
+	if (prev_gui_description != gui_description) {
+		term_clear();
+		if (gui_description & DESCRIPTION_MAIN) {
+			print_main_description();
+		}
+		if (gui_description & DESCRIPTION_SERVO) {
+			print_servo_description();
+		}
+		next_update_ticks = 0;
+		term_clear_to_end();
+		prev_gui_description = gui_description;
+		return 1;
+	}
+
+	/* update on timeout or servo update */
+	if (time_before(timer_get_tics(), next_update_ticks)
+	    && last_servo_count == s->update_count)
+		return 0;
+
+	next_update_ticks = timer_get_tics() + WRC_MONITOR_REFRESH_PERIOD;
+	last_servo_count = s->update_count;
+	prev_gui_description = gui_description;
+	gui_description = DESCRIPTION_MAIN;
+	print_main_data();
+
+	/* Print servo */
+	/* FIXME: add support of multiple instances */
+	print_servo_data(ppg->pp_instances);
+	print_aux_data();
+	/* clear colors */
+	pp_printf("\e[m\n");
+	/* clear till the end of a screen */
+	term_clear_to_end();
+
+	return 1;
+}
+
+void print_main_description(void)
 {
 	int i;
 	int ndevs;
@@ -371,36 +420,19 @@ void print_gui_description(void)
 	cprintf(C_CYAN, "\n--------------------------- Synchronization status ----------------------------");
 }
 
-int wrc_mon_gui(void)
+void print_main_data(void)
 {
-	static uint32_t last_servo_count;
 	struct hal_port_state state;
 	int tx, rx;
-	struct spll_aux_clock_status aux_stat;
+	int leap_sec, tmp;
 	uint64_t sec;
 	uint32_t nsec;
-	struct pp_servo *s = SRV(ppg->pp_instances);
 	char buf[20];
 	uint8_t mac[ETH_ALEN];
-	int n_out, i;
 	int ndevs;
+	int i;
 
 	const char *pll_locking_state_name;
-
-	/* print new values only if time elapsed or servo's update_count
-	 * increased */
-	if (time_before(timer_get_tics(), next_update_ticks)
-	    && last_servo_count == s->update_count)
-		return 0;
-
-	next_update_ticks = timer_get_tics() + WRC_MONITOR_REFRESH_PERIOD;
-	last_servo_count = s->update_count;
-
-	if (redraw_gui_description) {
-		print_gui_description();
-		redraw_gui_description = 0;
-	}
-
 	shw_pps_gen_get_time(&sec, &nsec);
 
 	/* TAI Time */
@@ -408,8 +440,8 @@ int wrc_mon_gui(void)
 
 	
 	/* UTC offset */
-	wrc_ptp_get_leapsec(&i , &n_out /* dummy */);
-	pprintf(4, 44, "%d", i);
+	wrc_ptp_get_leapsec(&leap_sec , &tmp /* dummy */);
+	pprintf(4, 44, "%d", leap_sec);
 
 	/* Timing mode  */
 	pprintf(5, 11, getStateAsString(timing_mode_state, WRPC_ARCH_G(ppg)->timingMode));
@@ -489,9 +521,6 @@ int wrc_mon_gui(void)
 
 		/* FIXME: should be independent for each interface */
 		wrpc_get_port_state(&state, NULL);
-// 		if (!state.state) {
-// 			continue;
-// 		}
 
 		if (state.locked)
 			pcprintf(14, 9, C_GREEN, "Lock");
@@ -615,14 +644,18 @@ int wrc_mon_gui(void)
 /* ----------------------------------------------------------------------------------------------------------------------- */
 	}
 
-	/* Print servo */
-	/* FIXME: add support of multiple instances */
-	show_servo(ppg->pp_instances);
+	return;
+}
+
+void print_aux_data(void)
+{
+	int n_out, i;
+	struct spll_aux_clock_status aux_stat;
 
 	spll_get_num_channels(NULL, &n_out);
 
 	for (i = 0; i < n_out - 1; i++) {
-		cprintf(C_MAGENTA, "Aux clock %d status:        ", i);
+		cprintf(C_MAGENTA, "\n\nAux clock %d status:        ", i);
 
 		aux_stat = spll_get_aux_status(i);
 
@@ -640,19 +673,12 @@ int wrc_mon_gui(void)
 			cprintf(C_GREEN, ", ready");
 			cprintf(C_WHITE, " (AUX-to-WR offset: %d ps)", aux_stat.phase);
 		}
-		
-		pp_printf("\n");
-
 	}
-	/* clear colors */
-	pp_printf("\e[m\n");
-	/* clear till the end of a screen */
-	term_clear_to_end();
 
-	return 0;
+	return;
 }
 
-void print_servo_description(int wr_servo)
+void print_servo_description()
 {
 	pcprintf(18, 1, C_BLUE, "Servo state:\n");
 
@@ -673,21 +699,20 @@ void print_servo_description(int wr_servo)
 	pp_printf("egressLatency    :\n");
 	pp_printf("semistaticLatency:\n");
 	pp_printf("offsetFromMaster :\n");
-	if (wr_servo) {
+	if (gui_description & DESCRIPTION_WR_SERVO) {
 		pp_printf("Phase setpoint   :\n");
 		pp_printf("Skew             :\n");
 	}
 	pp_printf("Update counter   :\n");
-	if (wr_servo) {
+	if (gui_description & DESCRIPTION_WR_SERVO) {
 		pp_printf("Master PHY delays TX:\n"); /* RX: */
 		pp_printf("Slave  PHY delays TX:\n"); /* RX: */
 	}
 }
 
-void show_servo(struct pp_instance *ppi)
+void print_servo_data(struct pp_instance *ppi)
 {
 	wrh_servo_t * wr_servo;
-	static wrh_servo_t * wr_servo_prev;
 	wr_servo_ext_t * wr_servo_ext = NULL;
 	char buf[128];
 	int row_offset;
@@ -698,27 +723,33 @@ void show_servo(struct pp_instance *ppi)
 	pprintf(18, 1, "");
 	if (ppi->state != PPS_SLAVE || !(ppi->servo->flags & PP_SERVO_FLAG_VALID)) {
 		cprintf(C_RED, "Link down, master mode or sync info not valid");
-		term_clear_to_end();
-		redraw_servo_description = 1;
 		return;
 	}
 
 	wr_servo = (ppi->protocol_extension == PPSI_EXT_WR && ppi->extState == PP_EXSTATE_ACTIVE) ?
 			(wrh_servo_t*) ppi->ext_data : NULL;
-	if (wr_servo_prev != wr_servo)
-		redraw_servo_description = 1;
-	wr_servo_prev = wr_servo;
+
+	/* should print servio description */
+	gui_description |= DESCRIPTION_SERVO;
+
 
 	if (wr_servo) {
 		wr_servo_ext = &((struct wr_data *)wr_servo)->servo_ext;
 	}
 
-
-	if (redraw_servo_description) {
-	    term_clear_to_end();
-	    print_servo_description(wr_servo?1:0);
-	    redraw_servo_description = 0;
-	}
+	/* should print WR servio description */
+	gui_description |= wr_servo ? DESCRIPTION_WR_SERVO : 0;
+	
+	/* Avoid printing new data if change in description is expected.
+	 * This avoids extra redraw of data values */
+	if(prev_gui_description
+		!= (gui_description 
+		    & (DESCRIPTION_MAIN
+		       | DESCRIPTION_SERVO
+		       | DESCRIPTION_WR_SERVO)
+		   )
+	  )
+		return;
 
 	if (pe_info->lastt && time(NULL) - pe_info->lastt > 5) {
 		pcprintf(18, 23, C_RED, "--- not updating ---\n");
