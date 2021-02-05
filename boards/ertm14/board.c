@@ -1748,21 +1748,21 @@ int wrc_board_early_init()
     int rv = storage_mount( &wrc_storage_dev );
     bist_checkpoint( ertm_bist, ERTM14_BIST_FLASH_FS_MOUNT, 0, rv == 0 );
 
-    /* reset the networking part of the WRCore and start the WR Endpoint */
    	net_rst();
 
+    int ll = ertm14_low_level_init();
+
+    /* reset the networking part of the WRCore and start the WR Endpoint */
     ep_init( &wrc_endpoint_dev, (void *) BASE_EP );
 
 	netif_register_device( "wru0", "default", &wrc_endpoint_dev );
 
 	/* Sleep for 1s to make sure WRS v4.2 always realizes that
 	 * the link is down */
+
 	timer_delay_ms(200);
 	ep_enable( &wrc_endpoint_dev, 1, 1);
 	timer_delay_ms(200);
-
-    int ll = ertm14_low_level_init();
-
     bist_summary( ertm_bist );
 
     return ll;
@@ -1867,6 +1867,42 @@ static int mmc15_link_poll(void)
     return 0;
 }
 
+static timeout_t rfmon_timeout;
+
+void ertm15_init_rf_monitor( void )
+{
+    tmo_init( &rfmon_timeout, 2000 );
+}
+
+int ertm15_update_rf_monitor( void )
+{
+    if( tmo_expired( &rfmon_timeout ) )
+    {
+        tmo_restart(&rfmon_timeout);
+        ertm15_rf_distr_measure_power ( &board.rf_distr );
+
+        int id = ertm14_get_current_config_id();
+
+        if( id < 0 || id >= ERTM14_MAX_CONFIGS)
+            return 0;
+
+        struct ertm14_board_state *bstate = ertm14_get_state_for_config( id );
+
+        int i;
+
+        for( i = ERTM14_RF_OUT_MIN_ID; i <= ERTM14_RF_OUT_MAX_ID; i++ )
+        {
+            bstate->lo.out_power[i] = board.rf_distr.pwr_lo_ch[i];
+            bstate->ref.out_power[i] = board.rf_distr.pwr_ref_ch[i];
+        }
+
+        bstate->lo.amp_power = board.rf_distr.pwr_lo_in;
+        bstate->ref.amp_power = board.rf_distr.pwr_ref_in;
+    }
+
+    return 0;
+}
+
 int wrc_board_init()
 {
     ertm14_shell_init();
@@ -1884,6 +1920,7 @@ int wrc_board_init()
     wrc_task_create( "phy-cal", phy_calibration_init, phy_calibration_poll );
     wrc_task_create( "mmc14", mmc14_link_init, mmc14_link_poll );
     wrc_task_create( "mmc15", mmc15_link_init, mmc15_link_poll );
+    wrc_task_create( "rf-monitor", ertm15_init_rf_monitor, ertm15_update_rf_monitor );
 
     ertm14_apply_config( 0 );
 
