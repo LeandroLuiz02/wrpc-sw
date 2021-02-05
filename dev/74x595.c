@@ -24,7 +24,7 @@
 #include "dev/gpio.h"
 #include "dev/74x595.h"
 
-#define X595_GPIO_MAX 2
+#define X595_GPIO_MAX 3
 
 struct x595_gpio_priv_data
 {
@@ -36,8 +36,8 @@ struct x595_gpio_priv_data
     uint32_t cur_data;
 };
 
-static int  x595_gpio_priv_count;
-static struct x595_gpio_priv_data x595_gpio_priv[2];
+static int  x595_gpio_priv_count = 0;
+static struct x595_gpio_priv_data x595_gpio_priv[X595_GPIO_MAX];
 
 static int x595_gpio_in(const struct gpio_pin *pin)
 {
@@ -125,6 +125,8 @@ int x595_gpio_create(struct gpio_device *device, int n_regs, const struct gpio_p
     struct x595_gpio_priv_data *priv;
     if( x595_gpio_priv_count >= X595_GPIO_MAX )
         return -1;
+
+    dev_dbg("x595_gpio_create: this = %p, n_regs = %d\n", device, n_regs );
 
     device->priv = priv = &x595_gpio_priv[x595_gpio_priv_count];
     x595_gpio_priv_count++;
