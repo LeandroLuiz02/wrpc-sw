@@ -134,12 +134,36 @@ static struct ertm_voltages voltages_defaults = {
 	11.9, 3.2, 1.0, 8.3, 8.3, 5.0, 11.95, 3.1,
 	{ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, },
 };
+struct ertm_wr_status wr_status_default = {
+	/* FIXME: copied, not #include'd, from wrc_diags_regs.h */
+	/* eventually replace by struct WRC_DIAGS_WB */
+	.VER		= 0xdeadbabe,	/* [0x0]: REG Version register */
+	.CTRL		= 0,   		/* [0x4]: REG Ctrl */
+	.WDIAG_SSTAT	= 0,  		/* [0x8]: REG WRPC Diag: servo status */
+	.WDIAG_PSTAT	= 1,  		/* [0xc]: REG WRPC Diag: Port status */
+	.WDIAG_PTPSTAT	= 3,		/* [0x10]: REG WRPC Diag: PTP state */
+	.WDIAG_ASTAT	= 0xa5,		/* [0x14]: REG WRPC Diag: AUX state */
+	.WDIAG_TXFCNT	= 0xa5,		/* [0x18]: REG WRPC Diag: Tx PTP Frame cnts */
+	.WDIAG_RXFCNT	= 0xa5,		/* [0x1c]: REG WRPC Diag: Rx PTP Frame cnts */
+	.WDIAG_SEC_MSB	= 0xa5,		/* [0x20]: REG WRPC Diag:local time [msb of s] */
+	.WDIAG_SEC_LSB	= 0xa5,		/* [0x24]: REG WRPC Diag: local time [lsb of s] */
+	.WDIAG_NS	= 0xa5,     	/* [0x28]: REG WRPC Diag: local time [ns] */
+	.WDIAG_MU_MSB	= 0xa5,		/* [0x2c]: REG WRPC Diag: Round trip (mu) [msb of ps] */
+	.WDIAG_MU_LSB	= 0xa5,		/* [0x30]: REG WRPC Diag: Round trip (mu) [lsb of ps] */
+	.WDIAG_DMS_MSB	= 0xa5,		/* [0x34]: REG WRPC Diag: Master-slave delay (dms) [msb of ps] */
+	.WDIAG_DMS_LSB	= 0xa5,		/* [0x38]: REG WRPC Diag: Master-slave delay (dms) [lsb of ps] */
+	.WDIAG_ASYM	= 0xa5,		/* [0x3c]: REG WRPC Diag: Total link asymmetry [ps] */
+	.WDIAG_CKO	= 0xa5,		/* [0x40]: REG WRPC Diag: Clock offset (cko) [ps] */
+	.WDIAG_SETP	= 0xa5,		/* [0x44]: REG WRPC Diag: Phase setpoint (setp) [ps] */
+	.WDIAG_UCNT	= 0xa5,		/* [0x48]: REG WRPC Diag: Update counter (ucnt) */
+	.WDIAG_TEMP	= 0xa5,		/* [0x4c]: REG WRPC Diag: Board temperature [C degree] */
+};
 
 /* WARNING: mostly unused */
 struct ertm_device_metadata device_metadata_defaults = {
 	.vendor_id = 0x10dc,
 	.device_id = 0xbabe,
-	.version = 0xcafe,
+	.version = 0xdeadbabe,
 	.byte_order_mark = 0xFEFF,
 	.source_id = "sim-ertm14/15",
 	.capability_mask = 0,
@@ -180,6 +204,7 @@ static void ertm_status_init(struct ertm_state *st)
 		sizeof(st->temperatures));
 	memcpy(&st->voltages, &voltages_defaults,
 		sizeof(st->voltages));
+	memcpy(&st->wr_status, &wr_status_default, sizeof(st->wr_status));
 	/* FIXME: st->nco_reset */
 }
 struct ertm_status *ertm_init(char *address)
