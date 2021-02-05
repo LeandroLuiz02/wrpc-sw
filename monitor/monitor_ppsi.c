@@ -357,12 +357,12 @@ void print_gui_description(void)
 		pp_printf("Iface |        MAC        |       IP (source)       |    RX   |    TX   | VLAN\n");
 	}
 
-	pp_printf("\n----- HAL ---|---------------- PPSI -------------------------------------------------------\n");
-	pp_printf(" Iface| Freq |    Config    | MAC of peer port  |    PTP/EXT/PDETECT States    | Pro | VLAN\n");
-	pp_printf("------+------+--------------+-------------------+------------------------------+-----+-----\n");
+	pp_printf("\n----- HAL ---|---------------- PPSI -------------------------------------------------\n");
+	pp_printf(  " Iface| Freq |    Config    | MAC of peer port  |    PTP/EXT/PDETECT States    | Pro \n");
+	pp_printf(  "------+------+--------------+-------------------+------------------------------+-----\n");
 	for (i = 0 ; i < ndevs; i++) {
 		/* reuse the string above, strings between "|" will be overwritten anyway */
-		pp_printf(" Iface| Freq |    Config    | MAC of peer port  |    PTP/EXT/PDETECT States    | Pro | VLAN\n");
+		pp_printf(" Iface| Freq |    Config    | MAC of peer port  |    PTP/EXT/PDETECT States    | Pro \n");
 	}
 
 	cprintf(C_BLUE, "Pro - Protocol mapping: V-Ethernet over "
@@ -472,9 +472,9 @@ int wrc_mon_gui(void)
 
 	}
 	/* 
-	----- HAL ---|---------------- PPSI -------------------------------------------------------
-	 Iface| Freq |    Config    | MAC of peer port  |    PTP/EXT/PDETECT States    | Pro | VLAN
-	------+------+--------------+-------------------+------------------------------+-----+----- */
+	----- HAL ---|---------------- PPSI -------------------------------------------------
+	 Iface| Freq |    Config    | MAC of peer port  |    PTP/EXT/PDETECT States    | Pro 
+	------+------+--------------+-------------------+------------------------------+----- */
 
 	for (i = 0 ; i < ndevs; i++) {
 		struct wrc_netif_device *ndev = netif_get_device(i);
@@ -611,9 +611,6 @@ int wrc_mon_gui(void)
 			pcprintf(14, 82, C_WHITE, "%c", proto);
 			color = extensionStateColor(ppi_pt);
 			cprintf(color, "-%c", pe_info->short_ext_name);
-
-			/* VLAN */
-			pcprintf(14, 88, C_WHITE, "%4d", ppi_pt->vlans[0]);
 		}
 /* ----------------------------------------------------------------------------------------------------------------------- */
 	}
