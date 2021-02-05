@@ -76,7 +76,7 @@
  */
 #define __ASSEMBLY__
 #include "include/revision.h"
-#include "ppsi/proto-ext-whiterabbit/wr-api.h"
+#include "ppsi/include/hw-specific/wrh.h"
 #include "arch/lm32/crt0.h"
 #include "include/generated/autoconf.h"
 /* From include/sys/signal.h */  
@@ -119,8 +119,10 @@ _true_reset:
 	.word softpll
 .org FIFO_LOG_PADDR
 	.word fifo_log
-.org PPI_STATIC_PADDR
-	.word ppi_static
+#ifdef CONFIG_PPSI
+.org PPG_STATIC_PADDR
+	.word ppg_static
+#endif
 .org STATS_PADDR
 	.word stats
 

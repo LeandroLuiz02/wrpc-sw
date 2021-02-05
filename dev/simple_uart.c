@@ -48,6 +48,7 @@ void suart_write_byte(struct simple_uart_device *dev, int b)
 int suart_write_string(struct simple_uart_device *dev, const char *s)
 {
 	const char *t = s;
+
 	while (*s)
 		suart_write_byte(dev, *(s++));
 	return s - t;

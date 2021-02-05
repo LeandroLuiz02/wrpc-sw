@@ -18,6 +18,10 @@ SIZE =		$(CROSS_COMPILE)size
 
 
 AUTOCONF = $(CURDIR)/include/generated/autoconf.h
+AUTOCONF_PPSI = $(CURDIR)/ppsi/include/generated/autoconf.h
+
+export AUTOCONF
+export AUTOCONF_PPSI
 
 PPSI = ppsi
 
@@ -34,7 +38,7 @@ obj-$(CONFIG_WR_NODE)   += wrc_main.o
 obj-$(CONFIG_WR_NODE_SIM) += wrc_main_sim.o
 obj-$(CONFIG_TARGET_WR_SWITCH) += ipc/minipc-mem-server.o ipc/rt_ipc.o
 
-obj-y += dump-info.o
+obj-$(CONFIG-PPSI) += dump-info.o
 # our linker script is preprocessed, so have a rule here
 %.ld: %.ld.S $(AUTOCONF) .config
 	$(CC) -include $(AUTOCONF) -E -P $*.ld.S -o $@
@@ -203,6 +207,22 @@ pconfig.o: ppsi/.config
 
 $(AUTOCONF): silentoldconfig gitmodules
 
+$(AUTOCONF_PPSI): $(obj-ppsi)
+
+AUTOCONF_PPSI-$(CONFIG_PPSI) = $(AUTOCONF_PPSI)
+
+# below have dependency on $(AUTOCONF_PPSI) file
+REQUIRE_AUTOCONF_PPSI+= \
+	monitor/monitor_ppsi.o \
+	dump-info.o \
+	wrc_main.o \
+
+# some files require $(AUTOCONF_PPSI) to be present before build
+$(REQUIRE_AUTOCONF_PPSI): $(AUTOCONF_PPSI)
+# and wants to include $(AUTOCONF_PPSI) during the build
+$(REQUIRE_AUTOCONF_PPSI): CFLAGS+=-include $(AUTOCONF_PPSI)
+
+
 clean:
 	rm -f $(OBJS) config.o pconfig.o revision.o $(OUTPUT).elf \
 		$(LDS) \
@@ -229,7 +249,7 @@ liblinux:
 extest:
 	$(MAKE) -C liblinux/extest CC=cc
 
-tools: .config gitmodules liblinux extest
+tools: .config gitmodules liblinux extest $(AUTOCONF_PPSI-y)
 	$(MAKE) -C tools
 
 tools-diag: liblinux extest

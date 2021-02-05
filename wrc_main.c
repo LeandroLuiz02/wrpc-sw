@@ -34,6 +34,7 @@
 #include <dev/rxts_calibrator.h>
 #include <dev/flash.h>
 #include <dev/gpio.h>
+#include <netconsole.h>
 
 #include <wrc_ptp.h>
 #include <system_checks.h>
@@ -89,6 +90,7 @@ static void wrc_initialize(void)
 #ifndef BOARD_HAS_CUSTOM_NETWORK_INIT
 	net_rst();
 	ep_init( &wrc_endpoint_dev, (void *) BASE_EP );
+	netif_register_device( "wr0", "default", &wrc_endpoint_dev );
 	/* Sleep for 1s to make sure WRS v4.2 always realizes that
 	 * the link is down */
 	timer_delay_ms(200);
@@ -112,7 +114,6 @@ static void wrc_initialize(void)
 	_endram = ENDRAM_MAGIC;
 
 	wrc_ptp_set_mode(WRC_MODE_SLAVE);
-	wrc_ptp_start();
 
 	wrc_tasks_accounting_init();
 	wrc_board_create_tasks();
@@ -146,11 +147,8 @@ static int wrc_check_link(void)
 		gen_gpio_out(&pin_sysc_led_link, 0);
 		link_status = NETIF_LINK_WENT_DOWN;
 		wrc_ptp_stop();
+		wrc_ptp_link_down();
 		rv = 1;
-		/* special case */
-		spll_init(SPLL_MODE_FREE_RUNNING_MASTER, 0, SPLL_FLAG_ALIGN_PPS);
-		shw_pps_gen_enable_output(0);
-
 	} else
 		link_status = (state ? NETIF_LINK_UP : NETIF_LINK_DOWN);
 
@@ -217,7 +215,7 @@ static int wrc_dispatch_ptp_events_poll(void)
 {
 	extern struct pp_instance ppi_static;
 	struct pp_instance *ppi = &ppi_static;
-	struct wr_servo_state *ss = &((struct wr_data *)ppi->ext_data)->servo_state;
+	struct pp_servo *ss = SRV(ppi);//= &((struct wr_data *)ppi->ext_data)->servo_state;
 
 	int mode = wrc_ptp_get_mode();
 
@@ -249,12 +247,12 @@ static int wrc_dispatch_ptp_events_poll(void)
 	{
 		if( ppi->state == PPS_SLAVE )
 		{
-			if( ss->state == WR_TRACK_PHASE && prev_servo_state != WR_TRACK_PHASE )
+			if( ss->state == WRH_TRACK_PHASE && prev_servo_state != WRH_TRACK_PHASE )
 			{
 				prev_timing_ok = 1;
 				event_post( WRC_EVENT_TIMING_UP );
 			}
-			else if( ss->state != WR_TRACK_PHASE && prev_servo_state == WR_TRACK_PHASE )
+			else if( ss->state != WRH_TRACK_PHASE && prev_servo_state == WRH_TRACK_PHASE )
 			{
 				prev_timing_ok = 0;
 				event_post( WRC_EVENT_TIMING_DOWN );
@@ -282,6 +280,7 @@ static void create_tasks(void)
 	wrc_task_create( "check-link", NULL, wrc_check_link );
 	wrc_task_create( "uptime", init_uptime, update_uptime );
 	wrc_task_create( "ptp", NULL, wrc_ptp_update);
+	wrc_task_create( "ptp_bmc", NULL, wrc_ptp_bmc_update);
 	wrc_task_create( "shell+gui", shell_boot_script, ui_update );
 	wrc_task_create( "spll-bh", NULL, spll_update );
 	wrc_task_create( "ptp-events", wrc_dispatch_ptp_events_init, wrc_dispatch_ptp_events_poll );
@@ -321,6 +320,11 @@ static void create_tasks(void)
 
 #ifdef CONFIG_WR_DIAG
 	wrc_task_create( "diags", NULL, wrc_wr_diags );
+#endif
+
+#ifdef CONFIG_NETCONSOLE
+	t = wrc_task_create( "netconsole", netconsole_init, netconsole_poll );
+	wrc_task_set_enable( t, is_link_up );
 #endif
 }
 

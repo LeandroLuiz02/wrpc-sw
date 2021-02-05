@@ -24,6 +24,17 @@ obj-$(CONFIG_IP) +=				shell/cmd_ip.o
 obj-$(CONFIG_PPSI) +=				shell/cmd_verbose.o
 obj-$(CONFIG_CMD_CONFIG) +=			shell/cmd_config.o
 obj-$(CONFIG_CMD_SLEEP) +=			shell/cmd_sleep.o
+obj-$(CONFIG_CMD_NETCONSOLE) +=			shell/cmd_netconsole.o
 obj-$(CONFIG_CMD_LL) +=				shell/cmd_ll.o
+obj-$(CONFIG_CMD_PPS) +=			shell/cmd_pps.o
+obj-$(CONFIG_CMD_LEAPSEC) +=			shell/cmd_leapsec.o
 obj-$(CONFIG_FLASH_INIT) +=			shell/cmd_init.o
 obj-$(CONFIG_VLAN) +=				shell/cmd_vlan.o
+
+# below have dependency on $(AUTOCONF_PPSI) file
+REQUIRE_AUTOCONF_PPSI += \
+	shell/cmd_leapsec.o \
+	shell/cmd_pps.o \
+	shell/cmd_ptp.o \
+	shell/cmd_ptrack.o \
+	shell/cmd_verbose.o \

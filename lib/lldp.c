@@ -21,7 +21,6 @@
 #include "ipv4.h"
 #include "shell.h"
 #include "dev/syscon.h"
-#include <wrpc.h> /*needed for htons()*/
 
 static uint8_t lldpdu[LLDP_MAX_PKT_LEN];
 static uint16_t lldpdu_len;
@@ -246,7 +245,7 @@ int lldp_poll(void)
 	static uint8_t old_mac[ETH_ALEN];
 
 	/* no extra traffic when abscal is in progress */
-	if (HAS_ABSCAL && ptp_mode == WRC_MODE_ABSCAL)
+	if (HAS_ABSCAL && wrc_ptp_is_abscal())
 		return 0;
 
 	/* periodic tasks */

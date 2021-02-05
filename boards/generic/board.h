@@ -3,6 +3,9 @@
  *
  * Released according to the GNU GPL, version 2 or any later version.
  */
+
+#include <netconsole.h>
+
 #ifndef __BOARD_WRC_H
 #define __BOARD_WRC_H
 /*
@@ -59,9 +62,9 @@
 #define BOARD_MAX_CHAN_AUX		2
 #define BOARD_MAX_PTRACKERS		1
 
-#define CONFIG_DISALLOW_LONG_DIVISION
+#undef CONFIG_DISALLOW_LONG_DIVISION
 
-#define BOARD_MAX_CONSOLE_DEVICES 1
+#define BOARD_MAX_CONSOLE_DEVICES (1 + HAS_NETCONSOLE)
 
 #define CONSOLE_UART_BAUDRATE 115200
 

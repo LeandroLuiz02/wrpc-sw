@@ -57,13 +57,14 @@ config STACKSIZE
 
 config PRINT_BUFSIZE
 	int
-	default 128
+	default CUSTOM_PRINT_BUFSIZE if DEVELOPER
+	default 256
 
 config RAMSIZE
 	int
 	default 65536 if TARGET_WR_SWITCH
 	default 196608 if TARGET_ERTM14
-	default 131072
+	default 196608
 
 config TEMP_POLL_INTERVAL
 	int
@@ -218,19 +219,32 @@ config SNMP_SET
 	  This option enables support for SET requests for Mini SNMP responder
 
 config SNMP_INIT
-	depends on SNMP && BUILD_INIT
-	default y if BUILD_INIT
-	default n
+	depends on SNMP && SNMP_SET && FLASH_INIT
+	default y
 	boolean "Adds support of changing init script/commands via SNMP"
 	help
 	  This option adds a branch wrpcInitScriptConfigGroup to the SNMP
 
 config SNMP_SDB
-	depends on SNMP && GENSDBFS
+	depends on SNMP && SNMP_SET && GENSDBFS
 	default y
 	boolean "Adds support of generation of SDB via SNMP"
 	help
 	  This option adds a branch wrpcSdbGroup to the SNMP
+
+config SNMP_CMD
+	depends on SNMP && SNMP_SET
+	default y
+	boolean "Allow to run any shell command via SNMP"
+	help
+	  This option adds a branch wrpcShellCmdGroup to the SNMP
+
+config SNMP_NETCONSOLE
+	depends on SNMP && NETCONSOLE
+	default y
+	boolean "Adds support of enabling/disabling netconsole via SNMP"
+	help
+	  This option adds a branch wrpcNetconsoleGroup to the SNMP
 
 config SNMP_AUX_DIAG
 	depends on SNMP && AUX_DIAG
@@ -363,6 +377,53 @@ config LLDP
 	  used by network devices for advertising their identity, capabilities, 
 	  and neighbors on local area network.
 
+config CMD_PPS
+	depends on WR_NODE
+	boolean "Include PPS command"
+	default n
+	help
+	  This enables pps command, which can be used to force PPS output
+	  all the time for all clock classes.
+
+config CMD_LEAPSEC
+	depends on WR_NODE
+	boolean "Include command to control leapsecond value"
+	default n
+	help
+	  This enables leapsec command, which can be used to adjust leap seconds
+	  value.
+
+config NETCONSOLE
+	depends on WR_NODE && IP && !NET_VERBOSE
+	boolean "Include netconsole via UDP"
+	default y
+	help
+	  Include netconsole to be run via UDP
+
+choice
+	prompt "Default mode of netconsole"
+	depends on NETCONSOLE
+	default NETCONSOLE_DEF_DISABLE
+
+config NETCONSOLE_DEF_WAIT
+	boolean "Netconsole is waiting for peer"
+	help
+	  Netconsole is waiting for peer to send a command
+
+config NETCONSOLE_DEF_DISABLE
+	boolean "Netconsole is disabled"
+	help
+	  Use SNMP or shell command to enable netconsole
+
+endchoice
+
+config CMD_NETCONSOLE
+	depends on NETCONSOLE
+	boolean "Include shell command to configure netconsole"
+	default y
+	help
+	  Include command to configure netconsole
+
 #
 # This is a set of configuration options that should not be changed by
 # normal users. If the "developer" menu is used, the binary is tainted.
@@ -487,7 +548,7 @@ config CUSTOM_STACKSIZE
 config CUSTOM_PRINT_BUFSIZE
 	depends on DEVELOPER
 	int "Size for the temporary output string of pp_printf"
-	default 128
+	default 256
 	help
 	  This buffer is constant storage (i.e. wasted space), but it
 	  also constraints the maximum lenght of text that can be written
@@ -550,6 +611,7 @@ config SPLL_FIFO_LOG
 choice
 	prompt "Implementation of pp_printf"
 	depends on DEVELOPER
+	default PRINTF_IS_FULL if EMBEDDED_NODE
 
 config PRINTF_IS_XINT
 	bool "hex-and-int"
@@ -688,12 +750,12 @@ config VLAN_ARRAY_SIZE
 ################# helper configuration items #############
 config PRINTF_XINT
 	boolean
-	default PRINTF_IS_XINT if (DEVELOPER && WR_NODE)
-	default y
+	default PRINTF_IS_XINT
 
 config PRINTF_FULL
 	boolean
-	default PRINTF_IS_FULL
+	default PRINTF_IS_FULL if (DEVELOPER && WR_NODE)
+	default y
 
 config PRINTF_MINI
 	boolean

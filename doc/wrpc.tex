@@ -603,6 +603,8 @@ filename: mac-address       ; first: 310000; last: 310005
 filename: sfp-database      ; first: 320000; last: 32007f
 Formatting SDBFS in Flash(0x2e0000)...
 \end{lstlisting}
+From version 4.3, it is possible to trigger creation of SDBFS via SNMP.
+For more details please refer to section~\ref{Generation of SFBFS via SNMP}.
 
 The other two methods: through the PCIe bus and using a Xilinx JTAG cable are
 described in appendix \ref{appendix:writing_sdbfs}.
@@ -666,11 +668,13 @@ where \texttt{xx:xx:xx:xx:xx:xx} is the MAC address of your board.\\
 Next, you should input calibration fixed delays values and alpha parameters. The
 example below clears any existing entries and adds two Axcen transceivers with
 $\Delta_{TX}$, $\Delta_{RX}$ and $\alpha$ parameters associated with them.
+Please note that the $\alpha$ value is slit into two values. The most
+significant 9 decimal digits and the least significant 9 decimal digits.
 
 \begin{lstlisting}
 wrc# sfp erase
-wrc# sfp add AXGE-1254-0531 180750 148326 72169888
-wrc# sfp add AXGE-3454-0531 180750 148326 -73685416
+wrc# sfp add AXGE-1254-0531 180750 148326 1235332 333756144
+wrc# sfp add AXGE-3454-0531 180750 148326 -1235332 333756144
 \end{lstlisting}
 
 To check the content of the SFP database you can execute the \textit{sfp show}
@@ -713,7 +717,9 @@ Cesium clock). Depending on your board you should connect:
   \item \textbf{VFC-HD}: DIO mezzanine LEMO No.4 for 1-PPS, LEMO No.5 for 10MHz
 \end{itemize*}
 
-\vspace{1em}
+% ==========================================================================
+\subsection{Init script}
+\label{Init script}
 WRPC has a possibility to load user-defined intialization script on every
 startup. If you run WRPC release v4.1 or higher, the default LM32 software
 comes with a built-in init script. The default script disables VLAN support,
@@ -819,20 +825,23 @@ WR synchronization status:
 wrc# gui
 \end{lstlisting}
 
-The information is presented in a clear, auto-refreshing screen (see the figure blow). 
+The information is presented in a clear, auto-refreshing screen (see the
+figure below).
 The information is refreshed at every WR iteration or periodically if
-nothing else happens (so you see an up-to-date timestamp). The period
-defaults to 1 second and can be changed using the \texttt{refresh} command. To
-exit from this console mode press <Esc>. A full description of the information
+nothing else happens (so you see an up-to-date timestamp). Only values are
+updated at every refresh. To force refresh of entire gui please press
+\texttt{r} key. To exit from this console mode press \texttt{<Esc>} or
+\texttt{q}. A full description of the information
 reporter by \textit{gui} is provided in Appendix \ref{WRPC GUI elements}.
 
 \noindent\textbf{Note:} the \textit{Synchronization status} and \textit{Timing
 parameters} in \texttt{gui} are available only in the WR Slave mode. When
-running as WR Master, you can see only the current date and time,
-link status, Tx and Rx packet counters, IP, lock and calibration status.
+running as \textit{WR Master} or \textit{WR Grand Master}, you can see only
+the part above \texttt{Synchronization status}.
+
 
 \vspace{1em}
-\includegraphics[width=12cm]{wrpc_mon.png}
+\includegraphics[width=15cm]{wrpc_mon.png}
 \vspace{1em}
 
 If you want to log statistics from the WRPC operation, it is better to use a
@@ -870,6 +879,93 @@ Depending on your board, 1-PPS output is produced on:
   \item \textbf{SVEC}: SVEC LEMO No.1
   \item \textbf{VFC-HD}: VFC-HD LEMO L3
 \end{itemize*}
+
+% ==========================================================================
+\subsection{Netconsole}
+\label{Netconsole}
+From the version 4.3 of WRPC the output from the serial console can be
+redirected\footnote{Such redirection includes \texttt{gui} command.
+To exit from \texttt{gui} when using the netconsole, please type
+\texttt{<Esc>} followed by \texttt{<Enter>}.}
+using UDP packets (port 55) to a remote host in the network via WR port. To use such
+functionality WRPC has to have compiled in option \texttt{CONFIG\_NETCONSOLE}.
+If option \texttt{NETCONSOLE\_DEF\_WAIT} is enabled WRPC after the start will
+wait for peer to comunicate with it. On the other hand if option
+\texttt{NETCONSOLE\_DEF\_DISABLE} is activated, then WRPC will not respond
+to any netconsole requests.
+
+To be able to configure netconsole from WRPC's command line the option
+\texttt{CONFIG\_CMD\_NETCONSOLE} has to be set in the dot-config.
+
+To make sure that netconsole is enabled, please execute \texttt{netconsole}
+command in the WRPC's shell:
+\begin{lstlisting}
+wrc# netconsole
+netconsole is waiting for peer
+\end{lstlisting}
+The above means that netconsole is ready to accept connections from a remote
+host. On the remote host, please execute the \texttt{nc}
+(or \texttt{netcat})\footnote{This is a standard tool which is installed on
+most Linux machines by default} command with the following parameters:
+\begin{lstlisting}
+host_pc$ nc -u <IP> 55
+\end{lstlisting}
+When any command is send via netconsole to WRPC it will start responding
+immediately. Please note that to trigger the sending of a command the
+\texttt{<enter>} key has to be pressed.
+
+Example session of a netconsole may look the following (on a host):
+\begin{lstlisting}
+$ nc -u 192.168.1.20 55
+
+
+wrc#temp
+ temp
+pcb:46.3750
+wrc#mode
+ mode
+running; e2e slave
+wrc#
+\end{lstlisting}
+At the same time the follwing will be printed on the serial console:
+\begin{lstlisting}
+wrc# temp
+pcb:46.3750
+wrc# mode
+running; e2e slave
+wrc#
+\end{lstlisting}
+
+Please note that all the input given on a host side will be printed twice in
+the netconsole, but only once in serial console. This will also bring an extra
+newline when \texttt{<enter>} is pressed. When all the interaction is made from
+a serial console, no extra newlines are introduced.
+Such behavior is caused by a \texttt{nc}. To get rid of such behavior custom
+version of \texttt{nc} would have to be distributed, which intentionally is
+avoided.
+
+To disable netconsole completely, please execute command:
+\begin{lstlisting}
+wrc# netconsole disable
+netconsole disabled
+\end{lstlisting}
+To make netconsole to listen for incoming messages please execute the folling
+command:
+\begin{lstlisting}
+wrc# netconsole wait
+netconsole is waiting for peer
+\end{lstlisting}
+Alternatively IP, MAC and port number of netconsole's peer can be entered
+manually, so netconsole will start sending packets to a given location.
+\begin{lstlisting}
+wrc# netconsole 90:e2:ba:1a:c6:78 192.168.1.1 53364
+netconsole's peer: MAC: 90:e2:ba:1a:c6:78 IP: 192.168.1.1 port: 53364
+\end{lstlisting}
+Worth to mentione here is that \texttt{nc} accepts parameter \texttt{-p}
+which specifies on which port \texttt{nc} will communicate on the host side.
+
+WRPC also may have support of configuring netconsole via SNMP, for details
+please check the section~\ref{Configuring netconsole via SNMP}.
 
 % ==========================================================================
 \newpage
@@ -1070,7 +1166,7 @@ Simple verification of performed actions:\\
 The same add can also be achieved by performing \texttt{sfp add} command in
 the WRPC's console:
 \begin{lstlisting}
- wrc# sfp add NEW-SFP 1111 2222 3333
+ wrc# sfp add NEW-SFP 1111 2222 0 3333
  Update existing SFP entry
  3 SFPs in DB
 \end{lstlisting}
@@ -1105,6 +1201,174 @@ To verify that database is empty:
  wrc# sfp show
  SFP database empty
 \end{lstlisting}
+
+% ==========================================================================
+\subsubsection{Setting up init script via SNMP}
+\label{Setting up init script via SNMP}
+
+When options \texttt{CONFIG\_SNMP\_INIT}, \texttt{CONFIG\_FLASH\_INIT}
+and \texttt{CONFIG\_SNMP\_SET} are enabled in the dot-config, it is possible to
+add a command at the end of an \textit{init script}. For more information about
+the~\textit{init script} please refer to section~\ref{Init script} and
+description of an \texttt{init} command in
+\hyperlink{cmd init add}{appendix~\ref{WRPC Shell commands}}.
+
+To add a command at the end of an init script, first specify a command by
+filling OID \texttt{wrpcInitScriptConfigLine.0}, then trigger the write to
+a Flash by setting \texttt{writeToFlash} to
+OID \texttt{wrpcInitScriptConfigLine.0}.
+
+The following example adds \texttt{my\_init\_command} at the end of
+the init script:
+\begin{lstlisting}
+$ snmpset $SNMP_OPT wrpcInitScriptConfigLine.0 = "my_init_command"
+WR-WRPC-MIB::wrpcInitScriptConfigLine.0 = STRING: my_init_command
+$ snmpset $SNMP_OPT wrpcInitScriptConfigApply.0 = writeToFlash
+WR-WRPC-MIB::wrpcInitScriptConfigApply.0 = INTEGER: applySuccessful(100)
+\end{lstlisting}
+
+To erase the init script please write \texttt{eraseFlash} to
+OID \texttt{wrpcInitScriptConfigApply.0}. For example:
+\begin{lstlisting}
+$ snmpset $SNMP_OPT wrpcInitScriptConfigApply.0 = eraseFlash
+WR-WRPC-MIB::wrpcInitScriptConfigApply.0 = INTEGER: applySuccessful(100)
+\end{lstlisting}
+As in version 4.3, there is no way to dump init scrips via SNMP.
+
+% ==========================================================================
+\subsubsection{Generation of SFBFS via SNMP}
+\label{Generation of SFBFS via SNMP}
+When options \texttt{CONFIG\_SNMP\_SDB}, \texttt{CONFIG\_GENSDBFS}
+and \texttt{CONFIG\_SNMP\_SET}
+are enabled in the dot-config, it is possible to trigger creation and erase
+of SDBFS image in a Flash via SNMP. The final result is the same as executing
+a command \hyperlink{cmd sdb fs}{\texttt{sdb~fs~...}} for creation or
+\hyperlink{cmd sdb fse}{\texttt{sdb~fse~...}} for erase from a serial console.
+
+To create SDBFS image in the flash, please set first parameters of used Flash:
+\begin{lstlisting}
+$ snmpset $SNMP_OPT wrpcSdbMemType.0 = 0
+WR-WRPC-MIB::wrpcSdbMemType.0 = INTEGER: flash(0)
+$ snmpset $SNMP_OPT wrpcSdbBaseAddr.0 = 3014656
+WR-WRPC-MIB::wrpcSdbBaseAddr.0 = INTEGER: 3014656
+$ snmpset $SNMP_OPT wrpcSdbParam.0 = 64
+WR-WRPC-MIB::wrpcSdbParam.0 = INTEGER: 64
+\end{lstlisting}
+For details about \texttt{memtype}, \texttt{baseadr} and \texttt{param}, please
+refer to a description of a command
+\hyperlink{cmd sdb fs}{\texttt{sdb fs <memtype> <baseadr> <param>}}
+in the~\hyperlink{cmd sdb fs}{appendix~\ref{WRPC Shell commands}}.
+
+Then trigger the creation itself:
+\begin{lstlisting}
+$ snmpset -t 20 $SNMP_OPT wrpcSdbApply.0 = writeToFlash
+WR-WRPC-MIB::wrpcSdbApply.0 = INTEGER: applySuccessful(100)
+\end{lstlisting}
+When creating or erasing the Flash, it is important to set timeout longer than
+usual (in this case 20 seconds, parameter \texttt{-t 20} of \texttt{snmpset}),
+otherwise \texttt{snmpset} will resend request to write to memory.
+
+The way to erase flash is very similar to the creation:
+\begin{lstlisting}
+$ snmpset $SNMP_OPT wrpcSdbMemType.0 = 0
+WR-WRPC-MIB::wrpcSdbMemType.0 = INTEGER: flash(0)
+$ snmpset $SNMP_OPT wrpcSdbBaseAddr.0 = 3014656
+WR-WRPC-MIB::wrpcSdbBaseAddr.0 = INTEGER: 3014656
+$ snmpset $SNMP_OPT wrpcSdbParam.0 = 64
+WR-WRPC-MIB::wrpcSdbParam.0 = INTEGER: 64
+$ snmpset -t 20 $SNMP_OPT wrpcSdbApply.0 = eraseFlash
+WR-WRPC-MIB::wrpcSdbApply.0 = INTEGER: applySuccessful(100)
+\end{lstlisting}
+
+% ==========================================================================
+\subsubsection{Configuring netconsole via SNMP}
+\label{Configuring netconsole via SNMP}
+
+It is possible to check the status and configure the netconsole described in
+section~\ref{Netconsole} via SNMP. Additionally it is possible to get MAC, IP
+and port number of a peer via SNMP.
+
+To be albe to read the above parameters the option
+\texttt{CONFIG\_SNMP\_NETCONSOLE} has to be enabled.
+\begin{lstlisting}
+$ snmpwalk $SNMP_OPT wrpcNetconsoleGetGroup
+WR-WRPC-MIB::wrpcNetconsoleGetStatus.0 = INTEGER: enabled(1)
+WR-WRPC-MIB::wrpcNetconsoleGetPeerMac.0 = STRING: 90:e2:ba:1a:c6:78
+WR-WRPC-MIB::wrpcNetconsoleGetPeerIp.0 = IpAddress: 192.168.1.1
+WR-WRPC-MIB::wrpcNetconsoleGetPeerPort.0 = INTEGER: 53364
+\end{lstlisting}
+
+If SNMP sets are enabled with option \texttt{CONFIG\_SNMP\_SET}, it is possible
+to change netconsole's mode to \texttt{disable} and \texttt{wait} via SNMP.
+For more details please check section~\ref{Netconsole}.
+
+Set netconsole's mode to \texttt{wait}:
+\begin{lstlisting}
+$ snmpset $SNMP_OPT wrpcNetconsoleSetApply.0 = wait
+WR-WRPC-MIB::wrpcNetconsoleSetApply.0 = INTEGER: applySuccessful(100)
+\end{lstlisting}
+
+Set netconsole's mode to \texttt{disable}.
+\begin{lstlisting}
+$ snmpset $SNMP_OPT wrpcNetconsoleSetApply.0 = disable
+WR-WRPC-MIB::wrpcNetconsoleSetApply.0 = INTEGER: applySuccessful(100)
+\end{lstlisting}
+
+
+As today there is no possibility to set parameters like MAC, IP and port number
+of netconsole's peer via SNMP.
+
+% ==========================================================================
+\subsubsection{Run shell command via SNMP}
+\label{Run shell command via SNMP}
+
+When options \texttt{CONFIG\_SNMP\_CMD} and \texttt{CONFIG\_SNMP\_SET} are
+enabled in a dot-config, it is possible to trigger execution of any shell
+command via SNMP.
+
+To trigger an exectuion of a command, the command has to be set to
+the OID \texttt{wrpcShellCmdLine.0}. To prevent accidential runs, the magic
+number \texttt{44451} (literal \texttt{magic} can be used instead) has to be
+set in the OID \texttt{wrpcShellCmdMagic.0}.
+Finally, to trigger the execution set the OID \texttt{wrpcShellCmdRun.0} with
+value 12 (or literal \texttt{execute}). The last set will return information
+whether the triggering of a command was successful or not. To figure out if
+the command succeeded, please check the return value stored in the OID
+\texttt{wrpcShellCmdReturnCode.0}
+
+The example below shows the execution of \texttt{ip} command via SNMP.
+\begin{lstlisting}
+$ snmpset $SNMP_OPT wrpcShellCmdLine.0 = "ip"
+WR-WRPC-MIB::wrpcShellCmdLine.0 = STRING: ver
+$ snmpset $SNMP_OPT wrpcShellCmdMagic.0 = magic
+WR-WRPC-MIB::wrpcShellCmdMagic.0 = INTEGER: magic(44451)
+$ snmpset $SNMP_OPT wrpcShellCmdRun.0 = execute
+WR-WRPC-MIB::wrpcShellCmdRun.0 = INTEGER: executionSuccessful(100)
+\end{lstlisting}
+
+To check the return value:
+\begin{lstlisting}
+$ snmpget $SNMP_OPT WR-WRPC-MIB::wrpcShellCmdReturnCode
+WR-WRPC-MIB::wrpcShellCmdReturnCode.0 = INTEGER: 0
+\end{lstlisting}
+
+The \texttt{ip} command triggered in the above example caused the following
+output on a serial console:
+\begin{lstlisting}
+Execute command from SNMP: "ip"
+IP-address: 192.168.1.20 (from bootp)
+\end{lstlisting}
+
+The output of the executed command is printed only on the serial
+console\footnote{However, it can be also mirrored to the netconsole.
+For details, please check the section~\ref{Netconsole}.}.
+As today it cannot be forwarded via SNMP.
+
+\textbf{Note:} the maximum supported length of a command is the same as for
+the serial console's shell, which is 80 chars.
+
+\textbf{Note:} Be careful with interactive commands. It is possible to start
+such command (e.g. \texttt{gui}) via SNMP, but it is not possible to stop it.
 
 % ==========================================================================
 \newpage
@@ -1614,6 +1878,12 @@ udp-based network services, in addition to \textit{ptp}:
 
 	If \texttt{CONFIG\_SNMP} is set, the node is a snmp agent.
         See section \ref{Diagnostics via SNMP} for details.\\
+& \\
+\textit{ netconsole } &
+
+	If \texttt{CONFIG\_NETCONSOLE} is set, the node may mirror all serial
+	console's output to the remote host. See section~\ref{Netconsole}
+	for details.\\
 
 \end{longtable}
 
@@ -1786,8 +2056,8 @@ tools used to build and run it, you can write to our mailing list
 
   \code{help} & lists available commands in this instance of the WRPC \\
 
-  \code{init add <cmd>} & adds shell command at the end of the initialization
-    script \\
+  \code{init add <cmd>}\hypertarget{cmd init add}{} & adds shell command at
+    the end of the initialization script \\
 
   \code{init boot} & executes the script stored in Flash/EEPROM (the same
     action is done automatically when WRPC starts after resetting LM32) \\
@@ -1800,6 +2070,12 @@ tools used to build and run it, you can write to our mailing list
   \code{ip get} & \\
   \code{ip set <ip>} & reports or sets the IPv4 address of the WRPC (only
     available if \texttt{CONFIG\_IP} is set at build time \\
+
+  \code{leapsec} & \\
+  \code{leapsec get} & get number of leap seconds from PTP and from the system \\
+
+  \code{leapsec set <num>} & get number of leap seconds for PTP. This settings
+    make sense only for GM mode \\
 
   \code{ltest} & \\
   \code{ltest fake <nsecs>} & fakes delay to trigger latency failures (for
@@ -1825,6 +2101,20 @@ tools used to build and run it, you can write to our mailing list
     clock (requires external 10MHz and 1-PPS reference), Master or Slave.
     After setting the mode, \texttt{ptp start} must be re-issued \\
 
+  \code{netconsole} & prints peer's MAC, IP and port number used by
+    the netconsole; to enable \code{netconsole} command
+    \texttt{CONFIG\_CMD\_NETCONSOLE} has to be set in the dot-config; for more
+    information about netconsole please refer to the section \ref{Netconsole}\\
+
+  \code{netconsole <MAC> <IP> <PORT>} & sets peer's MAC, IP and port number for
+    the netconsole \\
+
+  \code{netconsole wait} & let the netconsole to wait for communication from
+    peer; netconsole will transmit when the next netconsole's packet arrives to
+    WRPC \\
+
+  \code{netconsole disable} & disable netconsole until enabled manually \\
+
   \code{pll cl <channel>} & checks if SoftPLL is locked for the channel \\
 
   \code{pll gdac <index>} & gets dac's value \\
@@ -1842,6 +2132,11 @@ tools used to build and run it, you can write to our mailing list
   \code{pll start <channel>} & starts SoftPLL for the channel \\
 
   \code{pll stop <channel>} & stops SoftPLL for the channel \\
+
+  \code{pps} & check status of a PPS generation independent of PPSI state \\
+
+  \code{pps force <on|off>} & enable/disable PPS generation independent of
+    PPSI state. It is usefull mostly for testing purposes \\
 
   \code{ps} & prints the list of running tasks (processes) in the CPU. For
     each task you get the number of iterations, the maximum execution time
@@ -1878,8 +2173,8 @@ tools used to build and run it, you can write to our mailing list
     only generated one time. \\
 
   \code{sdb} & prints devices connected to the Wishbone bus inside WRPC \\
-
-  \code{sdb fs <memtype> <baseadr> <param>} & creates SDBFS image under
+  \code{sdb fs <memtype> <baseadr> <param>}\hypertarget{cmd sdb fs}{} & creates
+    SDBFS image under
     specified \code{<baseadr>} in selected storage depending on \code{<memtype>}
     ({\bf 0} - Flash, {\bf 1} - I2C EEPROM, {\bf 2} - 1-Wire EEPROM). The meaning
     of last parameter \code{<param>} depends on the type of selected storage. It
@@ -1893,7 +2188,8 @@ tools used to build and run it, you can write to our mailing list
     as VHDL generic parameters of the WR PTP Core. Command \code{sdb} is
     available if \texttt{CONFIG\_GENSDBFS} is set.\\
 
-  \code{sdb fse <memtype> <baseadr> <param>} & erases SDBFS image under
+  \code{sdb fse <memtype> <baseadr> <param>}\hypertarget{cmd sdb fse}{} &
+    erases SDBFS image under
     specified \code{<baseadr>} from selected storage depending on
     \code{<memtype>} ({\bf 0} - Flash, {\bf 1} - I2C EEPROM, {\bf 2} - 1-Wire
     EEPROM). The meaning of last parameter \code{<param>} depends on the type
@@ -1907,8 +2203,10 @@ tools used to build and run it, you can write to our mailing list
     as VHDL generic parameters of the WR PTP Core. Command \code{sdb} is
     available if \texttt{CONFIG\_GENSDBFS} is set.\\
 
-  \code{sfp add <PN> <deltaTx> <deltaRx> <alpha>} & stores calibration
-    parameters for SFP to a file in Flash/EEPROM \\
+  \code{sfp add <PN> <deltaTx> <deltaRx> <alphaH> <alphaL>} & stores calibration
+    parameters for SFP to a file in Flash/EEPROM. \code{<alphaL>} is the 9 lower
+    decimal digits of alpha value, \code{<alphaH>} are the 9 higher decimal
+    digits. For negative alpha values only \code{<alphaH>} is negative. \\
 
   \code{sfp erase} & erases the SFP database stored in the Flash/EEPROM \\
 

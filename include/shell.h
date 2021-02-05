@@ -9,6 +9,9 @@
 #define UI_SHELL_MODE 0
 #define UI_GUI_MODE 1
 
+#define SH_MAX_LINE_LEN 80
+#define SH_MAX_ARGS 8
+
 extern int wrc_ui_mode;
 extern int wrc_stat_running;
 

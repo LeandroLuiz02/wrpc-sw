@@ -18,18 +18,27 @@
 #endif
 
 extern int wrc_phase_tracking;
+extern struct pp_globals *ppg;
 
 static int cmd_ptrack(const char *args[])
 {
+	struct pp_instance *ppi = ppg->pp_instances;
+
+#ifdef CONFIG_HAS_EXT_WR
 	if (args[0] && !strcasecmp(args[0], "enable")) {
-		wr_servo_enable_tracking(1);
-		wrc_phase_tracking = 1;
+		wrh_servo_enable_tracking(1);
 	}
 	else if (args[0] && !strcasecmp(args[0], "disable")) {
-		wr_servo_enable_tracking(0);
-		wrc_phase_tracking = 0;
+		wrh_servo_enable_tracking(0);
 	}
-	pp_printf("phase tracking %s\n", wrc_phase_tracking?"ON":"OFF");
+
+	if (ppi->protocol_extension==PPSI_EXT_WR && ppi->extState==PP_EXSTATE_ACTIVE)
+		pp_printf("phase tracking %s\n", WRH_SRV(ppi)->tracking_enabled?"ON":"OFF");
+#endif
+
+#if CONFIG_HAS_EXT_L1SYNC
+	pp_printf("phase tracking not implemented for L1sync!\n");
+#endif
 
 	return 0;
 }

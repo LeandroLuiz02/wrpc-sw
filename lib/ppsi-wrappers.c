@@ -47,12 +47,14 @@ int wrpc_get_port_state(struct hal_port_state *port, const char *port_name)
 		port->mode = HEXP_PORT_MODE_WR_MASTER;
 
 	/* all deltas are added anyway */
-	ep_get_deltas(&wrc_endpoint_dev, &port->calib.delta_tx_board,
-		      &port->calib.delta_rx_board);
+	ep_get_deltas(&wrc_endpoint_dev, &port->calib.sfp.delta_tx_ps,
+		      &port->calib.sfp.delta_rx_ps);
+	/* get the bitslide */
+	port->calib.bitslide_ps = ep_get_bitslide(&wrc_endpoint_dev);
 	port->calib.delta_tx_phy = 0;
 	port->calib.delta_rx_phy = 0;
-	port->calib.sfp.delta_tx_ps = 0;
-	port->calib.sfp.delta_rx_ps = 0;
+	port->calib.delta_tx_board = 0;
+	port->calib.delta_rx_board = 0;
 	read_phase_val(port);
 	port->state = ep_link_up(&wrc_endpoint_dev, NULL);
 	port->calib.tx_calibrated = 1;

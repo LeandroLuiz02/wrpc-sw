@@ -97,7 +97,6 @@ void cprintf(int color, const char *fmt, ...)
 	va_start(ap, fmt);
 	pp_vprintf(fmt, ap);
 	va_end(ap);
-	pp_printf("\e[m");
 }
 
 void pcprintf(int row, int col, int color, const char *fmt, ...)
@@ -108,7 +107,15 @@ void pcprintf(int row, int col, int color, const char *fmt, ...)
 	va_start(ap, fmt);
 	pp_vprintf(fmt, ap);
 	va_end(ap);
-	pp_printf("\e[m");
+}
+
+void pprintf(int row, int col, const char *fmt, ...)
+{
+	va_list ap;
+	pp_printf("\e[%d;%df", row, col);
+	va_start(ap, fmt);
+	pp_vprintf(fmt, ap);
+	va_end(ap);
 }
 
 void __debug_printf(const char *fmt, ...)
@@ -123,6 +130,11 @@ void __debug_printf(const char *fmt, ...)
 void term_clear(void)
 {
 	pp_printf("\e[2J\e[1;1H");
+}
+
+void term_clear_to_end(void)
+{
+	pp_printf("\e[J");
 }
 
 int tmo_init(timeout_t *tmo, uint32_t milliseconds)
