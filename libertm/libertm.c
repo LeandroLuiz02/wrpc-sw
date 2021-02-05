@@ -84,6 +84,7 @@ struct ertm_state {
 	struct ertm_voltages	voltages;
 	struct ertm_nco_reset	nco_reset;
 	struct ertm_wr_status	wr_status;
+	int			ptp_enabled;
 	uint32_t		reserved[64];
 };
 
@@ -458,11 +459,6 @@ int ertm_wr_diags(struct ertm_status *handle, struct ertm_wr_status *status)
 	return 0;
 }
 
-int ertm_wr_enable(struct ertm_status *handle, int enable)
-{
-	return ERTM_NOT_IMPLEMENTED;
-}
-
 int ertm_wr_status(struct ertm_status *handle, int *link_up, int *is_locked)
 {
 	struct ertm_wr_status status;
@@ -476,9 +472,9 @@ int ertm_wr_status(struct ertm_status *handle, int *link_up, int *is_locked)
 	return 0;
 }
 
-#if 0
-/* WR enable/diagnostics */
-struct ertm_wr_status;						/* to be defined with rabbits */
-int ertm_wr_enable(struct ertm_status *handle, int enable);	/* free-running OCXO if disabled */
-
-#endif
+int ertm_wr_enable(struct ertm_status *handle, int enable)
+{
+	/* do a call to ptp start/stop */
+	handle->state->ptp_enabled = enable;
+	return 0;
+}
