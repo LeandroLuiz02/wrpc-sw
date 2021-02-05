@@ -46,6 +46,7 @@ void ad9910_write(struct ad9910_device *dev, uint32_t reg, uint64_t value, int n
 int ad9910_probe( struct ad9910_device *dev, struct spi_bus *bus, void (*trigger_io_update)(struct ad9910_device *dev) );
 void ad9910_trigger_update(struct ad9910_device *dev);
 void ad9910_configure_sync( struct ad9910_device *dev, int enable, int fine_delay_taps );
-uint64_t ad9910_frequency_to_ftw( struct ad9910_device *dev, uint64_t freq_hz );
+uint64_t ad9910_ftw_to_frequency( uint64_t ftw );
+uint64_t ad9910_frequency_to_ftw( uint64_t freq_hz );
 
 #endif
