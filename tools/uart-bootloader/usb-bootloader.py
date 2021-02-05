@@ -219,8 +219,9 @@ class DSIBootloader:
             if r[0] != self.RSP_HELLO:
                 return None
             break
-        board_id="default"
+        board_id=""
         if len( r[1] ) < 8:
+            board_id="default"
             print("Assuming default board ID. Old WRCore bootloader?")
         else:
             for i in range(0,8):
@@ -268,20 +269,22 @@ class DSIBootloader:
             image = fw
         else:
             raise Exception("Unknown flash target: %s" % target)
-        return self.do_program_flash(image, offset)
+        self.do_program_flash(image, offset)
+        self.cmd_jump( 0x4 ); # boot WRCore back!
+
         
     def program_flash(self, fw, target):
         #print("PGM", target)
         if self.target_board == "ertm14m0" or self.target_board == "ertm14m1":
             return self.program_ertm14_mmc(fw, target)
-        elif self.target_board == "ertm14fp":
+        elif self.target_board == "ertm14fp" or self.target_board == "default":
             return self.program_ertm14_wrc(fw, target)
 
     def do_program_flash(self, fw, offset = 0, sector_size = 0x10000):
         remaining = len(fw)
-
-        for i in range(offset / sector_size,
-                       (offset + (remaining + sector_size - 1)) / sector_size):
+        
+        for i in range( offset // sector_size,
+                       (offset + (remaining + sector_size - 1)) // sector_size):
             sys.stdout.write("\rErasing sector 0x%x          " %
                              (i * sector_size))
             sys.stdout.flush()
@@ -292,7 +295,7 @@ class DSIBootloader:
             n = 256 if remaining > 256 else remaining
             data = []
             for b in fw[p:p + n]:
-                data.append(ord(b))
+                data.append(b)
 
             #print("b0 %x" % data[0])
 
@@ -305,7 +308,7 @@ class DSIBootloader:
             sys.stdout.flush()
 
         print(
-            "\nFlashing complete. Please power-off and power-on again your board."
+            "\nFlashing complete."
         )
 
     def load_ram(self, image, addr):
@@ -375,8 +378,8 @@ def run_terminal(ser):
 	    # sys.stderr.flush()
 
         a = os.read(sys.stdin.fileno(), 1)
-        if a and ord(a) == 1:
-            return      # exit on Ctrl-A
+        if a and ( ord(a) == 1 or ord(a) == 4 ):
+            return      # exit on Ctrl-A or Ctrl-D
         else:
             ser.send(a)
 
