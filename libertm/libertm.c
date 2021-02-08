@@ -194,7 +194,7 @@ struct ertm_board_info board_info_defaults = {
 	.ertm14_mac1 = 0x00112233445566,
 	.ertm14_mac2 = 0x00223344556677,
 	.ertm15 = 0xbabecafea5a5a515,
-	.firmware_version = "sim-0.0",
+	.firmware_version = "sim-0.0",		/* FIXME */
 	.wrpc_sw_version = "wrpc_sw-sim-0.0",
         .wrpc_sw_commit_id =
 		"8f087ad4e0aa8ede6736506bfdc1fbde",
