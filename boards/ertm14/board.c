@@ -770,16 +770,33 @@ static int control_uart_poll(void)
     if( uart_link_recv( &board.control_uart_link, &pkt, 0 ) > 0 )
     {
         struct uart_packet tx_pkt;
+
         /*... dispatch */
         if( pkt->ptype == ERTM14_UART_PTYPE_PING )
         {
+	    /* build funny pong packet */
+	    static const char hello[] = "i am david\n";
             tx_pkt.ptype = ERTM14_UART_PTYPE_PING;
             tx_pkt.length = 10;
+	    memcpy(&tx_pkt.payload, hello, sizeof(hello));
 
             uart_link_send( &board.control_uart_link, &tx_pkt );
 
             blink(1);
-        }
+        } else if (pkt->ptype == ERTM14_UART_PTYPE_CONFIG_REQ) {
+	    /* build packet with some version info */
+	    int config_id;
+	    struct ertm14_board_state *bs;
+
+	    tx_pkt.ptype = ERTM14_UART_PTYPE_CONFIG_RESP;
+	    config_id = ertm14_get_current_config_id();
+	    bs = ertm14_get_state_for_config(config_id);
+	    tx_pkt.length = sizeof(*bs);
+	    memcpy(&tx_pkt.payload, bs, sizeof(*bs));
+
+	    /* we presume this is binary, snmp or not */
+            uart_link_send(&board.control_uart_link, &tx_pkt);
+	}
     }
 
     return 0;
