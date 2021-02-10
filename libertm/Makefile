@@ -3,7 +3,7 @@
 TARGET = libertm
 CFLAGS += -fPIC -Wall -g
 
-all: libs serial
+all: libs serial ertm-serial
 
 libs: static-lib so-lib
 static-lib: $(TARGET).a
@@ -19,6 +19,8 @@ serial: serial.o
 	$(CC) $(CFLAGS) -o $@ $^ $(LDLIBS) $(LDFLAGS)
 serial.o: $(TARGET).h
 
+ertm-serial: ertm-serial.o
+	$(CC) $(CFLAGS) -o $@ $^ $(LDLIBS) $(LDFLAGS)
 
 clean:
 	rm -f *.o *.a *.so
