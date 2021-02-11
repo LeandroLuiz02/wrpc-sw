@@ -33,18 +33,6 @@
 static const char *usb_serial = "/dev/ttyUSB2";
 static const int serial_speed = 8*115200;
 
-/* struct ertm14_dds_state
-{
-    uint32_t ftw;
-    uint8_t out_state[ERTM14_RF_OUT_MAX_ID + 1];
-    int out_power[ERTM14_RF_OUT_MAX_ID + 1];
-    int amp_power;
-    int ampl_factor;
-    int sync_source;
-    int sync_count;
-};
-*/
-
 void dds_state_to_lo_ref(struct ertm14_dds_state *dds, struct ertm_lo_ref *loref)
 {
 	int i;
@@ -106,13 +94,16 @@ int main(int argc, char *argv[])
         stat = uart_link_recv(link, &rx_pkt, sizeof(*rx_pkt) + 10);
         if (stat > 0) {
 		int i;
+		struct ertm14_board_state *board;
+
 		fprintf(stderr,"recvd %d bytes: \n", rx_pkt->length);
 		for (i = 0; i < rx_pkt->length; i++)
 			fprintf(stderr, "%02x%c", rx_pkt->payload[i],
 				((i+1) % 16 == 0) ? '\n' : ' ');
 		if ((i+1) % 16 != 0)
 			fprintf(stderr, "\n");
-		dds_state_to_lo_ref((struct ertm14_dds_state *)(&rx_pkt->payload[4]), &loref);
+		board = (struct ertm14_board_state *)&rx_pkt->payload[4];
+		dds_state_to_lo_ref(&board->ref, &loref);
 		display_ertm_lo_ref(&loref);
         }
 
