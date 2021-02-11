@@ -51,11 +51,14 @@ void dds_state_to_lo_ref(struct ertm14_dds_state *dds, struct ertm_lo_ref *loref
 
 	loref->freq 				= ntohl(dds->ftw);
 	loref->pll_output_power 		= ntohl(dds->amp_power);
+	loref->pll_output_power 		/= 1000;	/* to dBm */
 	loref->level_adjust 			= ntohl(dds->ampl_factor);
-	for (i = ERTM14_RF_OUT_MIN_ID; i <= ERTM14_RF_OUT_MAX_ID; i++)
-		loref->chpower[i] = ntohl(dds->out_state[i]);
-	for (i = ERTM14_RF_OUT_MIN_ID; i <= ERTM14_RF_OUT_MAX_ID; i++)
-		loref->state[i] = ntohl(dds->out_state[i]);
+	loref->level_adjust 			/= (1<<14);
+	for (i = ERTM14_RF_OUT_MIN_ID; i <= ERTM14_RF_OUT_MAX_ID; i++) {
+		loref->chpower[i] = ntohl(dds->out_power[i]);
+		loref->chpower[i] /= 1000;
+		loref->state[i] = dds->out_state[i];
+	}
 }
 
 static char *state_literal[] = {
@@ -63,6 +66,7 @@ static char *state_literal[] = {
 	[ERTM15_RF_OUT_OFF] = "off",
 	[ERTM15_RF_OUT_MONITOR] = "monitor",
 };
+
 void display_ertm_lo_ref(struct ertm_lo_ref *dds)
 {
 	int i;
@@ -71,8 +75,9 @@ void display_ertm_lo_ref(struct ertm_lo_ref *dds)
 	printf("level adjust: %0.4f\n", dds->level_adjust);
 	printf("pll_out_power: %08x\n", dds->pll_output_power);
 	for (i = ERTM14_RF_OUT_MIN_ID; i <= ERTM14_RF_OUT_MAX_ID; i++)
-		printf("ch: %02d pow: %8.3f %-8s\n",
-		    i, dds->chpower[i], state_literal[dds->state[i]]);
+		printf("ch: %02d pow: %8.3f %d %-8s\n",
+		    i, dds->chpower[i], dds->state[i],
+		    state_literal[dds->state[i]]);
 }
 
 int main(int argc, char *argv[])
@@ -105,9 +110,11 @@ int main(int argc, char *argv[])
 		for (i = 0; i < rx_pkt->length; i++)
 			fprintf(stderr, "%02x%c", rx_pkt->payload[i],
 				((i+1) % 16 == 0) ? '\n' : ' ');
+		if ((i+1) % 16 != 0)
+			fprintf(stderr, "\n");
+		dds_state_to_lo_ref((struct ertm14_dds_state *)(&rx_pkt->payload[4]), &loref);
+		display_ertm_lo_ref(&loref);
         }
-	dds_state_to_lo_ref((struct ertm14_dds_state *)(&rx_pkt->payload[4]), &loref);
-	display_ertm_lo_ref(&loref);
 
 	return 0;
 }
