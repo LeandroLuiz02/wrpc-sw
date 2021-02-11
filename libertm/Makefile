@@ -7,9 +7,6 @@ ERTM_UART_LOCATION = ../lib
 ERTM_BOARD_LOCATION = ../boards/ertm14/
 
 CFLAGS += -I $(ERTM_UART_LOCATION) -I $(ERTM_BOARD_LOCATION)
-CFLAGS += -I ../include -I ..
-# CFLAGS += -DIUART_PLATFORM_LINUX
-CFLAGS += -DIUART_PLATFORM_BARE_METAL
 
 all: libs serial ertm-serial
 

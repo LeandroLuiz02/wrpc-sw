@@ -22,7 +22,7 @@
 #include <fcntl.h>
 
 /* #include "libertm.h" FIXME */
-#include "board.h"
+#include "board-state.h"
 #include "ertm14-uart-link.h"
 
 /* constants of nature for this design */
