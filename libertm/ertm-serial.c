@@ -68,12 +68,47 @@ void display_ertm_lo_ref(struct ertm_lo_ref *dds)
 		    state_literal[dds->state[i]]);
 }
 
+void board_to_state(struct ertm14_board_state *board, struct ertm_state *state)
+{
+	int i;
+
+	dds_state_to_lo_ref(&board->ref, &state->ref);
+	dds_state_to_lo_ref(&board->lo, &state->lo);
+	state->clka.enabled_mask = ntohl(board->clka_enable_mask);
+	state->clkb.enabled_mask = ntohl(board->clkb_enable_mask);
+	for (i = ERTM_CLKAB_MIN_CH; i <= ERTM_CLKAB_MAX_CH; i++) {
+		/* FIXME: not enum */
+		state->clka.chfreq[i] = ntohl(board->clka_freq_hz[i]);
+		state->clkb.chfreq[i] = ntohl(board->clkb_freq_hz[i]);
+	}
+}
+
+void display_ertm_clk(struct ertm_clk *clk)
+{
+	int i;
+	for (i = ERTM_CLKAB_MIN_CH; i <= ERTM_CLKAB_MAX_CH; i++) {
+		char *onoff = (clk->enabled_mask & (1<<i)) ? "on " : "off";
+		printf("ch %02d: %3s  %10dHz\n", i, onoff, clk->chfreq[i]);
+	}
+}
+
+void display_ertm_state(struct ertm_state *st)
+{
+	printf("LO:\n");
+	display_ertm_lo_ref(&st->lo);
+	printf("REF:\n");
+	display_ertm_lo_ref(&st->ref);
+	printf("CLKA:\n");
+	display_ertm_clk(&st->clka);
+	printf("CLKB:\n");
+	display_ertm_clk(&st->clkb);
+}
+
 int main(int argc, char *argv[])
 {
     	struct uart_link ln, *link = &ln;
         struct uart_packet pack, *tx_pkt = &pack;
         struct uart_packet pack2, *rx_pkt = &pack2;
-	struct ertm_lo_ref loref;
 	int res, stat;
 
 	uart_link_create_linux(link, usb_serial, serial_speed);
@@ -95,6 +130,7 @@ int main(int argc, char *argv[])
         if (stat > 0) {
 		int i;
 		struct ertm14_board_state *board;
+		struct ertm_state st, *state = &st;
 
 		fprintf(stderr,"recvd %d bytes: \n", rx_pkt->length);
 		for (i = 0; i < rx_pkt->length; i++)
@@ -102,9 +138,9 @@ int main(int argc, char *argv[])
 				((i+1) % 16 == 0) ? '\n' : ' ');
 		if ((i+1) % 16 != 0)
 			fprintf(stderr, "\n");
-		board = (struct ertm14_board_state *)&rx_pkt->payload[4];
-		dds_state_to_lo_ref(&board->ref, &loref);
-		display_ertm_lo_ref(&loref);
+		board = (struct ertm14_board_state *)rx_pkt->payload;
+		board_to_state(board, state);
+		display_ertm_state(state);
         }
 
 	return 0;
