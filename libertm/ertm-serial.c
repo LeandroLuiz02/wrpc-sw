@@ -39,7 +39,8 @@ int main(int argc, char *argv[])
 	uart_link_create_linux(link, usb_serial, serial_speed);
 
         fprintf(stderr,"sending command 'command'\n");
-        tx_pkt->ptype = ERTM14_UART_PTYPE_PING;
+        tx_pkt->ptype = ERTM14_UART_PTYPE_CONFIG_REQ;
+	// #define ERTM14_UART_PTYPE_CONFIG_RESP 7
         tx_pkt->length = strlen("command");
 	memcpy(&tx_pkt->payload, "command", strlen("command") + 1);
 
@@ -50,14 +51,13 @@ int main(int argc, char *argv[])
 	}
 
 	memset(rx_pkt, 0, sizeof(*rx_pkt));
-        stat = uart_link_recv(link, &rx_pkt, 1000);
+        stat = uart_link_recv(link, &rx_pkt, sizeof(*rx_pkt) + 10);
         if (stat > 0) {
 		int i;
 		fprintf(stderr,"recvd %d bytes [", rx_pkt->length);
 		for (i = 0; i < rx_pkt->length; i++)
 			fprintf(stderr, "%02x ", rx_pkt->payload[i]);
 		fprintf(stderr,"]\n");
-		fprintf(stderr, "to wit: [%s]\n", rx_pkt->payload);
         }
 
 	return 0;
