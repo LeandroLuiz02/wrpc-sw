@@ -3,6 +3,14 @@
 TARGET = libertm
 CFLAGS += -fPIC -Wall -g
 
+ERTM_UART_LOCATION = ../lib
+ERTM_BOARD_LOCATION = ../boards/ertm14/
+
+CFLAGS += -I $(ERTM_UART_LOCATION) -I $(ERTM_BOARD_LOCATION)
+CFLAGS += -I ../include -I ..
+# CFLAGS += -DIUART_PLATFORM_LINUX
+CFLAGS += -DIUART_PLATFORM_BARE_METAL
+
 all: libs serial ertm-serial
 
 libs: static-lib so-lib
@@ -19,8 +27,11 @@ serial: serial.o
 	$(CC) $(CFLAGS) -o $@ $^ $(LDLIBS) $(LDFLAGS)
 serial.o: $(TARGET).h
 
-ertm-serial: ertm-serial.o
+ertm-serial: ertm-serial.o ertm14-uart-link.o
 	$(CC) $(CFLAGS) -o $@ $^ $(LDLIBS) $(LDFLAGS)
+
+ertm14-uart-link.o: $(ERTM_UART_LOCATION)/ertm14-uart-link.c
+	$(CC) $(CFLAGS) -c -o $@ $^ $(LDLIBS) $(LDFLAGS)
 
 clean:
 	rm -f *.o *.a *.so
