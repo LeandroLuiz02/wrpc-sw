@@ -22,6 +22,7 @@
 #include "dev/iuart.h"
 #include "lib/ertm14-uart-link.h"
 #include "rf_frame_transceiver.h"
+#include "board-state.h"
 
 #define BOARD_USE_CUSTOM_SDBFS 1
 #define BOARD_HAS_CUSTOM_NETWORK_INIT 1
@@ -95,15 +96,8 @@ extern unsigned char *BASE_EP;
 #define BASE_ERTM14_RF_FRAME_TRANSCEIVER       (BASE_AUXWB + 0x500)
 #define BASE_ERTM14_STREAMERS       (BASE_AUXWB + 0x600)
 
-
-#define ERTM14_RF_OUT_MIN_ID 4
-#define ERTM14_RF_OUT_MAX_ID 12
-
 #define ERTM14_OUT_CLKA 0
 #define ERTM14_OUT_CLKB 1
-
-#define ERTM14_CLKAB_OUT_MIN_ID 4
-#define ERTM14_CLKAB_OUT_MAX_ID 15
 
 #define ERTM14_CLKAB_OUT_FRONT_PANEL 15
 
@@ -194,30 +188,6 @@ struct ertm14_board
 
     uint32_t dds_sync_delays[ 6 ];
 };
-
-struct ertm14_dds_state
-{
-    uint32_t ftw;
-    uint8_t out_state[ERTM14_RF_OUT_MAX_ID + 1];
-    int out_power[ERTM14_RF_OUT_MAX_ID + 1];
-    int amp_power;
-    int ampl_factor;
-    int sync_source;
-    int sync_count;
-};
-
-struct ertm14_board_state
-{
-    int valid;
-    struct ertm14_dds_state ref;
-    struct ertm14_dds_state lo;
-    uint32_t clka_freq_hz[ERTM14_CLKAB_OUT_MAX_ID + 1];
-    uint32_t clkb_freq_hz[ERTM14_CLKAB_OUT_MAX_ID + 1];
-    uint32_t clka_enable_mask;
-    uint32_t clkb_enable_mask;
-};
-
-
 
 extern struct ertm14_board board;
 
