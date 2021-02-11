@@ -175,8 +175,6 @@ int uart_link_recv_byte( struct uart_link* link )
 
 int uart_link_set_binary( struct uart_link* link )
 {
-    struct uart_link_priv *priv = (struct uart_link_priv* ) link->priv;
-
     int retries;
 
     for( retries = 0; retries < 3; retries++ )
@@ -275,6 +273,7 @@ int uart_link_reset( struct uart_link *link )
 {
     link->state = LINK_STATE_IDLE;
     link->rx_last_tics = 0;
+    return 0;		/* FIXME: mustn't this be void? */
 }
 
 int uart_link_send( struct uart_link* link, struct uart_packet* pkt )
@@ -454,11 +453,16 @@ int uart_link_recv( struct uart_link* link, struct uart_packet **pkt, int timeou
 #define ERTM14_UART_PTYPE_SNMP_RESP 3
 #define ERTM14_UART_PTYPE_MMC_STATUS_REQ 4
 
-int main()
+int toms_main()
 {
     struct uart_link link;
+    char ttyname[] = "/dev/ttyUSB2";
+    int speed = 921600;
 
-    int rv = uart_link_create_linux( &link, "/dev/ttyUSB2", 921600 );
+    if (uart_link_create_linux( &link, ttyname, speed) != 0) {
+	fprintf(stderr, "cannot open uart %s at speed %d\n", ttyname, speed);
+	exit(1);
+    }
 
     for(;;)
     {
@@ -470,8 +474,6 @@ int main()
         uart_link_send( &link, &pkt );
 
         struct uart_packet *rx_pkt;
-
-        int retries = 0;
 
         int stat = uart_link_recv( &link, &rx_pkt, 1000 );
         if( stat > 0)
