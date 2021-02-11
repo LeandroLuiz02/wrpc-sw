@@ -1,3 +1,4 @@
+* move the loading from the build system?
 * locate the USB serial port unambiguously
 * python ancillaries run under venv
 	/user/dcobas/ertm14/py/bin/python3
