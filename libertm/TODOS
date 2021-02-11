@@ -1,0 +1,8 @@
+* locate the USB serial port unambiguously
+* python ancillaries run under venv
+	/user/dcobas/ertm14/py/bin/python3
+  this must be standardized to acc-py
+* do the build system stuff for ertm correctly according to
+  wrpc-sw guidelines (are there any?)
+* ditto for usb-bootloader
+* clean up branches to merge into wrpc-sw
