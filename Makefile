@@ -170,7 +170,7 @@ sdb-lib/libsdbfs.a:
 
 $(OUTPUT).elf: $(LDS-y) $(AUTOCONF) gitmodules config.o pconfig.o $(OBJS)
 	$(CC) $(CFLAGS) -D__GIT_VER__="\"$(GIT_VER)\"" -D__GIT_USR__="\"$(GIT_USR)\"" -c revision.c
-	${CC} -o $@ revision.o config.o pconfig.o $(OBJS) $(LDFLAGS)
+	${CC} -Wl,-Map,$(OUTPUT).map -o $@ revision.o config.o pconfig.o $(OBJS) $(LDFLAGS)
 	${OBJDUMP} -d $(OUTPUT).elf > $(OUTPUT)_disasm.S
 	$(SIZE) $@
 	./save_size.sh $(SIZE) $@
