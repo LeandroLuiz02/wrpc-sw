@@ -42,7 +42,7 @@ void dds_state_to_lo_ref(struct ertm14_dds_state *dds, struct ertm_lo_ref *loref
 	loref->pll_output_power 		= ntohl(dds->amp_power);
 	loref->pll_output_power 		/= 1000;	/* to dBm */
 	loref->level_adjust 			= ntohl(dds->ampl_factor);
-	loref->level_adjust 			/= (1<<14);
+	loref->level_adjust 			/= (1<<8);
 	for (i = ERTM14_RF_OUT_MIN_ID; i <= ERTM14_RF_OUT_MAX_ID; i++) {
 		loref->chpower[i] = ntohl(dds->out_power[i]);
 		loref->chpower[i] /= 1000;
