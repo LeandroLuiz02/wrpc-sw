@@ -210,3 +210,17 @@ const char *fromdec(const char *dec, int *v)
 	*v = o * sign;
 	return dec;
 }
+
+/*
+ * This is a minimal atoi, that doesn't call strtol. Since we are only
+ * calling atoi, it saves XXXX bytes of library code
+ * Use fromdec in atoi. Not the way round, because fromdec can return a pointer
+ * to non recognized character (atoi cannot).
+ */
+int atoi(const char *s)
+{
+	int res;
+
+	fromdec(s, &res);
+	return res;
+}
