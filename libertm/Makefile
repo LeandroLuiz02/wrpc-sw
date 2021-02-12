@@ -25,7 +25,7 @@ serial: serial.o
 serial.o: $(TARGET).h
 
 ertm-serial: ertm-serial.o ertm14-uart-link.o
-	$(CC) $(CFLAGS) -o $@ $^ $(LDLIBS) $(LDFLAGS)
+	$(CC) $(CFLAGS) -o $@ $^ $(LDLIBS) $(LDFLAGS) -lm
 
 ertm14-uart-link.o: $(ERTM_UART_LOCATION)/ertm14-uart-link.c
 	$(CC) $(CFLAGS) -c -o $@ $^ $(LDLIBS) $(LDFLAGS)

@@ -21,6 +21,7 @@
 #include <sys/stat.h>
 #include <fcntl.h>
 #include <arpa/inet.h>
+#include <math.h>
 
 
 #include "board-state.h"
@@ -46,6 +47,22 @@ void dds_state_to_lo_ref(struct ertm14_dds_state *dds, struct ertm_lo_ref *loref
 		loref->chpower[i] = ntohl(dds->out_power[i]);
 		loref->chpower[i] /= 1000;
 		loref->state[i] = dds->out_state[i];
+	}
+}
+
+void lo_ref_to_dds_state(struct ertm_lo_ref *loref, struct ertm14_dds_state *dds)
+{
+	int i;
+
+	dds->ftw                 = htonl(loref->freq);
+	loref->pll_output_power *= 1000;	/*  to  mdBm  */
+	dds->amp_power           = htonl(floor(loref->pll_output_power));
+	loref->level_adjust 	/= (1<<8);
+	dds->ampl_factor         = htonl(floor(loref->level_adjust));
+	for (i = ERTM14_RF_OUT_MIN_ID; i <= ERTM14_RF_OUT_MAX_ID; i++) {
+		loref->chpower[i] *= 1000;
+		dds->out_power[i] = htonl(floor(loref->chpower[i]));
+		dds->out_state[i] = loref->state[i];
 	}
 }
 
@@ -80,6 +97,21 @@ void board_to_state(struct ertm14_board_state *board, struct ertm_state *state)
 		/* FIXME: not enum */
 		state->clka.chfreq[i] = ntohl(board->clka_freq_hz[i]);
 		state->clkb.chfreq[i] = ntohl(board->clkb_freq_hz[i]);
+	}
+}
+
+void state_to_board(struct ertm_state *state, struct ertm14_board_state *board)
+{
+	int i;
+
+	lo_ref_to_dds_state(&state->ref, &board->ref);
+	lo_ref_to_dds_state(&state->lo, &board->lo);
+	board->clka_enable_mask = htonl(state->clka.enabled_mask);
+	board->clkb_enable_mask = htonl(state->clkb.enabled_mask);
+	for (i = ERTM_CLKAB_MIN_CH; i <= ERTM_CLKAB_MAX_CH; i++) {
+		/* FIXME: not enum */
+		board->clka_freq_hz[i] = htonl(state->clka.chfreq[i]);
+		board->clkb_freq_hz[i] = htonl(state->clkb.chfreq[i]);
 	}
 }
 
