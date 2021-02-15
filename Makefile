@@ -162,7 +162,7 @@ $(obj-ppsi): gitmodules
 		echo "Warning: keeping previous ppsi configuration" >& 2; \
 	fi
 	$(MAKE) -C $(PPSI) ppsi.a WRPCSW_ROOT=.. \
-		CROSS_COMPILE=$(CROSS_COMPILE) CONFIG_NO_PRINTF=y
+		CROSS_COMPILE=$(CROSS_COMPILE) CONFIG_NO_PRINTF=y \
 		USER_CFLAGS="$(PPSI_USER_CFLAGS)"
 
 sdb-lib/libsdbfs.a:
