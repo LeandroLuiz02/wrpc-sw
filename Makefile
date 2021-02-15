@@ -142,7 +142,7 @@ all: tools $(OUTPUT).elf $(arch-files-y)
 
 # we need to remove "ptpdump" support for ppsi if RAM size is small and
 # we include etherbone
-ifneq ($(CONFIG_RAMSIZE),131072)
+ifneq ($(CONFIG_RAMSIZE),196608)
   ifdef CONFIG_IP
     PPSI_USER_CFLAGS = -DCONFIG_NO_PTPDUMP
   endif
