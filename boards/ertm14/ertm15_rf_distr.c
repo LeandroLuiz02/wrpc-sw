@@ -39,6 +39,8 @@
     #define INT32_MIN INT_MIN
 #endif
 
+#define ERTM15_PWR_BIAS -130 // mBm offset adjustment for measured LO/REF power values
+
 static const struct gpio_pin pin_lo_ctrl_ser = { &board.gpio_aux, 39 };
 static const struct gpio_pin pin_lo_ctrl_updtclk = { &board.gpio_aux, 40 };
 static const struct gpio_pin pin_lo_ctrl_shftclk = { &board.gpio_aux, 41 };
@@ -227,6 +229,8 @@ static int convert_power( int adc_value )
     const int32_t f_log_2V_0dBm = log10fix( f_2V, precision_bits );
     int32_t f_log_input = log10fix( f_adc_voltage, precision_bits );
     int32_t pwr =  ( ( 2000LL * (int64_t)(f_log_input - f_log_2V_0dBm) ) >> precision_bits ) + 1500;
+
+    pwr += ERTM15_PWR_BIAS;
 
     return (int) (pwr);
 }
