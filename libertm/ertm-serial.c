@@ -146,8 +146,7 @@ int main(int argc, char *argv[])
 	uart_link_create_linux(link, usb_serial, serial_speed);
 
         fprintf(stderr,"sending command 'command'\n");
-        tx_pkt->ptype = ERTM14_UART_PTYPE_CONFIG_REQ;
-	// #define ERTM14_UART_PTYPE_CONFIG_RESP 7
+        tx_pkt->ptype = ERTM14_UART_PTYPE_SNMP_REQ;
         tx_pkt->length = strlen("command");
 	memcpy(&tx_pkt->payload, "command", strlen("command") + 1);
 

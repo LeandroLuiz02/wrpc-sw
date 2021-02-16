@@ -784,12 +784,12 @@ static int control_uart_poll(void)
             uart_link_send( &board.control_uart_link, &tx_pkt );
 
             blink(1);
-        } else if (pkt->ptype == ERTM14_UART_PTYPE_CONFIG_REQ) {
+        } else if (pkt->ptype == ERTM14_UART_PTYPE_SNMP_REQ) {
 	    /* build packet with some version info */
 	    int config_id;
 	    struct ertm14_board_state *bs;
 
-	    tx_pkt.ptype = ERTM14_UART_PTYPE_CONFIG_RESP;
+	    tx_pkt.ptype = ERTM14_UART_PTYPE_SNMP_RESP;
 	    config_id = ertm14_get_current_config_id();
 	    bs = ertm14_get_state_for_config(config_id);
 	    tx_pkt.length = sizeof(*bs);
