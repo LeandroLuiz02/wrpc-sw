@@ -215,7 +215,7 @@ int wdiag_get_snapshot(void)
 		return 0;
 }
 
-void wdiags_write_servo_state(int wr_mode, uint8_t servostate, uint64_t mu,
+void wdiags_write_servo_state(int wr_mode, int servostate, uint64_t mu,
 			      uint64_t dms, int32_t asym, int32_t cko,
 			      int32_t setp, int32_t ucnt)
 {
@@ -240,7 +240,7 @@ void wdiags_write_port_state(int link, int locked)
 	syscon->WDIAG_PSTAT = val;
 }
 
-void wdiags_write_ptp_state(uint8_t ptpstate)
+void wdiags_write_ptp_state(int ptpstate)
 {
 	syscon->WDIAG_PTPSTAT = SYSC_WDIAG_PTPSTAT_PTPSTATE_W(ptpstate);
 }

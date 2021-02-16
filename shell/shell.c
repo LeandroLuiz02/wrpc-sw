@@ -296,7 +296,7 @@ static int build_init_readcmd(uint8_t *cmd, int maxlen)
 
 void shell_boot_script(void)
 {
-	uint8_t next = 0;
+	int next = 0;
 
 	while (CONFIG_HAS_BUILD_INIT) {
 		cmd_len = build_init_readcmd((uint8_t *)cmd_buf,
@@ -327,7 +327,7 @@ void shell_boot_script(void)
 
 void shell_show_build_init(void)
 {
-	uint8_t i = 0;
+	int i = 0;
 
 	pp_printf("-- built-in script --\n");
 	while (CONFIG_HAS_BUILD_INIT) {

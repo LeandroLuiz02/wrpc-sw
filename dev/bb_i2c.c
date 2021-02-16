@@ -48,7 +48,7 @@ void bb_i2c_stop(struct i2c_bus *bus)
 unsigned char bb_i2c_put_byte(struct i2c_bus *bus, uint8_t data)
 {
 	int i;
-	uint8_t ack;
+	int ack;
 
 	for (i = 0; i < 8; i++, data <<= 1) {
 		M_SDA_OUT(data & 0x80);
@@ -66,7 +66,7 @@ unsigned char bb_i2c_put_byte(struct i2c_bus *bus, uint8_t data)
 	return ack != 0;
 }
 
-void bb_i2c_get_byte(struct i2c_bus *bus, uint8_t *data, uint8_t last)
+void bb_i2c_get_byte(struct i2c_bus *bus, uint8_t *data, int last)
 {
 
 	int i;
@@ -113,9 +113,9 @@ void bb_i2c_init(struct i2c_bus *bus)
 	M_SDA_OUT(1);
 }
 
-uint8_t bb_i2c_devprobe(struct i2c_bus *bus, uint8_t i2c_addr)
+int bb_i2c_devprobe(struct i2c_bus *bus, uint8_t i2c_addr)
 {
-	uint8_t ret;
+	int ret;
 	bb_i2c_start(bus);
 	ret = !bb_i2c_put_byte(bus, i2c_addr << 1);
 	bb_i2c_stop(bus);

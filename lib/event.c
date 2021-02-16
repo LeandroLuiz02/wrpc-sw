@@ -31,7 +31,7 @@ struct event_handler
 static struct event_handler handlers[MAX_EVENT_HANDLERS];
 static int event_handler_count = 0;
 
-static inline void queue_put( struct event_queue* buf, uint8_t c )
+static inline void queue_put( struct event_queue* buf, int c )
 {
     if (buf->count >= buf->size)
 		return;

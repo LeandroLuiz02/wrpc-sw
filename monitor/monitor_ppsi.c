@@ -464,7 +464,7 @@ void print_main_data(void)
 
 	for (i = 0 ; i < ndevs; i++) {
 		struct wrc_netif_device *ndev = netif_get_device(i);
-		uint8_t port_up = ndev->link_state == NETIF_LINK_UP;
+		int port_up = ndev->link_state == NETIF_LINK_UP;
 
 		if (port_up) {
 			pcprintf(9, 1, C_GREEN, " %s: ", ndev->name);
@@ -510,8 +510,8 @@ void print_main_data(void)
 
 	for (i = 0 ; i < ndevs; i++) {
 		struct wrc_netif_device *ndev = netif_get_device(i);
-		uint8_t port_up = ndev->link_state == NETIF_LINK_UP;
-		uint8_t color;
+		int port_up = ndev->link_state == NETIF_LINK_UP;
+		int color;
 
 		if (port_up) {
 			pcprintf(14, 1, C_GREEN, " %s: ", ndev->name);

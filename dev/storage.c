@@ -496,12 +496,13 @@ static int sfp_valid(struct s_sfpinfo *sfp)
 	return 1;
 }
 
-static int sfp_entry(struct s_sfpinfo *sfp, uint8_t oper, uint8_t pos)
+static int sfp_entry(struct s_sfpinfo *sfp, int oper, int pos)
 {
-	static uint8_t sfpcount = 0;
+	static int sfpcount = 0;
 	struct s_sfpinfo tempsfp;
 	int ret = -1;
-	uint8_t i, chksum = 0;
+	int i;
+	int chksum = 0;
 	uint8_t *ptr;
 	int sdb_offset;
 
@@ -515,13 +516,13 @@ static int sfp_entry(struct s_sfpinfo *sfp, uint8_t oper, uint8_t pos)
 	 * call */
 	if (!pos) {
 		sfpcount = 0;
-		sdb_offset = sizeof(sfpcount);
+		sdb_offset = 1; /* sfpcount */
 		while (sdbfs_fread(&wrc_sdbfs, sdb_offset, &tempsfp,
 					sizeof(tempsfp)) == sizeof(tempsfp)) {
 			if (!sfp_valid(&tempsfp))
 				break;
 			sfpcount++;
-			sdb_offset = sizeof(sfpcount) + sfpcount * sizeof(tempsfp);
+			sdb_offset = 1 /* sfpcount */ + sfpcount * sizeof(tempsfp);
 		}
 	}
 
@@ -538,7 +539,7 @@ static int sfp_entry(struct s_sfpinfo *sfp, uint8_t oper, uint8_t pos)
 	}
 
 	if (oper == SFP_GET) {
-		sdb_offset = sizeof(sfpcount) + pos * sizeof(*sfp);
+		sdb_offset = 1 /* sfpcount */ + pos * sizeof(*sfp);
 		if (sdbfs_fread(&wrc_sdbfs, sdb_offset, sfp, sizeof(*sfp))
 				!= sizeof(*sfp))
 			goto out;
@@ -547,7 +548,7 @@ static int sfp_entry(struct s_sfpinfo *sfp, uint8_t oper, uint8_t pos)
 		/* read sizeof() - 1 because we don't include checksum */
 		for (i = 0; i < sizeof(struct s_sfpinfo) - 1; ++i)
 			chksum = chksum + *(ptr++);
-		if (chksum != sfp->chksum) {
+		if ((chksum & 0xff) != sfp->chksum) {
 			pp_printf("sfp: corrupted checksum\n");
 			goto out;
 		}
@@ -560,7 +561,7 @@ static int sfp_entry(struct s_sfpinfo *sfp, uint8_t oper, uint8_t pos)
 			chksum = chksum + *(ptr++);
 		sfp->chksum = chksum;
 		/* add SFP at the end of DB */
-		sdb_offset = sizeof(sfpcount) + sfpcount * sizeof(*sfp);
+		sdb_offset = 1 /* sfpcount */ + sfpcount * sizeof(*sfp);
 		if (sdbfs_fwrite(&wrc_sdbfs, sdb_offset, sfp, sizeof(*sfp))
 				!= sizeof(*sfp)) {
 			goto out;
@@ -577,7 +578,7 @@ static int storage_update_sfp(struct s_sfpinfo *sfp)
 {
 	int sfpcount = 1;
 	int temp;
-	int8_t i;
+	int i;
 	struct s_sfpinfo sfp_db[SFPS_MAX];
 	struct s_sfpinfo *dbsfp;
 
@@ -613,7 +614,7 @@ static int storage_update_sfp(struct s_sfpinfo *sfp)
 	return i;
 }
 
-int storage_get_sfp(struct s_sfpinfo *sfp, uint8_t oper, uint8_t pos)
+int storage_get_sfp(struct s_sfpinfo *sfp, int oper, int pos)
 {
 	struct s_sfpinfo tmp_sfp;
 
@@ -636,8 +637,8 @@ int storage_get_sfp(struct s_sfpinfo *sfp, uint8_t oper, uint8_t pos)
 
 int storage_match_sfp(struct s_sfpinfo *sfp)
 {
-	uint8_t sfpcount = 1;
-	int8_t i;
+	int sfpcount = 1;
+	int i;
 	struct s_sfpinfo dbsfp;
 
 	for (i = 0; i < sfpcount; ++i) {
@@ -823,7 +824,7 @@ out_close:
 }
 
 // FIXME: migrate to new API
-int storage_phtrans(uint32_t *valp, uint8_t write)
+int storage_phtrans(uint32_t *valp, int write)
 {
 	if( !write )
 		return storage_get_calibration_parameter( CAL_PARAM_T24P, valp );
@@ -834,7 +835,7 @@ int storage_phtrans(uint32_t *valp, uint8_t write)
 
 /* MAC Address Storage */
 
-int storage_get_persistent_mac(uint8_t portnum, uint8_t *mac)
+int storage_get_persistent_mac(int portnum, uint8_t *mac)
 {
 	int ret = 0;
 	//int i;
@@ -891,7 +892,7 @@ int storage_get_persistent_mac(uint8_t portnum, uint8_t *mac)
 	return 0;
 }
 
-int storage_set_persistent_mac(uint8_t portnum, uint8_t *mac)
+int storage_set_persistent_mac(int portnum, uint8_t *mac)
 {
 	int ret;
 
@@ -1020,7 +1021,7 @@ out:
 	return ret;
 }
 
-int storage_init_readcmd(uint8_t *buf, uint8_t bufsize, uint8_t next)
+int storage_init_readcmd(uint8_t *buf, int bufsize, int next)
 {
 	int i = 0, ret = -1;
 	uint16_t used;
