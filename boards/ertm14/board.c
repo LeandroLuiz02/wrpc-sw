@@ -1796,6 +1796,7 @@ int wrc_board_early_init()
     return ll;
 }
 
+/* FIXME: these should be in a .h file */
 extern int phy_calibration_poll(void);
 extern void phy_calibration_init(void);
 
