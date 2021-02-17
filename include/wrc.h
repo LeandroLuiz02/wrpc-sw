@@ -30,6 +30,9 @@
 	  _a < _b ? _a : _b; })
 #endif
 
+/* Don't use abs from the library */
+#define abs(x) ((x >= 0) ? x : -x)
+
 #ifndef htons
 #  define htons(x)      (x)
 #endif
@@ -91,9 +94,6 @@ void shell_init(void);
 
 /* Default width (in 8ns/16ns units) of the pulses on the PPS output */
 #define PPS_WIDTH (10 * 1000 * 1000 / NS_PER_CLOCK) /* 10ms */
-
-/* This is in the library, somewhere */
-extern int abs(int val);
 
 /* refresh period for _gui_ and _stat_ commands */
 extern int wrc_ui_refperiod;
