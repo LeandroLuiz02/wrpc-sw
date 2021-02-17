@@ -306,12 +306,10 @@ static int tx_fsm_update()
 }
 
 
-static void rx_fsm_init(  )
+static void rx_fsm_init(struct wrc_port_rx_setup_state *fsm)
 {
-	struct wrc_port_rx_setup_state* fsm = &rx_state;
-
-	fsm->attempts = 0;
-	fsm->state = RX_SETUP_STATE_INIT;
+    fsm->attempts = 0;
+    fsm->state = RX_SETUP_STATE_INIT;
     fsm->prev_link_up = 0;
     memset(fsm->cpos_stat, 0, sizeof(fsm->cpos_stat ));
 }

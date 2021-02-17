@@ -12,6 +12,7 @@
 #include <wrc.h>
 
 #include "board.h"
+#include "dev/console.h"
 #include "dev/clock_monitor.h"
 #include "softpll_ng.h"
 #include "shell.h"
@@ -41,10 +42,10 @@ static void dump_dds_state( const char *name, struct ertm14_dds_state *cfg )
     int i;
     pp_printf("%s DDS FTW:                0x%08x\n", name, cfg->ftw);
     pp_printf("%s DDS amplitude factor:   %d\n", name, cfg->ampl_factor);
-    pp_printf("%s DDS measured power:     %d.%-02d dBm\n", name, cfg->amp_power / 1000, cfg->amp_power % 1000);
+    pp_printf("%s DDS measured power:     %d.%02d dBm\n", name, cfg->amp_power / 1000, cfg->amp_power % 1000);
     pp_printf("%s outputs:\n", name);
     for( i = ERTM14_RF_OUT_MIN_ID; i <= ERTM14_RF_OUT_MAX_ID; i++ )
-        pp_printf("- %s%d: %-08s (last measured power = %d.%-02d dBm)\n", name, i, get_rf_out_state_string( cfg->out_state[i] ),
+        pp_printf("- %s%d: %08s (last measured power = %d.%02d dBm)\n", name, i, get_rf_out_state_string( cfg->out_state[i] ),
         cfg->out_power[i] / 1000, cfg->out_power[i] % 1000
         );
 }
@@ -73,7 +74,7 @@ static void dump_config( int id, struct ertm14_board_state *cfg )
     pp_printf("CLKA/CLKB outputs: \n");
     for(i = 0; i <= ERTM14_CLKAB_OUT_MAX_ID; i++)
     {
-        pp_printf(" - CLKA%-02d: %-20d Hz (%s) CLKB%-02d: %-20d Hz (%s)\n",
+        pp_printf(" - CLKA%02d: %-20d Hz (%s) CLKB%02d: %-20d Hz (%s)\n",
         i, cfg->clka_freq_hz[i], (cfg->clka_enable_mask & (1<<i)) ? "ON " : "OFF",
         i, cfg->clkb_freq_hz[i], (cfg->clkb_enable_mask & (1<<i)) ? "ON " : "OFF" );
 
@@ -177,7 +178,7 @@ static int measure_clock(int id, int ref_channel, int ref_frequency)
     return cm->freqs[id];
 }
 
-static void ertm_test_dac()
+static void ertm_test_dac(void)
 {
     int i = 0;
     pp_printf("Playing sawtooth on eRTM15 OCXO DAC. Press ESC to abort.\n");
@@ -197,7 +198,7 @@ static void ertm_test_dac()
     }
 }
 
-static void ertm_show_cm()
+static void ertm_show_cm(void)
 {
     int i;
     struct wb_clock_monitor_device *cm = &board.ertm14_cmon;
@@ -213,14 +214,17 @@ static void ertm_show_cm()
     }
 }
 
-static void set_dds_sync_source( char *channel_name, char *src_name )
+static void set_dds_sync_source( const char *channel_name, const char *src_name )
 {
 
 }
 
+/* FIXME: this should be in a .h file */
+extern void phy_calibration_disable(void);
+
 static int cmd_ertm(const char *args[])
 {
-	int i;
+	int i = 0;
     if (!strcasecmp(args[0], "test-dac")) 
     {
         ertm_test_dac();

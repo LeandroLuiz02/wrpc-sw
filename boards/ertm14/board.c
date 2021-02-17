@@ -1796,6 +1796,7 @@ int wrc_board_early_init()
     return ll;
 }
 
+/* FIXME: these should be in a .h file */
 extern int phy_calibration_poll(void);
 extern void phy_calibration_init(void);
 
@@ -1836,7 +1837,7 @@ void poll_mmc_sensors(struct uart_link *link)
     struct ertm14_mmc_state *state = mmc_get_status(link);
 
     if (!state) // fixme: report error?
-        return 0;
+        return;
 
     int i;
 
@@ -1864,13 +1865,11 @@ void poll_mmc_sensors(struct uart_link *link)
 static void mmc14_link_init(void)
 {
     tmo_init( &mmc14_tmo, 1000 );
-    return 0;
 }
 
 static void mmc15_link_init(void)
 {
     tmo_init( &mmc15_tmo, 1000 );
-    return 0;
 }
 
 static int mmc14_link_poll(void)
