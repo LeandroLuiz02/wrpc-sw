@@ -112,7 +112,7 @@ static void tx_fsm_init(struct wrc_port_tx_setup_state *fsm)
     tmo_init(&fsm->spll_lock_timeout, FSM_SPLL_LOCK_TIMEOUT_MS);
 }
 
-static int tx_fsm_update()
+static int tx_fsm_update(void)
 {
     struct wrc_port_tx_setup_state *fsm = &tx_state;
 

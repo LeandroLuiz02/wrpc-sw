@@ -331,7 +331,7 @@ int puts(const char *s)
 }
 
 
-int console_getc()
+int console_getc(void)
 {
     int i;
 
