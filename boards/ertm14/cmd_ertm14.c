@@ -36,18 +36,18 @@ static const char *get_rf_out_state_string(int state)
 }
 
 
-static void dump_dds_state( const char *name, struct ertm14_dds_state *cfg ) 
+static void dump_dds_state( const char *name, struct ertm14_dds_state *cfg )
 {
     int i;
     uint64_t freq = ad9910_ftw_to_frequency( cfg->ftw );
 
     pp_printf("%s DDS FTW:                0x%08x (%d Hz)\n", name, (uint32_t) cfg->ftw, (uint32_t) freq );
     pp_printf("%s DDS amplitude factor:   %d\n", name, cfg->ampl_factor);
-    pp_printf("%s DDS measured power:     %d mBm\n", name, cfg->amp_power);
+    pp_printf("%s DDS measured power:     %d.%02d dBm\n", name, cfg->amp_power / 1000, cfg->amp_power % 1000);
     pp_printf("%s outputs:\n", name);
     for( i = ERTM14_RF_OUT_MIN_ID; i <= ERTM14_RF_OUT_MAX_ID; i++ )
-        pp_printf("- %s%d: %-08s (last measured power = %d mBm)\n", name, i, get_rf_out_state_string( cfg->out_state[i] ),
-        cfg->out_power[i]
+        pp_printf("- %s%d: %08s (last measured power = %d.%02d dBm)\n", name, i, get_rf_out_state_string( cfg->out_state[i] ),
+        cfg->out_power[i] / 1000, cfg->out_power[i] % 1000
         );
 }
 
@@ -75,7 +75,7 @@ static void dump_config( int id, struct ertm14_board_state *cfg )
     pp_printf("CLKA/CLKB outputs: \n");
     for(i = 0; i <= ERTM14_CLKAB_OUT_MAX_ID; i++)
     {
-        pp_printf(" - CLKA%-02d: %-20d Hz (%s) CLKB%-02d: %-20d Hz (%s)\n",
+        pp_printf(" - CLKA%02d: %-20d Hz (%s) CLKB%02d: %-20d Hz (%s)\n",
         i, cfg->clka_freq_hz[i], (cfg->clka_enable_mask & (1<<i)) ? "ON " : "OFF",
         i, cfg->clkb_freq_hz[i], (cfg->clkb_enable_mask & (1<<i)) ? "ON " : "OFF" );
 
@@ -98,7 +98,7 @@ static void set_dds_param(int param, const char *name, const char *value, const 
 
     int is_lo = !strcasecmp( name , "lo");
     int is_ref = !strcasecmp( name , "ref");
-    
+
     struct ertm14_board_state *cfg = ertm14_get_state_for_config(selected_config);
     cfg->valid = 1;
 
@@ -132,17 +132,17 @@ static void set_clk_param(int param, const char *name, const char *channel, cons
 {
     int is_clka = !strcasecmp( name , "clka");
     int is_clkb = !strcasecmp( name , "clkb");
-    
+
     struct ertm14_board_state *cfg = ertm14_get_state_for_config(selected_config);
     cfg->valid = 1;
 
-    
+
     if (is_clka || is_clkb)
     {
-        
+
         uint32_t *freq = is_clka ? cfg->clka_freq_hz : cfg->clkb_freq_hz;
         uint32_t *enable_mask = is_clka ? &cfg->clka_enable_mask : &cfg->clkb_enable_mask;
-        
+
         int ch = atoi(channel);
 
         switch(param)
@@ -223,15 +223,15 @@ static void set_dds_sync_source( char *channel_name, char *src_name )
 static int cmd_ertm(const char *args[])
 {
 	int i;
-    if (!strcasecmp(args[0], "test-dac")) 
+    if (!strcasecmp(args[0], "test-dac"))
     {
         ertm_test_dac();
     }
-    else if (!strcasecmp(args[0], "cm")) 
+    else if (!strcasecmp(args[0], "cm"))
     {
         ertm_show_cm();
 	}
-    else if (!strcasecmp(args[0], "test-clocks")) 
+    else if (!strcasecmp(args[0], "test-clocks"))
     {
 		pp_printf("eRTM14/15 clock frequency test:\n");
 
@@ -245,12 +245,12 @@ static int cmd_ertm(const char *args[])
         spll_set_dac(-1, 65530); // dmtd -> max
         usleep(500000);
         pp_printf(".");
-        
+
         }*/
-      
+
 
         pp_printf("Main Ref clock: ");
-        
+
         spll_set_dac(0, 0); // main -> min
         usleep(500000);
         int main_min = measure_clock( ERTM14_CMON_CLK_REF, ERTM14_CMON_CLK_DMTD, DMTD_CLOCK_FREQ_HZ );
@@ -258,13 +258,13 @@ static int cmd_ertm(const char *args[])
         spll_set_dac(0, 65530); // main -> max
         usleep(500000);
         int main_max = measure_clock( ERTM14_CMON_CLK_REF, ERTM14_CMON_CLK_DMTD, DMTD_CLOCK_FREQ_HZ );
-        
+
         spll_set_dac(0, 32768); // main -> midrange
         usleep(500000);
         int main_mid = measure_clock( ERTM14_CMON_CLK_REF, ERTM14_CMON_CLK_DMTD, DMTD_CLOCK_FREQ_HZ );
 
         pp_printf("min=%d, max=%d, mid=%d Hz\n", main_min, main_max, main_mid);
-        
+
         pp_printf("DMTD clock: ");
 
         spll_set_dac(-1, 0); // dmtd -> min
@@ -274,13 +274,13 @@ static int cmd_ertm(const char *args[])
         spll_set_dac(-1, 65530); // dmtd -> max
         usleep(500000);
         int dmtd_max = measure_clock( ERTM14_CMON_CLK_DMTD, ERTM14_CMON_CLK_REF, 20000000 );
-        
+
         spll_set_dac(-1, 32768); // dmtd -> midrange
         usleep(500000);
         int dmtd_mid = measure_clock( ERTM14_CMON_CLK_DMTD, ERTM14_CMON_CLK_REF, 20000000 );
 
         pp_printf("min=%d, max=%d, mid=%d Hz\n", dmtd_min, dmtd_max, dmtd_mid);
-        
+
 
 
     } else if (!strcasecmp(args[0], "show-config") ) {
