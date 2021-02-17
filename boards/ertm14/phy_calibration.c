@@ -1,3 +1,5 @@
+#include <string.h>
+
 #include <board.h>
 #include "dev/syscon.h"
 #include "dev/endpoint.h"
@@ -248,7 +250,7 @@ static int tx_fsm_update(void)
 
         if (within_range(phase, phase_min, phase_max, 16000))
         {
-            int i;
+            // int i;
 
             fsm->measured_phase = phase;
             phy_dbg("FIX phase %d\n", fsm->measured_phase );
@@ -269,7 +271,7 @@ static int tx_fsm_update(void)
 
     case TX_SETUP_VALIDATE:
     {
-        int phase, enabled;
+        //int phase, enabled;
         //int rv = spll_read_ptracker(0, &phase, &enabled);
 
         //if (!rv)

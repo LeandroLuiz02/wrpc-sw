@@ -224,7 +224,7 @@ extern void phy_calibration_disable(void);
 
 static int cmd_ertm(const char *args[])
 {
-	int i;
+	int i = 0;
     if (!strcasecmp(args[0], "test-dac")) 
     {
         ertm_test_dac();
