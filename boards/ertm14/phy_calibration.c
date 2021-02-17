@@ -376,15 +376,14 @@ static int rx_fsm_update(void)
 
 			int rx_up = dbg0 & MDIO_DBG0_LINK_UP;
 			int rx_aligned = dbg0 & MDIO_DBG0_LINK_ALIGNED;
-   			int rx_comma_pos = (dbg0 >> 7) & 0x7f;
-            int rx_comma_valid = (dbg0 >> 7) & 0x80 ? 1 : 0;
-
+   			// int rx_comma_pos = (dbg0 >> 7) & 0x7f;
+			// int rx_comma_valid = (dbg0 >> 7) & 0x80 ? 1 : 0;
 
 			if ( tmo_expired(&fsm->link_timeout) && !rx_up) {
 				fsm->state = RX_SETUP_STATE_INIT;
-            }
-            else 
-            {
+			}
+			else 
+			{
 				if ( !rx_up )
 					return 0;
 
