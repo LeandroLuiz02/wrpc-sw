@@ -502,7 +502,7 @@ void phy_calibration_init()
     rx_fsm_init(&rx_state);
 }
 
-void phy_calibration_disable()
+void phy_calibration_disable(void)
 {
     tx_state.state = TX_SETUP_STATE_DISABLED;
     rx_state.state = RX_SETUP_STATE_DISABLED;

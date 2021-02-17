@@ -221,6 +221,9 @@ static void set_dds_sync_source( char *channel_name, char *src_name )
 
 }
 
+/* FIXME: this should be in a .h file */
+extern void phy_calibration_disable(void);
+
 static int cmd_ertm(const char *args[])
 {
 	int i;
