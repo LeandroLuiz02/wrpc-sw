@@ -317,7 +317,7 @@ void shell_show_build_init(void)
 }
 
 
-void shell_register_command( struct wrc_shell_cmd* cmd )
+void shell_register_command(const struct wrc_shell_cmd* cmd)
 {
 	if( n_cmds >= SHELL_MAX_COMMANDS )
 	{
