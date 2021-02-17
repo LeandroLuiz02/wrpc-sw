@@ -214,7 +214,7 @@ static void ertm_show_cm(void)
     }
 }
 
-static void set_dds_sync_source( char *channel_name, char *src_name )
+static void set_dds_sync_source( const char *channel_name, const char *src_name )
 {
 
 }
