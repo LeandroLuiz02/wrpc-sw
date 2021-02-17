@@ -308,7 +308,7 @@ static int tx_fsm_update(void)
 }
 
 
-static void rx_fsm_init(  )
+static void rx_fsm_init(void)
 {
 	struct wrc_port_rx_setup_state* fsm = &rx_state;
 
@@ -318,7 +318,7 @@ static void rx_fsm_init(  )
     memset(fsm->cpos_stat, 0, sizeof(fsm->cpos_stat ));
 }
 
-static int rx_fsm_update(  )
+static int rx_fsm_update(void)
 {
 	struct wrc_port_rx_setup_state* fsm = &rx_state;
 	struct wrc_port_tx_setup_state* fsm_tx = &tx_state;
@@ -480,7 +480,7 @@ static int rx_fsm_update(  )
 	return 0;
 }
 
-int phy_calibration_poll()
+int phy_calibration_poll(void)
 {
     tx_fsm_update();
     rx_fsm_update();
@@ -489,7 +489,7 @@ int phy_calibration_poll()
 
 
 
-void phy_calibration_init()
+void phy_calibration_init(void)
 {
     phy_dbg("Initializing PHY calibrator...\n");
     ep_pcs_write(&wrc_endpoint_dev, MDIO_REG_MCR, MDIO_MCR_PDOWN);	/* reset the PHY */
