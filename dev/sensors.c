@@ -149,7 +149,7 @@ static int cmd_sensors(const char *args[])
 	{
 		if( s->flags & WRC_SENSOR_VALID )
 		{
-			pp_printf(" - %-20s %-20s : %-05d %s\n", 
+			pp_printf(" - %-20s %-20s : %05d %s\n",
 				sensor_type_string( s->flags ),
 				s->name,
 				s->value,
