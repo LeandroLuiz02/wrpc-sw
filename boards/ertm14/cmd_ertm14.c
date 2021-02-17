@@ -178,7 +178,7 @@ static int measure_clock(int id, int ref_channel, int ref_frequency)
     return cm->freqs[id];
 }
 
-static void ertm_test_dac()
+static void ertm_test_dac(void)
 {
     int i = 0;
     pp_printf("Playing sawtooth on eRTM15 OCXO DAC. Press ESC to abort.\n");
@@ -198,7 +198,7 @@ static void ertm_test_dac()
     }
 }
 
-static void ertm_show_cm()
+static void ertm_show_cm(void)
 {
     int i;
     struct wb_clock_monitor_device *cm = &board.ertm14_cmon;
