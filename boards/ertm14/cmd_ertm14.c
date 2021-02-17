@@ -12,6 +12,7 @@
 #include <wrc.h>
 
 #include "board.h"
+#include "dev/console.h"
 #include "dev/clock_monitor.h"
 #include "softpll_ng.h"
 #include "shell.h"
