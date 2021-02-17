@@ -41,10 +41,10 @@ static void dump_dds_state( const char *name, struct ertm14_dds_state *cfg )
     int i;
     pp_printf("%s DDS FTW:                0x%08x\n", name, cfg->ftw);
     pp_printf("%s DDS amplitude factor:   %d\n", name, cfg->ampl_factor);
-    pp_printf("%s DDS measured power:     %d.%-02d dBm\n", name, cfg->amp_power / 1000, cfg->amp_power % 1000);
+    pp_printf("%s DDS measured power:     %d.%02d dBm\n", name, cfg->amp_power / 1000, cfg->amp_power % 1000);
     pp_printf("%s outputs:\n", name);
     for( i = ERTM14_RF_OUT_MIN_ID; i <= ERTM14_RF_OUT_MAX_ID; i++ )
-        pp_printf("- %s%d: %-08s (last measured power = %d.%-02d dBm)\n", name, i, get_rf_out_state_string( cfg->out_state[i] ),
+        pp_printf("- %s%d: %08s (last measured power = %d.%02d dBm)\n", name, i, get_rf_out_state_string( cfg->out_state[i] ),
         cfg->out_power[i] / 1000, cfg->out_power[i] % 1000
         );
 }
@@ -73,7 +73,7 @@ static void dump_config( int id, struct ertm14_board_state *cfg )
     pp_printf("CLKA/CLKB outputs: \n");
     for(i = 0; i <= ERTM14_CLKAB_OUT_MAX_ID; i++)
     {
-        pp_printf(" - CLKA%-02d: %-20d Hz (%s) CLKB%-02d: %-20d Hz (%s)\n",
+        pp_printf(" - CLKA%02d: %-20d Hz (%s) CLKB%02d: %-20d Hz (%s)\n",
         i, cfg->clka_freq_hz[i], (cfg->clka_enable_mask & (1<<i)) ? "ON " : "OFF",
         i, cfg->clkb_freq_hz[i], (cfg->clkb_enable_mask & (1<<i)) ? "ON " : "OFF" );
 
