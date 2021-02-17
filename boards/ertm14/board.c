@@ -763,43 +763,55 @@ static void control_uart_mode_callback( int is_binary )
         uart_link_reset( &board.control_uart_link );
 }
 
+static int ertm_process_psnmp(
+	struct uart_packet *rx_pkt, struct uart_packet *tx_pkt);
+
 static int control_uart_poll(void)
 {
     struct uart_packet *pkt;
 
     if( uart_link_recv( &board.control_uart_link, &pkt, 0 ) > 0 )
     {
-        struct uart_packet tx_pkt;
+        struct uart_packet t, *tx_pkt = &t;
 
         /*... dispatch */
         if( pkt->ptype == ERTM14_UART_PTYPE_PING )
         {
 	    /* build funny pong packet */
 	    static const char hello[] = "i am david\n";
-            tx_pkt.ptype = ERTM14_UART_PTYPE_PING;
-            tx_pkt.length = 10;
-	    memcpy(&tx_pkt.payload, hello, sizeof(hello));
+            tx_pkt->ptype = ERTM14_UART_PTYPE_PING;
+            tx_pkt->length = 10;
+	    memcpy(&tx_pkt->payload, hello, sizeof(hello));
 
-            uart_link_send( &board.control_uart_link, &tx_pkt );
+            uart_link_send( &board.control_uart_link, tx_pkt );
 
             blink(1);
         } else if (pkt->ptype == ERTM14_UART_PTYPE_SNMP_REQ) {
-	    /* build packet with some version info */
-	    int config_id;
-	    struct ertm14_board_state *bs;
 
-	    tx_pkt.ptype = ERTM14_UART_PTYPE_SNMP_RESP;
-	    config_id = ertm14_get_current_config_id();
-	    bs = ertm14_get_state_for_config(config_id);
-	    tx_pkt.length = sizeof(*bs);
-	    memcpy(&tx_pkt.payload, bs, sizeof(*bs));
+	    /* dispatch on (psuedo)snmp payload */
+	    ertm_process_psnmp(pkt, tx_pkt);
 
 	    /* we presume this is binary, snmp or not */
-            uart_link_send(&board.control_uart_link, &tx_pkt);
+            uart_link_send(&board.control_uart_link, tx_pkt);
 	}
     }
 
     return 0;
+}
+
+static int ertm_process_psnmp(struct uart_packet *rx_pkt, struct uart_packet *tx_pkt)
+{
+	struct ertm14_board_state *bs;
+	int config_id;
+
+	/* default op: get configuration */
+	tx_pkt->ptype = ERTM14_UART_PTYPE_SNMP_RESP;
+	config_id = ertm14_get_current_config_id();
+	bs = ertm14_get_state_for_config(config_id);
+	tx_pkt->length = sizeof(*bs);
+	memcpy(&tx_pkt->payload, bs, sizeof(*bs));
+
+	return 0;
 }
 
 
