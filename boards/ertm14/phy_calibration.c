@@ -105,6 +105,8 @@ static void tx_fsm_init(struct wrc_port_tx_setup_state *fsm)
     fsm->cal_file_updated = 0;
     fsm->cnt = 0;
 
+    /* FIXME: is cal_saved_phase unsigned? uint32_t? declare it so
+     * at the wrc_port_tx_setup_state structure */
     if( !storage_get_calibration_parameter( CAL_PARAM_PHY_TARGET_TX_PHASE, &fsm->cal_saved_phase ) )
     {
         phy_dbg("read tx target phase :%d ps\n", fsm->cal_saved_phase);
@@ -308,12 +310,10 @@ static int tx_fsm_update(void)
 }
 
 
-static void rx_fsm_init(void)
+static void rx_fsm_init(struct wrc_port_rx_setup_state* fsm)
 {
-	struct wrc_port_rx_setup_state* fsm = &rx_state;
-
-	fsm->attempts = 0;
-	fsm->state = RX_SETUP_STATE_INIT;
+    fsm->attempts = 0;
+    fsm->state = RX_SETUP_STATE_INIT;
     fsm->prev_link_up = 0;
     memset(fsm->cpos_stat, 0, sizeof(fsm->cpos_stat ));
 }

@@ -47,7 +47,7 @@ static void dump_dds_state( const char *name, struct ertm14_dds_state *cfg )
     pp_printf("%s DDS measured power:     %d.%02d dBm\n", name, cfg->amp_power / 1000, cfg->amp_power % 1000);
     pp_printf("%s outputs:\n", name);
     for( i = ERTM14_RF_OUT_MIN_ID; i <= ERTM14_RF_OUT_MAX_ID; i++ )
-        pp_printf("- %s%d: %08s (last measured power = %d.%02d dBm)\n", name, i, get_rf_out_state_string( cfg->out_state[i] ),
+        pp_printf("- %s%d: %8s (last measured power = %d.%02d dBm)\n", name, i, get_rf_out_state_string( cfg->out_state[i] ),
         cfg->out_power[i] / 1000, cfg->out_power[i] % 1000
         );
 }
@@ -320,6 +320,7 @@ static int cmd_ertm(const char *args[])
     } else if (!strcasecmp(args[0], "set-dds-sync-source")) {
         set_dds_sync_source(args[1], args[2]);
     }
+    return 0;
 }
 
 #define ERTM14_MON_REFRESH_PERIOD 1000 // ms
