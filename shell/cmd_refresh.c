@@ -31,7 +31,10 @@ static int cmd_refresh(const char *args[])
 	return 0;
 }
 
+/* This command was not registered before */
+/*
 DEFINE_WRC_COMMAND(refresh) = {
 	.name = "refresh",
 	.exec = cmd_refresh,
 };
+*/

@@ -65,9 +65,6 @@ static int cmd_pos = 0, cmd_len = 0;
 static int state = SH_PROMPT;
 static int current_key = 0;
 
-static struct wrc_shell_cmd *cmds[ SHELL_MAX_COMMANDS ];
-static int n_cmds = 0;
-
 int shell_is_interacting;
 int (*shell_ui_callback)(void);
 
@@ -130,9 +127,8 @@ static int _shell_exec(void)
 	if (*tokptr[0] == '#')
 		return 0;
 
-	for (i = 0; i < n_cmds; i++)
+	for (p = __cmd_begin; p < __cmd_end; p++)
 	{
-		p = cmds[i];
 		if (!strcasecmp(p->name, tokptr[0])) {
 			rv = p->exec((const char **)(tokptr + 1));
 			if (rv < 0)
@@ -342,25 +338,13 @@ void shell_show_build_init(void)
 		pp_printf("(empty)\n");
 }
 
-
-void shell_register_command( struct wrc_shell_cmd* cmd )
-{
-	if( n_cmds >= SHELL_MAX_COMMANDS )
-	{
-		pp_printf("can't register shell command '%s', increase SHELL_MAX_COMMANDS\n", cmd->name );
-		return;
-	}
-	cmds[ n_cmds ] = cmd;
-	n_cmds++;
-}
-
 void shell_list_cmds()
 {
-	int i;
+	struct wrc_shell_cmd *p;
 
-	for(i = 0; i < n_cmds; i++)
+	for (p = __cmd_begin; p < __cmd_end; p++)
 	{
-		pp_printf("  %s\n", cmds[i]->name);
+		pp_printf(" %s\n", p->name);
 	}
 }
 
@@ -371,38 +355,4 @@ void shell_activate_ui_command( int (*callback)(void) )
 	pp_printf("Activateui: %p\n", callback );
 	term_clear();
 	cmd_len = 0;
-}
-
-#define REGISTER_WRC_COMMAND(_name) \
-	{ extern struct wrc_shell_cmd __wrc_cmd_ ## _name; shell_register_command( &__wrc_cmd_ ## _name ); }
-
-void shell_register_commands(void)
-{
-	REGISTER_WRC_COMMAND(gui);
-	REGISTER_WRC_COMMAND(ps);
-	REGISTER_WRC_COMMAND(pll);
-	REGISTER_WRC_COMMAND(ptp);
-	REGISTER_WRC_COMMAND(verbose);
-	REGISTER_WRC_COMMAND(mode);
-	REGISTER_WRC_COMMAND(mac);
-	REGISTER_WRC_COMMAND(sdb);
-	REGISTER_WRC_COMMAND(calibration);
-	REGISTER_WRC_COMMAND(help);
-	REGISTER_WRC_COMMAND(diag);
-	REGISTER_WRC_COMMAND(init);
-	REGISTER_WRC_COMMAND(sfp);
-	REGISTER_WRC_COMMAND(stat);
-	REGISTER_WRC_COMMAND(ver);
-	REGISTER_WRC_COMMAND(ptrack);
-	REGISTER_WRC_COMMAND(time);
-	if (HAS_IP)
-		REGISTER_WRC_COMMAND(ip);
-	if (HAS_VLANS)
-		REGISTER_WRC_COMMAND(vlan);
-	if (HAS_CMD_PPS)
-		REGISTER_WRC_COMMAND(pps);
-	if (HAS_CMD_LEAPSEC)
-		REGISTER_WRC_COMMAND(leapsec);
-	if (HAS_CMD_NETCONSOLE)
-		REGISTER_WRC_COMMAND(netconsole);
 }

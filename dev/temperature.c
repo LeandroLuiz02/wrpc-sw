@@ -125,9 +125,10 @@ static int cmd_temp(const char *args[])
 	return 0;
 }
 
-
+/* This command was not registered before */
+/*
 DEFINE_WRC_COMMAND(temp) = {
 	.name = "temp",
 	.exec = cmd_temp,
 };
-
+*/

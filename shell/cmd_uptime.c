@@ -9,7 +9,10 @@ static int cmd_uptime(const char *args[])
 	return 0;
 }
 
+/* This command was not registered before */
+/*
 DEFINE_WRC_COMMAND(uptime) = {
 	.name = "uptime",
 	.exec = cmd_uptime,
 };
+*/
