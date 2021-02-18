@@ -559,7 +559,7 @@ void print_main_data(void)
 			if (ppg->defaultDS->slaveOnly) {
 				strncpy(str_config, "slaveOnly", sizeof(str_config) - 1);
 			} else {
-				if (ppg->defaultDS->externalPortConfigurationEnabled) {
+				if (is_externalPortConfigurationEnabled(ppg->defaultDS)) {
 					int s = 0;
 					for (s = 0; s < sizeof(desired_states) / sizeof(struct desired_state_t); s++) {
 						if (desired_states[s].state == ppi_pt->externalPortConfigurationPortDS.desiredState) {
