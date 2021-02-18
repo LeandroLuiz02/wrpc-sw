@@ -825,6 +825,12 @@ struct ertm14_protocol_ops {
     { -1, },
 };
 
+static void get_board_config(struct ertm14_board_state *bs)
+{
+    int config_id = ertm14_get_current_config_id();
+    memcpy(bs, ertm14_get_state_for_config(config_id), sizeof(*bs));
+}
+
 static void set_board_config(struct ertm14_board_state *bs)
 {
     /* FIXME: this is far from reentrant */
@@ -836,8 +842,6 @@ static void set_board_config(struct ertm14_board_state *bs)
 static int ertm_process_psnmp(struct uart_packet *rx_pkt, struct uart_packet *tx_pkt)
 {
 	struct ertm14_board_state *bs;
-	struct ertm14_mmc_state *mmcs;
-	int config_id;
 	uint8_t opcode = rx_pkt->payload[0];
 
 	tx_pkt->ptype = ERTM14_UART_PTYPE_SNMP_RESP;
@@ -845,17 +849,13 @@ static int ertm_process_psnmp(struct uart_packet *rx_pkt, struct uart_packet *tx
 	switch (opcode) {
 	case ertm14_get_board_config:
 		/* return full board configuration */		
-		config_id = ertm14_get_current_config_id();
-		bs = ertm14_get_state_for_config(config_id);
 		tx_pkt->length = 1 + sizeof(*bs);
 		tx_pkt->payload[0] = ertm14_get_board_config;
-		memcpy(&tx_pkt->payload[1], bs, sizeof(*bs));
+		get_board_config((void *)&tx_pkt->payload[1]);
 		break;
 
 	case ertm14_set_board_config:
-		bs = &rx_pkt->payload[1];
-		set_board_config(bs);
-		tx_pkt->ptype = ERTM14_UART_PTYPE_SNMP_RESP;
+		set_board_config((void *)&rx_pkt->payload[1]);
 		tx_pkt->length = 1;
 		tx_pkt->payload[0] = ertm14_get_board_config;
 		break;
