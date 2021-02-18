@@ -448,11 +448,6 @@ int uart_link_recv( struct uart_link* link, struct uart_packet **pkt, int timeou
 
 #ifdef __linux__
 
-#define ERTM14_UART_PTYPE_PING 1
-#define ERTM14_UART_PTYPE_SNMP_REQ 2
-#define ERTM14_UART_PTYPE_SNMP_RESP 3
-#define ERTM14_UART_PTYPE_MMC_STATUS_REQ 4
-
 int toms_main()
 {
     struct uart_link link;
