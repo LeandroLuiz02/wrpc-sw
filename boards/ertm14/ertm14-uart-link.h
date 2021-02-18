@@ -2,7 +2,6 @@
 #define __ERTM14_UART_LINK_H
 
 #include <stdint.h>
-#include "board-state.h"
 
 #define ERTM14_MAX_UART_LINK_PAYLOAD 512
 
