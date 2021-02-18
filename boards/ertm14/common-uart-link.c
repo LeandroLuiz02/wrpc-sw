@@ -1,44 +1,7 @@
-#include <stdint.h>
-#include <stdio.h>
-#include <stdlib.h>
 #include <sys/errno.h>
 #include <string.h>
 
-#ifdef CONFIG_TARGET_ERTM14
-#include "dev/console.h"
-#include "dev/simple_uart.h"
-#endif
-
 #include "ertm14-uart-link.h"
-
-#ifndef DEBUG
-#define ulink_dbg(...)
-#else
-#ifdef __linux__
-#define ulink_dbg(...) fprintf(stderr,__VA_ARGS__)
-#else
-#define ulink_dbg(...)
-#endif
-#endif
-
-#define CON_ESCAPE_CODE 0x1b
-#define CON_SWITCH_BINARY_CODE 'B'
-#define CON_SWITCH_TEXT_CODE 'T'
-
-#define CRC_POLY 0x8408
-
-#define LINK_STATE_IDLE 0
-#define LINK_STATE_SYNC 1
-#define LINK_STATE_PTYPE 2
-#define LINK_STATE_LEN0 3
-#define LINK_STATE_LEN1 4
-#define LINK_STATE_PAYLOAD 5
-#define LINK_STATE_CRC0 6
-#define LINK_STATE_CRC1 7
-
-#define RX_FSM_TIMEOUT 1000 /* ms */
-
-
 
 static uint16_t crc_xmodem_update(uint16_t crc, uint8_t data)
 {
@@ -57,63 +20,6 @@ static uint16_t crc_xmodem_update(uint16_t crc, uint8_t data)
     }
     return crc;
 }
-
-
-#ifdef CONFIG_TARGET_ERTM14
-
-static uint32_t wrpc_get_ms_tics( struct uart_link* link )
-{
-    return timer_get_tics();
-}
-
-static int wrpc_console_uart_send_byte( struct uart_link* link, uint8_t b )
-{
-    return console_binary_send_byte( &console_uart_dev, b );
-}
-
-static int wrpc_console_uart_recv_byte( struct uart_link* link )
-{
-    return console_binary_recv_byte( &console_uart_dev ) ;
-}
-
-int uart_link_create_wrpc_console( struct uart_link *link )
-{
-    link->priv = NULL;
-    link->send_byte = wrpc_console_uart_send_byte;
-    link->recv_byte = wrpc_console_uart_recv_byte;
-    link->get_ms_tics = wrpc_get_ms_tics;
-    link->state = LINK_STATE_IDLE;
-    link->rx_last_tics = 0;
-    return 0;
-};
-
-
-static int wrpc_suart_send_byte( struct uart_link* link, uint8_t b )
-{
-    struct simple_uart_device *suart = (struct simple_uart_device* ) link->priv;
-    suart_write_byte( suart, b );
-    return 1;
-}
-
-static int wrpc_suart_recv_byte( struct uart_link* link )
-{
-    struct simple_uart_device *suart = (struct simple_uart_device* ) link->priv;
-    return suart_read_byte( suart );
-}
-
-int uart_link_create_wrpc_suart( struct uart_link *link, struct simple_uart_device *uart_dev )
-{
-    link->priv = uart_dev;
-    link->send_byte = wrpc_suart_send_byte;
-    link->recv_byte = wrpc_suart_recv_byte;
-    link->get_ms_tics = wrpc_get_ms_tics;
-    link->state = LINK_STATE_IDLE;
-    link->rx_last_tics = 0;
-    return 0;
-};
-
-
-#endif
 
 static uint16_t crc16(unsigned char *buf, int len)
 {
