@@ -147,8 +147,8 @@ int main(int argc, char *argv[])
 
         fprintf(stderr,"sending command 'command'\n");
         tx_pkt->ptype = ERTM14_UART_PTYPE_SNMP_REQ;
-        tx_pkt->length = strlen("command");
-	memcpy(&tx_pkt->payload, "command", strlen("command") + 1);
+        tx_pkt->length = 1;
+	tx_pkt->payload[0] = 0x10;
 
         res = uart_link_send(link, tx_pkt);
 	if (res < 0) {
@@ -169,7 +169,7 @@ int main(int argc, char *argv[])
 				((i+1) % 16 == 0) ? '\n' : ' ');
 		if ((i+1) % 16 != 0)
 			fprintf(stderr, "\n");
-		board = (struct ertm14_board_state *)rx_pkt->payload;
+		board = (struct ertm14_board_state *)&rx_pkt->payload[1];
 		board_to_state(board, state);
 		display_ertm_state(state);
         }
