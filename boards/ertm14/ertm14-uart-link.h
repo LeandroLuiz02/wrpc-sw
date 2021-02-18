@@ -42,6 +42,27 @@
 #define ERTM15_VOLTAGE_POCXO 18
 #define ERTM15_CURRENT_OCXO 19
 
+#define LINK_STATE_IDLE 0
+#define LINK_STATE_SYNC 1
+#define LINK_STATE_PTYPE 2
+#define LINK_STATE_LEN0 3
+#define LINK_STATE_LEN1 4
+#define LINK_STATE_PAYLOAD 5
+#define LINK_STATE_CRC0 6
+#define LINK_STATE_CRC1 7
+
+#define RX_FSM_TIMEOUT 1000 /* ms */
+
+#ifndef DEBUG
+#define ulink_dbg(...)
+#else
+#ifdef __linux__
+#define ulink_dbg(...) fprintf(stderr,__VA_ARGS__)
+#else
+#define ulink_dbg(...)
+#endif
+#endif
+
 struct simple_uart_device;
 
 struct uart_packet
@@ -64,6 +85,12 @@ struct uart_link
     struct uart_packet rx_packet;
 };
 
+#ifdef __linux__
+#include <unistd.h>
+#define linux_usleep(u)		usleep(u)
+#else
+#define	linux_usleep(u)		do {} while (0)
+#endif
 
 #ifdef __linux__
 int uart_link_create_linux( struct uart_link *link, const char* dev_name, int speed );
