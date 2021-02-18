@@ -13,6 +13,13 @@
 #define ERTM14_CLKAB_OUT_MIN_ID 4
 #define ERTM14_CLKAB_OUT_MAX_ID 15
 
+#define ERTM14_MAX_SENSORS_COUNT 21
+
+#ifndef PACKED
+    #define PACKED __attribute__((packed))
+#endif
+
+
 struct ertm14_dds_state
 {
     uint32_t ftw;
@@ -33,6 +40,26 @@ struct ertm14_board_state
     uint32_t clkb_freq_hz[ERTM14_CLKAB_OUT_MAX_ID + 1];
     uint32_t clka_enable_mask;
     uint32_t clkb_enable_mask;
+};
+
+PACKED struct ertm14_mmc_version_info
+{
+    char git_tag[32];
+    char git_sha[32];
+    uint32_t build_date;
+};
+
+PACKED struct ertm14_mmc_sensor_state
+{
+    uint8_t flags;
+    uint8_t id;
+    uint16_t value;
+};
+
+PACKED struct ertm14_mmc_state
+{
+    struct ertm14_mmc_version_info info;
+    struct ertm14_mmc_sensor_state sensors[ERTM14_MAX_SENSORS_COUNT];
 };
 
 #endif /*  __BOARD_STATE_ERTM14_H */
