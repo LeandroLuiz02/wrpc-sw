@@ -338,16 +338,6 @@ void shell_show_build_init(void)
 		pp_printf("(empty)\n");
 }
 
-void shell_list_cmds()
-{
-	struct wrc_shell_cmd *p;
-
-	for (p = __cmd_begin; p < __cmd_end; p++)
-	{
-		pp_printf(" %s\n", p->name);
-	}
-}
-
 void shell_activate_ui_command( int (*callback)(void) )
 {
 	shell_ui_callback = callback;
@@ -356,3 +346,20 @@ void shell_activate_ui_command( int (*callback)(void) )
 	term_clear();
 	cmd_len = 0;
 }
+
+static int cmd_help(const char *args[])
+{
+	struct wrc_shell_cmd *p;
+	pp_printf("Available commands:\n");
+
+	for (p = __cmd_begin; p < __cmd_end; p++) {
+	pp_printf(" %s\n", p->name);
+	}
+
+	return 0;
+}
+
+DEFINE_WRC_COMMAND(help) = {
+	.name = "help",
+	.exec = cmd_help,
+};
