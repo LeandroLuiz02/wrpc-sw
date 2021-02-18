@@ -38,8 +38,9 @@
 #include "dev/endpoint.h"
 #include "dev/74x595.h"
 #include "dev/netif.h"
+#include "hw/wrc_diags_regs.h"
 
-#include "lib/ertm14-uart-link.h"
+#include "ertm14-uart-link.h"
 
 #include "sensors.h"
 #include "softpll_ng.h"

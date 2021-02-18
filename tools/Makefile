@@ -72,8 +72,7 @@ pfilter-builder: pfilter-builder.c
 		$@.c $(LDFLAGS) -o $@
 
 # FIXME: this stuff must be reorganized
-ertm14-uart-link.o: ../lib/ertm14-uart-link.h ../lib/ertm14-uart-link.c
-	$(CC) -c ../lib/ertm14-uart-link.c -o $@
+ertm14-uart-link.o: ertm14-uart-link.h
 ertm-serial: ertm-serial.c ertm14-uart-link.o
 	$(CC) $(CFLAGS) -include ../include/generated/autoconf.h \
 		-I ../lib \

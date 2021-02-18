@@ -2,6 +2,7 @@
 #define __ERTM14_UART_LINK_H
 
 #include <stdint.h>
+#include "board-state.h"
 
 #define ERTM14_MAX_UART_LINK_PAYLOAD 512
 
@@ -41,32 +42,6 @@
 #define ERTM15_VOLTAGE_P9V0_REF 17
 #define ERTM15_VOLTAGE_POCXO 18
 #define ERTM15_CURRENT_OCXO 19
-
-#define ERTM14_MAX_SENSORS_COUNT 21
-
-#ifndef PACKED
-    #define PACKED __attribute__((packed))
-#endif
-
-PACKED struct ertm14_mmc_version_info
-{
-    char git_tag[32];
-    char git_sha[32];
-    uint32_t build_date;
-};
-
-PACKED struct ertm14_mmc_sensor_state
-{
-    uint8_t flags;
-    uint8_t id;
-    uint16_t value;
-};
-
-PACKED struct ertm14_mmc_state
-{
-    struct ertm14_mmc_version_info info;
-    struct ertm14_mmc_sensor_state sensors[ERTM14_MAX_SENSORS_COUNT];
-};
 
 struct simple_uart_device;
 
