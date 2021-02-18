@@ -861,12 +861,13 @@ static int ertm_process_psnmp(struct uart_packet *rx_pkt, struct uart_packet *tx
 		break;
 
 	case ertm14_get_mmc_state:
+		// struct ertm14_mmc_state *mmcs;
 		break;
-	case ertm14_get_wrc_diags:		//,    NULL, NULL, sizeof(struct WRC_DIAGS_WB), 0, },
+	case ertm14_get_wrc_diags:
 		break;
-	case ertm14_get_wrc_nco:		//,      NULL, NULL, -1, 0, },
+	case ertm14_get_wrc_nco:
 		break;
-	case ertm14_set_wrc_nco:		//,      NULL, NULL, -1, 0, },
+	case ertm14_set_wrc_nco:
 		break;
 	default:
 		/* default op: get configuration */
