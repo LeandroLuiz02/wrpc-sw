@@ -800,21 +800,79 @@ static int control_uart_poll(void)
     return 0;
 }
 
+/* visually recognizable opcodes */
+#define ertm14_get_board_config		0x10
+#define ertm14_set_board_config		0x11
+#define ertm14_get_mmc_state		0x12
+#define ertm14_get_wrc_diags		0x13
+#define ertm14_get_wrc_nco		0x14
+#define ertm14_set_wrc_nco		0x15
+
+struct ertm14_protocol_ops {
+	int8_t	opcode;
+	void	*arg1;
+	void	*arg2;
+	size_t	length1;
+	size_t	length2;
+} protocol_ops[] = {
+    { ertm14_get_board_config, NULL, NULL, sizeof(struct ertm14_board_state), 0, },
+    { ertm14_set_board_config, NULL, NULL, sizeof(struct ertm14_board_state), sizeof(struct ertm14_board_state), },
+    { ertm14_get_mmc_state,    NULL, NULL, sizeof(struct ertm14_mmc_state), 0, },
+    { ertm14_get_wrc_diags,    NULL, NULL, sizeof(struct WRC_DIAGS_WB), 0, },
+    { ertm14_get_wrc_nco,      NULL, NULL, -1, 0, },
+    { ertm14_set_wrc_nco,      NULL, NULL, -1, 0, },
+    { -1, },
+};
+
+static void set_board_config(struct ertm14_board_state *bs)
+{
+    /* FIXME: this is far from reentrant */
+    ertm14_current_state = &ertm14_configs[0];
+    memcpy(ertm14_current_state, bs, sizeof(*bs));
+    event_post(WRC_ERTM14_EVENT_APPLY_NEW_CONFIG);
+}
+
 static int ertm_process_psnmp(struct uart_packet *rx_pkt, struct uart_packet *tx_pkt)
 {
 	struct ertm14_board_state *bs;
+	struct ertm14_mmc_state *mmcs;
 	int config_id;
+	uint8_t opcode = rx_pkt->payload[0];
 
-	/* default op: get configuration */
 	tx_pkt->ptype = ERTM14_UART_PTYPE_SNMP_RESP;
-	config_id = ertm14_get_current_config_id();
-	bs = ertm14_get_state_for_config(config_id);
-	tx_pkt->length = sizeof(*bs);
-	memcpy(&tx_pkt->payload, bs, sizeof(*bs));
 
+	switch (opcode) {
+	case ertm14_get_board_config:
+		/* return full board configuration */		
+		config_id = ertm14_get_current_config_id();
+		bs = ertm14_get_state_for_config(config_id);
+		tx_pkt->length = 1 + sizeof(*bs);
+		tx_pkt->payload[0] = ertm14_get_board_config;
+		memcpy(&tx_pkt->payload[1], bs, sizeof(*bs));
+		break;
+
+	case ertm14_set_board_config:
+		bs = &rx_pkt->payload[1];
+		set_board_config(bs);
+		tx_pkt->ptype = ERTM14_UART_PTYPE_SNMP_RESP;
+		tx_pkt->length = 1;
+		tx_pkt->payload[0] = ertm14_get_board_config;
+		break;
+
+	case ertm14_get_mmc_state:
+		break;
+	case ertm14_get_wrc_diags:		//,    NULL, NULL, sizeof(struct WRC_DIAGS_WB), 0, },
+		break;
+	case ertm14_get_wrc_nco:		//,      NULL, NULL, -1, 0, },
+		break;
+	case ertm14_set_wrc_nco:		//,      NULL, NULL, -1, 0, },
+		break;
+	default:
+		/* default op: get configuration */
+		break;
+	}
 	return 0;
 }
-
 
 static void ertm14_clock_monitor_init(void)
 {
