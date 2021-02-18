@@ -64,6 +64,11 @@ struct uart_link
     struct uart_packet rx_packet;
 };
 
+#ifdef __linux__
+#define linux_usleep(u)		usleep(u)
+#else
+#define	linux_usleep(u)		do {} while (0)
+#endif
 
 #ifdef __linux__
 int uart_link_create_linux( struct uart_link *link, const char* dev_name, int speed );
