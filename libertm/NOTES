@@ -11,3 +11,69 @@ Serial line connection using cu:
 
 (the escape Ctrl-C is good to avoid multi-escaping tilde characters,
 used both by ssh and cu by default)
+
+
+ertm commands:
+
+ "ertm" "test-dac"
+ "ertm" "cm"			# this goes away too
+ "ertm" "test-clocks"
+ "ertm" "show-config"
+ "ertm" "activate-config"	# don't care about configs
+ "ertm" "select-config"
+ "ertm" "set-dds-ftw"
+ "ertm" "set-dds-ampl"
+ "ertm" "set-dds-enable"
+ "ertm" "set-clk-enable"
+ "ertm" "set-clk-freq"
+ "ertm" "set-dds-sync-source"
+
+
+This is the full shitload that we must give back to the
+caller upstream the C calling convention
+
+eRTM14 config 0: ACTIVE
+LO DDS FTW:                0x39374bc6
+LO DDS amplitude factor:   127
+LO DDS measured power:     0.0  dBm
+LO outputs:
+- LO4: MONITOR  (last measured power = 0.0  dBm)
+- LO5: MONITOR  (last measured power = 0.0  dBm)
+- LO6: MONITOR  (last measured power = 0.0  dBm)
+- LO7: MONITOR  (last measured power = 0.0  dBm)
+- LO8: MONITOR  (last measured power = 0.0  dBm)
+- LO9: MONITOR  (last measured power = 0.0  dBm)
+- LO10: MONITOR  (last measured power = 0.0  dBm)
+- LO11: MONITOR  (last measured power = 0.0  dBm)
+- LO12: MONITOR  (last measured power = 0.0  dBm)
+REF DDS FTW:                0x39374bc6
+REF DDS amplitude factor:   127
+REF DDS measured power:     0.0  dBm
+REF outputs:
+- REF4: MONITOR  (last measured power = 0.0  dBm)
+- REF5: MONITOR  (last measured power = 0.0  dBm)
+- REF6: MONITOR  (last measured power = 0.0  dBm)
+- REF7: MONITOR  (last measured power = 0.0  dBm)
+- REF8: MONITOR  (last measured power = 0.0  dBm)
+- REF9: MONITOR  (last measured power = 0.0  dBm)
+- REF10: MONITOR  (last measured power = 0.0  dBm)
+- REF11: MONITOR  (last measured power = 0.0  dBm)
+- REF12: MONITOR  (last measured power = 0.0  dBm)
+CLKA/CLKB outputs:
+ - CLKA0 : 500000000            Hz (ON ) CLKB0 : 500000000            Hz (ON )
+ - CLKA1 : 500000000            Hz (ON ) CLKB1 : 500000000            Hz (ON )
+ - CLKA2 : 500000000            Hz (ON ) CLKB2 : 500000000            Hz (ON )
+ - CLKA3 : 500000000            Hz (ON ) CLKB3 : 500000000            Hz (ON )
+ - CLKA4 : 500000000            Hz (ON ) CLKB4 : 500000000            Hz (ON )
+ - CLKA5 : 500000000            Hz (ON ) CLKB5 : 500000000            Hz (ON )
+ - CLKA6 : 500000000            Hz (ON ) CLKB6 : 500000000            Hz (ON )
+ - CLKA7 : 500000000            Hz (ON ) CLKB7 : 500000000            Hz (ON )
+ - CLKA8 : 500000000            Hz (ON ) CLKB8 : 500000000            Hz (ON )
+ - CLKA9 : 500000000            Hz (ON ) CLKB9 : 500000000            Hz (ON )
+ - CLKA10: 500000000            Hz (ON ) CLKB10: 500000000            Hz (ON )
+ - CLKA11: 500000000            Hz (ON ) CLKB11: 500000000            Hz (ON )
+ - CLKA12: 500000000            Hz (ON ) CLKB12: 500000000            Hz (ON )
+ - CLKA13: 500000000            Hz (ON ) CLKB13: 500000000            Hz (ON )
+ - CLKA14: 500000000            Hz (ON ) CLKB14: 500000000            Hz (ON )
+ - CLKA15: 500000000            Hz (ON ) CLKB15: 500000000            Hz (ON )
+
