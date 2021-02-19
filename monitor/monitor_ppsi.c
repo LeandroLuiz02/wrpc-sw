@@ -422,7 +422,7 @@ void print_main_description(void)
 
 void print_main_data(void)
 {
-	struct hal_port_state state;
+	struct wrc_port_state state;
 	int tx, rx;
 	int leap_sec, tmp;
 	uint64_t sec;
@@ -853,7 +853,7 @@ void print_servo_data(struct pp_instance *ppi)
 int wrc_log_stats(void)
 {
 #if 0
-	struct hal_port_state state;
+	struct wrc_port_state state;
 	int tx, rx;
 	struct spll_aux_clock_status aux_stat;
 	uint64_t sec;
@@ -945,7 +945,7 @@ int wrc_log_stats(void)
 int wrc_wr_diags(void)
 {
 #if 0
-	struct hal_port_state ps;
+	struct wrc_port_state ps;
 	static uint32_t last_jiffies;
 	int tx, rx;
 	uint64_t sec;

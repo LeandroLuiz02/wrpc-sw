@@ -49,7 +49,7 @@ struct wrpc_socket *ptpd_netif_create_socket(struct wrpc_socket *sock,
 					     int udp_or_raw, int udpport)
 {
 	int i;
-	struct hal_port_state pstate;
+	struct wrc_port_state pstate;
 
 	/* Look for the first available socket. */
 	for (i = 0; i < ARRAY_SIZE(socks); i++)

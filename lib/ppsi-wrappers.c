@@ -18,11 +18,11 @@
 
 #include <board.h>
 
-struct wrs_shm_head *ppsi_head;
+void *ppsi_head;
 
 /* Following code from ptp-noposix/libposix/freestanding-wrapper.c */
 
-static int read_phase_val(struct hal_port_state *port)
+static int read_phase_val(struct wrc_port_state *port)
 {
 	int32_t dmtd_phase;
 
@@ -39,34 +39,21 @@ static int read_phase_val(struct hal_port_state *port)
 
 extern uint32_t cal_phase_transition;
 
-int wrpc_get_port_state(struct hal_port_state *port, const char *port_name)
+int wrpc_get_port_state(struct wrc_port_state *port, const char *port_name)
 {
-	if (wrc_ptp_get_mode() == WRC_MODE_SLAVE)
-		port->mode = HEXP_PORT_MODE_WR_SLAVE;
-	else
-		port->mode = HEXP_PORT_MODE_WR_MASTER;
-
 	/* all deltas are added anyway */
-	ep_get_deltas(&wrc_endpoint_dev, &port->calib.sfp.delta_tx_ps,
-		      &port->calib.sfp.delta_rx_ps);
+	ep_get_deltas(&wrc_endpoint_dev, &port->calib.delta_tx_ps,
+		      &port->calib.delta_rx_ps);
 	/* get the bitslide */
 	port->calib.bitslide_ps = ep_get_bitslide(&wrc_endpoint_dev);
-	port->calib.delta_tx_phy = 0;
-	port->calib.delta_rx_phy = 0;
-	port->calib.delta_tx_board = 0;
-	port->calib.delta_rx_board = 0;
 	read_phase_val(port);
-	port->state = ep_link_up(&wrc_endpoint_dev, NULL);
 	port->calib.tx_calibrated = 1;
 	port->calib.rx_calibrated = 1;
 	port->locked = spll_check_lock(0);
-	/*  port->lock_priority = 0;*/
-	/*spll_get_phase_shift(0, NULL, (int32_t *)&port->phase_setpoint);*/
 	port->clock_period  = REF_CLOCK_PERIOD_PS;
 	port->t2_phase_transition = cal_phase_transition;
 	port->t4_phase_transition = cal_phase_transition;
 	ep_get_mac_addr(&wrc_endpoint_dev, port->hw_addr);
-	port->hw_index      = 0;
 
 	return 0;
 }
