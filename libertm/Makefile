@@ -5,8 +5,10 @@ CFLAGS += -fPIC -Wall -g
 
 ERTM_UART_LOCATION = ../lib
 ERTM_BOARD_LOCATION = ../boards/ertm14/
+WRC_INCLUDES = ../include
 
 CFLAGS += -I $(ERTM_UART_LOCATION) -I $(ERTM_BOARD_LOCATION)
+CFLAGS += -I $(WRC_INCLUDES)
 
 all: libs serial ertm-serial
 
@@ -33,6 +35,14 @@ common-uart-link.o: $(ERTM_BOARD_LOCATION)/common-uart-link.c
 ertm14-uart-link.o: $(ERTM_UART_LOCATION)/ertm14-uart-link.c
 	$(CC) $(CFLAGS) -c -o $@ $^ $(LDLIBS) $(LDFLAGS)
 
+linux-uart-link.o: $(ERTM_BOARD_LOCATION)/ertm14-uart-link.h
+ertm-serial.o: $(WRC_INCLUDES)/hw/wrc_diags_regs.h
+ertm-serial.o: $(ERTM_BOARD_LOCATION)/psnmp-proto.h $(ERTM_BOARD_LOCATION)/board-state.h
+ertm-serial.o: $(ERTM_BOARD_LOCATION)/ertm14-uart-link.h $(ERTM_BOARD_LOCATION)/ertm15_rf_distr.h
+ertm-serial.o: private.h libertm.h
+libertm.o: libertm.h private.h
+
 clean:
 	rm -f *.o *.a *.so
 	rm -f serial
+
