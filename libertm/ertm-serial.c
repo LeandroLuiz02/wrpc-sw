@@ -147,38 +147,55 @@ void display_hex(uint8_t *buf, size_t len)
 		fprintf(stderr, "\n");
 }
 
-int main(int argc, char *argv[])
+int get_board_config(struct ertm_status *st)
 {
-    	struct uart_link ln, *link = &ln;
-        struct uart_packet pack, *tx_pkt = &pack;
-        struct uart_packet pack2, *rx_pkt = &pack2;
 	int res, stat;
 
-	uart_link_create_linux(link, usb_serial, serial_speed);
+    	struct uart_link *link = &st->link;
+        struct uart_packet pack1, *tx_pkt = &pack1;
+        struct uart_packet pack2, *rx_pkt = &pack2;
 
-        fprintf(stderr,"sending command 'command'\n");
+	struct ertm14_board_state *board;
+	struct ertm_state *state = st->state;
+
         tx_pkt->ptype = ERTM14_UART_PTYPE_SNMP_REQ;
         tx_pkt->length = 1;
-	tx_pkt->payload[0] = 0x10;
+	tx_pkt->payload[0] = ertm14_get_board_config;
 
         res = uart_link_send(link, tx_pkt);
 	if (res < 0) {
 		printf("error %d in uart_link_send\n", res);
 		return res;
+		return ERTM_UART_LINK_SEND_ERR;
 	}
-
 	memset(rx_pkt, 0, sizeof(*rx_pkt));
         stat = uart_link_recv(link, &rx_pkt, sizeof(*rx_pkt) + 10);
-        if (stat > 0) {
-		struct ertm14_board_state *board;
-		struct ertm_state st, *state = &st;
-
-		fprintf(stderr,"recvd %d bytes: \n", rx_pkt->length);
-		display_hex(rx_pkt->payload, rx_pkt->length);
-		board = (struct ertm14_board_state *)&rx_pkt->payload[1];
-		board_to_state(board, state);
-		display_ertm_state(state);
+        if (stat <= 0) {
+		fprintf(stderr, "error (stat %d) in uart_link_recv\n", stat);
+		return ERTM_UART_LINK_RECV_ERR;
         }
+	fprintf(stderr,"recvd %d bytes: \n", rx_pkt->length);
+	display_hex(rx_pkt->payload, rx_pkt->length);
+
+	board = (struct ertm14_board_state *)&rx_pkt->payload[1];
+	board_to_state(board, state);
+	display_ertm_state(state);
+
+	return 0;
+}
+
+static struct ertm_state state;
+static struct ertm_status st = {
+	.state = &state,
+};
+static struct ertm_status *status = &st;
+
+int main(int argc, char *argv[])
+{
+	uart_link_create_linux(&status->link, usb_serial, serial_speed);
+
+        fprintf(stderr,"sending command 'command'\n");
+	get_board_config(status);
 
 	return 0;
 }
