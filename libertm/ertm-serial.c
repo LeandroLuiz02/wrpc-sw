@@ -136,6 +136,17 @@ void display_ertm_state(struct ertm_state *st)
 	display_ertm_clk(&st->clkb);
 }
 
+void display_hex(uint8_t *buf, size_t len)
+{
+	int i;
+
+	for (i = 0; i < len; i++)
+		fprintf(stderr, "%02x%c", buf[i],
+			((i+1) % 16 == 0) ? '\n' : ' ');
+	if ((i+1) % 16 != 0)
+		fprintf(stderr, "\n");
+}
+
 int main(int argc, char *argv[])
 {
     	struct uart_link ln, *link = &ln;
@@ -159,16 +170,11 @@ int main(int argc, char *argv[])
 	memset(rx_pkt, 0, sizeof(*rx_pkt));
         stat = uart_link_recv(link, &rx_pkt, sizeof(*rx_pkt) + 10);
         if (stat > 0) {
-		int i;
 		struct ertm14_board_state *board;
 		struct ertm_state st, *state = &st;
 
 		fprintf(stderr,"recvd %d bytes: \n", rx_pkt->length);
-		for (i = 0; i < rx_pkt->length; i++)
-			fprintf(stderr, "%02x%c", rx_pkt->payload[i],
-				((i+1) % 16 == 0) ? '\n' : ' ');
-		if ((i+1) % 16 != 0)
-			fprintf(stderr, "\n");
+		display_hex(rx_pkt->payload, rx_pkt->length);
 		board = (struct ertm14_board_state *)&rx_pkt->payload[1];
 		board_to_state(board, state);
 		display_ertm_state(state);
