@@ -556,7 +556,7 @@ void print_main_data(void)
 #endif
 			// Evaluate the instance configuration
 			strcpy(str_config,"unknown");
-			if (ppg->defaultDS->slaveOnly) {
+			if (is_slaveOnly(ppg->defaultDS)) {
 				strncpy(str_config, "slaveOnly", sizeof(str_config) - 1);
 			} else {
 				if (is_externalPortConfigurationEnabled(ppg->defaultDS)) {
@@ -569,7 +569,7 @@ void print_main_data(void)
 					}
 
 				} else {
-					if (ppi_pt->portDS->masterOnly) {
+					if (is_masterOnly(ppi_pt->portDS)) {
 						strncpy(str_config, "masterOnly", sizeof(str_config) - 1);
 					} else {
 						strncpy(str_config, "auto", sizeof(str_config) - 1);
