@@ -138,29 +138,29 @@ int get_board_config(struct ertm_status *st)
 {
 	int res, stat;
 
-    	struct uart_link *link = &st->link;
-        struct uart_packet pack1, *tx_pkt = &pack1;
-        struct uart_packet pack2, *rx_pkt = &pack2;
+	struct uart_link *link = &st->link;
+	struct uart_packet pack1, *tx_pkt = &pack1;
+	struct uart_packet pack2, *rx_pkt = &pack2;
 
 	struct ertm14_board_state *board;
 	struct ertm_state *state = st->state;
 
-        tx_pkt->ptype = ERTM14_UART_PTYPE_SNMP_REQ;
-        tx_pkt->length = 1;
+	tx_pkt->ptype = ERTM14_UART_PTYPE_SNMP_REQ;
+	tx_pkt->length = 1;
 	tx_pkt->payload[0] = ertm14_get_board_config;
 
-        res = uart_link_send(link, tx_pkt);
+	res = uart_link_send(link, tx_pkt);
 	if (res < 0) {
 		printf("error %d in uart_link_send\n", res);
 		return res;
 		return ERTM_UART_LINK_SEND_ERR;
 	}
 	memset(rx_pkt, 0, sizeof(*rx_pkt));
-        stat = uart_link_recv(link, &rx_pkt, sizeof(*rx_pkt) + 10);
-        if (stat <= 0) {
+	stat = uart_link_recv(link, &rx_pkt, sizeof(*rx_pkt) + 10);
+	if (stat <= 0) {
 		fprintf(stderr, "error (stat %d) in uart_link_recv\n", stat);
 		return ERTM_UART_LINK_RECV_ERR;
-        }
+	}
 	fprintf(stderr,"recvd %d bytes: \n", rx_pkt->length);
 	display_hex(rx_pkt->payload, rx_pkt->length);
 
