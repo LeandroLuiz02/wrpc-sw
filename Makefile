@@ -135,7 +135,7 @@ all: tools $(OUTPUT).elf $(arch-files-y)
 
 .PRECIOUS: %.elf %.bin
 .PHONY: all tools clean gitmodules $(PPSI)/ppsi.o extest liblinux
-.PHONY: libertm
+.PHONY: libertm boards-clean
 
 # we need to remove "ptpdump" support for ppsi if RAM size is small and
 # we include etherbone
@@ -204,7 +204,7 @@ pconfig.o: ppsi/.config
 
 $(AUTOCONF): silentoldconfig gitmodules
 
-clean:
+clean: boards-clean
 	rm -f $(OBJS) config.o pconfig.o revision.o $(OUTPUT).elf \
 		$(LDS) \
 		$(OUTPUT).bin rules-*.bin \
