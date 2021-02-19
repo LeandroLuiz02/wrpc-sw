@@ -16,6 +16,29 @@ extern "C" {
 
 #include <stdint.h>
 
+/* error codes */
+#define ERTM_OK		0
+#define ERTM_BAD_CONNECTOR	(-1)
+#define ERTM_CH_OUT_OF_RANGE	(-2)
+#define ERTM_NOT_IMPLEMENTED	(-3)
+#define ERTM_UART_LINK_SEND_ERR (-4)
+#define ERTM_UART_LINK_RECV_ERR (-5)
+
+struct ertm_error_codes {
+	int	code;
+	char	*message;
+} ertm_error_codes[] = {
+	[-ERTM_OK]		= { ERTM_OK, "success" },
+	[-ERTM_BAD_CONNECTOR]	= { ERTM_BAD_CONNECTOR, "bad connector parameter" },
+	[-ERTM_CH_OUT_OF_RANGE]	= { ERTM_CH_OUT_OF_RANGE, "channel number out of range" },
+	[-ERTM_NOT_IMPLEMENTED]	= { ERTM_NOT_IMPLEMENTED, "function not implemented" },
+	[-ERTM_UART_LINK_SEND_ERR] ={ ERTM_UART_LINK_SEND_ERR, "USB serial link send failed" },
+	[-ERTM_UART_LINK_RECV_ERR] ={ ERTM_UART_LINK_RECV_ERR, "USB serial link recv failed" },
+};
+
+extern char *ertm_perror(int error);
+
+/* board constant of nature definitions */
 enum ertm_clkab_freq {
 	ERTM_CLKAB_1000MHz,
 	ERTM_CLKAB_500MHz,

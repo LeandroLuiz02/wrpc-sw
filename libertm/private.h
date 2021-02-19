@@ -11,6 +11,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include "libertm.h"
+#include "ertm14-uart-link.h"
 
 struct ertm_clk {
 	uint32_t		enabled_mask;

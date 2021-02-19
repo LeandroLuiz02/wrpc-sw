@@ -15,21 +15,6 @@
 #include "libertm.h"
 #include "private.h"
 
-#define ERTM_OK		0
-#define ERTM_BAD_CONNECTOR	(-1)
-#define ERTM_CH_OUT_OF_RANGE	(-2)
-#define ERTM_NOT_IMPLEMENTED	(-3)
-
-struct ertm_error_codes {
-	int	code;
-	char	*message;
-} ertm_error_codes[] = {
-	[-ERTM_OK]		= { ERTM_OK, "success"},
-	[-ERTM_BAD_CONNECTOR]	= { ERTM_BAD_CONNECTOR, "bad connector parameter"},
-	[-ERTM_CH_OUT_OF_RANGE]	= { ERTM_CH_OUT_OF_RANGE, "channel number out of range"},
-	[-ERTM_NOT_IMPLEMENTED]	= { ERTM_NOT_IMPLEMENTED, "function not implemented"},
-};
-
 char *ertm_perror(int error)
 {
 	return ertm_error_codes[-error].message;
