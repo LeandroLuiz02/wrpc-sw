@@ -23,7 +23,7 @@
 #include <arpa/inet.h>
 #include <math.h>
 
-
+#include "psnmp-proto.h"
 #include "board-state.h"
 #include "private.h"
 #include "libertm.h"

@@ -7,6 +7,13 @@
 #ifndef __BOARD_STATE_ERTM14_H
 #define __BOARD_STATE_ERTM14_H
 
+/* beware this header: it is only required for WRC_DIAG_WB,
+ * which is not here (yet), and it unconditionally defines
+ * the wretched PACKED macro
+ * Dependencies, Makefiles and header order suffer accordingly
+ */
+#include "hw/wrc_diags_regs.h"
+
 #define ERTM14_RF_OUT_MIN_ID 4
 #define ERTM14_RF_OUT_MAX_ID 12
 
@@ -14,11 +21,6 @@
 #define ERTM14_CLKAB_OUT_MAX_ID 15
 
 #define ERTM14_MAX_SENSORS_COUNT 21
-
-#ifndef PACKED
-    #define PACKED __attribute__((packed))
-#endif
-
 
 struct ertm14_dds_state
 {
