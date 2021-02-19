@@ -17,7 +17,3 @@ boards/ertm14/sdbfs-custom-image.h: boards/ertm14/sdbfs
 boards/wr2rf-vme/sdbfs-custom-image.h: boards/wr2rf-vme/sdbfs
 	./tools/gensdbfs -c boards/wr2rf-vme/sdbfs-custom-image.h boards/wr2rf-vme/sdbfs boards/wr2rf-vme/sdbfs-custom-image.bin
 
-
-#		echo "DUPA"
-#		sleep 10
-#		#
