@@ -171,22 +171,48 @@ int get_board_config(struct ertm_status *st)
 	return 0;
 }
 
-static struct ertm_state state;
-static struct ertm_status st = {
-	.state = &state,
-};
-static struct ertm_status *status = &st;
-
 /* constants of nature for this design */
-static const char *usb_serial = "/dev/ttyUSB2";
-static const int serial_speed = 8*115200;
+static char *usb_serial = "/dev/ttyUSB2";
+static int serial_speed = 8*115200;
+
+struct ertm_status *ertm_init(char *address)
+{
+	struct ertm_status *st = malloc(sizeof(*st));
+	int err;
+
+	if (st == NULL) {
+		errno = ENOMEM;
+		return NULL;
+	}
+	st->state = malloc(sizeof(*st->state));
+	if (st == NULL) {
+		errno = ENOMEM;
+		return NULL;
+	}
+	err = uart_link_create_linux(&st->link, address, serial_speed);
+	if (err != 0) {
+		errno = ENODEV;
+		return NULL;
+	}
+
+	return st;
+}
+
+void ertm_exit(struct ertm_status *handle)
+{
+	if (handle != NULL)
+		free(handle->state);
+	free(handle);
+}
 
 int main(int argc, char *argv[])
 {
-	uart_link_create_linux(&status->link, usb_serial, serial_speed);
+	struct ertm_status *h = ertm_init(usb_serial);
 
         fprintf(stderr,"sending command 'command'\n");
-	get_board_config(status);
+	get_board_config(h);
+
+	ertm_exit(h);
 
 	return 0;
 }
