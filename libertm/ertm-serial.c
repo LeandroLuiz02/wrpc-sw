@@ -21,10 +21,6 @@
 #include "ertm14-uart-link.h"
 #include "ertm15_rf_distr.h"
 
-/* constants of nature for this design */
-static const char *usb_serial = "/dev/ttyUSB2";
-static const int serial_speed = 8*115200;
-
 void dds_state_to_lo_ref(struct ertm14_dds_state *dds, struct ertm_lo_ref *loref)
 {
 	int i;
@@ -180,6 +176,10 @@ static struct ertm_status st = {
 	.state = &state,
 };
 static struct ertm_status *status = &st;
+
+/* constants of nature for this design */
+static const char *usb_serial = "/dev/ttyUSB2";
+static const int serial_speed = 8*115200;
 
 int main(int argc, char *argv[])
 {
