@@ -17,7 +17,7 @@ boards/ertm14/sdbfs-custom-image.h: boards/ertm14/sdbfs
 boards/wr2rf-vme/sdbfs-custom-image.h: boards/wr2rf-vme/sdbfs
 	./tools/gensdbfs -c boards/wr2rf-vme/sdbfs-custom-image.h boards/wr2rf-vme/sdbfs boards/wr2rf-vme/sdbfs-custom-image.bin
 
-clean:
+boards-clean:
 	rm -f boards/*/*.o
 	rm -f boards/ertm14/sdbfs-custom-image.h
 	rm -f boards/wr2rf-vme/sdbfs-custom-image.h
