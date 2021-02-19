@@ -7,19 +7,10 @@
  * The comm via USB serial is implemented here
  */
 
-#include <limits.h>
-#include <stdint.h>
 #include <errno.h>
 #include <string.h>
-
 #include <stdlib.h>
 #include <stdio.h>
-
-#include <termios.h>
-#include <unistd.h>
-#include <sys/types.h>
-#include <sys/stat.h>
-#include <fcntl.h>
 #include <arpa/inet.h>
 #include <math.h>
 
