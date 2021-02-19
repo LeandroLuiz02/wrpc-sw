@@ -135,6 +135,7 @@ all: tools $(OUTPUT).elf $(arch-files-y)
 
 .PRECIOUS: %.elf %.bin
 .PHONY: all tools clean gitmodules $(PPSI)/ppsi.o extest liblinux
+.PHONY: libertm
 
 # we need to remove "ptpdump" support for ppsi if RAM size is small and
 # we include etherbone
@@ -213,6 +214,7 @@ clean:
 	$(MAKE) -C tools clean
 	$(MAKE) -C liblinux clean
 	$(MAKE) -C liblinux/extest clean
+	$(MAKE) -C libertm clean
 
 distclean: clean
 	rm -rf include/config
@@ -225,6 +227,9 @@ distclean: clean
 
 liblinux:
 	$(MAKE) -C liblinux CC=cc
+
+libertm:
+	$(MAKE) -C $@ CC=cc
 
 extest:
 	$(MAKE) -C liblinux/extest CC=cc
