@@ -79,4 +79,5 @@ struct ertm_connection {
 struct ertm_status {
 	struct ertm_connection connection;
 	struct ertm_state *state;
+	struct uart_link link;
 };
