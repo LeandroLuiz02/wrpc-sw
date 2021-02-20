@@ -13,15 +13,8 @@ typedef struct hal_port_calibration {
 	/* bit slide expressed in picos */
 	uint32_t bitslide_ps;
 
-
 	int delta_tx_ps; /* "delta" of this SFP type WRT calibration type */
 	int delta_rx_ps;
-	
-	/* When non-zero: RX path is calibrated (delta_*_rx contain valid values) */
-	int rx_calibrated;
-	/* When non-zero: TX path is calibrated */
-	int tx_calibrated;
-
 } hal_port_calibration_t;
 
 /* Internal port state structure */

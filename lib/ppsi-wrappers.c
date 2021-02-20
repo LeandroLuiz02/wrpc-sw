@@ -47,8 +47,6 @@ int wrpc_get_port_state(struct wrc_port_state *port, const char *port_name)
 	/* get the bitslide */
 	port->calib.bitslide_ps = ep_get_bitslide(&wrc_endpoint_dev);
 	read_phase_val(port);
-	port->calib.tx_calibrated = 1;
-	port->calib.rx_calibrated = 1;
 	port->locked = spll_check_lock(0);
 	port->clock_period  = REF_CLOCK_PERIOD_PS;
 	port->t2_phase_transition = cal_phase_transition;
