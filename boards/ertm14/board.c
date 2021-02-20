@@ -43,6 +43,7 @@
 
 #include <hw/wr_streamers.h>
 #include <wrc-event.h>
+#include <lib/events-ptp.h>
 
 #include "ertm15_rf_distr.h"
 #include "rf_frame_transceiver.h"
@@ -1186,6 +1187,7 @@ int wrc_board_init()
 
 int wrc_board_create_tasks()
 {
+    wrc_task_create("events-ptp", wrc_events_ptp_init, wrc_events_ptp_poll);
 
     return 0;
 }
