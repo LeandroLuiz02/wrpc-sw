@@ -275,7 +275,7 @@ static void create_tasks(void)
 	struct wrc_task *t;
 
 	wrc_tasks_init();
-	wrc_task_create( "idle", wrc_initialize, NULL );
+	wrc_task_create( "idle", NULL, NULL );
 	wrc_task_create( "check-link", NULL, wrc_check_link );
 	wrc_task_create( "uptime", init_uptime, update_uptime );
 	wrc_task_create( "ptp", NULL, wrc_ptp_update);
@@ -332,6 +332,8 @@ int main(void)
 {
 	check_reset();
 	create_tasks();
+
+	wrc_initialize();
 
 	/* initialization of individual tasks */
 	wrc_start_all_tasks();
