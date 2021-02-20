@@ -115,7 +115,6 @@ static void wrc_initialize(void)
 	wrc_ptp_set_mode(WRC_MODE_SLAVE);
 
 	wrc_tasks_accounting_init();
-	wrc_board_create_tasks();
 }
 
 int link_status;
@@ -335,6 +334,7 @@ int main(void)
 {
 	check_reset();
 	create_tasks();
+	wrc_board_create_tasks();
 
 	wrc_initialize();
 
