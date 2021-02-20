@@ -104,6 +104,8 @@ int event_handler_enable( int id, int enable )
 int event_post( int event )
 {
     int i;
+    if (!BOARD_USE_EVENTS)
+        return 0;
     for(i = 0; i < event_handler_count; i++ )
     {
         struct event_handler *eh = &handlers[i];

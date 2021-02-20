@@ -85,6 +85,12 @@ int wrc_events_ptp_poll(void)
 
 void wrc_events_ptp_link_down(void)
 {
+	/* TODO: do boards need events NETIF_LINK_WENT_DOWN and
+	 * WRC_EVENT_TIMING_DOWN? Isn't enough to have link down?
+	 */ 
+	if (!BOARD_USE_EVENTS)
+		return;
+
 	prev_timing_ok = 0;
 }
 

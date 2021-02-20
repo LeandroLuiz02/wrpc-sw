@@ -266,7 +266,8 @@ int main(void)
 		// run all pending tasks
 		wrc_poll_all_tasks();
 		// call all event handlers
-		events_dispatch();
+		if (BOARD_USE_EVENTS)
+			events_dispatch();
 		/* better safe than sorry */
 		check_stack();
 	}
