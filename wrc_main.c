@@ -274,7 +274,10 @@ static void create_tasks(void)
 {
 	struct wrc_task *t;
 
-	wrc_tasks_init();
+	/* clear task table in case of a reset */
+	wrc_tasks_preinit();
+
+	/* create all other tasks */
 	wrc_task_create( "idle", NULL, NULL );
 	wrc_task_create( "check-link", NULL, wrc_check_link );
 	wrc_task_create( "uptime", init_uptime, update_uptime );
@@ -336,7 +339,7 @@ int main(void)
 	wrc_initialize();
 
 	/* initialization of individual tasks */
-	wrc_start_all_tasks();
+	wrc_tasks_run_inits();
 
 	for (;;) {
 		// run all pending tasks
