@@ -545,6 +545,7 @@ void print_main_data(void)
 			unsigned char *p = ppi_pt->activePeer;
 			char * extension_state_name = EMPTY_EXTENSION_STATE_NAME;
 			char proto;
+			char mac_buf[20];
 
 #if 0 /* FIXME: only one instance so far */
 			if (strcmp(if_name,
@@ -580,10 +581,7 @@ void print_main_data(void)
 			pcprintf(14, 16, C_WHITE, "%-12s", str_config);
 
 			/* peer not implemented */
-			pprintf(14, 31, "%02x:%02x"
-					":%02x:%02x:%02x:%02x ",
-					p[0], p[1], p[2], p[3],
-					p[4], p[5]);
+			pprintf(14, 31, format_mac(mac_buf, p));
 
 			pcprintf(14, 51, C_GREEN, "%s/", getStateAsString(pp_instance_state_to_name, ppi_pt->state));
 			/* print extension state */
