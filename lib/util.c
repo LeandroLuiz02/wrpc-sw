@@ -211,6 +211,35 @@ const char *fromdec(const char *dec, int *v)
 	return dec;
 }
 
+
+char *format_mac(char *s, const unsigned char *mac)
+{
+	pp_sprintf(s, "%02x:%02x:%02x:%02x:%02x:%02x",
+		   mac[0], mac[1], mac[2], mac[3], mac[4], mac[5]);
+	return s;
+}
+
+void decode_mac(const char *str, unsigned char *mac)
+{
+	int i, x;
+
+	/* Don't try to detect bad input; need small code */
+	for (i = 0; i < 6; ++i) {
+		str = fromhex(str, &x);
+		mac[i] = x;
+		if (*str == ':')
+			++str;
+	}
+}
+
+void decode_port(const char *str, int *port)
+{
+	if( !str )
+		*port = 0;
+	else
+		*port = atoi(str);
+}
+
 /*
  * This is a minimal atoi, that doesn't call strtol. Since we are only
  * calling atoi, it saves XXXX bytes of library code

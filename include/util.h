@@ -57,6 +57,11 @@ const char *fromhex(const char *hex, int *v);
 const char *fromhex64(const char *hex, int64_t *v);
 const char *fromdec(const char *dec, int *v);
 
+char *format_mac(char *s, const unsigned char *mac);
+
+void decode_mac(const char *str, unsigned char *mac);
+void decode_port(const char *str, int *port);
+
 static inline int within_range(int x, int minval, int maxval, int wrap)
 {
     int rv;
