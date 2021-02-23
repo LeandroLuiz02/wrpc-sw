@@ -388,3 +388,9 @@ DEFINE_WRC_COMMAND(ertm_ui) = {
 	.name = "eu", // fixme
 	.exec = cmd_ertm_ui,
 };
+
+void ertm14_shell_init()
+{
+    shell_register_command( &__wrc_cmd_ertm );
+    shell_register_command( &__wrc_cmd_ertm_ui );
+}
