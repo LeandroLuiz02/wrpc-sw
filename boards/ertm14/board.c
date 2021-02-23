@@ -773,7 +773,7 @@ static int control_uart_poll(void)
 {
     struct uart_packet *pkt;
 
-    if( uart_link_recv( &board.control_uart_link, &pkt, 0 ) > 0 )
+    if( uart_link_recv( &board.control_uart_link, &pkt, 100 ) > 0 )
     {
         struct uart_packet t, *tx_pkt = &t;
 
