@@ -272,6 +272,14 @@ int atoi(const char *s)
 	return res;
 }
 
+#ifdef CONFIG_ARCH_RISCV
+#warning (FIXME: fix endiansess conversion functions)
+#define ntohs(x) (x)
+#define ntohl(x) (x)
+#define htons(x) (x)
+#define htons(x) (x)
+
+#endif
 
 /* To save code, in the div of two int64 numbers
  * use signed 64bit division, then correct the sign of the result */

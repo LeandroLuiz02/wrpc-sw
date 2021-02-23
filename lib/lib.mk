@@ -3,10 +3,16 @@ obj-y += \
 	lib/wrc-tasks.o \
 	lib/events-ptp.o \
 
-obj-$(CONFIG_LM32) += \
+obj-$(CONFIG_ARCH_LM32) += \
 	lib/assert.o \
 	lib/usleep.o \
 	lib/event.o
+
+obj-$(CONFIG_ARCH_RISCV) += \
+	lib/assert.o \
+	lib/usleep.o \
+	lib/event.o
+
 
 obj-$(CONFIG_WR_NODE) += lib/net.o
 

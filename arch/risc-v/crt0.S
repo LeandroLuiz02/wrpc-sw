@@ -1,3 +1,8 @@
+#define __ASSEMBLY__
+#include "include/revision.h"
+#include "ppsi/include/hw-specific/wrh.h"
+#include "arch/risc-v/crt0.h"
+#include "include/generated/autoconf.h"
 
 .section .boot, "ax", @progbits
 
@@ -11,7 +16,50 @@ _start:
 _exception_entry:
     j      trap_entry
 
+.org WRPC_MARK
+/* Used by the dumping tool to identify byte ordering */	
+.ascii     "WRPC----"
+.int       0x01234567
+.short     0x89ab, 0xcdef
+/* Pointer to structures, for the dumping tool */
+.org SOFTPLL_PADDR
+    .word  softpll
+.org FIFO_LOG_PADDR
+    .word  fifo_log
+#ifdef CONFIG_PPSI
+.org PPG_STATIC_PADDR
+    .word  ppg_static
+#endif
+.org STATS_PADDR
+    .word  stats
 
+.org UPTIME_SEC_ADDR
+.global uptime_sec
+uptime_sec:
+    .word  0
+
+.org VERSION_WRPC_ADDR
+.global version_wrpc
+version_wrpc:
+    .byte  WRPC_SHMEM_VERSION
+
+.org VERSION_PPSI_ADDR
+.global version_ppsi
+version_ppsi:
+    .byte  WRS_PPSI_SHMEM_VERSION
+
+/* Pointer to a structure used by testbenches, use only when
+ * CONFIG_WR_NODE_SIM is set */
+.org HDL_TESTBENCH_PADDR
+.global hdl_testbench_p
+hdl_testbench_p:
+#ifdef CONFIG_WR_NODE_SIM
+    .word  hdl_testbench
+#else
+    .word  0
+#endif
+
+.org 0x100
 
 _entry:
 

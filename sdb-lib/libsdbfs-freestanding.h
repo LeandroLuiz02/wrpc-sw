@@ -14,6 +14,13 @@
 #  define htons(x) (x)
 #  define ntohl(x) (x)
 #  define htonl(x) (x)
+#elif CPU_ARCH == RISCV
+/* FIXME: fix for riscv */
+#warning FIXME: fix sdbfs for riscv
+#  define ntohs(x) (x)
+#  define htons(x) (x)
+#  define ntohl(x) (x)
+#  define htonl(x) (x)
 #else
 #  error "No support, yet, for little-endian freestanding library"
 #endif

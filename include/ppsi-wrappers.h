@@ -10,6 +10,12 @@
 
 #ifdef CONFIG_HOST_PROCESS
 #  include <arpa/inet.h>
+#elif defined(CONFIG_ARCH_RISCV)
+/* FIXME: fix endianness for riscV */
+#define ntohs(x) (x)
+#define ntohl(x) (x)
+#define htons(x) (x)
+#define htons(x) (x)
 #else
 
 #  ifndef __IEEE_BIG_ENDIAN

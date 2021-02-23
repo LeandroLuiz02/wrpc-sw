@@ -1,7 +1,8 @@
 
 # Those hardware-specific files should not be built for the host, even if
 # most of them give no error no warning. The host has different implementations
-obj-$(CONFIG_LM32) += 	dev/simple_uart.o dev/console.o
+obj-$(CONFIG_ARCH_LM32) += 	dev/simple_uart.o dev/console.o
+obj-$(CONFIG_ARCH_RISCV) += 	dev/simple_uart.o dev/console.o
 
 obj-$(CONFIG_EMBEDDED_NODE) += \
 	dev/endpoint.o \

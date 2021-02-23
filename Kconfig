@@ -2,6 +2,21 @@
 mainmenu "WR PTP Core software configuration"
 
 choice
+	prompt "Architecture"
+
+config ARCH_LM32
+	bool "LM32"
+	help
+	  Use LM32
+
+config ARCH_RISCV
+	bool "riscV"
+	help
+	  Use riscV
+
+endchoice
+
+choice
 	prompt "Target Platform"
 
 config TARGET_GENERIC_PHY_8BIT
@@ -115,13 +130,10 @@ config HOST_PROCESS
 	boolean
 	default n
 
-config LM32
-	boolean
-	default !HOST_PROCESS
 
 config EMBEDDED_NODE
 	boolean
-	default LM32 && WR_NODE
+	default (ARCH_LM32 || ARCH_RISCV) && WR_NODE
 
 # CONFIG_WR_SWITCH has no further options at all at this point
 
@@ -527,7 +539,7 @@ config HOST_PROCESS
 	boolean "Build as a host process, to develop/debug network"
 
 config CUSTOM_RAMSIZE
-	depends on DEVELOPER && LM32
+	depends on DEVELOPER && (ARCH_LM32 || ARCH_RISCV)
 	int "Size of the RAM in the FPGA for this program"
 	default 131072
 	help
@@ -537,7 +549,7 @@ config CUSTOM_RAMSIZE
 	  choose your preferred value here.
 
 config CUSTOM_STACKSIZE
-	depends on DEVELOPER && LM32
+	depends on DEVELOPER && (ARCH_LM32 || ARCH_RISCV)
 	int "Size of the stack area needed by this program"
 	default 2048
 	help
@@ -567,7 +579,7 @@ config TEMP_HIGH_RAPPEL
 	int "Remember over-temperature every that many seconds"
 
 config CMD_LL
-	depends on DEVELOPER && LM32
+	depends on DEVELOPER && (ARCH_LM32 || ARCH_RISCV)
 	bool "Build low-level commands for development/testing"
 	help
 	  This enables low-level commands: "devmem" to read/write memory
@@ -585,13 +597,13 @@ config DAC_LOG
 	  to set ipaddress and mac of the target host. UDP port is 1050.
 
 config FLASH_INIT
-	depends on DEVELOPER && LM32
+	depends on DEVELOPER && (ARCH_LM32 || ARCH_RISCV)
 	default y
 	boolean "Read init commands from flash storage"
 
 # CHECK_RESET for switch and node
 config CHECK_RESET
-	depends on DEVELOPER && LM32 || TARGET_WR_SWITCH
+	depends on DEVELOPER && (ARCH_LM32 || ARCH_RISCV) || TARGET_WR_SWITCH
 	bool "Print a stack trace if reset happens"
 	help
 	  If the CPU is following a NULL pointer, the program will
@@ -600,7 +612,7 @@ config CHECK_RESET
 	  then clears the stack (for next time) and restarts again.
 
 config SPLL_FIFO_LOG
-	depends on DEVELOPER && LM32
+	depends on DEVELOPER && (ARCH_LM32 || ARCH_RISCV)
 	bool "Add a circular buffer for spll logging, used by tools/wrpc-dump"
 	help
 	  This option addrs 256 bytes to the wrpc bynary, to log

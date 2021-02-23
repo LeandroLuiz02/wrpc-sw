@@ -8,6 +8,10 @@
 
 #ifdef unix
   static inline void clear_irq(void) {}
+#elif defined(CONFIG_ARCH_RISCV)
+  /* FIXME: fix for riscv */
+  #warning FIXME: fix irq.h for riscv
+  static inline void clear_irq(void) {}
 #else
 static inline void clear_irq(void)
 {

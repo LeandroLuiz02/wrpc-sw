@@ -134,7 +134,7 @@ SECTIONS
 	*(.bss.*)
 	*(.gnu.linkonce.b.*)
 	*(COMMON)
-    } > ram2
+  } > ram
 
     /* End of RAM for checking stack overflows */
     PROVIDE(_endram = ORIGIN(stack));
@@ -143,4 +143,6 @@ SECTIONS
     PROVIDE(_fstack = ORIGIN(stack) + LENGTH(stack) - 0x400);
     PROVIDE(_fexception_stack = ORIGIN(stack) + LENGTH(stack) - 0x4);
     PROVIDE(_end = .);
+    /* This may be missing, according to .config */
+    PROVIDE(fifo_log = 0);
 }

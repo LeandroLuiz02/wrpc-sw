@@ -1,7 +1,18 @@
 # Tomasz Wlostowski for CERN, 2011,2012
 -include $(CURDIR)/.config
 
-CROSS_COMPILE ?= lm32-elf-
+CROSS_COMPILE-$(CONFIG_ARCH_LM32) ?= lm32-elf-
+CROSS_COMPILE-$(CONFIG_ARCH_RISCV) ?= riscv-elf-
+
+CROSS_COMPILE ?= $(CROSS_COMPILE-y)
+
+ifeq ($(CONFIG_ARCH_LM32),y)
+CPU_ARCH = LM32
+endif
+ifeq ($(CONFIG_ARCH_RISCV),y)
+CPU_ARCH = RISCV
+endif
+
 
 ifdef CONFIG_HOST_PROCESS
   CROSS_COMPILE =
@@ -29,8 +40,11 @@ PPSI = ppsi
 MAKEALL_COPY_LIST=.bin .elf
 
 # we miss CONFIG_ARCH_LM32 as we have no other archs by now
-obj-$(CONFIG_LM32) = arch/lm32/crt0.o arch/lm32/irq.o
-LDS-$(CONFIG_WR_NODE)   = arch/lm32/ram.ld
+obj-$(CONFIG_ARCH_LM32) = arch/lm32/crt0.o arch/lm32/irq.o
+obj-$(CONFIG_ARCH_RISCV) = arch/risc-v/crt0.o arch/risc-v/irq.o arch/risc-v/irq_helper.o
+# silently assume WR_NODE for the next two
+LDS-$(CONFIG_ARCH_LM32)   = arch/lm32/ram.ld
+LDS-$(CONFIG_ARCH_RISCV)  = arch/risc-v/ram.ld
 LDS-$(CONFIG_TARGET_WR_SWITCH) = arch/lm32/ram-wrs.ld
 LDS-$(CONFIG_HOST_PROCESS) =
 
@@ -47,7 +61,8 @@ obj-$(CONFIG_PPSI) += dump-info.o
 cflags-y =	-ffreestanding -include $(AUTOCONF) -Iinclude \
 			-I. -Isoftpll -Iipc
 cflags-y +=	-I$(CURDIR)/pp_printf
-cflags-$(CONFIG_LM32) +=  -Iinclude/std
+cflags-$(CONFIG_ARCH_LM32)  +=  -Iinclude/std
+cflags-$(CONFIG_ARCH_RISCV) +=  -Iinclude/std
 
 cflags-$(CONFIG_PPSI) += \
 	-include include/ppsi-wrappers.h \
@@ -68,10 +83,15 @@ obj-$(CONFIG_EMBEDDED_NODE) += \
 	monitor/monitor_ppsi.o \
 	lib/ppsi-wrappers.o
 
-cflags-$(CONFIG_LM32) += -mmultiply-enabled -mbarrel-shift-enabled
-ldflags-$(CONFIG_LM32) = -mmultiply-enabled -mbarrel-shift-enabled \
+cflags-$(CONFIG_ARCH_LM32) += -mmultiply-enabled -mbarrel-shift-enabled
+cflags-$(CONFIG_ARCH_RISCV) += -march=rv32im -mabi=ilp32
+ldflags-$(CONFIG_ARCH_LM32) = -mmultiply-enabled -mbarrel-shift-enabled \
 	-nostdlib -T $(LDS-y)
-arch-files-$(CONFIG_LM32) = $(OUTPUT).bram $(OUTPUT).vhd $(OUTPUT).mif
+ldflags-$(CONFIG_ARCH_RISCV) = -march=rv32im -mabi=ilp32 \
+	-nostdlib -T $(LDS-y)
+asflags-$(CONFIG_ARCH_RISCV) += -march=rv32im -mabi=ilp32
+arch-files-$(CONFIG_ARCH_LM32) = $(OUTPUT).bram $(OUTPUT).vhd $(OUTPUT).mif
+arch-files-$(CONFIG_ARCH_RISCV) = $(OUTPUT).bram $(OUTPUT).vhd $(OUTPUT).mif
 
 
 # packet-filter rules: for CONFIG_VLAN we use both sets
@@ -98,7 +118,9 @@ ifndef CONFIG_PPSI
   obj-y += pp_printf/div64.o
 endif
 # And always complain if we pick the libgcc division: 64/32 = 32 is enough here.
-obj-$(CONFIG_LM32) += check-error.o
+obj-$(CONFIG_ARCH_LM32)  += check-error.o
+obj-$(CONFIG_ARCH_RISCV) += check-error.o
+
 
 # add system check functions like stack overflow and check reset
 obj-y += system_checks.o
@@ -112,12 +134,10 @@ CFLAGS = $(cflags-y) -Wall -Wstrict-prototypes \
 	-include include/wrc.h -ggdb
 
 # Assembler Flags
-ASFLAGS = -I.
+ASFLAGS = -I. $(asflags-y)
 
 LDFLAGS = $(ldflags-y) \
 	-Wl,--gc-sections -Os -lgcc -lc
-
-WRC-O-FLAGS-$(CONFIG_LM32) =  -e _start
 
 OBJS = $(obj-y)
 
@@ -151,7 +171,8 @@ endif
 PPSI-CFG-y = wrpc_defconfig
 PPSI-CFG-$(CONFIG_P2P) = wrpc_pdelay_defconfig
 PPSI-CFG-$(CONFIG_HOST_PROCESS) = unix_defconfig
-PPSI-FLAGS-$(CONFIG_LM32) = CONFIG_NO_PRINTF=y
+PPSI-FLAGS-$(CONFIG_ARCH_LM32) = CONFIG_NO_PRINTF=y
+PPSI-FLAGS-$(CONFIG_ARCH_RISCV) = CONFIG_NO_PRINTF=y
 PPSI-FLAGS-$(CONFIG_TARGET_GENERIC_PHY_8BIT) = CONFIG_TARGET_GENERIC_PHY_8BIT=y
 
 $(obj-ppsi): gitmodules
@@ -163,10 +184,11 @@ $(obj-ppsi): gitmodules
 	fi
 	$(MAKE) -C $(PPSI) ppsi.a WRPCSW_ROOT=.. \
 		CROSS_COMPILE=$(CROSS_COMPILE) CONFIG_NO_PRINTF=y \
-		USER_CFLAGS="$(PPSI_USER_CFLAGS)"
+		USER_CFLAGS="$(PPSI_USER_CFLAGS)" \
+		CPU_ARCH=$(CPU_ARCH)
 
 sdb-lib/libsdbfs.a:
-	$(MAKE) -C sdb-lib
+	$(MAKE) -C sdb-lib CPU_ARCH=$(CPU_ARCH)
 
 $(OUTPUT).elf: $(LDS-y) $(AUTOCONF) gitmodules config.o pconfig.o $(OBJS)
 	$(CC) $(CFLAGS) -D__GIT_VER__="\"$(GIT_VER)\"" -D__GIT_USR__="\"$(GIT_USR)\"" -c revision.c
@@ -176,7 +198,8 @@ $(OUTPUT).elf: $(LDS-y) $(AUTOCONF) gitmodules config.o pconfig.o $(OBJS)
 	./save_size.sh $(SIZE) $@
 
 
-OBJCOPY-TARGET-$(CONFIG_LM32) = -O elf32-lm32 -B lm32
+OBJCOPY-TARGET-$(CONFIG_ARCH_LM32) = -O elf32-lm32 -B lm32
+OBJCOPY-TARGET-$(CONFIG_ARCH_RISCV) = -O elf32-littleriscv -B riscv
 OBJCOPY-TARGET-$(CONFIG_HOST_PROCESS) = -O elf64-x86-64 -B i386
 
 config.o: .config $(AUTOCONF)

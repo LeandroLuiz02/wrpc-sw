@@ -19,7 +19,10 @@ OBJDUMP         = $(CROSS_COMPILE)objdump
 # calculate endianness at compile time
 ENDIAN := $(shell ./check-endian $(CC))
 
-CFLAGS = -Wall -ggdb -Os -mmultiply-enabled -mbarrel-shift-enabled
+CFLAGS-CPU-LM32  = -mmultiply-enabled -mbarrel-shift-enabled
+CFLAGS-CPU-RISCV = -march=rv32im -mabi=ilp32
+
+CFLAGS = -Wall -ggdb -Os $(CFLAGS-CPU-$(CPU_ARCH))
 CFLAGS += -I../include/linux -I../include # for <sdb.h>
 CFLAGS += -ffunction-sections -fdata-sections
 CFLAGS += -Wno-pointer-sign
