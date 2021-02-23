@@ -27,13 +27,10 @@ static int cmd_w1_w(const char *args[])
 	return i == blen ? 0 : -1;
 }
 
-/* This command was not registered before */
-/*
 DEFINE_WRC_COMMAND(w1w) = {
 	.name = "w1w",
 	.exec = cmd_w1_w,
 };
-*/
 
 /* A shell command, for testing read: "w1r <offset> <len> */
 static int cmd_w1_r(const char *args[])
@@ -57,13 +54,10 @@ static int cmd_w1_r(const char *args[])
 	return i == blen ? 0 : -1;
 }
 
-/* This command was not registered before */
-/*
 DEFINE_WRC_COMMAND(w1r) = {
 	.name = "w1r",
 	.exec = cmd_w1_r,
 };
-*/
 
 /* A shell command, for checking */
 static int cmd_w1(const char *args[])
@@ -86,10 +80,8 @@ static int cmd_w1(const char *args[])
 	return 0;
 }
 
-/* This command was not registered before */
-/*
 DEFINE_WRC_COMMAND(w1) = {
 	.name = "w1",
 	.exec = cmd_w1,
 };
-*/
+

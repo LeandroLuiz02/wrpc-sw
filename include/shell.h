@@ -25,12 +25,9 @@ struct wrc_shell_cmd {
 	int (*exec) (const char *args[]);
 };
 
-extern struct wrc_shell_cmd __cmd_begin[], __cmd_end[];
 /* Put the structures in their own section */
 #define DEFINE_WRC_COMMAND(_name) \
-	static struct wrc_shell_cmd __wrc_cmd_ ## _name \
-	__attribute__((section(".cmd"), __used__))
-
+	struct wrc_shell_cmd __wrc_cmd_ ## _name 
 
 char *env_get(const char *var);
 int env_set(const char *var, const char *value);
@@ -42,7 +39,9 @@ extern int shell_is_interacting;
 
 void shell_boot_script(void);
 void shell_show_build_init(void);
+void shell_register_command( struct wrc_shell_cmd* cmd );
 void shell_list_cmds(void);
+void shell_register_commands(void);
 void shell_activate_ui_command( int (*callback)(void) );
 
 #endif

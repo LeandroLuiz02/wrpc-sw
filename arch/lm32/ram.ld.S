@@ -45,12 +45,6 @@ SECTIONS
 
 	.text : { *(.text .text.*) } > ram =0
 
-	.cmd : {
-		__cmd_begin = .;
-		KEEP(*(.cmd))
-		__cmd_end = .;
-	} > ram
-
 	.rodata : { *(.rodata .rodata.*) } > ram
 
 	.data : {
