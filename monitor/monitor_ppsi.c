@@ -193,24 +193,6 @@ desired_states[] = {
 	{}
 };
 
-char * timeIntervalToString_ns_dot_ps(TimeInterval time, char *buf)
-{
-
-	int64_t nanos;
-	uint32_t picos;
-	char sign = ' ';
-
-	if (time < 0 && time != INT64_MIN) {
-		sign = '-';
-		time = -time;
-	}
-	nanos = time >> TIME_INTERVAL_FRACBITS;
-	picos = (((time & TIME_INTERVAL_FRACMASK) * 1000) + TIME_INTERVAL_ROUNDING_VALUE) >> TIME_INTERVAL_FRACBITS;
-	sprintf(buf, "%c%Ld.%03d", sign, nanos, picos);
-
-	return buf;
-}
-
 char * timeToString_ps_as_ns(struct pp_time *time, char *buf)
 {
 	char sign = '+';
@@ -308,7 +290,7 @@ static char *optimized_pp_time_toString_ps_as_ns(struct pp_time *pptime, char *b
 	if (pptime->secs)
 		sprintf(buf,"%s sec ", timeToString_ps_as_ns(pptime, lbuf));
 	else
-		sprintf(buf,"%s nsec", timeIntervalToString_ns_dot_ps(pp_time_to_interval(pptime), lbuf));
+		sprintf(buf,"%s nsec", interval_to_string(pp_time_to_interval(pptime)));
 	return buf;
 }
 
@@ -769,7 +751,7 @@ void print_servo_data(struct pp_instance *ppi)
 
 	/* +- Timing parameters --------------------------------------------------------- */
 
-	pcprintf(21, 20, C_WHITE, "%19s nsec", timeIntervalToString_ns_dot_ps(ppg->currentDS->meanDelay, buf));
+	pcprintf(21, 20, C_WHITE, "%19s nsec", interval_to_string(ppg->currentDS->meanDelay));
 
 	/*delayMS */
 	pcprintf(22, 20, C_WHITE,"%24s", optimized_pp_time_toString_ps_as_ns(&ppi->servo->delayMS, buf));	
@@ -793,18 +775,18 @@ void print_servo_data(struct pp_instance *ppi)
 
 
 	/* delayAsymmetry */
-	pcprintf(24, 20, C_WHITE, "%19s nsec",   timeIntervalToString_ns_dot_ps(ppi->portDS->delayAsymmetry, buf));
+	pcprintf(24, 20, C_WHITE, "%19s nsec",   interval_to_string(ppi->portDS->delayAsymmetry));
 	/* delayCoefficient */
 	pcprintf(25, 23, C_WHITE, "%s", relativeDifferenceToString(ppi->asymmetryCorrectionPortDS.scaledDelayCoefficient, buf));
 	/* fpa */
 	pcprintf(25, 51, C_WHITE, "%Lu", ppi->asymmetryCorrectionPortDS.scaledDelayCoefficient); /* print as unsigned! */
 
 	/* ingressLatency */
-	pcprintf(26, 20, C_WHITE, "%19s nsec",   timeIntervalToString_ns_dot_ps(ppi->timestampCorrectionPortDS.ingressLatency, buf));
+	pcprintf(26, 20, C_WHITE, "%19s nsec",   interval_to_string(ppi->timestampCorrectionPortDS.ingressLatency));
 	/* egressLatency */
-	pcprintf(27, 20, C_WHITE, "%19s nsec",   timeIntervalToString_ns_dot_ps(ppi->timestampCorrectionPortDS.egressLatency, buf));
+	pcprintf(27, 20, C_WHITE, "%19s nsec",   interval_to_string(ppi->timestampCorrectionPortDS.egressLatency));
 	/* semistaticLatency */
-	pcprintf(28, 20, C_WHITE, "%19s nsec",   timeIntervalToString_ns_dot_ps(ppi->timestampCorrectionPortDS.semistaticLatency, buf));
+	pcprintf(28, 20, C_WHITE, "%19s nsec",   interval_to_string(ppi->timestampCorrectionPortDS.semistaticLatency));
 
 	/*if (0) {
 		cprintf(C_BLUE, "Fiber asymmetry:   ");
@@ -813,7 +795,7 @@ void print_servo_data(struct pp_instance *ppi)
 	}*/
 
 	/* offsetFromMaster */
-	pcprintf(29, 20, C_WHITE, "%19s nsec", timeIntervalToString_ns_dot_ps (ppg->currentDS->offsetFromMaster, buf));
+	pcprintf(29, 20, C_WHITE, "%19s nsec", interval_to_string (ppg->currentDS->offsetFromMaster));
 	row_offset = 30;
 	if (wr_servo) {
 		/* Phase setpoint */
