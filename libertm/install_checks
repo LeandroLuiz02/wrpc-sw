@@ -1,0 +1,18 @@
+#!/bin/sh
+
+SERIAL_LINE=/dev/ttyUSB2
+
+# override default serial line if need be
+if [ x"$1" != x"" ] ; then
+	SERIAL_LINE="$1"
+fi
+
+# ensure existence of the serial line
+if ! [ -c "$SERIAL_LINE" ] ; then
+	echo "serial device $SERIAL_LINE not present, exiting" >&2
+	exit 1
+fi
+
+# ensure permissions on the serial line
+chmod 777 "$SERIAL_LINE"
+
