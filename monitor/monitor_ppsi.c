@@ -193,39 +193,15 @@ desired_states[] = {
 	{}
 };
 
-char * timeToString_ps_as_ns(struct pp_time *time, char *buf)
+static inline char * timeToString_ps_as_ns(struct pp_time *time, char *buf)
 {
-	char sign = '+';
-	int64_t scaled_nsecs = time->scaled_nsecs;
-	int64_t secs = time->secs, nanos, picos;
-
 	if (!is_incorrect(time)) {
-		if (scaled_nsecs < 0 || secs < 0) {
-			sign = '-';
-			scaled_nsecs = -scaled_nsecs;
-			secs = -secs;
-		}
-		nanos = scaled_nsecs >> TIME_FRACBITS;
-		picos = ((scaled_nsecs & TIME_FRACMASK) * 1000 + TIME_ROUNDING_VALUE)
-				>> TIME_FRACBITS;
-		if ((scaled_nsecs > 0 && secs < 0) 
-		    || (scaled_nsecs < 0 && secs > 0)) {
-			sprintf(buf, "!Wsign:s%cns%c", secs > 0 ? '+':'-', scaled_nsecs > 0 ? '+':'-');
-			return buf;
-		}
-		sprintf(buf, "%c%Ld",
-			sign, secs);
-		sprintf(buf, "%s.%Ld",
-			buf, nanos);
-		sprintf(buf, "%s.%Ld",
-			buf, picos);
-
+		return time_to_string(time);
 	} else {
 		sprintf(buf, "--Incorrect--");
 	}
 	return buf;
 }
-
 
 static inline int extensionStateColor(struct pp_instance *ppi)
 {
