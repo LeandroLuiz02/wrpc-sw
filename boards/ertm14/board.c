@@ -909,7 +909,7 @@ static int ertm_process_psnmp(struct uart_packet *rx_pkt, struct uart_packet *tx
 	case ertm14_set_board_config:
 		set_board_config((void *)&rx_pkt->payload[1]);
 		tx_pkt->length = 1;
-		tx_pkt->payload[0] = ertm14_get_board_config;
+		tx_pkt->payload[0] = ertm14_set_board_config;
 		break;
 
 	case ertm14_get_mmc_state:
