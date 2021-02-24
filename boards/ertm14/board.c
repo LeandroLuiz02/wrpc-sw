@@ -103,6 +103,7 @@ struct ertm14_board_state ertm14_configs[ ERTM14_MAX_CONFIGS ];
 struct ertm14_board_state *ertm14_current_state;
 struct ertm14_board_state ertm14_next_state;
 struct ertm14_board_state ertm14_mask;
+struct ertm14_board_state ertm14_hardware;
 
 struct gpio_pin pin_pll_main_cs_n = { &board.gpio_aux, 0 };
 struct gpio_pin pin_pll_main_sdi = { &board.gpio_aux, 1 };
@@ -873,6 +874,15 @@ static void board_state_to_no(struct ertm14_board_state *dds, int hton)
     dds_state_order(&result->lo, hton);
 }
 
+static void get_sim_board_config(struct ertm14_board_state *bs)
+{
+    struct ertm14_board_state r, *result = &r;
+    struct ertm14_board_state *hw = &ertm14_hardware;
+
+    memcpy(result, hw, sizeof(*hw));
+    board_state_to_no(result, 1);
+    memcpy(bs, result, sizeof(*bs));
+}
 static void get_board_config(struct ertm14_board_state *bs)
 {
     struct ertm14_board_state r, *result = &r;
@@ -895,6 +905,69 @@ static void set_next_board_config(struct ertm14_board_state *bs)
 static int clkab_set_output_divider(int clka_or_clkb, int output, int divider);
 static int clkab_enable_output(int clka_or_clkb, int output, int enable);
 
+static void apply_config_sim(struct ertm14_board_state *cfg,
+	struct ertm14_board_state *mask)
+{
+	/* this is lifted from Tom's ertm14_commit_board_config,
+	 * adding a condition to each operation to mask them at will
+	 */
+	int i;
+	struct ertm14_board_state *sim_hw = &ertm14_hardware;
+
+	for (i = 0; i <= ERTM14_CLKAB_OUT_MAX_ID; i++) {
+		/* digital clocks */
+		int freq_a = cfg->clka_freq_hz[i];
+		int freq_b = cfg->clkb_freq_hz[i];
+		int div_a = ertm14_get_clkab_divider( freq_a );
+		int div_b = ertm14_get_clkab_divider( freq_b );
+		int enable_a = ( cfg->clka_enable_mask & (1<<i) ) ? 1 : 0;
+		int enable_b = ( cfg->clkb_enable_mask & (1<<i) ) ? 1 : 0;
+		
+		board_dbg("CLKA%d: freq=%d Hz, divider=%d, enable=%d\n", i, freq_a, div_a, enable_a);
+		board_dbg("CLKA%d: freq=%d Hz, divider=%d, enable=%d\n", i, freq_b, div_b, enable_b);
+
+		if (mask->clka_freq_hz[i])
+			sim_hw->clka_freq_hz[i] = cfg->clka_freq_hz[i];
+		if (mask->clkb_freq_hz[i])
+			sim_hw->clkb_freq_hz[i] = cfg->clkb_freq_hz[i];
+		if (mask->clka_enable_mask & (1<<i)) {
+			sim_hw->clka_enable_mask &= ~((uint32_t)1<<i);
+			sim_hw->clka_enable_mask |= ((uint32_t)enable_a<<i);
+		}
+		if (mask->clkb_enable_mask & (1<<i)) {
+			sim_hw->clkb_enable_mask &= ~((uint32_t)1<<i);
+			sim_hw->clkb_enable_mask |= ((uint32_t)enable_a<<i);
+		}
+	}
+
+	/* DDSes */
+	if (mask->lo.ampl_factor || mask->lo.ftw) {
+		sim_hw->lo.ampl_factor = cfg->lo.ampl_factor;
+		sim_hw->lo.ftw = cfg->lo.ftw;
+	}
+	if (mask->ref.ampl_factor || mask->ref.ftw) {
+		sim_hw->ref.ampl_factor = cfg->ref.ampl_factor;
+		sim_hw->ref.ftw = cfg->ref.ftw;
+	}
+
+	board_dbg("DDS LO: FTW=0x%08x, ampl=%d\n", cfg->lo.ftw, cfg->lo.ampl_factor );
+	board_dbg("DDS REF: FTW=0x%08x, ampl=%d\n", cfg->ref.ftw, cfg->ref.ampl_factor );
+
+	for (i = ERTM14_RF_OUT_MIN_ID; i <= ERTM14_RF_OUT_MAX_ID; i++) {
+		int st_lo = cfg->lo.out_state[i] == ERTM15_RF_OUT_ON ? 1 : 0;
+		int st_ref = cfg->ref.out_state[i] == ERTM15_RF_OUT_ON ? 1 : 0;
+		board_dbg("i %d lo %x ref %x\n", i, st_lo, st_ref );
+
+		if (mask->lo.out_state[i])
+			sim_hw->lo.out_state[i] = cfg->lo.out_state[i];
+		if (mask->ref.out_state[i])
+			sim_hw->ref.out_state[i] = cfg->ref.out_state[i];
+	}
+}
+
+static void (*apply_config)(struct ertm14_board_state *cfg, struct ertm14_board_state *mask) = apply_config_sim;
+
+#if 0
 static void apply_config(struct ertm14_board_state *cfg,
 	struct ertm14_board_state *mask)
 {
@@ -948,6 +1021,7 @@ static void apply_config(struct ertm14_board_state *cfg,
 
         ertm15_update_rf_switches( &board.rf_distr );
 }
+#endif /* apply_config with real hw */
 
 static void commit_board_config(struct ertm14_board_state *mask)
 {
@@ -996,6 +1070,13 @@ static int ertm_process_psnmp(struct uart_packet *rx_pkt, struct uart_packet *tx
 		commit_board_config((void *)&rx_pkt->payload[1]);
 		tx_pkt->length = 1 + sizeof(*bs);
 		tx_pkt->payload[0] = ertm14_commit_board_config;
+		break;
+
+	case ertm14_get_sim_board_config:
+		/* return full board configuration */		
+		tx_pkt->length = 1 + sizeof(*bs);
+		tx_pkt->payload[0] = ertm14_get_board_config;
+		get_sim_board_config((void *)&tx_pkt->payload[1]);
 		break;
 
 	case ertm14_get_mmc_state:
@@ -1776,6 +1857,8 @@ void ertm14_config_init()
 
         cfg->clka_enable_mask = -1; //( 1<<11);
         cfg->clkb_enable_mask = -1; //( 1<<11);
+
+	memcpy(&ertm14_hardware, cfg, sizeof(*cfg));
     }
 };
 

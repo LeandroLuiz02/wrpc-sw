@@ -192,7 +192,7 @@ int set_board_config(struct ertm_status *st, struct ertm_state *config)
 		return ERTM_UART_LINK_SEND_ERR;
 	}
 	memset(rx_pkt, 0, sizeof(*rx_pkt));
-	usleep(100000);
+	usleep(200000);
 	stat = uart_link_recv(link, &rx_pkt, 2000);
 	if (stat < 0) {
 		fprintf(stderr, "error (stat %d) in uart_link_recv\n", stat);
@@ -203,7 +203,7 @@ int set_board_config(struct ertm_status *st, struct ertm_state *config)
 	return 0;
 }
 
-int get_board_config(struct ertm_status *st)
+int get_board_config_sim(struct ertm_status *st, int sim)
 {
 	int res, stat;
 
@@ -216,7 +216,7 @@ int get_board_config(struct ertm_status *st)
 
 	tx_pkt->ptype = ERTM14_UART_PTYPE_SNMP_REQ;
 	tx_pkt->length = 1;
-	tx_pkt->payload[0] = ertm14_get_board_config;
+	tx_pkt->payload[0] = (sim ? ertm14_get_sim_board_config : ertm14_get_board_config);
 
 	res = uart_link_send(link, tx_pkt);
 	if (res < 0) {
@@ -236,6 +236,17 @@ int get_board_config(struct ertm_status *st)
 
 	return 0;
 }
+
+int get_board_config(struct ertm_status *st)
+{
+	return get_board_config_sim(st, 0);
+}
+
+int get_sim_board_config(struct ertm_status *st)
+{
+	return get_board_config_sim(st, 1);
+}
+
 
 /* constants of nature for this design */
 static char *usb_serial = "/dev/ttyUSB2";
@@ -280,6 +291,8 @@ int main(int argc, char *argv[])
 	fprintf(stderr,"------------------------------\n");
 	fprintf(stderr,"getting board config\n");
 	get_board_config(h);
+	get_board_config(h);
+	get_board_config(h);
 	display_ertm_state(h->state);
 	fprintf(stderr,"got board config\n");
 	memcpy(config, h->state, sizeof(*config));
@@ -293,19 +306,25 @@ int main(int argc, char *argv[])
 	mask->lo.level_adjust = 1;
 	config->ref.level_adjust = 0.314159;
 	mask->lo.level_adjust = 1;
-	set_board_config(h, config, mask);
-	get_board_config(h);
+	usleep(100000);
+	set_board_config(h, config);
+	usleep(100000);
+	commit_board_config(h, mask);
+	usleep(100000);
+	get_sim_board_config(h);
 	display_ertm_state(h->state);
 	fprintf(stderr,"------------------------------\n");
+	exit(1);
 
+	/* switch those visually recognizable values */
 	fprintf(stderr,"------------------------------\n");
 	fprintf(stderr,"setting a different funny board config\n");
 	config->lo.level_adjust = 0.314159;
 	mask->lo.level_adjust = 1;
 	config->ref.level_adjust = 0.577216;
 	mask->lo.level_adjust = 1;
-	set_board_config(h, config, mask);
-	get_board_config(h);
+	set_board_config(h, config);
+	commit_board_config(h, mask);
 	display_ertm_state(h->state);
 	fprintf(stderr,"------------------------------\n");
 
