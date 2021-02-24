@@ -128,9 +128,45 @@ void display_hex(uint8_t *buf, size_t len)
 		fprintf(stderr, "\n");
 }
 
-int set_board_config(struct ertm_status *st,
-	struct ertm_state *config,
-	struct ertm_state *config_mask)
+int commit_board_config(struct ertm_status *st,
+	struct ertm_state *mask)
+{
+	int res, stat;
+
+	struct uart_link *link = &st->link;
+	struct uart_packet tx, *tx_pkt = &tx;
+	struct uart_packet rx, *rx_pkt = &rx;
+
+	uint8_t *opcode = &tx_pkt->payload[0];
+	struct ertm14_board_state *cfg	=
+		(struct ertm14_board_state *)&tx_pkt->payload[1];
+
+	memset(tx_pkt, 0, sizeof(*tx_pkt));
+	tx_pkt->ptype = ERTM14_UART_PTYPE_SNMP_REQ;
+	tx_pkt->length = 1 + sizeof(*cfg);
+	*opcode = ertm14_commit_board_config;
+	state_to_board(mask, cfg);
+	cfg->valid = 1;
+
+	res = uart_link_send(link, tx_pkt);
+	if (res < 0) {
+		printf("error %d in uart_link_send\n", res);
+		return res;
+		return ERTM_UART_LINK_SEND_ERR;
+	}
+	memset(rx_pkt, 0, sizeof(*rx_pkt));
+	usleep(100000);
+	stat = uart_link_recv(link, &rx_pkt, 2000);
+	if (stat < 0) {
+		fprintf(stderr, "error (stat %d) in uart_link_recv\n", stat);
+		return ERTM_UART_LINK_RECV_ERR;
+	}
+	fprintf(stderr,"recvd %d bytes: \n", rx_pkt->length);
+
+	return 0;
+}
+
+int set_board_config(struct ertm_status *st, struct ertm_state *config)
 {
 	int res, stat;
 
