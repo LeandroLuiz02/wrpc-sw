@@ -2,7 +2,7 @@ Loading with the current setup:
 
 /user/dcobas/ertm14/py/bin/python3 \
 /user/dcobas/ertm14/devel/wrpc-sw/tools/uart-bootloader/usb-bootloader.py \
-   -b default -t -s 912600 -p /dev/ttyUSB2 \
+   -b default -t -s 921600 -p /dev/ttyUSB2 \
     /user/dcobas/ertm14/devel/wrpc-sw/wrc.bin
 
 Serial line connection using cu:
