@@ -893,13 +893,61 @@ static void set_next_board_config(struct ertm14_board_state *bs)
     board_state_to_no(&ertm14_next_state, 0);
 }
 
-static int ertm14_commit_config(struct ertm14_board_state *st);
+static int clkab_set_output_divider(int clka_or_clkb, int output, int divider);
+static int clkab_enable_output(int clka_or_clkb, int output, int enable);
 
 static void apply_config(struct ertm14_board_state *cfg,
 	struct ertm14_board_state *mask)
 {
-    /* FIXME: at this moment, ignore mask */
-    ertm14_commit_config(cfg);
+	/* this is lifted from Tom's ertm14_commit_board_config,
+	 * adding a condition to each operation to mask them at will
+	 */
+	int i;
+	for (i = 0; i <= ERTM14_CLKAB_OUT_MAX_ID; i++) {
+		/* digital clocks */
+		int freq_a = cfg->clka_freq_hz[i];
+		int freq_b = cfg->clkb_freq_hz[i];
+		int div_a = ertm14_get_clkab_divider( freq_a );
+		int div_b = ertm14_get_clkab_divider( freq_b );
+		int enable_a = ( cfg->clka_enable_mask & (1<<i) ) ? 1 : 0;
+		int enable_b = ( cfg->clkb_enable_mask & (1<<i) ) ? 1 : 0;
+		
+		board_dbg("CLKA%d: freq=%d Hz, divider=%d, enable=%d\n", i, freq_a, div_a, enable_a);
+		board_dbg("CLKA%d: freq=%d Hz, divider=%d, enable=%d\n", i, freq_b, div_b, enable_b);
+
+		if (mask->clka_freq_hz[i])
+			clkab_set_output_divider(ERTM14_OUT_CLKA, i, div_a);
+		if (mask->clkb_freq_hz[i])
+			clkab_set_output_divider(ERTM14_OUT_CLKB, i, div_b);
+		if (mask->clka_enable_mask & (1<<i))
+			clkab_enable_output( ERTM14_OUT_CLKA, i, enable_a );
+		if (mask->clkb_enable_mask & (1<<i))
+			clkab_enable_output( ERTM14_OUT_CLKB, i, enable_b );
+	}
+
+	/* DDSes */
+	if (mask->lo.ampl_factor || mask->lo.ftw)
+		ad9910_program(&board.dds_ad9910_lo, cfg->lo.ftw, 0, cfg->lo.ampl_factor );
+	if (mask->ref.ampl_factor || mask->ref.ftw)
+		ad9910_program(&board.dds_ad9910_ref, cfg->ref.ftw, 0, cfg->ref.ampl_factor );
+
+	board_dbg("DDS LO: FTW=0x%08x, ampl=%d\n", cfg->lo.ftw, cfg->lo.ampl_factor );
+	board_dbg("DDS REF: FTW=0x%08x, ampl=%d\n", cfg->ref.ftw, cfg->ref.ampl_factor );
+
+	for (i = ERTM14_RF_OUT_MIN_ID; i <= ERTM14_RF_OUT_MAX_ID; i++) {
+		int st_lo = cfg->lo.out_state[i] == ERTM15_RF_OUT_ON ? 1 : 0;
+		int st_ref = cfg->ref.out_state[i] == ERTM15_RF_OUT_ON ? 1 : 0;
+		board_dbg("i %d lo %x ref %x\n", i, st_lo, st_ref );
+
+		if (mask->lo.out_state[i])
+			ertm15_rf_distr_output_enable(&board.rf_distr,
+						ERTM15_RF_LO, i, st_lo );
+		if (mask->ref.out_state[i])
+			ertm15_rf_distr_output_enable(&board.rf_distr,
+						ERTM15_RF_REF, i, st_ref );
+	}
+
+        ertm15_update_rf_switches( &board.rf_distr );
 }
 
 static void commit_board_config(struct ertm14_board_state *mask)
@@ -911,7 +959,7 @@ static void commit_board_config(struct ertm14_board_state *mask)
     ertm14_current_state = current;
     memcpy(current, next, sizeof(*next));
     memcpy(maskp, mask, sizeof(*mask));
-    apply_config(current, NULL);
+    apply_config(current, mask);
     event_post(WRC_ERTM14_EVENT_APPLY_NEW_CONFIG);
 }
 
@@ -922,7 +970,6 @@ static void set_board_config(struct ertm14_board_state *bs)
 
     memcpy(next, bs, sizeof(*bs));
     board_state_to_no(next, 0);
-    commit_board_config(next);
 }
 
 static int ertm_process_psnmp(struct uart_packet *rx_pkt, struct uart_packet *tx_pkt)
@@ -944,6 +991,12 @@ static int ertm_process_psnmp(struct uart_packet *rx_pkt, struct uart_packet *tx
 		set_board_config((void *)&rx_pkt->payload[1]);
 		tx_pkt->length = 1;
 		tx_pkt->payload[0] = ertm14_set_board_config;
+		break;
+
+	case ertm14_commit_board_config:
+		commit_board_config((void *)&rx_pkt->payload[1]);
+		tx_pkt->length = 1 + sizeof(*bs);
+		tx_pkt->payload[0] = ertm14_commit_board_config;
 		break;
 
 	case ertm14_get_mmc_state:
