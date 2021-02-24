@@ -186,7 +186,6 @@ int get_board_config(struct ertm_status *st)
 	res = uart_link_send(link, tx_pkt);
 	if (res < 0) {
 		printf("error %d in uart_link_send\n", res);
-		return res;
 		return ERTM_UART_LINK_SEND_ERR;
 	}
 	memset(rx_pkt, 0, sizeof(*rx_pkt));
