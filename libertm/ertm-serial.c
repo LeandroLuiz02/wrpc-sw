@@ -26,13 +26,10 @@ void dds_state_to_lo_ref(struct ertm14_dds_state *dds, struct ertm_lo_ref *loref
 	int i;
 
 	loref->freq 				= ntohl(dds->ftw);
-	loref->pll_output_power 		= ntohl(dds->amp_power);
-	loref->pll_output_power 		/= 1000;	/* to dBm */
-	loref->level_adjust 			= ntohl(dds->ampl_factor);
-	loref->level_adjust 			/= (1<<8);
+	loref->pll_output_power 		= ntohl(dds->amp_power) / 1000;
+	loref->level_adjust 			= ntohl(dds->ampl_factor) / 256.0;
 	for (i = ERTM14_RF_OUT_MIN_ID; i <= ERTM14_RF_OUT_MAX_ID; i++) {
-		loref->chpower[i] = ntohl(dds->out_power[i]);
-		loref->chpower[i] /= 1000;
+		loref->chpower[i] = ntohl(dds->out_power[i]) / 1000;
 		loref->state[i] = dds->out_state[i];
 	}
 }
@@ -42,13 +39,10 @@ void lo_ref_to_dds_state(struct ertm_lo_ref *loref, struct ertm14_dds_state *dds
 	int i;
 
 	dds->ftw                 = htonl(loref->freq);
-	loref->pll_output_power *= 1000;	/*  to  mdBm  */
-	dds->amp_power           = htonl(floor(loref->pll_output_power));
-	loref->level_adjust 	/= (1<<8);
-	dds->ampl_factor         = htonl(floor(loref->level_adjust));
+	dds->amp_power           = htonl(loref->pll_output_power * 1000);
+	dds->ampl_factor         = htonl(floor(loref->level_adjust * 256));
 	for (i = ERTM14_RF_OUT_MIN_ID; i <= ERTM14_RF_OUT_MAX_ID; i++) {
-		loref->chpower[i] *= 1000;
-		dds->out_power[i] = htonl(floor(loref->chpower[i]));
+		dds->out_power[i] = htonl(floor(loref->chpower[i] * 1000));
 		dds->out_state[i] = loref->state[i];
 	}
 }
