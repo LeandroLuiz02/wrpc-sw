@@ -841,32 +841,34 @@ static int control_uart_poll(void)
 
 /* ensure all uart traffic is in network order */
 
-static void dds_state_to_no(struct ertm14_dds_state *dds)
+static void dds_state_order(struct ertm14_dds_state *dds, int hton)
 {
     int i;
+    uint32_t (*convert)(uint32_t hostlong) = (hton ? htonl : ntohl);
 
-    dds->ftw         = htonl(dds->ftw);
-    dds->amp_power   = htonl(dds->amp_power);
-    dds->ampl_factor = htonl(dds->ampl_factor);
-    dds->sync_source = htonl(dds->sync_source);
-    dds->sync_count  = htonl(dds->sync_count);
+    dds->ftw         = convert(dds->ftw);
+    dds->amp_power   = convert(dds->amp_power);
+    dds->ampl_factor = convert(dds->ampl_factor);
+    dds->sync_source = convert(dds->sync_source);
+    dds->sync_count  = convert(dds->sync_count);
     for (i = ERTM14_RF_OUT_MIN_ID; i <= ERTM14_RF_OUT_MAX_ID; i++)
-	    dds->out_power[i] = htonl(dds->out_power[i]);
+	    dds->out_power[i] = convert(dds->out_power[i]);
 }
 
-static void board_state_to_no(struct ertm14_board_state *dds)
+static void board_state_to_no(struct ertm14_board_state *dds, int hton)
 {
     struct ertm14_board_state r, *result = &r;
     int i;
+    uint32_t (*convert)(uint32_t hostlong) = (hton ? htonl : ntohl);
 
-    result->clka_enable_mask = htonl(result->clka_enable_mask);
-    result->clkb_enable_mask = htonl(result->clkb_enable_mask);
+    result->clka_enable_mask = convert(result->clka_enable_mask);
+    result->clkb_enable_mask = convert(result->clkb_enable_mask);
     for (i = ERTM14_CLKAB_OUT_MIN_ID; i <=  ERTM14_CLKAB_OUT_MAX_ID; i++) {
-	    result->clka_freq_hz[i] = htonl(result->clka_freq_hz[i]);
-	    result->clkb_freq_hz[i] = htonl(result->clkb_freq_hz[i]);
+	    result->clka_freq_hz[i] = convert(result->clka_freq_hz[i]);
+	    result->clkb_freq_hz[i] = convert(result->clkb_freq_hz[i]);
     }
-    dds_state_to_no(&result->ref);
-    dds_state_to_no(&result->lo);
+    dds_state_order(&result->ref, hton);
+    dds_state_order(&result->lo, hton);
 }
 
 static void get_board_config(struct ertm14_board_state *bs)
