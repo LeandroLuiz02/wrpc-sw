@@ -20,8 +20,8 @@
 
 
 #include <stdint.h>
+#include <string.h>
 #include <stdio.h>
-#include <ppsi/ppsi.h>
 
 #include "dev/gpio.h"
 #include "dev/bb_spi.h"
@@ -39,6 +39,42 @@
 #include "dev/74x595.h"
 #include "dev/netif.h"
 #include "hw/wrc_diags_regs.h"
+
+/* FIXME: this is the 127th (re)(non)(un)definition of the ntohl macros
+ * in the entire wrpc-sw codebase. This is insane and as non-portable
+ * as can be. If arpa/inet.h or netinet/in.h is not given by the arch
+ * lib, there must be one definition linked to the architecture in one
+ * single header. This will work for lm32 and fail miserably elsewhere,
+ * but there is no excuse for this state of affairs. Yuck */
+
+#include <machine/endian.h>
+#if defined(BYTE_ORDER) && BYTE_ORDER == BIG_ENDIAN
+/* The host byte order is the same as network byte order,
+   so these functions are all just identity. These are functions,
+   not macros, so they can pointer-referenced */
+static uint32_t htonl(uint32_t __hostlong)
+{
+	return __hostlong;
+}
+static uint32_t ntohl(uint32_t __netlong)
+{
+	return __netlong;
+}
+static uint16_t htons(uint16_t __hostshort)
+{
+	return __hostshort;
+}
+/* FIXME: this was half-done in include/ppsi-wrappers, only for this
+ * function, hence a link-time clash. Yuck twice */
+#if 0
+static uint16_t ntohs(uint16_t __netshort)
+{
+	return __netshort;
+}
+#endif
+#else
+#error "building on a non-lm32 architecture"
+#endif
 
 #include "board-state.h"
 #include "ertm14-uart-link.h"
@@ -65,6 +101,8 @@
 struct ertm14_board board;
 struct ertm14_board_state ertm14_configs[ ERTM14_MAX_CONFIGS ];
 struct ertm14_board_state *ertm14_current_state;
+struct ertm14_board_state ertm14_next_state;
+struct ertm14_board_state ertm14_mask;
 
 struct gpio_pin pin_pll_main_cs_n = { &board.gpio_aux, 0 };
 struct gpio_pin pin_pll_main_sdi = { &board.gpio_aux, 1 };
@@ -805,32 +843,34 @@ static int control_uart_poll(void)
 
 /* ensure all uart traffic is in network order */
 
-static void dds_state_to_no(struct ertm14_dds_state *dds)
+static void dds_state_order(struct ertm14_dds_state *dds, int hton)
 {
     int i;
+    uint32_t (*convert)(uint32_t hostlong) = (hton ? htonl : ntohl);
 
-    dds->ftw         = htonl(dds->ftw);
-    dds->amp_power   = htonl(dds->amp_power);
-    dds->ampl_factor = htonl(dds->ampl_factor);
-    dds->sync_source = htonl(dds->sync_source);
-    dds->sync_count  = htonl(dds->sync_count);
+    dds->ftw         = convert(dds->ftw);
+    dds->amp_power   = convert(dds->amp_power);
+    dds->ampl_factor = convert(dds->ampl_factor);
+    dds->sync_source = convert(dds->sync_source);
+    dds->sync_count  = convert(dds->sync_count);
     for (i = ERTM14_RF_OUT_MIN_ID; i <= ERTM14_RF_OUT_MAX_ID; i++)
-	    dds->out_power[i] = htonl(dds->out_power[i]);
+	    dds->out_power[i] = convert(dds->out_power[i]);
 }
 
-static void board_state_to_no(struct ertm14_board_state *dds)
+static void board_state_to_no(struct ertm14_board_state *dds, int hton)
 {
     struct ertm14_board_state r, *result = &r;
     int i;
+    uint32_t (*convert)(uint32_t hostlong) = (hton ? htonl : ntohl);
 
-    result->clka_enable_mask = htonl(result->clka_enable_mask);
-    result->clkb_enable_mask = htonl(result->clkb_enable_mask);
+    result->clka_enable_mask = convert(result->clka_enable_mask);
+    result->clkb_enable_mask = convert(result->clkb_enable_mask);
     for (i = ERTM14_CLKAB_OUT_MIN_ID; i <=  ERTM14_CLKAB_OUT_MAX_ID; i++) {
-	    result->clka_freq_hz[i] = htonl(result->clka_freq_hz[i]);
-	    result->clkb_freq_hz[i] = htonl(result->clkb_freq_hz[i]);
+	    result->clka_freq_hz[i] = convert(result->clka_freq_hz[i]);
+	    result->clkb_freq_hz[i] = convert(result->clkb_freq_hz[i]);
     }
-    dds_state_to_no(&result->ref);
-    dds_state_to_no(&result->lo);
+    dds_state_order(&result->ref, hton);
+    dds_state_order(&result->lo, hton);
 }
 
 static void get_board_config(struct ertm14_board_state *bs)
@@ -841,16 +881,47 @@ static void get_board_config(struct ertm14_board_state *bs)
 
     current = ertm14_get_state_for_config(config_id);
     memcpy(result, current, sizeof(*current));
-    board_state_to_no(result);
+    board_state_to_no(result, 1);
     memcpy(bs, result, sizeof(*bs));
+}
+
+static void set_next_board_config(struct ertm14_board_state *bs)
+{
+    /* FIXME: this is far from reentrant */
+    memcpy(&ertm14_next_state, bs, sizeof(*bs));
+    board_state_to_no(&ertm14_next_state, 0);
+}
+
+static int ertm14_commit_config(struct ertm14_board_state *st);
+
+static void apply_config(struct ertm14_board_state *cfg,
+	struct ertm14_board_state *mask)
+{
+    /* FIXME: at this moment, ignore mask */
+    ertm14_commit_config(cfg);
+}
+
+static void commit_board_config(struct ertm14_board_state *mask)
+{
+    struct ertm14_board_state *current = &ertm14_configs[0];
+    struct ertm14_board_state *next = &ertm14_next_state;
+    struct ertm14_board_state *maskp = &ertm14_mask;
+
+    ertm14_current_state = current;
+    memcpy(current, next, sizeof(*next));
+    memcpy(maskp, mask, sizeof(*mask));
+    apply_config(current, NULL);
+    event_post(WRC_ERTM14_EVENT_APPLY_NEW_CONFIG);
 }
 
 static void set_board_config(struct ertm14_board_state *bs)
 {
     /* FIXME: this is far from reentrant */
-    ertm14_current_state = &ertm14_configs[0];
-    memcpy(ertm14_current_state, bs, sizeof(*bs));
-    event_post(WRC_ERTM14_EVENT_APPLY_NEW_CONFIG);
+    struct ertm14_board_state *next = &ertm14_next_state;
+
+    memcpy(next, bs, sizeof(*bs));
+    board_state_to_no(next, 0);
+    commit_board_config(next);
 }
 
 static int ertm_process_psnmp(struct uart_packet *rx_pkt, struct uart_packet *tx_pkt)
@@ -871,7 +942,7 @@ static int ertm_process_psnmp(struct uart_packet *rx_pkt, struct uart_packet *tx
 	case ertm14_set_board_config:
 		set_board_config((void *)&rx_pkt->payload[1]);
 		tx_pkt->length = 1;
-		tx_pkt->payload[0] = ertm14_get_board_config;
+		tx_pkt->payload[0] = ertm14_set_board_config;
 		break;
 
 	case ertm14_get_mmc_state:

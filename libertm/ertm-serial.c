@@ -26,13 +26,10 @@ void dds_state_to_lo_ref(struct ertm14_dds_state *dds, struct ertm_lo_ref *loref
 	int i;
 
 	loref->freq 				= ntohl(dds->ftw);
-	loref->pll_output_power 		= ntohl(dds->amp_power);
-	loref->pll_output_power 		/= 1000;	/* to dBm */
-	loref->level_adjust 			= ntohl(dds->ampl_factor);
-	loref->level_adjust 			/= (1<<8);
+	loref->pll_output_power 		= ntohl(dds->amp_power) / 1000;
+	loref->level_adjust 			= ntohl(dds->ampl_factor) / 256.0;
 	for (i = ERTM14_RF_OUT_MIN_ID; i <= ERTM14_RF_OUT_MAX_ID; i++) {
-		loref->chpower[i] = ntohl(dds->out_power[i]);
-		loref->chpower[i] /= 1000;
+		loref->chpower[i] = ntohl(dds->out_power[i]) / 1000;
 		loref->state[i] = dds->out_state[i];
 	}
 }
@@ -42,13 +39,10 @@ void lo_ref_to_dds_state(struct ertm_lo_ref *loref, struct ertm14_dds_state *dds
 	int i;
 
 	dds->ftw                 = htonl(loref->freq);
-	loref->pll_output_power *= 1000;	/*  to  mdBm  */
-	dds->amp_power           = htonl(floor(loref->pll_output_power));
-	loref->level_adjust 	/= (1<<8);
-	dds->ampl_factor         = htonl(floor(loref->level_adjust));
+	dds->amp_power           = htonl(loref->pll_output_power * 1000);
+	dds->ampl_factor         = htonl(floor(loref->level_adjust * 256));
 	for (i = ERTM14_RF_OUT_MIN_ID; i <= ERTM14_RF_OUT_MAX_ID; i++) {
-		loref->chpower[i] *= 1000;
-		dds->out_power[i] = htonl(floor(loref->chpower[i]));
+		dds->out_power[i] = htonl(floor(loref->chpower[i] * 1000));
 		dds->out_state[i] = loref->state[i];
 	}
 }
@@ -135,24 +129,25 @@ void display_hex(uint8_t *buf, size_t len)
 }
 
 int set_board_config(struct ertm_status *st,
-	struct ertm14_board_state *config,
-	struct ertm14_board_state *config_mask)
+	struct ertm_state *config,
+	struct ertm_state *config_mask)
 {
 	int res, stat;
 
 	struct uart_link *link = &st->link;
-	struct uart_packet pack1, *tx_pkt = &pack1;
-	struct uart_packet pack2, *rx_pkt = &pack2;
+	struct uart_packet tx, *tx_pkt = &tx;
+	struct uart_packet rx, *rx_pkt = &rx;
 
 	uint8_t *opcode = &tx_pkt->payload[0];
-	uint8_t *cfg	= &tx_pkt->payload[1];
-	uint8_t *msk	= &tx_pkt->payload[1+sizeof(*config)];
+	struct ertm14_board_state *cfg	=
+		(struct ertm14_board_state *)&tx_pkt->payload[1];
 
+	memset(tx_pkt, 0, sizeof(*tx_pkt));
 	tx_pkt->ptype = ERTM14_UART_PTYPE_SNMP_REQ;
-	tx_pkt->length = 1 + 2 * sizeof(*config);
+	tx_pkt->length = 1 + sizeof(*cfg);
 	*opcode = ertm14_set_board_config;
-	memcpy(cfg, config, sizeof(*config));
-	memcpy(msk, config_mask, sizeof(*config_mask));
+	state_to_board(config, cfg);
+	cfg->valid = 1;
 
 	res = uart_link_send(link, tx_pkt);
 	if (res < 0) {
@@ -161,8 +156,9 @@ int set_board_config(struct ertm_status *st,
 		return ERTM_UART_LINK_SEND_ERR;
 	}
 	memset(rx_pkt, 0, sizeof(*rx_pkt));
-	stat = uart_link_recv(link, &rx_pkt, sizeof(*rx_pkt) + 10);
-	if (stat <= 0) {
+	usleep(100000);
+	stat = uart_link_recv(link, &rx_pkt, 2000);
+	if (stat < 0) {
 		fprintf(stderr, "error (stat %d) in uart_link_recv\n", stat);
 		return ERTM_UART_LINK_RECV_ERR;
 	}
@@ -194,7 +190,7 @@ int get_board_config(struct ertm_status *st)
 		return ERTM_UART_LINK_SEND_ERR;
 	}
 	memset(rx_pkt, 0, sizeof(*rx_pkt));
-	stat = uart_link_recv(link, &rx_pkt, sizeof(*rx_pkt) + 10);
+	stat = uart_link_recv(link, &rx_pkt, 1000);
 	if (stat <= 0) {
 		fprintf(stderr, "error (stat %d) in uart_link_recv\n", stat);
 		return ERTM_UART_LINK_RECV_ERR;
@@ -246,8 +242,28 @@ void ertm_exit(struct ertm_status *handle)
 int main(int argc, char *argv[])
 {
 	struct ertm_status *h = ertm_init(usb_serial);
+	struct ertm_state c, *config = &c;
+	struct ertm_state m, *mask = &m;
 
-        fprintf(stderr,"sending command 'command'\n");
+        fprintf(stderr,"getting board config\n");
+	get_board_config(h);
+        fprintf(stderr,"got board config\n");
+	memcpy(config, h->state, sizeof(*config));
+	memset(mask, 0, sizeof(*mask));
+
+	/* set a visually recognizable value */
+	config->lo.level_adjust = 0.577216;
+	mask->lo.level_adjust = 1;
+	config->ref.level_adjust = 0.314159;
+	mask->lo.level_adjust = 1;
+	set_board_config(h, config, mask);
+	get_board_config(h);
+
+	config->lo.level_adjust = 0.314159;
+	mask->lo.level_adjust = 1;
+	config->ref.level_adjust = 0.577216;
+	mask->lo.level_adjust = 1;
+	set_board_config(h, config, mask);
 	get_board_config(h);
 
 	ertm_exit(h);
