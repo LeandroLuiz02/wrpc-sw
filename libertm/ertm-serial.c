@@ -135,24 +135,25 @@ void display_hex(uint8_t *buf, size_t len)
 }
 
 int set_board_config(struct ertm_status *st,
-	struct ertm14_board_state *config,
-	struct ertm14_board_state *config_mask)
+	struct ertm_state *config,
+	struct ertm_state *config_mask)
 {
 	int res, stat;
 
 	struct uart_link *link = &st->link;
-	struct uart_packet pack1, *tx_pkt = &pack1;
-	struct uart_packet pack2, *rx_pkt = &pack2;
+	struct uart_packet tx, *tx_pkt = &tx;
+	struct uart_packet rx, *rx_pkt = &rx;
 
 	uint8_t *opcode = &tx_pkt->payload[0];
-	uint8_t *cfg	= &tx_pkt->payload[1];
-	uint8_t *msk	= &tx_pkt->payload[1+sizeof(*config)];
+	struct ertm14_board_state *cfg	=
+		(struct ertm14_board_state *)&tx_pkt->payload[1];
 
+	memset(tx_pkt, 0, sizeof(*tx_pkt));
 	tx_pkt->ptype = ERTM14_UART_PTYPE_SNMP_REQ;
-	tx_pkt->length = 1 + 2 * sizeof(*config);
+	tx_pkt->length = 1 + sizeof(*cfg);
 	*opcode = ertm14_set_board_config;
-	memcpy(cfg, config, sizeof(*config));
-	memcpy(msk, config_mask, sizeof(*config_mask));
+	state_to_board(config, cfg);
+	cfg->valid = 1;
 
 	res = uart_link_send(link, tx_pkt);
 	if (res < 0) {
@@ -246,8 +247,20 @@ void ertm_exit(struct ertm_status *handle)
 int main(int argc, char *argv[])
 {
 	struct ertm_status *h = ertm_init(usb_serial);
+	struct ertm_state c, *config = &c;
+	struct ertm_state m, *mask = &m;
 
-        fprintf(stderr,"sending command 'command'\n");
+        fprintf(stderr,"getting board config\n");
+	get_board_config(h);
+        fprintf(stderr,"got board config\n");
+	memcpy(config, h->state, sizeof(*config));
+	memset(mask, 0, sizeof(*mask));
+
+	/* set a visually recognizable value */
+	config->lo.level_adjust = 0.577216;
+	mask->lo.level_adjust = 1;
+	set_board_config(h, config, mask);
+	get_board_config(h);
 	get_board_config(h);
 
 	ertm_exit(h);
