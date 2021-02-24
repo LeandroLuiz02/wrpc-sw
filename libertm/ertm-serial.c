@@ -163,7 +163,6 @@ int set_board_config(struct ertm_status *st,
 		return ERTM_UART_LINK_RECV_ERR;
 	}
 	fprintf(stderr,"recvd %d bytes: \n", rx_pkt->length);
-	display_hex(rx_pkt->payload, rx_pkt->length);
 
 	return 0;
 }
@@ -195,7 +194,6 @@ int get_board_config(struct ertm_status *st)
 		return ERTM_UART_LINK_RECV_ERR;
 	}
 	fprintf(stderr,"recvd %d bytes: \n", rx_pkt->length);
-	display_hex(rx_pkt->payload, rx_pkt->length);
 
 	board = (struct ertm14_board_state *)&rx_pkt->payload[1];
 	board_to_state(board, state);
