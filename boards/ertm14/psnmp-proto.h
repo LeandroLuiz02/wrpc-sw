@@ -12,6 +12,7 @@
 #define ertm14_get_wrc_diags		0x14
 #define ertm14_get_wrc_nco		0x15
 #define ertm14_set_wrc_nco		0x16
+#define ertm14_get_sim_board_config	0x17
 
 struct ertm14_protocol_ops {
 	int8_t	opcode;
@@ -27,6 +28,7 @@ struct ertm14_protocol_ops {
     { ertm14_get_wrc_diags,    NULL, NULL, sizeof(struct WRC_DIAGS_WB), 0, },
     { ertm14_get_wrc_nco,      NULL, NULL, -1, 0, },
     { ertm14_set_wrc_nco,      NULL, NULL, -1, 0, },
+    { ertm14_get_sim_board_config,      NULL, NULL, -1, 0, },
     { -1, },
 };
 
