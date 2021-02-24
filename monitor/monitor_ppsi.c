@@ -226,32 +226,6 @@ char * timeToString_ps_as_ns(struct pp_time *time, char *buf)
 	return buf;
 }
 
-char * relativeDifferenceToString(RelativeDifference time, char *buf)
-{
-	char sign;
-	int32_t nsecs;
-	uint64_t sub_yocto = 0;
-	int64_t fraction;
-	uint64_t bitWeight = 500000000000000000;
-	uint64_t mask;
-
-	if (time < 0) {
-		time =- time;
-		sign = '-';
-	} else {
-		sign = '+';
-	}
-
-	nsecs = time >> REL_DIFF_FRACBITS;
-	fraction = time & REL_DIFF_FRACMASK;
-	for (mask = (uint64_t) 1 << (REL_DIFF_FRACBITS - 1); mask != 0; mask >>= 1) {
-		if (mask & fraction)
-			sub_yocto += bitWeight;
-		bitWeight /= 2;
-	}
-	sprintf(buf,"%c%d.%018Ld", sign, nsecs, sub_yocto);
-	return buf;
-}
 
 static inline int extensionStateColor(struct pp_instance *ppi)
 {
@@ -777,7 +751,7 @@ void print_servo_data(struct pp_instance *ppi)
 	/* delayAsymmetry */
 	pcprintf(24, 20, C_WHITE, "%19s nsec",   interval_to_string(ppi->portDS->delayAsymmetry));
 	/* delayCoefficient */
-	pcprintf(25, 23, C_WHITE, "%s", relativeDifferenceToString(ppi->asymmetryCorrectionPortDS.scaledDelayCoefficient, buf));
+	pcprintf(25, 23, C_WHITE, "%s", relative_interval_to_string(ppi->asymmetryCorrectionPortDS.scaledDelayCoefficient));
 	/* fpa */
 	pcprintf(25, 51, C_WHITE, "%Lu", ppi->asymmetryCorrectionPortDS.scaledDelayCoefficient); /* print as unsigned! */
 
