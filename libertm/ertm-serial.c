@@ -162,8 +162,9 @@ int set_board_config(struct ertm_status *st,
 		return ERTM_UART_LINK_SEND_ERR;
 	}
 	memset(rx_pkt, 0, sizeof(*rx_pkt));
-	stat = uart_link_recv(link, &rx_pkt, sizeof(*rx_pkt) + 10);
-	if (stat <= 0) {
+	usleep(100000);
+	stat = uart_link_recv(link, &rx_pkt, 2000);
+	if (stat < 0) {
 		fprintf(stderr, "error (stat %d) in uart_link_recv\n", stat);
 		return ERTM_UART_LINK_RECV_ERR;
 	}
@@ -195,7 +196,7 @@ int get_board_config(struct ertm_status *st)
 		return ERTM_UART_LINK_SEND_ERR;
 	}
 	memset(rx_pkt, 0, sizeof(*rx_pkt));
-	stat = uart_link_recv(link, &rx_pkt, sizeof(*rx_pkt) + 10);
+	stat = uart_link_recv(link, &rx_pkt, 1000);
 	if (stat <= 0) {
 		fprintf(stderr, "error (stat %d) in uart_link_recv\n", stat);
 		return ERTM_UART_LINK_RECV_ERR;
