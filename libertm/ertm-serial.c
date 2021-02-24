@@ -200,7 +200,6 @@ int get_board_config(struct ertm_status *st)
 
 	board = (struct ertm14_board_state *)&rx_pkt->payload[1];
 	board_to_state(board, state);
-	display_ertm_state(state);
 
 	return 0;
 }
@@ -245,26 +244,37 @@ int main(int argc, char *argv[])
 	struct ertm_state c, *config = &c;
 	struct ertm_state m, *mask = &m;
 
-        fprintf(stderr,"getting board config\n");
+	fprintf(stderr,"------------------------------\n");
+	fprintf(stderr,"getting board config\n");
 	get_board_config(h);
-        fprintf(stderr,"got board config\n");
+	display_ertm_state(h->state);
+	fprintf(stderr,"got board config\n");
 	memcpy(config, h->state, sizeof(*config));
 	memset(mask, 0, sizeof(*mask));
+	fprintf(stderr,"------------------------------\n");
 
 	/* set a visually recognizable value */
+	fprintf(stderr,"------------------------------\n");
+	fprintf(stderr,"setting funny board config\n");
 	config->lo.level_adjust = 0.577216;
 	mask->lo.level_adjust = 1;
 	config->ref.level_adjust = 0.314159;
 	mask->lo.level_adjust = 1;
 	set_board_config(h, config, mask);
 	get_board_config(h);
+	display_ertm_state(h->state);
+	fprintf(stderr,"------------------------------\n");
 
+	fprintf(stderr,"------------------------------\n");
+	fprintf(stderr,"setting a different funny board config\n");
 	config->lo.level_adjust = 0.314159;
 	mask->lo.level_adjust = 1;
 	config->ref.level_adjust = 0.577216;
 	mask->lo.level_adjust = 1;
 	set_board_config(h, config, mask);
 	get_board_config(h);
+	display_ertm_state(h->state);
+	fprintf(stderr,"------------------------------\n");
 
 	ertm_exit(h);
 
