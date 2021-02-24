@@ -101,6 +101,8 @@ static uint16_t ntohs(uint16_t __netshort)
 struct ertm14_board board;
 struct ertm14_board_state ertm14_configs[ ERTM14_MAX_CONFIGS ];
 struct ertm14_board_state *ertm14_current_state;
+struct ertm14_board_state ertm14_next_state;
+struct ertm14_board_state ertm14_mask;
 
 struct gpio_pin pin_pll_main_cs_n = { &board.gpio_aux, 0 };
 struct gpio_pin pin_pll_main_sdi = { &board.gpio_aux, 1 };
@@ -879,16 +881,47 @@ static void get_board_config(struct ertm14_board_state *bs)
 
     current = ertm14_get_state_for_config(config_id);
     memcpy(result, current, sizeof(*current));
-    board_state_to_no(result);
+    board_state_to_no(result, 1);
     memcpy(bs, result, sizeof(*bs));
+}
+
+static void set_next_board_config(struct ertm14_board_state *bs)
+{
+    /* FIXME: this is far from reentrant */
+    memcpy(&ertm14_next_state, bs, sizeof(*bs));
+    board_state_to_no(&ertm14_next_state, 0);
+}
+
+static int ertm14_commit_config(struct ertm14_board_state *st);
+
+static void apply_config(struct ertm14_board_state *cfg,
+	struct ertm14_board_state *mask)
+{
+    /* FIXME: at this moment, ignore mask */
+    ertm14_commit_config(cfg);
+}
+
+static void commit_board_config(struct ertm14_board_state *mask)
+{
+    struct ertm14_board_state *current = &ertm14_configs[0];
+    struct ertm14_board_state *next = &ertm14_next_state;
+    struct ertm14_board_state *maskp = &ertm14_mask;
+
+    ertm14_current_state = current;
+    memcpy(current, next, sizeof(*next));
+    memcpy(maskp, mask, sizeof(*mask));
+    apply_config(current, NULL);
+    event_post(WRC_ERTM14_EVENT_APPLY_NEW_CONFIG);
 }
 
 static void set_board_config(struct ertm14_board_state *bs)
 {
     /* FIXME: this is far from reentrant */
-    ertm14_current_state = &ertm14_configs[0];
-    memcpy(ertm14_current_state, bs, sizeof(*bs));
-    event_post(WRC_ERTM14_EVENT_APPLY_NEW_CONFIG);
+    struct ertm14_board_state *next = &ertm14_next_state;
+
+    memcpy(next, bs, sizeof(*bs));
+    board_state_to_no(next, 0);
+    commit_board_config(next);
 }
 
 static int ertm_process_psnmp(struct uart_packet *rx_pkt, struct uart_packet *tx_pkt)
