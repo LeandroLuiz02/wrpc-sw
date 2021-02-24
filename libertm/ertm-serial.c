@@ -254,8 +254,16 @@ int main(int argc, char *argv[])
 	/* set a visually recognizable value */
 	config->lo.level_adjust = 0.577216;
 	mask->lo.level_adjust = 1;
+	config->ref.level_adjust = 0.314159;
+	mask->lo.level_adjust = 1;
 	set_board_config(h, config, mask);
 	get_board_config(h);
+
+	config->lo.level_adjust = 0.314159;
+	mask->lo.level_adjust = 1;
+	config->ref.level_adjust = 0.577216;
+	mask->lo.level_adjust = 1;
+	set_board_config(h, config, mask);
 	get_board_config(h);
 
 	ertm_exit(h);
