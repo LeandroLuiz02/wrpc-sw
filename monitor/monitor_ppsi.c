@@ -539,6 +539,11 @@ int wrc_wr_diags(void)
  * in wrc_wr_diags
  * either this, or make syscon.c wdiags_* functions not depend on a
  * global...
+ *
+ * FIXME: add wrc_diags_dump to a header!!!
+ * FIXME: refactor wdiags_* function in dev/syscon.c so that they
+ *  do not write directly to syscon, but to an arbitrary address.
+ *  That will clean the code here *enormously*
  */
 int wrc_diags_dump(struct WRC_DIAGS_WB *buf)
 {
