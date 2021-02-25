@@ -247,6 +247,35 @@ int get_sim_board_config(struct ertm_status *st)
 	return get_board_config_sim(st, 1);
 }
 
+int get_wr_diags(struct ertm_status *st, struct WRC_DIAGS_WB *diags)
+{
+	int res, stat;
+
+	struct uart_link *link = &st->link;
+	struct uart_packet pack1, *tx_pkt = &pack1;
+	struct uart_packet pack2, *rx_pkt = &pack2;
+
+	tx_pkt->ptype = ERTM14_UART_PTYPE_SNMP_REQ;
+	tx_pkt->length = 1;
+	tx_pkt->payload[0] = ertm14_get_wrc_diags;
+	res = uart_link_send(link, tx_pkt);
+	if (res < 0) {
+		printf("error %d in uart_link_send\n", res);
+		return ERTM_UART_LINK_SEND_ERR;
+	}
+	memset(rx_pkt, 0, sizeof(*rx_pkt));
+	stat = uart_link_recv(link, &rx_pkt, 1000);
+	if (stat <= 0) {
+		fprintf(stderr, "error (stat %d) in uart_link_recv\n", stat);
+		return ERTM_UART_LINK_RECV_ERR;
+	}
+	fprintf(stderr,"recvd %d bytes: \n", rx_pkt->length);
+
+	memcpy(diags, &rx_pkt->payload[4], sizeof(*diags));
+
+	return 0;
+}
+
 
 /* constants of nature for this design */
 static char *usb_serial = "/dev/ttyUSB2";
@@ -282,11 +311,39 @@ void ertm_exit(struct ertm_status *handle)
 	free(handle);
 }
 
+void display_wrc_diags(struct WRC_DIAGS_WB *diags)
+{
+	char fmt[] = "%-38s: 0x%08x\n";
+
+	printf(fmt, "Version register", diags->VER);
+	printf(fmt, "Ctrl", diags->CTRL);
+	printf(fmt, "servo status", diags->WDIAG_SSTAT);
+	printf(fmt, "Port status", diags->WDIAG_PSTAT);
+	printf(fmt, "PTP state", diags->WDIAG_PTPSTAT);
+	printf(fmt, "AUX state", diags->WDIAG_ASTAT);
+	printf(fmt, "Tx PTP Frame cnts", diags->WDIAG_TXFCNT);
+	printf(fmt, "Rx PTP Frame cnts", diags->WDIAG_RXFCNT);
+	printf(fmt, "WRPC Diag:local time [msb of s]", diags->WDIAG_SEC_MSB);
+	printf(fmt, "local time [lsb of s]", diags->WDIAG_SEC_LSB);
+	printf(fmt, "local time [ns]", diags->WDIAG_NS);
+	printf(fmt, "Round trip (mu) [msb of ps]", diags->WDIAG_MU_MSB);
+	printf(fmt, "Round trip (mu) [lsb of ps]", diags->WDIAG_MU_LSB);
+	printf(fmt, "Master-slave delay (dms) [msb of ps]", diags->WDIAG_DMS_MSB);
+	printf(fmt, "Master-slave delay (dms) [lsb of ps]", diags->WDIAG_DMS_LSB);
+	printf(fmt, "Total link asymmetry [ps]", diags->WDIAG_ASYM);
+	printf(fmt, "Clock offset (cko) [ps]", diags->WDIAG_CKO);
+	printf(fmt, "Phase setpoint (setp) [ps]", diags->WDIAG_SETP);
+	printf(fmt, "Update counter (ucnt)", diags->WDIAG_UCNT);
+	printf(fmt, "Board temperature [C degree]", diags->WDIAG_TEMP);
+	
+}
+
 int main(int argc, char *argv[])
 {
 	struct ertm_status *h = ertm_init(usb_serial);
 	struct ertm_state c, *config = &c;
 	struct ertm_state m, *mask = &m;
+	struct WRC_DIAGS_WB d, *diags = &d;
 
 	fprintf(stderr,"------------------------------\n");
 	fprintf(stderr,"getting board config\n");
@@ -323,11 +380,21 @@ int main(int argc, char *argv[])
 	mask->lo.level_adjust = 1;
 	config->ref.level_adjust = 0.577216;
 	mask->lo.level_adjust = 1;
+	usleep(300000);
 	set_board_config(h, config);
+	usleep(300000);
 	commit_board_config(h, mask);
+	usleep(300000);
 	display_ertm_state(h->state);
 	fprintf(stderr,"------------------------------\n");
-
+ello:
+	/* get wr diags */
+	fprintf(stderr,"------------------------------\n");
+	fprintf(stderr,"getting diags from wrc\n");
+	get_wr_diags(h, diags);
+	display_wrc_diags(diags);
+	display_hex((void*)diags, sizeof(*diags));
+	fprintf(stderr,"------------------------------\n");
 	ertm_exit(h);
 
 	return 0;
