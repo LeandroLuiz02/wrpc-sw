@@ -1045,6 +1045,18 @@ static void set_board_config(struct ertm14_board_state *bs)
     board_state_to_no(next, 0);
 }
 
+static void get_wrc_diags(struct WRC_DIAGS_WB *diags)
+{
+	uint32_t *word = (void *)diags;
+	int i;
+	int n = sizeof(*diags)/sizeof(uint32_t);
+
+	memset(diags, 0xa5, sizeof(*diags));
+	wrc_diags_dump(diags);
+	for (i = 0; i < n; i++)
+		word[i] = htonl(word[i]);
+}
+
 static int ertm_process_psnmp(struct uart_packet *rx_pkt, struct uart_packet *tx_pkt)
 {
 	struct ertm14_board_state *bs;
@@ -1083,6 +1095,9 @@ static int ertm_process_psnmp(struct uart_packet *rx_pkt, struct uart_packet *tx
 		// struct ertm14_mmc_state *mmcs;
 		break;
 	case ertm14_get_wrc_diags:
+		tx_pkt->length = 4 + sizeof(struct WRC_DIAGS_WB);
+		tx_pkt->payload[0] = ertm14_get_wrc_diags;
+		get_wrc_diags((void *)&tx_pkt->payload[4]);
 		break;
 	case ertm14_get_wrc_nco:
 		break;
