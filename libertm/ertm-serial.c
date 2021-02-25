@@ -356,6 +356,8 @@ int main(int argc, char *argv[])
 	memset(mask, 0, sizeof(*mask));
 	fprintf(stderr,"------------------------------\n");
 
+	goto ello;
+
 	/* set a visually recognizable value */
 	fprintf(stderr,"------------------------------\n");
 	fprintf(stderr,"setting funny board config\n");
@@ -363,15 +365,15 @@ int main(int argc, char *argv[])
 	mask->lo.level_adjust = 1;
 	config->ref.level_adjust = 0.314159;
 	mask->lo.level_adjust = 1;
-	usleep(100000);
+	usleep(300000);
 	set_board_config(h, config);
-	usleep(100000);
+	usleep(300000);
 	commit_board_config(h, mask);
-	usleep(100000);
+	usleep(300000);
 	get_sim_board_config(h);
 	display_ertm_state(h->state);
 	fprintf(stderr,"------------------------------\n");
-	exit(1);
+
 
 	/* switch those visually recognizable values */
 	fprintf(stderr,"------------------------------\n");
