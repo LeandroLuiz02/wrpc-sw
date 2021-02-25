@@ -26,7 +26,7 @@
 #include "lib/ipv4.h"
 #include "shell.h"
 #include "revision.h"
-
+#include "hw/wrc_diags_regs.h"
 
 #define WRC_MONITOR_REFRESH_PERIOD (1 * TICS_PER_SECOND)
 #define WRC_DIAG_REFRESH_PERIOD (1 * TICS_PER_SECOND)
@@ -422,6 +422,12 @@ int wrc_log_stats(void)
 	return 1;
 }
 
+/* this is to avoid breaking wrc_wr_diags and its clone */
+uint32_t wrc_temp_get(char *name)
+{
+	struct wrc_sensor *s = wrc_sensor_find_by_type( WRC_SENSOR_TEMP_CELSIUS );
+	return s->value;
+}
 
 int wrc_wr_diags(void)
 {
@@ -528,3 +534,74 @@ int wrc_wr_diags(void)
 	return 1;
 }
 
+/*
+ * this function can be used to factor out most of the stuff
+ * in wrc_wr_diags
+ * either this, or make syscon.c wdiags_* functions not depend on a
+ * global...
+ */
+int wrc_diags_dump(struct WRC_DIAGS_WB *buf)
+{
+	struct hal_port_state ps;
+	int tx, rx;
+	uint64_t sec;
+	uint32_t nsec;
+	uint32_t aux_stat;
+	int i, temp, n_out;
+
+	buf->VER = 0x12345678;
+	buf->CTRL = 0xcafebabe;
+	/* frame statistics */
+	minic_get_stats(&tx, &rx);
+	buf->WDIAG_TXFCNT = tx;
+	buf->WDIAG_RXFCNT = rx;
+
+	/* local time */
+	shw_pps_gen_get_time(&sec, &nsec);
+	buf->WDIAG_SEC_MSB = 0xFFFFFFFF & (sec>>32);
+	buf->WDIAG_SEC_LSB = 0xFFFFFFFF &  sec;
+	buf->WDIAG_NS      = nsec;
+
+	/* port state (from hal) */
+	wrpc_get_port_state(&ps, NULL);
+	buf->WDIAG_PSTAT  = (ps.state ? SYSC_WDIAG_PSTAT_LINK : 0);
+	buf->WDIAG_PSTAT |= (ps.locked ? SYSC_WDIAG_PSTAT_LOCKED : 0);
+
+	/* port PTP State (from ppsi) */
+	buf->WDIAG_PTPSTAT = SYSC_WDIAG_PTPSTAT_PTPSTATE_W((uint8_t)ppi->state);
+
+	/* servo state (if slave)s */
+	if(ptp_mode == WRC_MODE_SLAVE) {
+		struct wr_servo_state *ss =
+			&((struct wr_data *)ppi->ext_data)->servo_state;
+		int32_t asym   = (int32_t)(ss->picos_mu-2LL * ss->delta_ms);
+		int wr_mode    = (ss->flags & WR_FLAG_VALID) ? 1 : 0;
+		int servostate =  ss->state;
+		uint64_t mu = ss->picos_mu;
+		uint64_t dms = ss->delta_ms;
+
+		buf->WDIAG_SSTAT   = wr_mode ? SYSC_WDIAG_SSTAT_WR_MODE : 0;
+		buf->WDIAG_SSTAT  |= SYSC_WDIAG_SSTAT_SERVOSTATE_W(servostate);
+		buf->WDIAG_MU_MSB  = 0xFFFFFFFF & (mu>>32);
+		buf->WDIAG_MU_LSB  = 0xFFFFFFFF &  mu;
+		buf->WDIAG_DMS_MSB = 0xFFFFFFFF & (dms>>32);
+		buf->WDIAG_DMS_LSB = 0xFFFFFFFF &  dms;
+		buf->WDIAG_ASYM    = asym;
+		buf->WDIAG_CKO     = ss->offset;
+		buf->WDIAG_SETP    = ss->cur_setpoint;
+		buf->WDIAG_UCNT    = ss->update_count;
+	}
+	/* auxiliar channels (if any) */
+	spll_get_num_channels(NULL, &n_out);
+	if (n_out > 8) n_out = 8; /* hardware limit. */
+	for(i = 0; i < n_out; i++) {
+		aux_stat |= (( SPLL_AUX_SLAVE_LOCKED | SPLL_AUX_TRACKING_READY ) & spll_get_aux_status(i).flags) << i;
+	}
+	buf->WDIAG_ASTAT = SYSC_WDIAG_ASTAT_AUX_W(aux_stat);
+
+	/* temperature */
+	temp = wrc_temp_get("pcb");
+	buf->WDIAG_TEMP = temp;
+
+	return 1;
+}
