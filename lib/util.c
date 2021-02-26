@@ -271,3 +271,20 @@ int atoi(const char *s)
 	fromdec(s, &res);
 	return res;
 }
+
+
+/* To save code, in the div of two int64 numbers
+ * use signed 64bit division, then correct the sign of the result */
+long long __divdi3 (long long A, long long B)
+{
+    int sign_a, sign_b;
+    unsigned long long a_u;
+    unsigned long long b_u;
+
+    sign_a = A < 0 ? -1 : 1;
+    sign_b = B < 0 ? -1 : 1;
+    a_u = A * sign_a;
+    b_u = A * sign_b;
+    return sign_a * sign_b * (long long) (a_u / b_u);
+}
+

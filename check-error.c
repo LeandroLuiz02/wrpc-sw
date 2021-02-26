@@ -51,10 +51,4 @@ long long __udivdi3 (long long A, long long B)
 	return 0;
 }
 
-/* was used in set_phase_shift, phase_to_cf_units */
-long long __divdi3 (long long A, long long B)
-{
-	__you_should_not_divide_ll_in_wrpc_sw();
-	return 0;
-}
 #endif
