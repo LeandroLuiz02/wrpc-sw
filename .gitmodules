@@ -3,3 +3,9 @@
 	url = https://ohwr.org/project/ppsi.git
 [ppsi "Submod"]
 	url = https://ohwr.org/project/ppsi.git
+[submodule "ual"]
+	path = ual
+	url = https://gitlab.cern.ch/cohtdrivers/ual.git
+[submodule "tools/riscv-loader/ual"]
+	path = tools/riscv-loader/ual
+	url = https://gitlab.cern.ch/cohtdrivers/ual.git
