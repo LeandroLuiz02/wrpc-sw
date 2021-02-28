@@ -24,13 +24,15 @@
 #include "rf_frame_transceiver.h"
 #include "board-state.h"
 
+#define ERTM14_SECONDARY_DEBUG_UART 1
+
 #define BOARD_USE_CUSTOM_SDBFS 1
 #define BOARD_HAS_CUSTOM_NETWORK_INIT 1
 
 #undef BOARD_ERTM14_REV_1
 #define BOARD_ERTM14_REV_2
 
-#define BOARD_MAX_CONSOLE_DEVICES 2
+#define BOARD_MAX_CONSOLE_DEVICES 3
 
 /* Board-specific parameters */
 #define TICS_PER_SECOND 1000
