@@ -371,10 +371,6 @@ void console_init()
     console_uart_dev.priv = &console_uart_priv;
     console_uart_dev.get_char = con_uart_getc;
     console_uart_dev.put_string = con_uart_put_string;
-<<<<<<< HEAD
-=======
-
->>>>>>> ertm14: added support for optional secondary console connected to a separate serial port (J11 pins 2/3) for easier debugging of the UART control link
     console_uart_priv.prev_char = 0;
     console_uart_priv.state = CON_STATE_IDLE;
     console_uart_priv.mode_switch_hook = NULL;
@@ -403,7 +399,6 @@ void console_init()
     console_uart_priv_2nd.prev_char = 0;
     console_uart_priv_2nd.state = CON_STATE_IDLE;
     console_uart_priv_2nd.mode_switch_hook = NULL;
-
     console_register_device( &console_uart_2nd );
 
     pp_printf("Console UART FIFO:: %d\n", suart_is_fifo_supported( &console_uart_priv.uart_dev ) );

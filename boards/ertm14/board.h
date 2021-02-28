@@ -24,6 +24,8 @@
 #include "rf_frame_transceiver.h"
 #include "board-state.h"
 
+#define ERTM14_SECONDARY_DEBUG_UART 1
+
 #define WRC_MAX_TASKS 24
 #define ERTM14_SECONDARY_DEBUG_UART 1
 
@@ -100,6 +102,7 @@ extern unsigned char *BASE_EP;
 #define BASE_ERTM14_10MHZ_ALIGN_UNIT       (BASE_AUXWB + 0x400)
 #define BASE_ERTM14_RF_FRAME_TRANSCEIVER       (BASE_AUXWB + 0x500)
 #define BASE_ERTM14_STREAMERS       (BASE_AUXWB + 0x600)
+#define BASE_ERTM14_DEBUG_UART       (BASE_AUXWB + 0x800)
 
 #define ERTM14_OUT_CLKA 0
 #define ERTM14_OUT_CLKB 1
