@@ -78,8 +78,6 @@ static int recv_fsm( struct uart_link* link, struct uart_packet **pkt )
 {
     int rx_byte = link->recv_byte( link );
 
-    uint32_t current_tics = link->get_ms_tics( link );
-
     if( rx_byte < 0 )
         return RX_FSM_NO_DATA;
 
