@@ -401,7 +401,9 @@ int main(int argc, char *argv[])
 
 	size = 1;
 	while (size <= 512) {
-	    printf("test %3d: ", size);
+	    fprintf(stderr, "test %3d: ", size);
+	    if (size == 512 && argv[1] != NULL)
+		size = strtol(argv[1], NULL, 0);
 	    test_comm(&h->link, size);
 	    size *= 2;
 	}
