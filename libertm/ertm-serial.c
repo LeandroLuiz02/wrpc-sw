@@ -14,7 +14,6 @@
 #include <sys/time.h>
 #include <arpa/inet.h>
 #include <math.h>
-#include <assert.h>
 
 
 #include "psnmp-proto.h"
@@ -23,6 +22,14 @@
 #include "libertm.h"
 #include "ertm14-uart-link.h"
 #include "ertm15_rf_distr.h"
+
+#define BUG(expr)	\
+	do {	\
+		if (!(expr)) {	\
+			fprintf(stderr, "assertion" #expr "failed!\n");	\
+			exit(1);	\
+		}	\
+	} while (0)
 
 void dds_state_to_lo_ref(struct ertm14_dds_state *dds, struct ertm_lo_ref *loref)
 {
@@ -146,8 +153,8 @@ int commit_board_config(struct ertm_status *st, struct ertm_state *mask)
 	tx_pkt->ptype = ERTM14_UART_PTYPE_SNMP_REQ;
 	tx_pkt->length = op->offset1 + op->length1;
 	tx_pkt->payload[0] = op->opcode;
-	assert(op->length1 == sizeof(*cfg));
-	assert(op->opcode == ertm14_commit_board_config);
+	BUG(op->length1 == sizeof(*cfg));
+	BUG(op->opcode == ertm14_commit_board_config);
 	cfg = (struct ertm14_board_state *)&tx_pkt->payload[op->offset1];
 	state_to_board(mask, cfg);
 	cfg->valid = 1;
@@ -184,8 +191,8 @@ int set_board_config(struct ertm_status *st, struct ertm_state *config)
 	tx_pkt->ptype = ERTM14_UART_PTYPE_SNMP_REQ;
 	tx_pkt->length = op->offset1 + op->length1;
 	tx_pkt->payload[0] = op->opcode;
-	assert(op->length1 == sizeof(*cfg));
-	assert(op->opcode == ertm14_set_board_config);
+	BUG(op->length1 == sizeof(*cfg));
+	BUG(op->opcode == ertm14_set_board_config);
 	cfg = (struct ertm14_board_state *)&tx_pkt->payload[op->offset1];
 	state_to_board(config, cfg);
 	cfg->valid = 1;
@@ -277,7 +284,7 @@ int get_wr_diags(struct ertm_status *st, struct WRC_DIAGS_WB *diags)
 	}
 	fprintf(stderr,"recvd %d bytes: \n", rx_pkt->length);
 
-	assert(op->length2 == sizeof(*diags));
+	BUG(op->length2 == sizeof(*diags));
 	memcpy(diags, &rx_pkt->payload[op->offset2], op->length2);
 
 	return 0;
