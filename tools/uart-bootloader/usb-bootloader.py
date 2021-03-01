@@ -435,7 +435,13 @@ def main(argv):
         print("Please specify the target board")
         sys.exit(2)
 
-    boot = DSIBootloader(our_port, target_board=board_target,baudrate=ser_speed)
+    try:
+        boot = DSIBootloader(our_port, target_board=board_target,baudrate=ser_speed)
+    except serial.serialutil.SerialException as e:
+        print("could not open {} at speed {}, check permissions".format(
+            board_target, ser_speed), file=sys.stderr)
+        exit(1)
+
     fw = bytearray(open(args[0], "rb").read())
 
 
