@@ -281,4 +281,4 @@ makeall_copy: $(addprefix $(DEFCONFIG_NAME),$(MAKEALL_COPY_LIST))
 PYTHON ?= python3
 load:
 		- killall -9 usb-bootloader.py
-		- ./tools/uart-bootloader/usb-bootloader.py -t -b default -s 921600 -p "$(PORT)" wrc.bin
+		- ./tools/uart-bootloader/usb-bootloader.py -b default -s 921600 -p "$(PORT)" wrc.bin
