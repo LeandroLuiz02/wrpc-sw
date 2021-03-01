@@ -77,4 +77,14 @@ struct ertm14_protocol_op {
 
 const int protocol_nops = sizeof(protocol_ops)/sizeof(protocol_ops[0]);
 
+static struct ertm14_protocol_op *get_proto_op(uint8_t opcode)
+{
+	int i;
+
+	for (i = 0; i < protocol_nops; i++)
+		if (protocol_ops[i].opcode == opcode)
+			return &protocol_ops[i];
+	return NULL;
+}
+
 #endif /* __PSNMP_PROTO_H */
