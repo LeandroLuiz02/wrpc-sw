@@ -57,6 +57,8 @@ static int con_rx_internal(struct console_device* dev)
         {
             priv->state = CON_STATE_ESC_PENDING;
             return -1;
+        } else {
+            return rx_char;
         }
     }
     else if( priv->state == CON_STATE_ESC_PENDING )
@@ -80,7 +82,7 @@ static int con_rx_internal(struct console_device* dev)
             default:
                 priv->state = CON_STATE_ESC_FLUSH;
                 priv->prev_char = rx_char;
-                return CON_ESCAPE_CODE;
+                return -1;
         }
         priv->state = CON_STATE_IDLE;
     }
