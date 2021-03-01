@@ -15,7 +15,7 @@ if ! [ -c "$SERIAL_LINE" ] ; then
 fi
 
 # ensure permissions on the serial line
-chmod 777 "$SERIAL_LINE"
+[ -r "$SERIAL_LINE" -a -w "$SERIAL_LINE" ] || chmod 777 "$SERIAL_LINE"
 
 # wrc.bin embedded firmware loading
 PYVENV=/user/dcobas/ertm14/py
