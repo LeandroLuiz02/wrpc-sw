@@ -64,4 +64,7 @@ PACKED struct ertm14_mmc_state
     struct ertm14_mmc_sensor_state sensors[ERTM14_MAX_SENSORS_COUNT];
 };
 
+/* FIXME: this is not the best place for this declaration */
+int wrc_diags_dump(struct WRC_DIAGS_WB *buf);
+
 #endif /*  __BOARD_STATE_ERTM14_H */
