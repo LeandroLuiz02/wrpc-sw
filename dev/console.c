@@ -28,8 +28,8 @@ struct console_uart_priv_data
     void (*mode_switch_hook)( int is_binary );
 };
 
-static struct console_uart_priv_data console_uart_priv;
-struct console_device console_uart_dev;
+static struct console_uart_priv_data console_uart_priv, console_uart_priv_2nd;
+struct console_device console_uart_dev, console_uart_2nd;
 struct console_device* console_devs[BOARD_MAX_CONSOLE_DEVICES];
 
 #define CON_ESCAPE_CODE 0x1b
@@ -57,6 +57,8 @@ static int con_rx_internal(struct console_device* dev)
         {
             priv->state = CON_STATE_ESC_PENDING;
             return -1;
+        } else {
+            return rx_char;
         }
     }
     else if( priv->state == CON_STATE_ESC_PENDING )
@@ -80,7 +82,7 @@ static int con_rx_internal(struct console_device* dev)
             default:
                 priv->state = CON_STATE_ESC_FLUSH;
                 priv->prev_char = rx_char;
-                return CON_ESCAPE_CODE;
+                return -1;
         }
         priv->state = CON_STATE_IDLE;
     }
@@ -334,7 +336,6 @@ void console_init()
     console_uart_dev.priv = &console_uart_priv;
     console_uart_dev.get_char = con_uart_getc;
     console_uart_dev.put_string = con_uart_put_string;
-    
 
     console_uart_priv.prev_char = 0;
     console_uart_priv.state = CON_STATE_IDLE;
@@ -346,7 +347,25 @@ void console_init()
     console_ipmi_init();
 #endif
 
+#ifdef ERTM14_SECONDARY_DEBUG_UART
+    // hack: there's a second UART attached to the console available on the J11 pins 2 & 3.
+    // This is meant to help debugging the UART link (which uses the primary front panel USB console uart...)
+    suart_init( &console_uart_priv_2nd.uart_dev, BASE_ERTM14_DEBUG_UART, CONSOLE_UART_BAUDRATE );
+
+    console_uart_2nd.flags = CONSOLE_FLAGS_MODE_TTY | CONSOLE_FLAGS_INSERT_CRLF;
+    console_uart_2nd.priv = &console_uart_priv_2nd;
+    console_uart_2nd.get_char = con_uart_getc;
+    console_uart_2nd.put_string = con_uart_put_string;
+
+    console_uart_priv_2nd.prev_char = 0;
+    console_uart_priv_2nd.state = CON_STATE_IDLE;
+    console_uart_priv_2nd.mode_switch_hook = NULL;
+    
+    console_register_device( &console_uart_2nd );
+
     pp_printf("Console UART FIFO:: %d\n", suart_is_fifo_supported( &console_uart_priv.uart_dev ) );
+    pp_printf("Debug UART FIFO:: %d\n", suart_is_fifo_supported( &console_uart_priv_2nd.uart_dev ) );
+#endif
 }
 
 void console_force_mode( struct console_device *dev, int mode )

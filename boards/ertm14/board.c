@@ -811,7 +811,7 @@ static int control_uart_poll(void)
 {
     struct uart_packet *pkt;
 
-    if( uart_link_recv( &board.control_uart_link, &pkt, 100 ) > 0 )
+    if( uart_link_recv( &board.control_uart_link, &pkt, 0 ) > 0 )
     {
         struct uart_packet t, *tx_pkt = &t;
 
@@ -831,6 +831,7 @@ static int control_uart_poll(void)
 
 	    /* dispatch on (psuedo)snmp payload */
 	    ertm_process_psnmp(pkt, tx_pkt);
+	    usleep(10000);  /* FIXME: why? linked to uart problem */
 
 	    /* we presume this is binary, snmp or not */
             uart_link_send(&board.control_uart_link, tx_pkt);
@@ -1107,6 +1108,13 @@ static int ertm_process_psnmp(struct uart_packet *rx_pkt, struct uart_packet *tx
 		break;
 	case ertm14_set_wrc_nco:
 		break;
+	case 0x5a:
+		tx_pkt->length = rx_pkt->length;
+		tx_pkt->length = 1;	/* no time to reply */
+		memcpy(tx_pkt->payload, rx_pkt->payload, rx_pkt->length);
+		tx_pkt->payload[0] = 0x5a; /* no time to reply */
+		break;
+
 	default:
 		/* default op: get configuration */
 		break;

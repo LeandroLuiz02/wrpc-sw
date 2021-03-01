@@ -11,8 +11,10 @@
 #include <string.h>
 #include <stdlib.h>
 #include <stdio.h>
+#include <sys/time.h>
 #include <arpa/inet.h>
 #include <math.h>
+
 
 #include "psnmp-proto.h"
 #include "board-state.h"
@@ -164,7 +166,6 @@ int commit_board_config(struct ertm_status *st, struct ertm_state *mask)
 		return ERTM_UART_LINK_SEND_ERR;
 	}
 	memset(rx_pkt, 0, sizeof(*rx_pkt));
-	usleep(100000);
 	stat = uart_link_recv(link, &rx_pkt, 2000);
 	if (stat < 0) {
 		fprintf(stderr, "error (stat %d) in uart_link_recv\n", stat);
@@ -350,6 +351,45 @@ void display_wrc_diags(struct WRC_DIAGS_WB *diags)
 	printf(fmt, "Board temperature [C degree]", diags->WDIAG_TEMP);
 	
 }
+long long usecofday(void)
+{
+	struct timeval tv;
+
+	gettimeofday(&tv, NULL);
+	return tv.tv_sec * 1000000LL + tv.tv_usec;
+}
+
+void test_comm(struct uart_link *link, size_t length)
+{
+	struct uart_packet snd, rcv, *rcvp;
+	int res = 0;
+	long long us;
+
+	memset(snd.payload, 0x5a, sizeof(snd.payload));
+	snd.length = length;
+	snd.ptype = ERTM14_UART_PTYPE_SNMP_REQ;
+	res = uart_link_send(link, &snd);
+	if (res < 0) {
+	    fprintf(stderr, "error %d in uart_link_send\n", res);
+	} else {
+	    fprintf(stderr,"sent %d bytes: \n", snd.length);
+	}
+
+	us = usecofday();
+	res = uart_link_recv(link, &rcvp, 2000);
+	us = usecofday() - us;
+	fprintf(stderr, "waited %lld us in uart_link_recv\n", us);
+	if (res < 0) {
+	    fprintf(stderr, "error %d in uart_link_recv\n", res);
+	    return;
+	} else {
+	    fprintf(stderr,"recvd %d bytes: \n", rcvp->length);
+	}
+	snd.length = rcvp->length;
+	memcpy(rcv.payload, rcvp->payload, rcvp->length);
+
+	return;
+}
 
 int main(int argc, char *argv[])
 {
@@ -357,6 +397,15 @@ int main(int argc, char *argv[])
 	struct ertm_state c, *config = &c;
 	struct ertm_state m, *mask = &m;
 	struct WRC_DIAGS_WB d, *diags = &d;
+	int size;
+
+	size = 1;
+	while (size <= 512) {
+	    printf("test %3d: ", size);
+	    test_comm(&h->link, size);
+	    size *= 2;
+	}
+	exit(1);
 
 	fprintf(stderr,"------------------------------\n");
 	fprintf(stderr,"getting board config\n");
@@ -378,15 +427,13 @@ int main(int argc, char *argv[])
 	mask->lo.level_adjust = 1;
 	config->ref.level_adjust = 0.314159;
 	mask->lo.level_adjust = 1;
-	usleep(300000);
 	set_board_config(h, config);
-	usleep(300000);
 	commit_board_config(h, mask);
-	usleep(300000);
 	get_sim_board_config(h);
 	display_ertm_state(h->state);
 	fprintf(stderr,"------------------------------\n");
 
+	goto ello;
 
 	/* switch those visually recognizable values */
 	fprintf(stderr,"------------------------------\n");
@@ -395,11 +442,8 @@ int main(int argc, char *argv[])
 	mask->lo.level_adjust = 1;
 	config->ref.level_adjust = 0.577216;
 	mask->lo.level_adjust = 1;
-	usleep(300000);
 	set_board_config(h, config);
-	usleep(300000);
 	commit_board_config(h, mask);
-	usleep(300000);
 	display_ertm_state(h->state);
 	fprintf(stderr,"------------------------------\n");
 ello:

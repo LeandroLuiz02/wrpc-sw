@@ -80,8 +80,6 @@ static int recv_fsm( struct uart_link* link, struct uart_packet **pkt )
 
     uint32_t current_tics = link->get_ms_tics( link );
 
-    if( current_tics - link->rx_last_tics > RX_FSM_TIMEOUT )
-
     if( rx_byte < 0 )
         return RX_FSM_NO_DATA;
 
@@ -126,7 +124,7 @@ static int recv_fsm( struct uart_link* link, struct uart_packet **pkt )
             link->rx_packet.length |= rx_byte;
             link->check_crc = crc_xmodem_update( link->check_crc, rx_byte);
             link->rx_count = 0;
-            
+
             if( link->rx_packet.length == 0 )
                 link->state = LINK_STATE_CRC0;
             else
@@ -158,22 +156,19 @@ static int recv_fsm( struct uart_link* link, struct uart_packet **pkt )
             link->state = LINK_STATE_IDLE;
 
             if (link->rx_count != link->rx_packet.length )
-            {            
-               // blink(1);
+            {   
                 return RX_FSM_PACKET_ERROR;
             }
             else if (link->rx_crc != link->check_crc )
             {
-                //blink(2);
                 return RX_FSM_PACKET_ERROR;
             }
             else
             {
-                //blink(0);
-
                 *pkt = &link->rx_packet;
                 return RX_FSM_GOT_PACKET;
             }
+            break;
         }
     }
 
