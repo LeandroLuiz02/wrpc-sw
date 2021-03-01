@@ -17,21 +17,66 @@
 
 struct ertm14_protocol_ops {
 	int8_t	opcode;
-	void	*arg1;
-	void	*arg2;
+	size_t	offset1;
 	size_t	length1;
+	size_t	offset2;
 	size_t	length2;
 } protocol_ops[] = {
-    { ertm14_get_board_config, NULL, NULL, sizeof(struct ertm14_board_state), 0, },
-    { ertm14_set_board_config, NULL, NULL, sizeof(struct ertm14_board_state), 0, },
-    { ertm14_commit_board_config, NULL, NULL, sizeof(struct ertm14_board_state), 0, },
-    { ertm14_get_mmc_state,    NULL, NULL, sizeof(struct ertm14_mmc_state), 0, },
-    { ertm14_get_wrc_diags,    NULL, NULL, sizeof(struct WRC_DIAGS_WB), 0, },
-    { ertm14_get_wrc_nco,      NULL, NULL, -1, 0, },
-    { ertm14_set_wrc_nco,      NULL, NULL, -1, 0, },
-    { ertm14_get_sim_board_config,      NULL, NULL, -1, 0, },
-    { ertm14_comm_test,      NULL, NULL, -1, 0, },
-    { -1, },
+    {
+	.opcode = ertm14_get_board_config,
+	.offset1 = 1,
+	.length1 = -1,
+	.offset2 = 0,
+	.length2 = sizeof(struct ertm14_board_state),
+    },
+    {
+	.opcode = ertm14_set_board_config,
+	.offset1 = 4,
+	.length1 = sizeof(struct ertm14_board_state),
+	.offset2 = 1,
+	.length2 = -1,
+    },
+    {
+	.opcode = ertm14_commit_board_config,
+	.offset1 = 1,
+	.length1 = sizeof(struct ertm14_board_state),
+	.offset2 = 1,
+	.length2 = -1,
+    },
+    {
+	.opcode = ertm14_get_mmc_state,
+	.offset1 = 1,
+	.length1 = -1,
+	.offset2 = 0,
+	.length2 = sizeof(struct ertm14_mmc_state),
+    },
+    {
+	.opcode = ertm14_get_wrc_diags,
+	.offset1 = 1,
+	.length1 = -1,
+	.offset2 = 0,
+	.length2 = sizeof(struct WRC_DIAGS_WB),
+    },
+    {
+	.opcode = ertm14_get_wrc_nco,
+	.offset1 = 1,
+	.length1 = -1,
+	.offset2 = 0,
+	.length2 = /* FIXME: what comes here? */ -1,
+    },
+    {
+	.opcode = ertm14_set_wrc_nco,
+	.offset1 = 1,
+	.length1 = /* FIXME: what comes here? */ -1,
+	.offset2 = 1,
+	.length2 = -1,
+	.length2 = sizeof(struct ertm14_board_state),
+    }
+    {
+	.opcode = -1,
+    },
 };
+
+const int protocol_nops = sizeof(protocol_ops)/sizeof(protocol_ops[0]);
 
 #endif /* __PSNMP_PROTO_H */
