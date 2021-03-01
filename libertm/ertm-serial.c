@@ -14,6 +14,7 @@
 #include <sys/time.h>
 #include <arpa/inet.h>
 #include <math.h>
+#include <assert.h>
 
 
 #include "psnmp-proto.h"
@@ -130,8 +131,7 @@ void display_hex(uint8_t *buf, size_t len)
 		fprintf(stderr, "\n");
 }
 
-int commit_board_config(struct ertm_status *st,
-	struct ertm_state *mask)
+int commit_board_config(struct ertm_status *st, struct ertm_state *mask)
 {
 	int res, stat;
 
@@ -139,14 +139,16 @@ int commit_board_config(struct ertm_status *st,
 	struct uart_packet tx, *tx_pkt = &tx;
 	struct uart_packet rx, *rx_pkt = &rx;
 
-	uint8_t *opcode = &tx_pkt->payload[0];
-	struct ertm14_board_state *cfg	=
-		(struct ertm14_board_state *)&tx_pkt->payload[1];
+	struct ertm14_board_state *cfg;
+	struct ertm14_protocol_op *op = get_proto_op(ertm14_commit_board_config);
 
 	memset(tx_pkt, 0, sizeof(*tx_pkt));
 	tx_pkt->ptype = ERTM14_UART_PTYPE_SNMP_REQ;
-	tx_pkt->length = 1 + sizeof(*cfg);
-	*opcode = ertm14_commit_board_config;
+	tx_pkt->length = op->offset1 + op->length1;
+	tx_pkt->payload[0] = op->opcode;
+	assert(op->length1 == sizeof(*cfg));
+	assert(op->opcode == ertm14_commit_board_config);
+	cfg = (struct ertm14_board_state *)&tx_pkt->payload[op->offset1];
 	state_to_board(mask, cfg);
 	cfg->valid = 1;
 
@@ -175,14 +177,16 @@ int set_board_config(struct ertm_status *st, struct ertm_state *config)
 	struct uart_packet tx, *tx_pkt = &tx;
 	struct uart_packet rx, *rx_pkt = &rx;
 
-	uint8_t *opcode = &tx_pkt->payload[0];
-	struct ertm14_board_state *cfg	=
-		(struct ertm14_board_state *)&tx_pkt->payload[1];
+	struct ertm14_board_state *cfg;
+	struct ertm14_protocol_op *op = get_proto_op(ertm14_set_board_config);
 
 	memset(tx_pkt, 0, sizeof(*tx_pkt));
 	tx_pkt->ptype = ERTM14_UART_PTYPE_SNMP_REQ;
-	tx_pkt->length = 1 + sizeof(*cfg);
-	*opcode = ertm14_set_board_config;
+	tx_pkt->length = op->offset1 + op->length1;
+	tx_pkt->payload[0] = op->opcode;
+	assert(op->length1 == sizeof(*cfg));
+	assert(op->opcode == ertm14_set_board_config);
+	cfg = (struct ertm14_board_state *)&tx_pkt->payload[op->offset1];
 	state_to_board(config, cfg);
 	cfg->valid = 1;
 
@@ -232,7 +236,7 @@ int get_board_config_sim(struct ertm_status *st, int sim)
 	}
 	fprintf(stderr,"recvd %d bytes: \n", rx_pkt->length);
 
-	board = (struct ertm14_board_state *)&rx_pkt->payload[1];
+	board = (struct ertm14_board_state *)&rx_pkt->payload[0];
 	board_to_state(board, state);
 
 	return 0;
@@ -255,10 +259,11 @@ int get_wr_diags(struct ertm_status *st, struct WRC_DIAGS_WB *diags)
 	struct uart_link *link = &st->link;
 	struct uart_packet pack1, *tx_pkt = &pack1;
 	struct uart_packet pack2, *rx_pkt = &pack2;
+	struct ertm14_protocol_op *op = get_proto_op(ertm14_get_wrc_diags);
 
 	tx_pkt->ptype = ERTM14_UART_PTYPE_SNMP_REQ;
-	tx_pkt->length = 1;
-	tx_pkt->payload[0] = ertm14_get_wrc_diags;
+	tx_pkt->length = op->offset1 + op->length1;
+	tx_pkt->payload[0] = op->opcode;
 	res = uart_link_send(link, tx_pkt);
 	if (res < 0) {
 		printf("error %d in uart_link_send\n", res);
@@ -272,7 +277,8 @@ int get_wr_diags(struct ertm_status *st, struct WRC_DIAGS_WB *diags)
 	}
 	fprintf(stderr,"recvd %d bytes: \n", rx_pkt->length);
 
-	memcpy(diags, &rx_pkt->payload[4], sizeof(*diags));
+	assert(op->length2 == sizeof(*diags));
+	memcpy(diags, &rx_pkt->payload[op->offset2], op->length2);
 
 	return 0;
 }
@@ -336,7 +342,7 @@ void display_wrc_diags(struct WRC_DIAGS_WB *diags)
 	printf(fmt, "Phase setpoint (setp) [ps]", diags->WDIAG_SETP);
 	printf(fmt, "Update counter (ucnt)", diags->WDIAG_UCNT);
 	printf(fmt, "Board temperature [C degree]", diags->WDIAG_TEMP);
-	
+
 }
 long long usecofday(void)
 {

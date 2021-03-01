@@ -1062,44 +1062,48 @@ static void get_wrc_diags(struct WRC_DIAGS_WB *diags)
 static int ertm_process_psnmp(struct uart_packet *rx_pkt, struct uart_packet *tx_pkt)
 {
 	struct ertm14_board_state *bs;
+	struct WRC_DIAGS_WB *diags;
 	uint8_t opcode = rx_pkt->payload[0];
+	struct ertm14_protocol_op *op;
 
+	/* return board config in case of bad opcode */
+	if ((op = get_proto_op(opcode)) == NULL)
+		op = get_proto_op(get_board_config);
+	
 	tx_pkt->ptype = ERTM14_UART_PTYPE_SNMP_RESP;
+	tx_pkt->length = op->offset2 + op->length2;
 
 	switch (opcode) {
 	case ertm14_get_board_config:
 		/* return full board configuration */		
-		tx_pkt->length = 1 + sizeof(*bs);
-		tx_pkt->payload[0] = ertm14_get_board_config;
-		get_board_config((void *)&tx_pkt->payload[1]);
+		bs = (struct ertm14_board_state *)&tx_pkt->payload[0];
+		get_board_config(bs);
 		break;
 
 	case ertm14_set_board_config:
-		set_board_config((void *)&rx_pkt->payload[1]);
-		tx_pkt->length = 1;
+		bs = (struct ertm14_board_state *)&rx_pkt->payload[4];
+		set_board_config(bs);
 		tx_pkt->payload[0] = ertm14_set_board_config;
 		break;
 
 	case ertm14_commit_board_config:
-		commit_board_config((void *)&rx_pkt->payload[1]);
-		tx_pkt->length = 1 + sizeof(*bs);
+		bs = (struct ertm14_board_state *)&rx_pkt->payload[4];
+		commit_board_config(bs);
 		tx_pkt->payload[0] = ertm14_commit_board_config;
 		break;
 
 	case ertm14_get_sim_board_config:
 		/* return full board configuration */		
-		tx_pkt->length = 1 + sizeof(*bs);
-		tx_pkt->payload[0] = ertm14_get_board_config;
-		get_sim_board_config((void *)&tx_pkt->payload[1]);
+		bs = (struct ertm14_board_state *)&tx_pkt->payload[0];
+		get_sim_board_config(bs);
 		break;
 
 	case ertm14_get_mmc_state:
 		// struct ertm14_mmc_state *mmcs;
 		break;
 	case ertm14_get_wrc_diags:
-		tx_pkt->length = 4 + sizeof(struct WRC_DIAGS_WB);
-		tx_pkt->payload[0] = ertm14_get_wrc_diags;
-		get_wrc_diags((void *)&tx_pkt->payload[4]);
+		diags = (struct WRC_DIAGS_WB *)&tx_pkt->payload[0];
+		get_wrc_diags(diags);
 		break;
 	case ertm14_get_wrc_nco:
 		break;
