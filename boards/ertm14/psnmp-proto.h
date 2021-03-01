@@ -14,7 +14,7 @@
 #define ertm14_set_wrc_nco		0x16
 #define ertm14_get_sim_board_config	0x17
 
-struct ertm14_protocol_ops {
+struct ertm14_protocol_op {
 	int8_t	opcode;
 	size_t	offset1;
 	size_t	length1;
