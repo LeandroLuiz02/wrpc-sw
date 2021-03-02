@@ -831,7 +831,6 @@ static int control_uart_poll(void)
 
 	    /* dispatch on (psuedo)snmp payload */
 	    ertm_process_psnmp(pkt, tx_pkt);
-	    usleep(10000);  /* FIXME: why? linked to uart problem */
 
 	    /* we presume this is binary, snmp or not */
             uart_link_send(&board.control_uart_link, tx_pkt);

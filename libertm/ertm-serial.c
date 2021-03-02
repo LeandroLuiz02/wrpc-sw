@@ -372,18 +372,15 @@ void test_comm(struct uart_link *link, size_t length)
 	if (res < 0) {
 	    fprintf(stderr, "error %d in uart_link_send\n", res);
 	} else {
-	    fprintf(stderr,"sent %d bytes: \n", snd.length);
 	}
 
 	us = usecofday();
 	res = uart_link_recv(link, &rcvp, 2000);
 	us = usecofday() - us;
-	fprintf(stderr, "waited %lld us in uart_link_recv\n", us);
 	if (res < 0) {
 	    fprintf(stderr, "error %d in uart_link_recv\n", res);
 	    return;
 	} else {
-	    fprintf(stderr,"recvd %d bytes: \n", rcvp->length);
 	}
 	snd.length = rcvp->length;
 	memcpy(rcv.payload, rcvp->payload, rcvp->length);
