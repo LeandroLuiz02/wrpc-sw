@@ -391,18 +391,36 @@ void test_comm(struct uart_link *link, size_t length)
 	return;
 }
 
+void stress_test_comm(struct uart_link *link)
+{
+	int size = 2;
+	int i;
+
+	/* stress-test uart traffic */
+	/* this samples the 1..512 space of lengths
+	 * by doing some power residue arithmetic
+	 */
+	for (i = 0; i < 200; i++) {
+		if (size > 512)
+		    test_comm(link, 523-size);
+		else
+		    test_comm(link, size);
+		fprintf(stderr, ".");
+		size *= 2;
+		size %= 523;
+	}
+	fprintf(stderr, "\n");
+}
+
 int main(int argc, char *argv[])
 {
 	struct ertm_status *h = ertm_init(usb_serial);
 	struct ertm_state c, *config = &c;
 	struct ertm_state m, *mask = &m;
 	struct WRC_DIAGS_WB d, *diags = &d;
-	int size = 512;
-	int i;
 
-	for (i = 0; i < 100; i++) {
-		test_comm(&h->link, size);
-	}
+	stress_test_comm(&h->link);
+	exit(1);
 
 	fprintf(stderr,"------------------------------\n");
 	fprintf(stderr,"getting board config\n");
