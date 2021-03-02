@@ -57,7 +57,12 @@ int suart_write_string(struct simple_uart_device *dev, const char *s)
 int suart_get_rx_fifo_count( struct simple_uart_device *dev )
 {
 	uint32_t r = readl( dev->base + UART_REG_SR );
-	return UART_SR_RX_FIFO_BYTES_R(r);
+	int n = UART_SR_RX_FIFO_BYTES_R(r);
+
+	if ( r & UART_SR_RX_RDY ) // another byte in the output register?
+		n++;
+
+	return n;
 }
 
 
