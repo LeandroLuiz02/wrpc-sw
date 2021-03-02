@@ -397,22 +397,15 @@ int main(int argc, char *argv[])
 	struct ertm_state c, *config = &c;
 	struct ertm_state m, *mask = &m;
 	struct WRC_DIAGS_WB d, *diags = &d;
-	int size;
+	int size = 512;
+	int i;
 
-	size = 1;
-	while (size <= 512) {
-	    fprintf(stderr, "test %3d: ", size);
-	    if (size == 512 && argv[1] != NULL)
-		size = strtol(argv[1], NULL, 0);
-	    test_comm(&h->link, size);
-	    size *= 2;
+	for (i = 0; i < 100; i++) {
+		test_comm(&h->link, size);
 	}
-	exit(1);
 
 	fprintf(stderr,"------------------------------\n");
 	fprintf(stderr,"getting board config\n");
-	get_board_config(h);
-	get_board_config(h);
 	get_board_config(h);
 	display_ertm_state(h->state);
 	fprintf(stderr,"got board config\n");
