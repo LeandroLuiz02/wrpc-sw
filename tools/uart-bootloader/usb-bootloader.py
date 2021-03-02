@@ -163,9 +163,11 @@ class DSIBootloader:
     RSP_BAD_CRC = 4
     RSP_HELLO = 5
 
-    def command(self, cmd, data):
+    def command(self, cmd, data, expect_response=True):
         while True:
             self.sock.tx_frame(cmd, data)
+            if( not expect_response ):
+                return 0
             status = self.sock.rx_frame()[0]
 
             if (status != self.RSP_CRC_ERROR):
@@ -205,10 +207,10 @@ class DSIBootloader:
 #	print(len(buf))
         return self.command(self.CMD_WRITE_RAM, buf)
 
-    def cmd_jump(self, addr):
+    def cmd_jump(self, addr, expect_response=True):
         buf = [(addr >> 24) & 0xff, (addr >> 16) & 0xff, (addr >> 8) & 0xff,
                addr & 0xff]
-        return self.command(self.CMD_GO, buf)
+        return self.command(self.CMD_GO, buf,expect_response=expect_response)
 
     def boot_enter(self):
         self.sock.reset_board()
@@ -219,8 +221,9 @@ class DSIBootloader:
             if r[0] != self.RSP_HELLO:
                 return None
             break
-        board_id="default"
+        board_id=""
         if len( r[1] ) < 8:
+            board_id="default"
             print("Assuming default board ID. Old WRCore bootloader?")
         else:
             for i in range(0,8):
@@ -250,7 +253,8 @@ class DSIBootloader:
         else:
             raise Exception("Unknown flash target: %s" % target)
         self.do_program_flash(image, offset, sector_size=0x400)
-        self.cmd_jump( 0x0 )
+        print("Flash programmed, launching the code...")
+        self.cmd_jump( 0x0,expect_response=False )
 
     def program_ertm14_wrc(self, fw, target):
         if target.lower() == "fpga":
@@ -274,14 +278,14 @@ class DSIBootloader:
         #print("PGM", target)
         if self.target_board == "ertm14m0" or self.target_board == "ertm14m1":
             return self.program_ertm14_mmc(fw, target)
-        elif self.target_board == "ertm14fp":
+        elif self.target_board == "ertm14fp" or self.target_board == "default":
             return self.program_ertm14_wrc(fw, target)
 
     def do_program_flash(self, fw, offset = 0, sector_size = 0x10000):
         remaining = len(fw)
 
-        for i in range(offset / sector_size,
-                       (offset + (remaining + sector_size - 1)) / sector_size):
+        for i in range( offset // sector_size,
+                       (offset + (remaining + sector_size - 1)) // sector_size):
             sys.stdout.write("\rErasing sector 0x%x          " %
                              (i * sector_size))
             sys.stdout.flush()
@@ -292,7 +296,7 @@ class DSIBootloader:
             n = 256 if remaining > 256 else remaining
             data = []
             for b in fw[p:p + n]:
-                data.append(ord(b))
+                data.append(b)
 
             #print("b0 %x" % data[0])
 
@@ -305,8 +309,10 @@ class DSIBootloader:
             sys.stdout.flush()
 
         print(
-            "\nFlashing complete. Please power-off and power-on again your board."
+            "\nFlashing complete"
         )
+
+        self.cmd_jump( 0x4 )
 
     def load_ram(self, image, addr):
         remaining = len(image)
@@ -370,12 +376,11 @@ def run_terminal(ser):
         a = ser.recv_nonblock()
         if (a != None):
             sys.stderr.write(chr(a))
-            # sys.stderr.write(a).decode('utf-8'))
-	    # flush is needed FIXME:
-	    # sys.stderr.flush()
+            if(chr(a) == '\n'):
+                sys.stderr.write('\r')
 
         a = os.read(sys.stdin.fileno(), 1)
-        if a and ord(a) == 1:
+        if a and (ord(a) == 1 or ord(a) == 4):
             return      # exit on Ctrl-A
         else:
             ser.send(a)
