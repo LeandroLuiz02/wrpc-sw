@@ -163,9 +163,11 @@ class DSIBootloader:
     RSP_BAD_CRC = 4
     RSP_HELLO = 5
 
-    def command(self, cmd, data):
+    def command(self, cmd, data, expect_response=True):
         while True:
             self.sock.tx_frame(cmd, data)
+            if( not expect_response ):
+                return 0
             status = self.sock.rx_frame()[0]
 
             if (status != self.RSP_CRC_ERROR):
@@ -205,10 +207,10 @@ class DSIBootloader:
 #	print(len(buf))
         return self.command(self.CMD_WRITE_RAM, buf)
 
-    def cmd_jump(self, addr):
+    def cmd_jump(self, addr, expect_response=True):
         buf = [(addr >> 24) & 0xff, (addr >> 16) & 0xff, (addr >> 8) & 0xff,
                addr & 0xff]
-        return self.command(self.CMD_GO, buf)
+        return self.command(self.CMD_GO, buf,expect_response=expect_response)
 
     def boot_enter(self):
         self.sock.reset_board()
@@ -251,7 +253,8 @@ class DSIBootloader:
         else:
             raise Exception("Unknown flash target: %s" % target)
         self.do_program_flash(image, offset, sector_size=0x400)
-        self.cmd_jump( 0x0 )
+        print("Flash programmed, launching the code...")
+        self.cmd_jump( 0x0,expect_response=False )
 
     def program_ertm14_wrc(self, fw, target):
         if target.lower() == "fpga":
@@ -269,9 +272,7 @@ class DSIBootloader:
             image = fw
         else:
             raise Exception("Unknown flash target: %s" % target)
-        self.do_program_flash(image, offset)
-        self.cmd_jump( 0x4 ); # boot WRCore back!
-
+        return self.do_program_flash(image, offset)
         
     def program_flash(self, fw, target):
         #print("PGM", target)
@@ -282,7 +283,7 @@ class DSIBootloader:
 
     def do_program_flash(self, fw, offset = 0, sector_size = 0x10000):
         remaining = len(fw)
-        
+
         for i in range( offset // sector_size,
                        (offset + (remaining + sector_size - 1)) // sector_size):
             sys.stdout.write("\rErasing sector 0x%x          " %
@@ -308,8 +309,10 @@ class DSIBootloader:
             sys.stdout.flush()
 
         print(
-            "\nFlashing complete."
+            "\nFlashing complete"
         )
+
+        self.cmd_jump( 0x4 )
 
     def load_ram(self, image, addr):
         remaining = len(image)
@@ -378,8 +381,8 @@ def run_terminal(ser):
 	    # sys.stderr.flush()
 
         a = os.read(sys.stdin.fileno(), 1)
-        if a and ( ord(a) == 1 or ord(a) == 4 ):
-            return      # exit on Ctrl-A or Ctrl-D
+        if a and (ord(a) == 1 or ord(a) == 4):
+            return      # exit on Ctrl-A
         else:
             ser.send(a)
 
@@ -435,7 +438,13 @@ def main(argv):
         print("Please specify the target board")
         sys.exit(2)
 
-    boot = DSIBootloader(our_port, target_board=board_target,baudrate=ser_speed)
+    try:
+        boot = DSIBootloader(our_port, target_board=board_target,baudrate=ser_speed)
+    except serial.serialutil.SerialException as e:
+        print("could not open {} at speed {}, check permissions".format(
+            board_target, ser_speed), file=sys.stderr)
+        exit(1)
+
     fw = bytearray(open(args[0], "rb").read())
 
 

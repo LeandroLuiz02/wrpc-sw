@@ -47,4 +47,10 @@ extern int wrc_temp_format(char *buffer, int len);
 void wrc_temp_init(void);
 int wrc_temp_refresh(void);
 
+/* generic sensor functions */
+void wrc_register_sensors( struct wrc_sensor* s);
+struct wrc_sensor* wrc_sensor_find_by_name(char *name);
+struct wrc_sensor* wrc_sensor_find_by_id(uint8_t id);
+struct wrc_sensor* wrc_sensor_find_by_type(uint8_t type);
+
 #endif /* __TEMPERATURE_H__ */

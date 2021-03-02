@@ -71,6 +71,12 @@ pfilter-builder: pfilter-builder.c
 	$(CC) $(CFLAGS)  -include ../include/generated/autoconf.h \
 		$@.c $(LDFLAGS) -o $@
 
+# FIXME: this stuff must be reorganized
+ertm14-uart-link.o: ertm14-uart-link.h
+ertm-serial: ertm-serial.c ertm14-uart-link.o
+	$(CC) $(CFLAGS) -include ../include/generated/autoconf.h \
+		-I ../lib \
+		$^ $(LDFLAGS) -o $@
 
 dump-info-host.o: ../dump-info.o
 	$(CROSS_COMPILE)objcopy --only-section=.data.dump_info \
