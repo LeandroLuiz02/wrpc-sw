@@ -11,6 +11,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include "libertm.h"
+#include "board-state.h"
 #include "ertm14-uart-link.h"
 
 struct ertm_clk {
