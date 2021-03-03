@@ -15,6 +15,15 @@
 #include "libertm.h"
 #include "private.h"
 
+struct ertm_error_codes ertm_error_codes[] = {
+	[-ERTM_OK]		= { ERTM_OK, "success" },
+	[-ERTM_BAD_CONNECTOR]	= { ERTM_BAD_CONNECTOR, "bad connector parameter" },
+	[-ERTM_CH_OUT_OF_RANGE]	= { ERTM_CH_OUT_OF_RANGE, "channel number out of range" },
+	[-ERTM_NOT_IMPLEMENTED]	= { ERTM_NOT_IMPLEMENTED, "function not implemented" },
+	[-ERTM_UART_LINK_SEND_ERR] ={ ERTM_UART_LINK_SEND_ERR, "USB serial link send failed" },
+	[-ERTM_UART_LINK_RECV_ERR] ={ ERTM_UART_LINK_RECV_ERR, "USB serial link recv failed" },
+};
+
 char *ertm_perror(int error)
 {
 	return ertm_error_codes[-error].message;
