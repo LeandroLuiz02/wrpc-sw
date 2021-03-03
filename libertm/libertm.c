@@ -229,6 +229,15 @@ static void get_set(uint32_t *attr, uint32_t *val, int set)
 		*val = *attr;
 }
 
+#if 0
+static int clkab_set_output_divider(int clka_or_clkb, int output, int divider)
+{
+	struct ertm14_board_state state, *st = &state;
+	struct ertm14_board_state mask, *msk = &mask;
+
+}
+#endif
+
 static int ertm_get_set_freq(struct ertm_status *handle,
 		enum ertm_connector connector,int channel, uint32_t *freq,
 		int set)
@@ -255,6 +264,7 @@ static int ertm_get_set_freq(struct ertm_status *handle,
 	case ERTM_CLKA:
 		clk = &handle->state->clka;
 		get_set(freq, &clk->chfreq[channel], set);
+		// clkab_set_output_divider(ERTM14_OUT_CLKA, channel, freq);
 		break;
 	case ERTM_CLKB:
 		clk = &handle->state->clkb;
@@ -303,6 +313,7 @@ int ertm_channel_enable(struct ertm_status *handle,
 		break;
 	case ERTM_CLKB:
 		mask = &handle->state->clkb.enabled_mask;
+		//clkab_enable_output(ERTM14_OUT_CLKA, channel, enable);
 		break;
 	case ERTM_LO:
 		mask = &handle->state->lo.enabled_mask;
