@@ -239,7 +239,7 @@ static int ertm_get_set_freq(struct ertm_status *handle,
 
 	if (handle == NULL) {
 		errno = EINVAL;
-		return -1;
+		return -ERTM_BAD_HANDLE;
 	}
 
 	/* channel param is irrelevant for lo/ref */
