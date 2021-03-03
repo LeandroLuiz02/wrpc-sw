@@ -18,15 +18,12 @@ so-lib: $(TARGET).so
 
 $(TARGET).so: $(TARGET).o
 	$(LD) -shared -o $@ $^
-$(TARGET).a: $(TARGET).o
+$(TARGET).a: $(TARGET).o linux-uart-link.o common-uart-link.o
 	$(AR) r $@ $^
 $(TARGET).o: $(TARGET).h
 
 main: main.o libertm.a
-	$(CC) $(CFLAGS) -o $@ $^ libertm.a $(LDLIBS) $(LDFLAGS)
-
-libertm.a: libertm.o linux-uart-link.o common-uart-link.o
-	$(AR) r $@ $^
+	$(CC) $(CFLAGS) -o $@ $^ $(LDLIBS) $(LDFLAGS)
 
 serial: serial.o
 	$(CC) $(CFLAGS) -o $@ $^ $(LDLIBS) $(LDFLAGS)
