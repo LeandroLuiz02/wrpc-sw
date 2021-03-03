@@ -169,11 +169,14 @@ struct ertm_status *ertm_init(char *address)
 		errno = ENOMEM;
 		return NULL;
 	}
-	err = uart_link_create_linux(&st->link, address, serial_speed);
+	/* FIXME: this has to be parameterized */
+	err = uart_link_create_linux(&st->link, usb_serial, serial_speed);
 	if (err != 0) {
 		errno = ENODEV;
 		return NULL;
 	}
+	/* FIXME: useless now */
+	ertm_status_init(st->state);
 
 	return st;
 }
