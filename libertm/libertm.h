@@ -56,8 +56,8 @@ enum ertm_connector {
 
 /* real available channels in connectors */
 #define ERTM_CLKAB_MIN_CH	4
-#define ERTM_LOREF_MIN_CH	4
 #define ERTM_CLKAB_MAX_CH	14
+#define ERTM_LOREF_MIN_CH	4
 #define ERTM_LOREF_MAX_CH	12
 
 /* firmware metadata according to The Convention (see
