@@ -141,18 +141,38 @@ static void ertm_status_init(struct ertm_state *st)
 	memcpy(&st->wr_status, &wr_status_default, sizeof(st->wr_status));
 	/* FIXME: st->nco_reset */
 }
+
+/* constants of nature for this design */
+static char *usb_serial = "/dev/ttyUSB2";
+static int serial_speed = 8*115200;
+
 struct ertm_status *ertm_init(char *address)
 {
-	struct ertm_status *status = malloc(sizeof(*status));
-	status->state = malloc(sizeof(*status->state));
-	ertm_status_init(status->state);
+	struct ertm_status *st = malloc(sizeof(*st));
+	int err;
 
-	return status;
+	if (st == NULL) {
+		errno = ENOMEM;
+		return NULL;
+	}
+	st->state = malloc(sizeof(*st->state));
+	if (st == NULL) {
+		errno = ENOMEM;
+		return NULL;
+	}
+	err = uart_link_create_linux(&st->link, address, serial_speed);
+	if (err != 0) {
+		errno = ENODEV;
+		return NULL;
+	}
+
+	return st;
 }
 
 void ertm_exit(struct ertm_status *handle)
 {
-	free(handle->state);
+	if (handle != NULL)
+		free(handle->state);
 	free(handle);
 }
 
