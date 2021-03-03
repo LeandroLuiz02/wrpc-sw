@@ -10,7 +10,7 @@ WRC_INCLUDES = ../include
 CFLAGS += -I $(ERTM_UART_LOCATION) -I $(ERTM_BOARD_LOCATION)
 CFLAGS += -I $(WRC_INCLUDES)
 
-all: libs serial ertm-serial
+all: libs serial ertm-serial main
 
 libs: static-lib so-lib
 static-lib: $(TARGET).a
@@ -21,6 +21,12 @@ $(TARGET).so: $(TARGET).o
 $(TARGET).a: $(TARGET).o
 	$(AR) r $@ $^
 $(TARGET).o: $(TARGET).h
+
+main: main.o libertm.a
+	$(CC) $(CFLAGS) -o $@ $^ libertm.a $(LDLIBS) $(LDFLAGS)
+
+libertm.a: libertm.o linux-uart-link.o common-uart-link.o
+	$(AR) r $@ $^
 
 serial: serial.o
 	$(CC) $(CFLAGS) -o $@ $^ $(LDLIBS) $(LDFLAGS)
