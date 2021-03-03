@@ -47,4 +47,4 @@ libertm.o: libertm.h private.h
 
 clean:
 	rm -f *.o *.a *.so
-	rm -f serial ertm-serial
+	rm -f serial ertm-serial main
