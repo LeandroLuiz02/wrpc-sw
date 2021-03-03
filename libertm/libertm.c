@@ -40,9 +40,6 @@ static uint32_t clkab_freq_table[] = {
 };
 const int clkab_nfreqs = sizeof(clkab_freq_table)/sizeof(clkab_freq_table[0]);
 
-struct ertm_status *ertm_init(char *address);
-void ertm_exit(struct ertm_status *handle);		/* end connection, destroy handle */
-
 static void clkab_defaults(struct ertm_clk *clk)
 {
 	int i;
