@@ -23,7 +23,7 @@ $(TARGET).a: $(TARGET).o linux-uart-link.o common-uart-link.o
 $(TARGET).o: $(TARGET).h
 
 main: main.o libertm.a
-	$(CC) $(CFLAGS) -o $@ $^ $(LDLIBS) $(LDFLAGS)
+	$(CC) $(CFLAGS) -o $@ $^ $(LDLIBS) $(LDFLAGS) -lm
 
 serial: serial.o
 	$(CC) $(CFLAGS) -o $@ $^ $(LDLIBS) $(LDFLAGS)
