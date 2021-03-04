@@ -171,12 +171,13 @@ struct ertm_status *ertm_init(const char *address)
 		return NULL;
 	}
 	st->state = malloc(sizeof(*st->state));
-	if (st == NULL) {
+	if (st->state == NULL) {
 		free(st);
 		errno = ENOMEM;
 		return NULL;
 	}
 	/* FIXME: this has to be parameterized */
+	memcpy(&st->connection.serial_connection, address, strlen(address));
 	err = uart_link_create_linux(&st->link, usb_serial, serial_speed);
 	if (err != 0) {
 		errno = ENODEV;
