@@ -12,9 +12,13 @@
 #include <errno.h>
 #include <string.h>
 #include <stdlib.h>
+#include <stdio.h>
+#include <arpa/inet.h>
 #include <math.h>
+
 #include "libertm.h"
 #include "private.h"
+#include "psnmp-proto.h"
 
 struct ertm_error_codes ertm_error_codes[] = {
 	[-ERTM_OK]		= { ERTM_OK, "success" },
@@ -252,6 +256,118 @@ static int clkab_set_output_divider(int clka_or_clkb, int output, int divider)
 
 }
 #endif
+
+int ertm_proto_cycle(struct uart_link *link,
+	int8_t opcode, void *payload, void *answer)
+{
+	int res = 0;
+	struct uart_packet request, *tx_pkt = &request;
+	struct uart_packet *r;
+	struct ertm14_protocol_op *op = get_proto_op(opcode);
+
+	if (op == NULL) {
+		errno = EINVAL;
+		return ERTM_BAD_OPCODE;
+	}
+
+	tx_pkt->ptype = ERTM14_UART_PTYPE_SNMP_REQ;
+	tx_pkt->length = op->length1;
+	tx_pkt->payload[0] = op->opcode;
+	memcpy(&tx_pkt->payload[op->offset1], payload, op->length1);
+	res = uart_link_send(link, tx_pkt);
+	if (res < 0) {
+		fprintf(stderr, "error %d in uart_link_send\n", res);
+		return ERTM_UART_LINK_SEND_ERR;
+	}
+	res = uart_link_recv(link, &r, 1000);
+	if (res <= 0) {
+		fprintf(stderr, "error (res %d) in uart_link_recv\n", res);
+		errno = ECOMM;
+		return ERTM_UART_LINK_RECV_ERR;
+	}
+	if (r->ptype != ERTM14_UART_PTYPE_SNMP_RESP) {
+		fprintf(stderr, "error (bad packet type != RESP) in uart_link_recv\n");
+		errno = EINVAL;
+		return ERTM_UART_PROTO_ERR;
+	}
+	fprintf(stderr,"recvd %d bytes: \n", r->length);
+	memset(answer, 0x5a, op->length2);
+	memcpy(answer, &r->payload[op->offset2], op->length2);
+
+	return 0;
+}
+
+void dds_board_to_host(struct ertm14_dds_state *dds, struct ertm14_dds_state *host)
+{
+	int i;
+
+	host->ftw 		= ntohl(dds->ftw);
+	host->amp_power 	= ntohl(dds->amp_power);
+	host->ampl_factor 	= ntohl(dds->ampl_factor);
+	for (i = ERTM14_RF_OUT_MIN_ID; i <= ERTM14_RF_OUT_MAX_ID; i++) {
+		host->out_power[i] = ntohl(dds->out_power[i]);
+		host->out_state[i] = dds->out_state[i];
+	}
+}
+
+void host_to_dds_board(struct ertm14_dds_state *host, struct ertm14_dds_state *dds)
+{
+	int i;
+
+	dds->ftw                 = htonl(host->ftw);
+	dds->amp_power           = htonl(host->amp_power);
+	dds->ampl_factor         = htonl(host->ampl_factor);
+	for (i = ERTM14_RF_OUT_MIN_ID; i <= ERTM14_RF_OUT_MAX_ID; i++) {
+		dds->out_power[i] = htonl(host->out_power[i]);
+		dds->out_state[i] = host->out_state[i];
+	}
+}
+
+void state_to_board(struct ertm_state *state, struct ertm14_board_state *board)
+{
+	int i;
+	struct ertm14_board_state *bs = &state->board_state;
+
+	host_to_dds_board(&bs->ref, &board->ref);
+	host_to_dds_board(&bs->lo, &board->lo);
+	board->clka_enable_mask = htonl(bs->clka_enable_mask);
+	board->clkb_enable_mask = htonl(bs->clkb_enable_mask);
+	for (i = ERTM_CLKAB_MIN_CH; i <= ERTM_CLKAB_MAX_CH; i++) {
+		/* FIXME: not enum */
+		board->clka_freq_hz[i] = htonl(bs->clka_freq_hz[i]);
+		board->clkb_freq_hz[i] = htonl(bs->clkb_freq_hz[i]);
+	}
+}
+
+void board_to_host(struct ertm14_board_state *board, struct ertm14_board_state *host)
+{
+	int i;
+
+	dds_board_to_host(&board->ref, &host->ref);
+	dds_board_to_host(&board->lo, &host->lo);
+	host->clka_enable_mask = ntohl(board->clka_enable_mask);
+	host->clkb_enable_mask = ntohl(board->clkb_enable_mask);
+	for (i = ERTM_CLKAB_MIN_CH; i <= ERTM_CLKAB_MAX_CH; i++) {
+		/* FIXME: not enum */
+		host->clka_freq_hz[i] = ntohl(board->clka_freq_hz[i]);
+		host->clkb_freq_hz[i] = ntohl(board->clkb_freq_hz[i]);
+	}
+}
+
+/* here, bs **can** (and should) be st->state->board_state */
+int ertm_get_board_config(struct ertm_status *st, struct ertm14_board_state *bs)
+{
+	struct uart_link *link = &st->link;
+	struct ertm14_board_state b, *board = &b;
+	int res;
+
+	res = ertm_proto_cycle(link, ertm14_get_board_config, NULL, board);
+	if (res < 0)
+		return res;
+
+	board_to_host(board, bs);
+	return 0;
+}
 
 static int ertm_get_set_freq(struct ertm_status *handle,
 		enum ertm_connector connector,int channel, uint32_t *freq,
