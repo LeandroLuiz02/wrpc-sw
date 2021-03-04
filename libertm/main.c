@@ -13,6 +13,9 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include "libertm.h"
+#include "private.h"
+#include "display.h"
+
 /*
     char *ertm_perror(int error)
  */
@@ -26,6 +29,8 @@ int main(int argc, char *argv[])
 		fprintf(stderr, "could not open %s\n", usb);
 		exit(1);
 	}
+	ertm_get_board_config(handle, &handle->state->board_state);
+	display_ertm_state(handle->state);
 
 	ertm_exit(handle);
 
