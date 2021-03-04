@@ -272,7 +272,7 @@ int ertm_proto_cycle(struct uart_link *link,
 	}
 
 	tx_pkt->ptype = ERTM14_UART_PTYPE_SNMP_REQ;
-	tx_pkt->length = op->length1;
+	tx_pkt->length = op->offset1 + op->length1;
 	tx_pkt->payload[0] = op->opcode;
 	memcpy(&tx_pkt->payload[op->offset1], payload, op->length1);
 	res = uart_link_send(link, tx_pkt);
