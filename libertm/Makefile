@@ -29,7 +29,7 @@ serial: serial.o
 	$(CC) $(CFLAGS) -o $@ $^ $(LDLIBS) $(LDFLAGS)
 serial.o: $(TARGET).h
 
-ertm-serial: ertm-serial.o linux-uart-link.o common-uart-link.o
+ertm-serial: ertm-serial.o libertm.a
 	$(CC) $(CFLAGS) -o $@ $^ $(LDLIBS) $(LDFLAGS) -lm
 
 common-uart-link.o: $(ERTM_BOARD_LOCATION)/common-uart-link.c
