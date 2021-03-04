@@ -348,7 +348,7 @@ int main(int argc, char *argv[])
 
 	fprintf(stderr,"------------------------------\n");
 	fprintf(stderr,"getting board config\n");
-	get_board_config(h);
+	ertm_get_board_config(h, &h->state->board_state);
 	display_ertm_state(h->state);
 	exit(1);
 	fprintf(stderr,"got board config\n");
