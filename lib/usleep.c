@@ -26,7 +26,7 @@ static int verify_lpj(int lpj)
 
 	/* wait for the beginning of a tick */
 	j = timer_get_tics() + 1;
-	while (timer_get_tics() != j)
+	while (timer_get_tics() < j)
 		;
 
 	__delay(lpj);
