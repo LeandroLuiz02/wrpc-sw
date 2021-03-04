@@ -1066,7 +1066,7 @@ static int ertm_process_psnmp(struct uart_packet *rx_pkt, struct uart_packet *tx
 
 	/* return board config in case of bad opcode */
 	if ((op = get_proto_op(opcode)) == NULL)
-		op = get_proto_op(get_board_config);
+		op = get_proto_op(ertm14_get_board_config);
 	
 	tx_pkt->ptype = ERTM14_UART_PTYPE_SNMP_RESP;
 	tx_pkt->length = op->offset2 + op->length2;
