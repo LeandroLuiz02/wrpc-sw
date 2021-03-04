@@ -59,18 +59,14 @@ struct ertm_wr_status {
 };
 
 struct ertm_state {
-	struct ertm_board_info	board_info;
-	struct ertm_clk		clka;
-	struct ertm_clk		clkb;
-	struct ertm_lo_ref	lo;
-	struct ertm_lo_ref	ref;
-	struct ertm_temperatures
-				temperatures;
-	struct ertm_voltages	voltages;
-	struct ertm_nco_reset	nco_reset;
-	struct ertm_wr_status	wr_status;
-	int			ptp_enabled;
-	uint32_t		reserved[64];
+	struct ertm_board_info		board_info;
+	struct ertm14_board_state	board_state;
+	struct ertm_temperatures	temperatures;
+	struct ertm_voltages		voltages;
+	struct ertm_nco_reset		nco_reset;
+	struct ertm_wr_status		wr_status;
+	int				ptp_enabled;
+	uint32_t			reserved[64];
 };
 
 struct ertm_connection {
