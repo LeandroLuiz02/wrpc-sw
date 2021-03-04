@@ -123,7 +123,7 @@ void display_ertm_clkab(struct ertm14_board_state *bs)
 	for (i = ERTM_CLKAB_MIN_CH; i <= ERTM_CLKAB_MAX_CH; i++) {
 		char *aonoff = (bs->clka_enable_mask & (1<<i)) ? "on " : "off";
 		char *bonoff = (bs->clkb_enable_mask & (1<<i)) ? "on " : "off";
-		printf("CLKA%02d: %3s  %10dHz\n", i, aonoff, bs->clka_freq_hz[i]);
+		printf("CLKA%02d: %3s  %10dHz\t\t", i, aonoff, bs->clka_freq_hz[i]);
 		printf("CLKB%02d: %3s  %10dHz\n", i, bonoff, bs->clkb_freq_hz[i]);
 	}
 }
@@ -132,10 +132,11 @@ void display_ertm_state(struct ertm_state *st)
 {
 	struct ertm14_board_state *bs = &st->board_state;
 
+	printf("CLKAB: --------------------------------------------------\n");
 	display_ertm_clkab(bs);
-	printf("LO:\n");
+	printf("LO: --------------------------------------------------\n");
 	display_dds_state(&bs->lo);
-	printf("REF:\n");
+	printf("REF: --------------------------------------------------\n");
 	display_dds_state(&bs->ref);
 }
 
