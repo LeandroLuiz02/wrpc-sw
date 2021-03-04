@@ -161,7 +161,7 @@ static void ertm_status_init(struct ertm_state *st)
 static char *usb_serial = "/dev/ttyUSB2";
 static int serial_speed = 8*115200;
 
-struct ertm_status *ertm_init(char *address)
+struct ertm_status *ertm_init(const char *address)
 {
 	struct ertm_status *st = malloc(sizeof(*st));
 	int err;

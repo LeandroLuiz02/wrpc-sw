@@ -247,40 +247,6 @@ int get_wr_diags(struct ertm_status *st, struct WRC_DIAGS_WB *diags)
 }
 
 
-/* constants of nature for this design */
-static char *usb_serial = "/dev/ttyUSB2";
-static int serial_speed = 8*115200;
-
-struct ertm_status *ertm_init(char *address)
-{
-	struct ertm_status *st = malloc(sizeof(*st));
-	int err;
-
-	if (st == NULL) {
-		errno = ENOMEM;
-		return NULL;
-	}
-	st->state = malloc(sizeof(*st->state));
-	if (st == NULL) {
-		errno = ENOMEM;
-		return NULL;
-	}
-	err = uart_link_create_linux(&st->link, address, serial_speed);
-	if (err != 0) {
-		errno = ENODEV;
-		return NULL;
-	}
-
-	return st;
-}
-
-void ertm_exit(struct ertm_status *handle)
-{
-	if (handle != NULL)
-		free(handle->state);
-	free(handle);
-}
-
 void display_wrc_diags(struct WRC_DIAGS_WB *diags)
 {
 	char fmt[] = "%-38s: 0x%08x\n";
@@ -364,6 +330,9 @@ void stress_test_comm(struct uart_link *link)
 	}
 	fprintf(stderr, "\n");
 }
+
+/* constants of nature for this design */
+char *usb_serial = "/dev/ttyUSB2";
 
 int main(int argc, char *argv[])
 {
