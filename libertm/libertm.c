@@ -168,6 +168,7 @@ struct ertm_status *ertm_init(char *address)
 	}
 	st->state = malloc(sizeof(*st->state));
 	if (st == NULL) {
+		free(st);
 		errno = ENOMEM;
 		return NULL;
 	}
