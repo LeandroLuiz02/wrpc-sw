@@ -329,7 +329,7 @@ int main(int argc, char *argv[])
 	fprintf(stderr,"------------------------------\n");
 
 	goto ello;
-
+#if 0
 	/* switch those visually recognizable values */
 	fprintf(stderr,"------------------------------\n");
 	fprintf(stderr,"setting a different funny board config\n");
@@ -341,6 +341,7 @@ int main(int argc, char *argv[])
 	commit_board_config(h, mask);
 	display_ertm_state(h->state);
 	fprintf(stderr,"------------------------------\n");
+#endif
 ello:
 	/* get wr diags */
 	fprintf(stderr,"------------------------------\n");
