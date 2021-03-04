@@ -140,7 +140,7 @@ struct ertm_nco_reset {
  * The handle is an opaque pointer to keep status of the connection
  */
 struct ertm_status;
-struct ertm_status *ertm_init(char *address);
+struct ertm_status *ertm_init(const char *address);
 void ertm_exit(struct ertm_status *handle);		/* end connection, destroy handle */
 
 int ertm_get_board_info(struct ertm_status *handle,
