@@ -201,33 +201,6 @@ int get_wr_diags(struct ertm_status *st, struct WRC_DIAGS_WB *diags)
 	return 0;
 }
 
-
-void display_wrc_diags(struct WRC_DIAGS_WB *diags)
-{
-	char fmt[] = "%-38s: 0x%08x\n";
-
-	printf(fmt, "Version register", diags->VER);
-	printf(fmt, "Ctrl", diags->CTRL);
-	printf(fmt, "servo status", diags->WDIAG_SSTAT);
-	printf(fmt, "Port status", diags->WDIAG_PSTAT);
-	printf(fmt, "PTP state", diags->WDIAG_PTPSTAT);
-	printf(fmt, "AUX state", diags->WDIAG_ASTAT);
-	printf(fmt, "Tx PTP Frame cnts", diags->WDIAG_TXFCNT);
-	printf(fmt, "Rx PTP Frame cnts", diags->WDIAG_RXFCNT);
-	printf(fmt, "WRPC Diag:local time [msb of s]", diags->WDIAG_SEC_MSB);
-	printf(fmt, "local time [lsb of s]", diags->WDIAG_SEC_LSB);
-	printf(fmt, "local time [ns]", diags->WDIAG_NS);
-	printf(fmt, "Round trip (mu) [msb of ps]", diags->WDIAG_MU_MSB);
-	printf(fmt, "Round trip (mu) [lsb of ps]", diags->WDIAG_MU_LSB);
-	printf(fmt, "Master-slave delay (dms) [msb of ps]", diags->WDIAG_DMS_MSB);
-	printf(fmt, "Master-slave delay (dms) [lsb of ps]", diags->WDIAG_DMS_LSB);
-	printf(fmt, "Total link asymmetry [ps]", diags->WDIAG_ASYM);
-	printf(fmt, "Clock offset (cko) [ps]", diags->WDIAG_CKO);
-	printf(fmt, "Phase setpoint (setp) [ps]", diags->WDIAG_SETP);
-	printf(fmt, "Update counter (ucnt)", diags->WDIAG_UCNT);
-	printf(fmt, "Board temperature [C degree]", diags->WDIAG_TEMP);
-	
-}
 long long usecofday(void)
 {
 	struct timeval tv;
