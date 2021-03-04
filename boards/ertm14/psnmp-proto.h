@@ -15,7 +15,7 @@
 #define ertm14_get_sim_board_config	0x17
 #define	ertm14_comm_test		0x18
 
-struct ertm14_protocol_op {
+static struct ertm14_protocol_op {
 	int8_t	opcode;
 	size_t	offset1;
 	size_t	length1;
@@ -76,7 +76,7 @@ struct ertm14_protocol_op {
     },
 };
 
-const int protocol_nops = sizeof(protocol_ops)/sizeof(protocol_ops[0]);
+static const int protocol_nops = sizeof(protocol_ops)/sizeof(protocol_ops[0]);
 
 static struct ertm14_protocol_op *get_proto_op(uint8_t opcode)
 {
