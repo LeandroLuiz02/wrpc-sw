@@ -22,14 +22,14 @@ $(TARGET).a: $(TARGET).o linux-uart-link.o common-uart-link.o
 	$(AR) r $@ $^
 $(TARGET).o: $(TARGET).h
 
-main: main.o libertm.a
+main: main.o libertm.a display.o
 	$(CC) $(CFLAGS) -o $@ $^ $(LDLIBS) $(LDFLAGS) -lm
 
 serial: serial.o
 	$(CC) $(CFLAGS) -o $@ $^ $(LDLIBS) $(LDFLAGS)
 serial.o: $(TARGET).h
 
-ertm-serial: ertm-serial.o libertm.a
+ertm-serial: ertm-serial.o libertm.a display.o
 	$(CC) $(CFLAGS) -o $@ $^ $(LDLIBS) $(LDFLAGS) -lm
 
 common-uart-link.o: $(ERTM_BOARD_LOCATION)/common-uart-link.c
