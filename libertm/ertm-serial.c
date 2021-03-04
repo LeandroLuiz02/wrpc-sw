@@ -431,13 +431,14 @@ int main(int argc, char *argv[])
 	struct ertm14_board_state *bsmask;
 	struct WRC_DIAGS_WB d, *diags = &d;
 
-	stress_test_comm(&h->link);
-	exit(1);
+	if (0)
+		stress_test_comm(&h->link);
 
 	fprintf(stderr,"------------------------------\n");
 	fprintf(stderr,"getting board config\n");
 	get_board_config(h);
 	display_ertm_state(h->state);
+	exit(1);
 	fprintf(stderr,"got board config\n");
 	memcpy(config, h->state, sizeof(*config));
 	memset(mask, 0, sizeof(*mask));
