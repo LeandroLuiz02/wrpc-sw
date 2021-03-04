@@ -274,7 +274,8 @@ int ertm_proto_cycle(struct uart_link *link,
 	tx_pkt->ptype = ERTM14_UART_PTYPE_SNMP_REQ;
 	tx_pkt->length = op->offset1 + op->length1;
 	tx_pkt->payload[0] = op->opcode;
-	memcpy(&tx_pkt->payload[op->offset1], payload, op->length1);
+	if (op->length1 > 0)
+	    memcpy(&tx_pkt->payload[op->offset1], payload, op->length1);
 	res = uart_link_send(link, tx_pkt);
 	if (res < 0) {
 		fprintf(stderr, "error %d in uart_link_send\n", res);
@@ -387,7 +388,7 @@ int ertm_get_wr_diags(struct ertm_status *st, struct WRC_DIAGS_WB *wrc_diags)
 	struct uart_link *link = &st->link;
 	struct WRC_DIAGS_WB d, *diags = &d;
 
-	res = ertm_proto_cycle(link, ertm14_get_wrc_diags, "hola dave", diags);
+	res = ertm_proto_cycle(link, ertm14_get_wrc_diags, NULL, diags);
 	if (res < 0)
 		return res;
 	diags_to_host(diags, wrc_diags);
