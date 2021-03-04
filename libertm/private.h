@@ -79,3 +79,5 @@ struct ertm_status {
 	struct ertm_state *state;
 	struct uart_link link;
 };
+
+extern int ertm_get_board_config(struct ertm_status *st, struct ertm14_board_state *bs);

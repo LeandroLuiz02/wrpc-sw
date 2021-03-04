@@ -31,32 +31,6 @@
 		}	\
 	} while (0)
 
-void dds_board_to_host(struct ertm14_dds_state *dds, struct ertm14_dds_state *host)
-{
-	int i;
-
-	host->ftw 		= ntohl(dds->ftw);
-	host->amp_power 	= ntohl(dds->amp_power);
-	host->ampl_factor 	= ntohl(dds->ampl_factor);
-	for (i = ERTM14_RF_OUT_MIN_ID; i <= ERTM14_RF_OUT_MAX_ID; i++) {
-		host->out_power[i] = ntohl(dds->out_power[i]);
-		host->out_state[i] = dds->out_state[i];
-	}
-}
-
-void host_to_dds_board(struct ertm14_dds_state *host, struct ertm14_dds_state *dds)
-{
-	int i;
-
-	dds->ftw                 = htonl(host->ftw);
-	dds->amp_power           = htonl(host->amp_power);
-	dds->ampl_factor         = htonl(host->ampl_factor);
-	for (i = ERTM14_RF_OUT_MIN_ID; i <= ERTM14_RF_OUT_MAX_ID; i++) {
-		dds->out_power[i] = htonl(host->out_power[i]);
-		dds->out_state[i] = host->out_state[i];
-	}
-}
-
 static char *state_literal[] = {
 	[ERTM_RF_OUT_ON] = "on",
 	[ERTM_RF_OUT_OFF] = "off",
@@ -84,37 +58,6 @@ void display_dds_state(struct ertm14_dds_state *dds)
 		printf("ch: %02d pow: %08x mdBm (%8.3f dBm)  %d %-8s\n",
 		    i, dds->out_power[i], dds->out_power[i]/1000.0,
 		    dds->out_state[i], state_literal[dds->out_state[i]]);
-}
-
-void board_to_host(struct ertm14_board_state *board, struct ertm14_board_state *host)
-{
-	int i;
-
-	dds_board_to_host(&board->ref, &host->ref);
-	dds_board_to_host(&board->lo, &host->lo);
-	host->clka_enable_mask = ntohl(board->clka_enable_mask);
-	host->clkb_enable_mask = ntohl(board->clkb_enable_mask);
-	for (i = ERTM_CLKAB_MIN_CH; i <= ERTM_CLKAB_MAX_CH; i++) {
-		/* FIXME: not enum */
-		host->clka_freq_hz[i] = ntohl(board->clka_freq_hz[i]);
-		host->clkb_freq_hz[i] = ntohl(board->clkb_freq_hz[i]);
-	}
-}
-
-void state_to_board(struct ertm_state *state, struct ertm14_board_state *board)
-{
-	int i;
-	struct ertm14_board_state *bs = &state->board_state;
-
-	host_to_dds_board(&bs->ref, &board->ref);
-	host_to_dds_board(&bs->lo, &board->lo);
-	board->clka_enable_mask = htonl(bs->clka_enable_mask);
-	board->clkb_enable_mask = htonl(bs->clkb_enable_mask);
-	for (i = ERTM_CLKAB_MIN_CH; i <= ERTM_CLKAB_MAX_CH; i++) {
-		/* FIXME: not enum */
-		board->clka_freq_hz[i] = htonl(bs->clka_freq_hz[i]);
-		board->clkb_freq_hz[i] = htonl(bs->clkb_freq_hz[i]);
-	}
 }
 
 void display_ertm_clkab(struct ertm14_board_state *bs)
@@ -169,7 +112,7 @@ int commit_board_config(struct ertm_status *st, struct ertm_state *mask)
 	BUG(op->length1 == sizeof(*cfg));
 	BUG(op->opcode == ertm14_commit_board_config);
 	cfg = (struct ertm14_board_state *)&tx_pkt->payload[op->offset1];
-	state_to_board(mask, cfg);
+	//state_to_board(mask, cfg);
 	cfg->valid = 1;
 
 	res = uart_link_send(link, tx_pkt);
@@ -207,7 +150,7 @@ int set_board_config(struct ertm_status *st, struct ertm_state *config)
 	BUG(op->length1 == sizeof(*cfg));
 	BUG(op->opcode == ertm14_set_board_config);
 	cfg = (struct ertm14_board_state *)&tx_pkt->payload[op->offset1];
-	state_to_board(config, cfg);
+	// state_to_board(config, cfg);
 	cfg->valid = 1;
 
 	res = uart_link_send(link, tx_pkt);

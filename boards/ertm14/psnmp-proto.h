@@ -88,4 +88,7 @@ static struct ertm14_protocol_op *get_proto_op(uint8_t opcode)
 	return NULL;
 }
 
+/* auxiliary */
+extern void board_to_host(struct ertm14_board_state *board, struct ertm14_board_state *host);
+
 #endif /* __PSNMP_PROTO_H */
