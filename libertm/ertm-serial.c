@@ -269,7 +269,7 @@ int main(int argc, char *argv[])
 	struct ertm_state m, *mask = &m;
 	struct ertm14_board_state *bs;
 	struct ertm14_board_state *bsmask;
-	struct WRC_DIAGS_WB d, *diags = &d;
+	struct ertm_wr_status d, *diags = &d;
 
 	if (0)
 		stress_test_comm(&h->link);
@@ -319,7 +319,7 @@ ello:
 	/* get wr diags */
 	fprintf(stderr,"------------------------------\n");
 	fprintf(stderr,"getting diags from wrc\n");
-	get_wr_diags(h, diags);
+	ertm_wr_diags(h, diags);
 	display_wrc_diags(diags);
 	display_hex((void*)diags, sizeof(*diags));
 	fprintf(stderr,"------------------------------\n");

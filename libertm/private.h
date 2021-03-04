@@ -64,7 +64,10 @@ struct ertm_state {
 	struct ertm_temperatures	temperatures;
 	struct ertm_voltages		voltages;
 	struct ertm_nco_reset		nco_reset;
-	struct ertm_wr_status		wr_status;
+	union {
+		struct ertm_wr_status	wr_status;
+		struct WRC_DIAGS_WB	diags_wb;
+	};
 	int				ptp_enabled;
 	uint32_t			reserved[64];
 };

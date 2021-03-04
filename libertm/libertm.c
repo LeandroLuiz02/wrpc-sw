@@ -355,6 +355,16 @@ void board_to_host(struct ertm14_board_state *board, struct ertm14_board_state *
 	}
 }
 
+static void diags_to_host(struct WRC_DIAGS_WB *diags, struct WRC_DIAGS_WB *host)
+{
+	int i;
+	int ndiags = sizeof(*diags) / sizeof(uint32_t);
+	uint32_t *src = (uint32_t *)diags;
+	uint32_t *dst = (uint32_t *)host;
+
+	for (i = 0; i < ndiags; i++)
+		dst[i] = ntohl(src[i]);
+}
 /* here, bs **can** (and should) be st->state->board_state */
 int ertm_get_board_config(struct ertm_status *st, struct ertm14_board_state *bs)
 {
@@ -369,6 +379,22 @@ int ertm_get_board_config(struct ertm_status *st, struct ertm14_board_state *bs)
 	board_to_host(board, bs);
 	return 0;
 }
+
+int ertm_get_wr_diags(struct ertm_status *st, struct WRC_DIAGS_WB *wrc_diags)
+{
+	int res;
+
+	struct uart_link *link = &st->link;
+	struct WRC_DIAGS_WB d, *diags = &d;
+
+	res = ertm_proto_cycle(link, ertm14_get_wrc_diags, "hola dave", diags);
+	if (res < 0)
+		return res;
+	diags_to_host(diags, wrc_diags);
+
+	return 0;
+}
+
 
 static int ertm_get_set_freq(struct ertm_status *handle,
 		enum ertm_connector connector,int channel, uint32_t *freq,
@@ -590,12 +616,18 @@ int ertm_rf_nco_reset(struct ertm_status *handle);
 int ertm_nco_reset_subscribe(struct ertm_status *handle,
 		enum ertm_connector, int enable, int channel, uint32_t stream_id);
 int ertm_nco_reset_get_status(struct ertm_status *handle, struct ertm_nco_reset *status);
-#endif
 
 int ertm_wr_diags(struct ertm_status *handle, struct ertm_wr_status *status)
 {
 	memcpy(status, &handle->state->wr_status, sizeof(*status));
 	return 0;
+}
+#endif
+
+int ertm_wr_diags(struct ertm_status *handle, struct ertm_wr_status *status)
+{
+	struct WRC_DIAGS_WB *s = (struct WRC_DIAGS_WB *)status;
+	return ertm_get_wr_diags(handle, s);
 }
 
 int ertm_wr_status(struct ertm_status *handle, int *link_up, int *is_locked)
