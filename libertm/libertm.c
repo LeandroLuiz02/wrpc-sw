@@ -12,6 +12,7 @@
 #include <errno.h>
 #include <string.h>
 #include <stdlib.h>
+#include <math.h>
 #include "libertm.h"
 #include "private.h"
 
@@ -40,29 +41,32 @@ static uint32_t clkab_freq_table[] = {
 };
 const int clkab_nfreqs = sizeof(clkab_freq_table)/sizeof(clkab_freq_table[0]);
 
-static void clkab_defaults(struct ertm_clk *clk)
+static void clkab_defaults(struct ertm14_board_state *bs)
 {
 	int i;
-	memset(clk, 0, sizeof(*clk));
-	clk->enabled_mask = 0;
-	for (i = ERTM_CLKAB_MIN_CH; i <= ERTM_CLKAB_MAX_CH; i++)
-		clk->chfreq[i] = ERTM_CLKAB_DEFAULT_FREQ;
+	bs->clka_enable_mask = 0;
+	bs->clkb_enable_mask = 0;
+	for (i = ERTM_CLKAB_MIN_CH; i <= ERTM_CLKAB_MAX_CH; i++) {
+		bs->clka_freq_hz[i] = ERTM_CLKAB_DEFAULT_FREQ;
+		bs->clkb_freq_hz[i] = ERTM_CLKAB_DEFAULT_FREQ;
+	}
 }
 
 /* any sensible value will do, simulation-only stuff */
 #define	ERTM_LOREF_DEFAULT_CHPOWER	15.0	/* dBm, random dflt */;
 
-static void lo_ref_defaults(struct ertm_lo_ref *lo_ref, uint32_t default_freq)
+static void dds_defaults(struct ertm14_dds_state *lo_ref, uint32_t default_ftw)
 {
 	int i;
 
 	memset(lo_ref, 0, sizeof(*lo_ref));
-	lo_ref->enabled_mask= 0;
-	lo_ref->freq = default_freq;
-	for (i = ERTM_LOREF_MIN_CH; i <= ERTM_LOREF_MAX_CH; i++)
-		lo_ref->chpower[i] = ERTM_LOREF_DEFAULT_CHPOWER;
-	lo_ref->level_adjust = 1.0;
-	lo_ref->pll_output_power = ERTM_LOREF_DEFAULT_CHPOWER;
+	lo_ref->ftw = default_ftw;
+	for (i = ERTM_LOREF_MIN_CH; i <= ERTM_LOREF_MAX_CH; i++) {
+		lo_ref->out_state[i] = ERTM_RF_OUT_OFF;
+		lo_ref->out_power[i] = ERTM_LOREF_DEFAULT_CHPOWER;
+	}
+	lo_ref->ampl_factor = 0x7f;
+	lo_ref->amp_power = ERTM_LOREF_DEFAULT_CHPOWER;
 }
 
 static struct ertm_temperatures temperatures_defaults = {
@@ -134,12 +138,13 @@ struct ertm_board_info board_info_defaults = {
 /* provide sensible initial values for all params */
 static void ertm_status_init(struct ertm_state *st)
 {
+	struct ertm14_board_state *bs = &st->board_state;
+
 	memcpy(&st->board_info, &board_info_defaults,
 		sizeof(st->board_info));
-	clkab_defaults(&st->clka);
-	clkab_defaults(&st->clkb);
-	lo_ref_defaults(&st->lo, ERTM_LO_DEFAULT_FREQ);
-	lo_ref_defaults(&st->ref, ERTM_REF_DEFAULT_FREQ);
+	clkab_defaults(bs);
+	dds_defaults(&bs->lo, ERTM_LO_DEFAULT_FREQ);
+	dds_defaults(&bs->ref, ERTM_REF_DEFAULT_FREQ);
 	memcpy(&st->temperatures, &temperatures_defaults,
 		sizeof(st->temperatures));
 	memcpy(&st->voltages, &voltages_defaults,
@@ -252,8 +257,8 @@ static int ertm_get_set_freq(struct ertm_status *handle,
 		int set)
 {
 	int err = 0;
-	struct ertm_clk *clk;
-	struct ertm_lo_ref *loref;
+	struct ertm14_board_state *bs;
+	uint32_t *reg;
 
 	if (handle == NULL) {
 		errno = EINVAL;
@@ -269,29 +274,26 @@ static int ertm_get_set_freq(struct ertm_status *handle,
 	if ((err = out_of_range(connector, channel)) != 0)
 		return err;
 
+	bs = &handle->state->board_state;
 	switch (connector) {
 	case ERTM_CLKA:
-		clk = &handle->state->clka;
-		get_set(freq, &clk->chfreq[channel], set);
+		reg = &bs->clka_freq_hz[channel];
 		// clkab_set_output_divider(ERTM14_OUT_CLKA, channel, freq);
 		break;
 	case ERTM_CLKB:
-		clk = &handle->state->clkb;
-		get_set(freq, &clk->chfreq[channel], set);
+		reg = &bs->clkb_freq_hz[channel];
 		break;
 	case ERTM_LO:
-		loref = &handle->state->lo;
-		get_set(freq, &loref->freq, set);
+		reg = &bs->lo.ftw;
 		break;
 	case ERTM_REF:
-		loref = &handle->state->ref;
-		get_set(freq, &loref->freq, set);
+		reg = &bs->ref.ftw;
 		break;
 	default:
 		errno = EINVAL;
 		return ERTM_BAD_CONNECTOR;
 	}
-
+	get_set(freq, reg, set);
 	return 0;
 }
 
@@ -307,49 +309,59 @@ int ertm_set_freq(struct ertm_status *handle,
 	return ertm_get_set_freq(handle, connector, channel, &freq, 1);
 }
 
+static void set_bit(uint32_t *word, unsigned bit, int value)
+{
+	value = ((!!value) << bit);
+	*word &= ~(1<<bit);
+	*word |= value;
+}
+
 int ertm_channel_enable(struct ertm_status *handle,
 		enum ertm_connector connector, int channel, int enable)
 {
+	struct ertm14_board_state *bs;
+	struct ertm14_dds_state *dds;
 	uint32_t *mask;
 	int err;
 
 	if ((err = out_of_range(connector, channel)) != 0) {
 		return err;
 	}
+	bs = &handle->state->board_state;
 	switch (connector) {
 	case ERTM_CLKA:
-		mask = &handle->state->clka.enabled_mask;
+		mask = &bs->clka_enable_mask;
+		set_bit(mask, channel, enable);
 		break;
 	case ERTM_CLKB:
-		mask = &handle->state->clkb.enabled_mask;
+		mask = &bs->clkb_enable_mask;
+		set_bit(mask, channel, enable);
 		//clkab_enable_output(ERTM14_OUT_CLKA, channel, enable);
 		break;
 	case ERTM_LO:
-		mask = &handle->state->lo.enabled_mask;
+		dds = &bs->lo;
+		dds->out_state[channel] = (enable ? ERTM_RF_OUT_ON : ERTM_RF_OUT_OFF);
 		break;
 	case ERTM_REF:
-		mask = &handle->state->ref.enabled_mask;
+		dds = &bs->ref;
+		dds->out_state[channel] = (enable ? ERTM_RF_OUT_ON : ERTM_RF_OUT_OFF);
 		break;
 	default:
 		errno = EINVAL;
 		return ERTM_BAD_CONNECTOR;
 	}
-	enable = (!!enable) << channel;
-	*mask &= ~(1<<channel);
-	*mask |= enable;
-
 	return 0;
 }
 
 static int get_dds(struct ertm_status *handle,
-		enum ertm_connector connector, struct ertm_lo_ref **dds)
+		enum ertm_connector connector, struct ertm14_dds_state **dds)
 {
 	switch (connector) {
 	case ERTM_LO:
-		*dds = &handle->state->lo;
+		*dds = &handle->state->board_state.lo;
 		break;
 	case ERTM_REF:
-		*dds = &handle->state->ref;
+		*dds = &handle->state->board_state.ref;
 		break;
 	default:
 		return ERTM_BAD_CONNECTOR;
@@ -361,15 +373,15 @@ static int get_dds(struct ertm_status *handle,
 int ertm_get_power(struct ertm_status *handle,
 		enum ertm_connector connector, double *power)
 {
-	struct ertm_lo_ref *clk;
+	struct ertm14_dds_state *dds;
 	int err;
 
-	if ((err = get_dds(handle, connector, &clk)) != 0) {
+	if ((err = get_dds(handle, connector, &dds)) != 0) {
 		errno = EINVAL;
 		return err;
 	}
 
-	*power = clk->pll_output_power;
+	*power = dds->amp_power;
 	return 0;
 }
 
@@ -385,44 +397,54 @@ int ertm_get_channel_power_all(struct ertm_status *handle,
 		enum ertm_connector connector,
 		uint32_t valid_mask, double *power)
 {
-	struct ertm_lo_ref *clk;
+	struct ertm14_dds_state *dds;
 	int i, err;
 
-	if ((err = get_dds(handle, connector, &clk)) != 0) {
+	if ((err = get_dds(handle, connector, &dds)) != 0) {
 		errno = EINVAL;
 		return err;
 	}
 	for (i = ERTM_LOREF_MIN_CH; i <= ERTM_LOREF_MAX_CH; i++) {
 		if (valid_mask & (1<<i))
-		    power[i] = clk->chpower[i];
+		    power[i] = dds->out_power[i];
 	}
 
 	return 0;
 }
 
+static double ampl_factor_to_float(uint8_t ampl_factor)
+{
+	return ampl_factor/256.0;
+}
+
+static uint8_t float_to_ampl_factor(double level)
+{
+	return (uint8_t)floor(level * 256);
+}
+
 int ertm_dds_set_level_adjust(struct ertm_status *handle,
 		enum ertm_connector connector, double level)
 {
-	struct ertm_lo_ref *clk;
+	struct ertm14_dds_state *dds;
 	int err;
 
-	if ((err = get_dds(handle, connector, &clk)) != 0)
+	if ((err = get_dds(handle, connector, &dds)) != 0)
 		return err;
 
-	clk->level_adjust = level;
+	dds->ampl_factor = float_to_ampl_factor(level);
 	return 0;
 }
 
 int ertm_dds_get_level_adjust(struct ertm_status *handle,
 		enum ertm_connector connector, double *level)
 {
-	struct ertm_lo_ref *clk;
+	struct ertm14_dds_state *dds;
 	int err;
 
-	if ((err = get_dds(handle, connector, &clk)) != 0)
+	if ((err = get_dds(handle, connector, &dds)) != 0)
 		return err;
 
-	*level = clk->level_adjust;
+	*level = ampl_factor_to_float(dds->ampl_factor);
 	return 0;
 }
 

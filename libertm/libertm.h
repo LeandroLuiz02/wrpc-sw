@@ -50,11 +50,17 @@ enum ertm_connector {
 	ERTM_REF,
 };
 
+/* MONITOR is OFF to all effects and purposes */
+#define	ERTM_RF_OUT_ON		ERTM15_RF_OUT_ON
+#define	ERTM_RF_OUT_OFF		ERTM15_RF_OUT_OFF
+#define	ERTM_RF_OUT_MONITOR	ERTM15_RF_OUT_MONITOR
+
 /* real available channels in connectors */
-#define ERTM_CLKAB_MIN_CH	4
+#define ERTM_CLKAB_MIN_CH	ERTM14_CLKAB_OUT_MIN_ID
 #define ERTM_CLKAB_MAX_CH	14
-#define ERTM_LOREF_MIN_CH	4
-#define ERTM_LOREF_MAX_CH	12
+			/* FIXME: ERTM14_CLKAB_OUT_MAX_ID is 15??*/
+#define ERTM_LOREF_MIN_CH	ERTM14_RF_OUT_MIN_ID
+#define ERTM_LOREF_MAX_CH	ERTM14_RF_OUT_MAX_ID
 
 /* firmware metadata according to The Convention (see
  * https://www.ohwr.org/project/fpga-dev-id/blob/master/device-structure.rst

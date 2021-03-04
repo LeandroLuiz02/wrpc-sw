@@ -13,6 +13,7 @@
  * Dependencies, Makefiles and header order suffer accordingly
  */
 #include "hw/wrc_diags_regs.h"
+#include "ertm15_rf_distr.h"
 
 #define ERTM14_RF_OUT_MIN_ID 4
 #define ERTM14_RF_OUT_MAX_ID 12

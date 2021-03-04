@@ -31,100 +31,113 @@
 		}	\
 	} while (0)
 
-void dds_state_to_lo_ref(struct ertm14_dds_state *dds, struct ertm_lo_ref *loref)
+void dds_board_to_host(struct ertm14_dds_state *dds, struct ertm14_dds_state *host)
 {
 	int i;
 
-	loref->freq 				= ntohl(dds->ftw);
-	loref->pll_output_power 		= ntohl(dds->amp_power) / 1000;
-	loref->level_adjust 			= ntohl(dds->ampl_factor) / 256.0;
+	host->ftw 		= ntohl(dds->ftw);
+	host->amp_power 	= ntohl(dds->amp_power);
+	host->ampl_factor 	= ntohl(dds->ampl_factor);
 	for (i = ERTM14_RF_OUT_MIN_ID; i <= ERTM14_RF_OUT_MAX_ID; i++) {
-		loref->chpower[i] = ntohl(dds->out_power[i]) / 1000;
-		loref->state[i] = dds->out_state[i];
+		host->out_power[i] = ntohl(dds->out_power[i]);
+		host->out_state[i] = dds->out_state[i];
 	}
 }
 
-void lo_ref_to_dds_state(struct ertm_lo_ref *loref, struct ertm14_dds_state *dds)
+void host_to_dds_board(struct ertm14_dds_state *host, struct ertm14_dds_state *dds)
 {
 	int i;
 
-	dds->ftw                 = htonl(loref->freq);
-	dds->amp_power           = htonl(loref->pll_output_power * 1000);
-	dds->ampl_factor         = htonl(floor(loref->level_adjust * 256));
+	dds->ftw                 = htonl(host->ftw);
+	dds->amp_power           = htonl(host->amp_power);
+	dds->ampl_factor         = htonl(host->ampl_factor);
 	for (i = ERTM14_RF_OUT_MIN_ID; i <= ERTM14_RF_OUT_MAX_ID; i++) {
-		dds->out_power[i] = htonl(floor(loref->chpower[i] * 1000));
-		dds->out_state[i] = loref->state[i];
+		dds->out_power[i] = htonl(host->out_power[i]);
+		dds->out_state[i] = host->out_state[i];
 	}
 }
 
 static char *state_literal[] = {
-	[ERTM15_RF_OUT_ON] = "on",
-	[ERTM15_RF_OUT_OFF] = "off",
-	[ERTM15_RF_OUT_MONITOR] = "monitor",
+	[ERTM_RF_OUT_ON] = "on",
+	[ERTM_RF_OUT_OFF] = "off",
+	[ERTM_RF_OUT_MONITOR] = "monitor",
 };
-
-void display_ertm_lo_ref(struct ertm_lo_ref *dds)
+/* FIXME: all these are repeated, same as above */
+static double ampl_factor_to_float(uint8_t ampl_factor)
 {
-	int i;
-
-	printf("ftw: %08x\n", dds->freq);
-	printf("level adjust: %0.4f\n", dds->level_adjust);
-	printf("pll_out_power: %08x\n", dds->pll_output_power);
-	for (i = ERTM14_RF_OUT_MIN_ID; i <= ERTM14_RF_OUT_MAX_ID; i++)
-		printf("ch: %02d pow: %8.3f %d %-8s\n",
-		    i, dds->chpower[i], dds->state[i],
-		    state_literal[dds->state[i]]);
+	return ampl_factor/256.0;
 }
 
-void board_to_state(struct ertm14_board_state *board, struct ertm_state *state)
+static uint8_t float_to_ampl_factor(double level)
+{
+	return (uint8_t)floor(level * 256);
+}
+
+void display_dds_state(struct ertm14_dds_state *dds)
 {
 	int i;
 
-	dds_state_to_lo_ref(&board->ref, &state->ref);
-	dds_state_to_lo_ref(&board->lo, &state->lo);
-	state->clka.enabled_mask = ntohl(board->clka_enable_mask);
-	state->clkb.enabled_mask = ntohl(board->clkb_enable_mask);
+	printf("ftw: %08x\n", dds->ftw);
+	printf("level adjust: %0.4f (%d/256)\n", ampl_factor_to_float(dds->ampl_factor), dds->ampl_factor);
+	printf("pll_out_power: %3.1f dBm (%08x mdBm)\n",  dds->amp_power/1000.0, dds->amp_power);
+	for (i = ERTM14_RF_OUT_MIN_ID; i <= ERTM14_RF_OUT_MAX_ID; i++)
+		printf("ch: %02d pow: %08x mdBm (%8.3f dBm)  %d %-8s\n",
+		    i, dds->out_power[i], dds->out_power[i]/1000.0,
+		    dds->out_state[i], state_literal[dds->out_state[i]]);
+}
+
+void board_to_host(struct ertm14_board_state *board, struct ertm14_board_state *host)
+{
+	int i;
+
+	dds_board_to_host(&board->ref, &host->ref);
+	dds_board_to_host(&board->lo, &host->lo);
+	host->clka_enable_mask = ntohl(board->clka_enable_mask);
+	host->clkb_enable_mask = ntohl(board->clkb_enable_mask);
 	for (i = ERTM_CLKAB_MIN_CH; i <= ERTM_CLKAB_MAX_CH; i++) {
 		/* FIXME: not enum */
-		state->clka.chfreq[i] = ntohl(board->clka_freq_hz[i]);
-		state->clkb.chfreq[i] = ntohl(board->clkb_freq_hz[i]);
+		host->clka_freq_hz[i] = ntohl(board->clka_freq_hz[i]);
+		host->clkb_freq_hz[i] = ntohl(board->clkb_freq_hz[i]);
 	}
 }
 
 void state_to_board(struct ertm_state *state, struct ertm14_board_state *board)
 {
 	int i;
+	struct ertm14_board_state *bs = &state->board_state;
 
-	lo_ref_to_dds_state(&state->ref, &board->ref);
-	lo_ref_to_dds_state(&state->lo, &board->lo);
-	board->clka_enable_mask = htonl(state->clka.enabled_mask);
-	board->clkb_enable_mask = htonl(state->clkb.enabled_mask);
+	host_to_dds_board(&bs->ref, &board->ref);
+	host_to_dds_board(&bs->lo, &board->lo);
+	board->clka_enable_mask = htonl(bs->clka_enable_mask);
+	board->clkb_enable_mask = htonl(bs->clkb_enable_mask);
 	for (i = ERTM_CLKAB_MIN_CH; i <= ERTM_CLKAB_MAX_CH; i++) {
 		/* FIXME: not enum */
-		board->clka_freq_hz[i] = htonl(state->clka.chfreq[i]);
-		board->clkb_freq_hz[i] = htonl(state->clkb.chfreq[i]);
+		board->clka_freq_hz[i] = htonl(bs->clka_freq_hz[i]);
+		board->clkb_freq_hz[i] = htonl(bs->clkb_freq_hz[i]);
 	}
 }
 
-void display_ertm_clk(struct ertm_clk *clk)
+void display_ertm_clkab(struct ertm14_board_state *bs)
 {
 	int i;
 	for (i = ERTM_CLKAB_MIN_CH; i <= ERTM_CLKAB_MAX_CH; i++) {
-		char *onoff = (clk->enabled_mask & (1<<i)) ? "on " : "off";
-		printf("ch %02d: %3s  %10dHz\n", i, onoff, clk->chfreq[i]);
+		char *aonoff = (bs->clka_enable_mask & (1<<i)) ? "on " : "off";
+		char *bonoff = (bs->clkb_enable_mask & (1<<i)) ? "on " : "off";
+		printf("CLKA%02d: %3s  %10dHz\t\t", i, aonoff, bs->clka_freq_hz[i]);
+		printf("CLKB%02d: %3s  %10dHz\n", i, bonoff, bs->clkb_freq_hz[i]);
 	}
 }
 
 void display_ertm_state(struct ertm_state *st)
 {
-	printf("LO:\n");
-	display_ertm_lo_ref(&st->lo);
-	printf("REF:\n");
-	display_ertm_lo_ref(&st->ref);
-	printf("CLKA:\n");
-	display_ertm_clk(&st->clka);
-	printf("CLKB:\n");
-	display_ertm_clk(&st->clkb);
+	struct ertm14_board_state *bs = &st->board_state;
+
+	printf("CLKAB: --------------------------------------------------\n");
+	display_ertm_clkab(bs);
+	printf("LO: --------------------------------------------------\n");
+	display_dds_state(&bs->lo);
+	printf("REF: --------------------------------------------------\n");
+	display_dds_state(&bs->ref);
 }
 
 void display_hex(uint8_t *buf, size_t len)
@@ -244,7 +257,7 @@ int get_board_config_sim(struct ertm_status *st, int sim)
 	fprintf(stderr,"recvd %d bytes: \n", rx_pkt->length);
 
 	board = (struct ertm14_board_state *)&rx_pkt->payload[0];
-	board_to_state(board, state);
+	board_to_host(board, &state->board_state);
 
 	return 0;
 }
@@ -414,15 +427,18 @@ int main(int argc, char *argv[])
 	struct ertm_status *h = ertm_init(usb_serial);
 	struct ertm_state c, *config = &c;
 	struct ertm_state m, *mask = &m;
+	struct ertm14_board_state *bs;
+	struct ertm14_board_state *bsmask;
 	struct WRC_DIAGS_WB d, *diags = &d;
 
-	stress_test_comm(&h->link);
-	exit(1);
+	if (0)
+		stress_test_comm(&h->link);
 
 	fprintf(stderr,"------------------------------\n");
 	fprintf(stderr,"getting board config\n");
 	get_board_config(h);
 	display_ertm_state(h->state);
+	exit(1);
 	fprintf(stderr,"got board config\n");
 	memcpy(config, h->state, sizeof(*config));
 	memset(mask, 0, sizeof(*mask));
@@ -433,10 +449,12 @@ int main(int argc, char *argv[])
 	/* set a visually recognizable value */
 	fprintf(stderr,"------------------------------\n");
 	fprintf(stderr,"setting funny board config\n");
-	config->lo.level_adjust = 0.577216;
-	mask->lo.level_adjust = 1;
-	config->ref.level_adjust = 0.314159;
-	mask->lo.level_adjust = 1;
+	bs = &config->board_state;
+	bsmask = &mask->board_state;
+	bs->lo.ampl_factor = float_to_ampl_factor(0.577216);
+	bsmask->lo.ampl_factor = 1;
+	bs->ref.ampl_factor = float_to_ampl_factor(0.314159);
+	bsmask->lo.ampl_factor = 1;
 	set_board_config(h, config);
 	commit_board_config(h, mask);
 	get_sim_board_config(h);
@@ -448,10 +466,10 @@ int main(int argc, char *argv[])
 	/* switch those visually recognizable values */
 	fprintf(stderr,"------------------------------\n");
 	fprintf(stderr,"setting a different funny board config\n");
-	config->lo.level_adjust = 0.314159;
-	mask->lo.level_adjust = 1;
-	config->ref.level_adjust = 0.577216;
-	mask->lo.level_adjust = 1;
+	bs->lo.ampl_factor = float_to_ampl_factor(0.314159);
+	bsmask->lo.ampl_factor = 1;
+	bs->ref.ampl_factor = float_to_ampl_factor(0.577216);
+	bsmask->lo.ampl_factor = 1;
 	set_board_config(h, config);
 	commit_board_config(h, mask);
 	display_ertm_state(h->state);
