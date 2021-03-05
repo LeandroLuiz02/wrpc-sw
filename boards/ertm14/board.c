@@ -842,8 +842,16 @@ static int control_uart_poll(void)
 
 #include "psnmp-proto.h"
 
-/* ensure all uart traffic is in network order */
+static void copy_config(struct ertm14_board_state *dst, struct ertm14_board_state *src)
+{
+    memcpy(src, dst, sizeof(struct ertm14_board_state));
+}
+static void clean_config(struct ertm14_board_state *bs)
+{
+	memset(bs, 0, sizeof(struct ertm14_board_state));
+}
 
+/* ensure all uart traffic is in network order */
 static void dds_state_order(struct ertm14_dds_state *dds, int hton)
 {
     int i;
@@ -877,28 +885,25 @@ static void board_state_to_no(struct ertm14_board_state *dds, int hton)
 static void get_sim_board_config(struct ertm14_board_state *bs)
 {
     struct ertm14_board_state r, *result = &r;
-    struct ertm14_board_state *hw = &ertm14_hardware;
 
-    memcpy(result, hw, sizeof(*hw));
+    copy_config(result, &ertm14_hardware);
     board_state_to_no(result, 1);
-    memcpy(bs, result, sizeof(*bs));
+    copy_config(bs, result);
 }
+
 static void get_board_config(struct ertm14_board_state *bs)
 {
     struct ertm14_board_state r, *result = &r;
-    struct ertm14_board_state *current;
-    int config_id = ertm14_get_current_config_id();
 
-    current = ertm14_get_state_for_config(config_id);
-    memcpy(result, current, sizeof(*current));
+    copy_config(result, ertm14_current_state);
     board_state_to_no(result, 1);
-    memcpy(bs, result, sizeof(*bs));
+    copy_config(bs, result);
 }
 
 static void set_next_board_config(struct ertm14_board_state *bs)
 {
     /* FIXME: this is far from reentrant */
-    memcpy(&ertm14_next_state, bs, sizeof(*bs));
+    copy_config(&ertm14_next_state, bs);
     board_state_to_no(&ertm14_next_state, 0);
 }
 
@@ -1025,24 +1030,20 @@ static void apply_config(struct ertm14_board_state *cfg,
 
 static void commit_board_config(struct ertm14_board_state *mask)
 {
-    struct ertm14_board_state *current = &ertm14_configs[0];
     struct ertm14_board_state *next = &ertm14_next_state;
-    struct ertm14_board_state *maskp = &ertm14_mask;
 
-    ertm14_current_state = current;
-    memcpy(current, next, sizeof(*next));
-    memcpy(maskp, mask, sizeof(*mask));
-    apply_config(current, mask);
+    copy_config(ertm14_current_state, next);
+    copy_config(&ertm14_mask, mask);
+    apply_config(ertm14_current_state, &ertm14_mask);
     event_post(WRC_ERTM14_EVENT_APPLY_NEW_CONFIG);
+    clean_config(&ertm14_mask);
 }
 
 static void set_board_config(struct ertm14_board_state *bs)
 {
     /* FIXME: this is far from reentrant */
-    struct ertm14_board_state *next = &ertm14_next_state;
-
-    memcpy(next, bs, sizeof(*bs));
-    board_state_to_no(next, 0);
+    copy_config(&ertm14_next_state, bs);
+    board_state_to_no(&ertm14_next_state, 0);
 }
 
 static void get_wrc_diags(struct WRC_DIAGS_WB *diags)
@@ -1884,20 +1885,19 @@ void ertm14_config_init()
         cfg->clka_enable_mask = -1; //( 1<<11);
         cfg->clkb_enable_mask = -1; //( 1<<11);
 
-	memcpy(&ertm14_hardware, cfg, sizeof(*cfg));
+	copy_config(&ertm14_hardware, cfg);
     }
-};
+}
 
 struct ertm14_board_state *ertm14_get_state_for_config(int config_id)
 {
     return &ertm14_configs[config_id];
 }
 
-
 int ertm14_apply_config(int config_id)
 {
     board_dbg("Apply_config: %d\n", config_id );
-    ertm14_current_state = &ertm14_configs[config_id];
+    copy_config(ertm14_current_state, &ertm14_configs[config_id]);
     event_post ( WRC_ERTM14_EVENT_APPLY_NEW_CONFIG );
     return 0;
 }
