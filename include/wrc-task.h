@@ -27,11 +27,11 @@ struct wrc_task {
 	unsigned long max_run_ticks; /* in ticks */
 };
 
-void wrc_tasks_init(void);
+void wrc_tasks_preinit(void);
 struct wrc_task* wrc_task_create( const char *name, void (*init)(void), int (*job)(void) );
 void wrc_task_set_enable( struct wrc_task* task, int (*enabled)(void) );
 struct wrc_task *wrc_task_get(int tid);
-void wrc_start_all_tasks(void);
+void wrc_tasks_run_inits(void);
 void wrc_poll_all_tasks(void);
 void wrc_tasks_accounting_init(void);
 int wrc_task_not_yet(uint32_t *lastt, unsigned period);

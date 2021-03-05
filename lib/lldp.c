@@ -36,14 +36,14 @@ static struct wr_sockaddr addr;
 
 extern char wrc_hw_name[HW_NAME_LENGTH];
 
-static void lldp_header_tlv(uint8_t tlv_type, uint8_t tlv_len)
+static void lldp_header_tlv(int tlv_type, int tlv_len)
 {
 	lldpdu[lldpdu_len] = tlv_type << 1;
 	lldpdu[lldpdu_len + LLDP_SUBTYPE] = tlv_len;
 	lldpdu_len += LLDP_HEADER;
 }
 
-static void fill_mac(uint8_t *tlv, uint8_t type)
+static void fill_mac(uint8_t *tlv, int type)
 {
 	*tlv = type;
 	/* write MAC after subtype byte */
@@ -119,10 +119,7 @@ static void lldp_add_tlv(int tlv_type) {
 		} else {
 			/* NOTE: no subtype */
 			ep_get_mac_addr(&wrc_endpoint_dev, mac);
-			pp_sprintf(buf,
-				   "%02x:%02x:%02x:%02x:%02x:%02x",
-				   mac[0], mac[1], mac[2], mac[3],
-				   mac[4], mac[5]);
+			format_mac(buf, mac);
 			tlv_len = 17;
 			strncpy((char *)(lldpdu + lldpdu_len + LLDP_HEADER),
 			       (char *)buf, tlv_len);

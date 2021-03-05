@@ -14,7 +14,7 @@ static int cmd_sleep(const char *args[])
 	int sec = 1;
 
 	if (args[0])
-		fromdec(args[0], &sec);
+		sec = atoi(args[0]);
 	while (sec--)
 		usleep(1000 * 1000);
 	return 0;

@@ -19,7 +19,7 @@ static int cmd_vlan(const char *args[])
 	if (!args[0] || !strcasecmp(args[0], "get")) {
 		/* nothing... */
 	} else if (!strcasecmp(args[0], "set") && args[1]) {
-		fromdec(args[1], &i);
+		i = atoi(args[1]);
 		if (i < 1 || i > 4095) {
 			pp_printf("%i (\"%s\") out of range\n", i, args[1]);
 			return -EINVAL;

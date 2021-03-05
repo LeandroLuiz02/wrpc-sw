@@ -1,7 +1,9 @@
-obj-y += lib/util.o lib/wrc-tasks.o
+obj-y += \
+	lib/util.o \
+	lib/wrc-tasks.o \
+	lib/events-ptp.o \
 
 obj-$(CONFIG_LM32) += \
-	lib/atoi.o \
 	lib/assert.o \
 	lib/usleep.o \
 	lib/event.o
@@ -18,3 +20,4 @@ obj-$(CONFIG_NETCONSOLE) += lib/netconsole.o
 # below requires $(AUTOCONF_PPSI) to be present before build
 REQUIRE_AUTOCONF_PPSI += \
 			lib/net.o \
+			lib/events-ptp.o \

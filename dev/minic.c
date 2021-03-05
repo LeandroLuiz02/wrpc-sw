@@ -50,19 +50,19 @@ static inline uint32_t minic_readl(uint32_t reg)
 	return *(volatile uint32_t *)(BASE_MINIC + reg);
 }
 
-static inline void minic_txword(uint8_t type, uint16_t word)
+static inline void minic_txword(int type, uint16_t word)
 {
 	minic_writel(MINIC_REG_TX_FIFO,
 			MINIC_TX_FIFO_TYPE_W(type) | MINIC_TX_FIFO_DAT_W(word));
 }
 
-static inline void minic_rxword(uint8_t *type, uint16_t *data, uint8_t *empty,
-		uint8_t *full)
+static inline void minic_rxword(int *type, uint16_t *data, int *empty,
+		int *full)
 {
 	uint32_t rx;
 
 	rx = minic_readl(MINIC_REG_RX_FIFO);
-	*type = (uint8_t)  MINIC_RX_FIFO_TYPE_R(rx);
+	*type = MINIC_RX_FIFO_TYPE_R(rx);
 	*data = (uint16_t) MINIC_RX_FIFO_DAT_R(rx);
 	if (empty)
 		*empty = (rx & MINIC_RX_FIFO_EMPTY) ? 1 : 0;
@@ -114,7 +114,7 @@ int minic_rx_frame(struct wr_ethhdr *hdr, uint8_t * payload, uint32_t buf_size,
 {
 	uint32_t hdr_size, payload_size;
 	uint32_t raw_ts;
-	uint8_t  rx_empty, rx_full, rx_type;
+	int rx_empty, rx_full, rx_type;
 	uint16_t rx_data;
 	uint16_t *ptr16_hdr, *ptr16_payload;
 	uint32_t oob_cnt;
@@ -224,7 +224,7 @@ int minic_tx_frame(struct wr_ethhdr_vlan *hdr, uint8_t *payload, uint32_t size,
 		   struct hw_timestamp *hwts)
 {
 	uint32_t d_hdr, mcr, pwords, hwords;
-	uint8_t ts_valid;
+	int ts_valid;
 	int i, hsize;
 	uint16_t *ptr;
 
@@ -307,8 +307,8 @@ int minic_tx_frame(struct wr_ethhdr_vlan *hdr, uint8_t *payload, uint32_t size,
 
 
 		if(ts_valid)
-			ts_valid = (uint8_t)(minic_readl(MINIC_REG_TSR0)
-					     & MINIC_TSR0_VALID);
+			ts_valid = minic_readl(MINIC_REG_TSR0)
+					     & MINIC_TSR0_VALID;
 
 		raw_ts = minic_readl(MINIC_REG_TSR1);
 		fid = MINIC_TSR0_FID_R(minic_readl(MINIC_REG_TSR0));

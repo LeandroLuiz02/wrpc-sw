@@ -281,7 +281,7 @@ static int cmd_ltest(const char *args[])
 	int v = 0, v1 = 0;
 
 	if (args[1]) {
-		fromdec(args[1], &v1); /* ms */
+		v1 = atoi(args[1]); /* ms */
 	}
 	if (args[0]) {
 		if (HAS_SYSLOG && !strcmp(args[0], "verbose"))
@@ -289,9 +289,9 @@ static int cmd_ltest(const char *args[])
 		else if (HAS_SYSLOG && !strcmp(args[0], "quiet"))
 			lat_verbose = 0;
 		else if (!strcmp(args[0], "fake"))
-			fromdec(args[1], &ltest_fake_delay_ns);
+			ltest_fake_delay_ns = atoi(args[1]);
 		else {
-			fromdec(args[0], &v);
+			v = atoi(args[0]);
 			latency_period_ms = v * 1000 + v1;
 			lastt = 0; /* reset, so it fires immediately */
 		}

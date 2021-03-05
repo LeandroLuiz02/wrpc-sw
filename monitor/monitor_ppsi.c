@@ -193,81 +193,13 @@ desired_states[] = {
 	{}
 };
 
-char * timeIntervalToString_ns_dot_ps(TimeInterval time, char *buf)
+static inline char * timeToString_ps_as_ns(struct pp_time *time, char *buf)
 {
-
-	int64_t nanos;
-	uint32_t picos;
-	char sign = ' ';
-
-	if (time < 0 && time != INT64_MIN) {
-		sign = '-';
-		time = -time;
-	}
-	nanos = time >> TIME_INTERVAL_FRACBITS;
-	picos = (((time & TIME_INTERVAL_FRACMASK) * 1000) + TIME_INTERVAL_ROUNDING_VALUE) >> TIME_INTERVAL_FRACBITS;
-	sprintf(buf, "%c%Ld.%03d", sign, nanos, picos);
-
-	return buf;
-}
-
-char * timeToString_ps_as_ns(struct pp_time *time, char *buf)
-{
-	char sign = '+';
-	int64_t scaled_nsecs = time->scaled_nsecs;
-	int64_t secs = time->secs, nanos, picos;
-
 	if (!is_incorrect(time)) {
-		if (scaled_nsecs < 0 || secs < 0) {
-			sign = '-';
-			scaled_nsecs = -scaled_nsecs;
-			secs = -secs;
-		}
-		nanos = scaled_nsecs >> TIME_FRACBITS;
-		picos = ((scaled_nsecs & TIME_FRACMASK) * 1000 + TIME_ROUNDING_VALUE)
-				>> TIME_FRACBITS;
-		if ((scaled_nsecs > 0 && secs < 0) 
-		    || (scaled_nsecs < 0 && secs > 0)) {
-			sprintf(buf, "!Wsign:s%cns%c", secs > 0 ? '+':'-', scaled_nsecs > 0 ? '+':'-');
-			return buf;
-		}
-		sprintf(buf, "%c%Ld",
-			sign, secs);
-		sprintf(buf, "%s.%Ld",
-			buf, nanos);
-		sprintf(buf, "%s.%Ld",
-			buf, picos);
-
+		return time_to_string(time);
 	} else {
 		sprintf(buf, "--Incorrect--");
 	}
-	return buf;
-}
-
-char * relativeDifferenceToString(RelativeDifference time, char *buf)
-{
-	char sign;
-	int32_t nsecs;
-	uint64_t sub_yocto = 0;
-	int64_t fraction;
-	uint64_t bitWeight = 500000000000000000;
-	uint64_t mask;
-
-	if (time < 0) {
-		time =- time;
-		sign = '-';
-	} else {
-		sign = '+';
-	}
-
-	nsecs = time >> REL_DIFF_FRACBITS;
-	fraction = time & REL_DIFF_FRACMASK;
-	for (mask = (uint64_t) 1 << (REL_DIFF_FRACBITS - 1); mask != 0; mask >>= 1) {
-		if (mask & fraction)
-			sub_yocto += bitWeight;
-		bitWeight /= 2;
-	}
-	sprintf(buf,"%c%d.%018Ld", sign, nsecs, sub_yocto);
 	return buf;
 }
 
@@ -308,7 +240,7 @@ static char *optimized_pp_time_toString_ps_as_ns(struct pp_time *pptime, char *b
 	if (pptime->secs)
 		sprintf(buf,"%s sec ", timeToString_ps_as_ns(pptime, lbuf));
 	else
-		sprintf(buf,"%s nsec", timeIntervalToString_ns_dot_ps(pp_time_to_interval(pptime), lbuf));
+		sprintf(buf,"%s nsec", interval_to_string(pp_time_to_interval(pptime)));
 	return buf;
 }
 
@@ -422,7 +354,7 @@ void print_main_description(void)
 
 void print_main_data(void)
 {
-	struct hal_port_state state;
+	struct wrc_port_state state;
 	int tx, rx;
 	int leap_sec, tmp;
 	uint64_t sec;
@@ -464,7 +396,7 @@ void print_main_data(void)
 
 	for (i = 0 ; i < ndevs; i++) {
 		struct wrc_netif_device *ndev = netif_get_device(i);
-		uint8_t port_up = ndev->link_state == NETIF_LINK_UP;
+		int port_up = ndev->link_state == NETIF_LINK_UP;
 
 		if (port_up) {
 			pcprintf(9, 1, C_GREEN, " %s: ", ndev->name);
@@ -510,8 +442,8 @@ void print_main_data(void)
 
 	for (i = 0 ; i < ndevs; i++) {
 		struct wrc_netif_device *ndev = netif_get_device(i);
-		uint8_t port_up = ndev->link_state == NETIF_LINK_UP;
-		uint8_t color;
+		int port_up = ndev->link_state == NETIF_LINK_UP;
+		int color;
 
 		if (port_up) {
 			pcprintf(14, 1, C_GREEN, " %s: ", ndev->name);
@@ -545,6 +477,7 @@ void print_main_data(void)
 			unsigned char *p = ppi_pt->activePeer;
 			char * extension_state_name = EMPTY_EXTENSION_STATE_NAME;
 			char proto;
+			char mac_buf[20];
 
 #if 0 /* FIXME: only one instance so far */
 			if (strcmp(if_name,
@@ -556,10 +489,10 @@ void print_main_data(void)
 #endif
 			// Evaluate the instance configuration
 			strcpy(str_config,"unknown");
-			if (ppg->defaultDS->slaveOnly) {
+			if (is_slaveOnly(ppg->defaultDS)) {
 				strncpy(str_config, "slaveOnly", sizeof(str_config) - 1);
 			} else {
-				if (ppg->defaultDS->externalPortConfigurationEnabled) {
+				if (is_externalPortConfigurationEnabled(ppg->defaultDS)) {
 					int s = 0;
 					for (s = 0; s < sizeof(desired_states) / sizeof(struct desired_state_t); s++) {
 						if (desired_states[s].state == ppi_pt->externalPortConfigurationPortDS.desiredState) {
@@ -569,7 +502,7 @@ void print_main_data(void)
 					}
 
 				} else {
-					if (ppi_pt->portDS->masterOnly) {
+					if (is_masterOnly(ppi_pt->portDS)) {
 						strncpy(str_config, "masterOnly", sizeof(str_config) - 1);
 					} else {
 						strncpy(str_config, "auto", sizeof(str_config) - 1);
@@ -580,10 +513,7 @@ void print_main_data(void)
 			pcprintf(14, 16, C_WHITE, "%-12s", str_config);
 
 			/* peer not implemented */
-			pprintf(14, 31, "%02x:%02x"
-					":%02x:%02x:%02x:%02x ",
-					p[0], p[1], p[2], p[3],
-					p[4], p[5]);
+			pprintf(14, 31, format_mac(mac_buf, p));
 
 			pcprintf(14, 51, C_GREEN, "%s/", getStateAsString(pp_instance_state_to_name, ppi_pt->state));
 			/* print extension state */
@@ -771,7 +701,7 @@ void print_servo_data(struct pp_instance *ppi)
 
 	/* +- Timing parameters --------------------------------------------------------- */
 
-	pcprintf(21, 20, C_WHITE, "%19s nsec", timeIntervalToString_ns_dot_ps(ppg->currentDS->meanDelay, buf));
+	pcprintf(21, 20, C_WHITE, "%19s nsec", interval_to_string(ppg->currentDS->meanDelay));
 
 	/*delayMS */
 	pcprintf(22, 20, C_WHITE,"%24s", optimized_pp_time_toString_ps_as_ns(&ppi->servo->delayMS, buf));	
@@ -795,18 +725,18 @@ void print_servo_data(struct pp_instance *ppi)
 
 
 	/* delayAsymmetry */
-	pcprintf(24, 20, C_WHITE, "%19s nsec",   timeIntervalToString_ns_dot_ps(ppi->portDS->delayAsymmetry, buf));
+	pcprintf(24, 20, C_WHITE, "%19s nsec",   interval_to_string(ppi->portDS->delayAsymmetry));
 	/* delayCoefficient */
-	pcprintf(25, 23, C_WHITE, "%s", relativeDifferenceToString(ppi->asymmetryCorrectionPortDS.scaledDelayCoefficient, buf));
+	pcprintf(25, 23, C_WHITE, "%s", relative_interval_to_string(ppi->asymmetryCorrectionPortDS.scaledDelayCoefficient));
 	/* fpa */
 	pcprintf(25, 51, C_WHITE, "%Lu", ppi->asymmetryCorrectionPortDS.scaledDelayCoefficient); /* print as unsigned! */
 
 	/* ingressLatency */
-	pcprintf(26, 20, C_WHITE, "%19s nsec",   timeIntervalToString_ns_dot_ps(ppi->timestampCorrectionPortDS.ingressLatency, buf));
+	pcprintf(26, 20, C_WHITE, "%19s nsec",   interval_to_string(ppi->timestampCorrectionPortDS.ingressLatency));
 	/* egressLatency */
-	pcprintf(27, 20, C_WHITE, "%19s nsec",   timeIntervalToString_ns_dot_ps(ppi->timestampCorrectionPortDS.egressLatency, buf));
+	pcprintf(27, 20, C_WHITE, "%19s nsec",   interval_to_string(ppi->timestampCorrectionPortDS.egressLatency));
 	/* semistaticLatency */
-	pcprintf(28, 20, C_WHITE, "%19s nsec",   timeIntervalToString_ns_dot_ps(ppi->timestampCorrectionPortDS.semistaticLatency, buf));
+	pcprintf(28, 20, C_WHITE, "%19s nsec",   interval_to_string(ppi->timestampCorrectionPortDS.semistaticLatency));
 
 	/*if (0) {
 		cprintf(C_BLUE, "Fiber asymmetry:   ");
@@ -815,7 +745,7 @@ void print_servo_data(struct pp_instance *ppi)
 	}*/
 
 	/* offsetFromMaster */
-	pcprintf(29, 20, C_WHITE, "%19s nsec", timeIntervalToString_ns_dot_ps (ppg->currentDS->offsetFromMaster, buf));
+	pcprintf(29, 20, C_WHITE, "%19s nsec", interval_to_string (ppg->currentDS->offsetFromMaster));
 	row_offset = 30;
 	if (wr_servo) {
 		/* Phase setpoint */
@@ -853,7 +783,7 @@ void print_servo_data(struct pp_instance *ppi)
 int wrc_log_stats(void)
 {
 #if 0
-	struct hal_port_state state;
+	struct wrc_port_state state;
 	int tx, rx;
 	struct spll_aux_clock_status aux_stat;
 	uint64_t sec;
@@ -945,7 +875,7 @@ int wrc_log_stats(void)
 int wrc_wr_diags(void)
 {
 #if 0
-	struct hal_port_state ps;
+	struct wrc_port_state ps;
 	static uint32_t last_jiffies;
 	int tx, rx;
 	uint64_t sec;

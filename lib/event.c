@@ -31,7 +31,7 @@ struct event_handler
 static struct event_handler handlers[MAX_EVENT_HANDLERS];
 static int event_handler_count = 0;
 
-static inline void queue_put( struct event_queue* buf, uint8_t c )
+static inline void queue_put( struct event_queue* buf, int c )
 {
     if (buf->count >= buf->size)
 		return;
@@ -104,6 +104,8 @@ int event_handler_enable( int id, int enable )
 int event_post( int event )
 {
     int i;
+    if (!BOARD_USE_EVENTS)
+        return 0;
     for(i = 0; i < event_handler_count; i++ )
     {
         struct event_handler *eh = &handlers[i];

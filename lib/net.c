@@ -49,7 +49,7 @@ struct wrpc_socket *ptpd_netif_create_socket(struct wrpc_socket *sock,
 					     int udp_or_raw, int udpport)
 {
 	int i;
-	struct hal_port_state pstate;
+	struct wrc_port_state pstate;
 
 	/* Look for the first available socket. */
 	for (i = 0; i < ARRAY_SIZE(socks); i++)
@@ -225,7 +225,7 @@ int ptpd_netif_recvfrom(struct wrpc_socket *s, struct wr_sockaddr *from, void *d
 	uint16_t size;
 	struct wr_ethhdr hdr;
 	struct hw_timestamp hwts;
-	uint8_t spll_busy;
+	int spll_busy;
 
 	/*check if there is something to fetch */
 	if (!q->n)
@@ -246,7 +246,7 @@ int ptpd_netif_recvfrom(struct wrpc_socket *s, struct wr_sockaddr *from, void *d
 	if (rx_timestamp) {
 		rx_timestamp->raw_nsec = hwts.nsec;
 		rx_timestamp->raw_ahead = hwts.ahead;
-		spll_busy = (uint8_t) spll_shifter_busy(0);
+		spll_busy = spll_shifter_busy(0);
 		spll_read_ptracker(0, &rx_timestamp->raw_phase, NULL);
 
 		rx_timestamp->sec = hwts.sec;

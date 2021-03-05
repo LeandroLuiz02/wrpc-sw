@@ -210,3 +210,88 @@ const char *fromdec(const char *dec, int *v)
 	*v = o * sign;
 	return dec;
 }
+
+
+char *format_hex(char *s, const unsigned char *mac, int cnt)
+{
+	int i;
+	*s = '\0';
+	for (i = 0; i < cnt; i++) {
+		pp_sprintf(s, "%s%02x:", s, mac[i]);
+	}
+
+	/* remove last colon */
+	s[cnt * 3 - 1] = '\0'; /* cnt * strlen("FF:") - 1 */
+	return s;
+}
+
+char *format_mac(char *s, const unsigned char *mac)
+{
+	format_hex(s, mac, 6);
+	return s;
+}
+
+
+char *format_hex8(char *s, const unsigned char *mac)
+{
+	return format_hex(s, mac, 8);
+}
+
+void decode_mac(const char *str, unsigned char *mac)
+{
+	int i, x;
+
+	/* Don't try to detect bad input; need small code */
+	for (i = 0; i < 6; ++i) {
+		str = fromhex(str, &x);
+		mac[i] = x;
+		if (*str == ':')
+			++str;
+	}
+}
+
+void decode_port(const char *str, int *port)
+{
+	if( !str )
+		*port = 0;
+	else
+		*port = atoi(str);
+}
+
+/*
+ * This is a minimal atoi, that doesn't call strtol. Since we are only
+ * calling atoi, it saves XXXX bytes of library code
+ * Use fromdec in atoi. Not the way round, because fromdec can return a pointer
+ * to non recognized character (atoi cannot).
+ */
+int atoi(const char *s)
+{
+	int res;
+
+	fromdec(s, &res);
+	return res;
+}
+
+
+/* To save code, in the div of two int64 numbers
+ * use signed 64bit division, then correct the sign of the result */
+long long __divdi3 (long long A, long long B)
+{
+    int sign_a, sign_b;
+    unsigned long long a_u;
+    unsigned long long b_u;
+
+    sign_a = A < 0 ? -1 : 1;
+    sign_b = B < 0 ? -1 : 1;
+    a_u = A * sign_a;
+    b_u = A * sign_b;
+    return sign_a * sign_b * (long long) (a_u / b_u);
+}
+
+/* To save code, at the 64bit modulo use division and multiplication instead of
+ * modulo function from the standard library */
+unsigned long long __umoddi3 (unsigned long long A, unsigned long long B)
+{
+	volatile uint64_t x = A/B;
+	return A - (x)*B;
+}

@@ -48,8 +48,4 @@ what: type of the parameter and its' source. For example,
 last: when non-zero, indicates the last parameter in a sample.
 */
 
-static inline void spll_debug(int what, int value, int last)
-{
-	SPLL->DFR_SPLL =
-	    (last ? 0x80000000 : 0) | (value & 0xffffff) | (what << 24);
-}
+void spll_debug(int what, int value, int last);

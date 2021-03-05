@@ -296,7 +296,7 @@ static int build_init_readcmd(uint8_t *cmd, int maxlen)
 
 void shell_boot_script(void)
 {
-	uint8_t next = 0;
+	int next = 0;
 
 	while (CONFIG_HAS_BUILD_INIT) {
 		cmd_len = build_init_readcmd((uint8_t *)cmd_buf,
@@ -327,7 +327,7 @@ void shell_boot_script(void)
 
 void shell_show_build_init(void)
 {
-	uint8_t i = 0;
+	int i = 0;
 
 	pp_printf("-- built-in script --\n");
 	while (CONFIG_HAS_BUILD_INIT) {
@@ -354,16 +354,6 @@ void shell_register_command( struct wrc_shell_cmd* cmd )
 	n_cmds++;
 }
 
-void shell_list_cmds()
-{
-	int i;
-
-	for(i = 0; i < n_cmds; i++)
-	{
-		pp_printf("  %s\n", cmds[i]->name);
-	}
-}
-
 void shell_activate_ui_command( int (*callback)(void) )
 {
 	shell_ui_callback = callback;
@@ -372,6 +362,23 @@ void shell_activate_ui_command( int (*callback)(void) )
 	term_clear();
 	cmd_len = 0;
 }
+
+static int cmd_help(const char *args[])
+{
+	int i;
+	pp_printf("Available commands:\n");
+
+	for(i = 0; i < n_cmds; i++) {
+		pp_printf(" %s\n", cmds[i]->name);
+	}
+
+	return 0;
+}
+
+DEFINE_WRC_COMMAND(help) = {
+	.name = "help",
+	.exec = cmd_help,
+};
 
 #define REGISTER_WRC_COMMAND(_name) \
 	{ extern struct wrc_shell_cmd __wrc_cmd_ ## _name; shell_register_command( &__wrc_cmd_ ## _name ); }
@@ -406,3 +413,4 @@ void shell_register_commands(void)
 	if (HAS_CMD_NETCONSOLE)
 		REGISTER_WRC_COMMAND(netconsole);
 }
+

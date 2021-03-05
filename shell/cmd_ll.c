@@ -49,8 +49,8 @@ static int cmd_delays(const char *args[])
 		return 0;
 	}
 	if (args[1]) {
-		fromdec(args[0], &tx);
-		fromdec(args[1], &rx);
+		tx = atoi(args[0]);
+		rx = atoi(args[1]);
 		sfp_deltaTx = tx;
 		sfp_deltaRx = rx;
 		/* Change the active value too (add bislide here) */

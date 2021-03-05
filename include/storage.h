@@ -123,14 +123,14 @@ void storage_init( struct i2c_bus *bus, int i2c_addr);
 
 int storage_sfpdb_erase(void);
 int storage_match_sfp(struct s_sfpinfo *sfp);
-int storage_get_sfp(struct s_sfpinfo *sfp, uint8_t add, uint8_t pos);
+int storage_get_sfp(struct s_sfpinfo *sfp, int add, int pos);
 
-int storage_phtrans(uint32_t *val, uint8_t write);
+int storage_phtrans(uint32_t *val, int write);
 
 int storage_init_erase(void);
 int storage_init_add(const char *args[]);
 int storage_init_show(void);
-int storage_init_readcmd(uint8_t *buf, uint8_t bufsize, uint8_t next);
+int storage_init_readcmd(uint8_t *buf, int bufsize, int next);
 int storage_sdbfs_erase( struct storage_device *dev, uint32_t addr, int force_base );
 int storage_sdbfs_format( struct storage_device *dev, uint32_t addr, int force_base );
 void storage_sdbfs_list(void);
@@ -143,8 +143,8 @@ int storage_save_calibration(void);
 
 int storage_read_hdl_cfg(void);
 int storage_mount( struct storage_device *dev );
-int storage_get_persistent_mac(uint8_t portnum, uint8_t *mac);
-int storage_set_persistent_mac(uint8_t portnum, uint8_t *mac);
+int storage_get_persistent_mac(int portnum, uint8_t *mac);
+int storage_set_persistent_mac(int portnum, uint8_t *mac);
 
 
 #endif

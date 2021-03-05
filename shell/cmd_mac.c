@@ -18,34 +18,6 @@
 #include "dev/onewire.h"
 #include "dev/endpoint.h"
 
-void decode_mac(const char *str, unsigned char *mac)
-{
-	int i, x;
-
-	/* Don't try to detect bad input; need small code */
-	for (i = 0; i < 6; ++i) {
-		str = fromhex(str, &x);
-		mac[i] = x;
-		if (*str == ':')
-			++str;
-	}
-}
-
-void decode_port(const char *str, int *port)
-{
-	if( !str )
-		*port = 0;
-	else
-		*port = atoi(str);
-}
-
-char *format_mac(char *s, const unsigned char *mac)
-{
-	pp_sprintf(s, "%02x:%02x:%02x:%02x:%02x:%02x",
-		   mac[0], mac[1], mac[2], mac[3], mac[4], mac[5]);
-	return s;
-}
-
 
 static int cmd_mac(const char *args[])
 {

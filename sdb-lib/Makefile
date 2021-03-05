@@ -19,7 +19,7 @@ OBJDUMP         = $(CROSS_COMPILE)objdump
 # calculate endianness at compile time
 ENDIAN := $(shell ./check-endian $(CC))
 
-CFLAGS = -Wall -ggdb -O2
+CFLAGS = -Wall -ggdb -Os -mmultiply-enabled -mbarrel-shift-enabled
 CFLAGS += -I../include/linux -I../include # for <sdb.h>
 CFLAGS += -ffunction-sections -fdata-sections
 CFLAGS += -Wno-pointer-sign

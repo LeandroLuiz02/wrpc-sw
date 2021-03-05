@@ -43,6 +43,7 @@ struct dump_info  dump_info[] = {
 	DUMP_FIELD(UInteger8, priority1),
 	DUMP_FIELD(UInteger8, priority2),
 	DUMP_FIELD(UInteger8, domainNumber),
+
 	DUMP_FIELD(yes_no_Boolean, slaveOnly),
 	/** Optional (IEEE1588-2019) */
 //	FIXME: DUMP_FIELD(Timestamp, currentTime),

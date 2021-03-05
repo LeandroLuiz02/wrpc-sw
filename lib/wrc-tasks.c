@@ -115,12 +115,12 @@ void wrc_task_set_enable( struct wrc_task* task, int (*enabled)(void) )
     task->enabled = enabled;
 }
 
-void wrc_tasks_init()
+void wrc_tasks_preinit(void)
 {
    	memset(&tasks, 0, sizeof(struct wrc_task) * WRC_MAX_TASKS);
 }
 
-void wrc_poll_all_tasks()
+void wrc_poll_all_tasks(void)
 {
 	int i;
 
@@ -131,7 +131,7 @@ void wrc_poll_all_tasks()
 		}
 }
 
-void wrc_start_all_tasks()
+void wrc_tasks_run_inits(void)
 {
 	int i;
 
@@ -142,7 +142,7 @@ void wrc_start_all_tasks()
 		}
 }
 
-void wrc_tasks_accounting_init()
+void wrc_tasks_accounting_init(void)
 {
 	shw_pps_gen_get_time(NULL, &prev_nanos_for_profile);
 	/* get tics */

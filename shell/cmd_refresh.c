@@ -19,7 +19,7 @@ static int cmd_refresh(const char *args[])
 	int sec;
 
 	if (args[0] && !args[1]) {
-		fromdec(args[0], &sec);
+		sec = atoi(args[0]);
 	}
 	else {
 		pp_printf("Usage: refresh <seconds>\n");

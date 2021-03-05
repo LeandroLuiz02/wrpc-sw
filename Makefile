@@ -38,7 +38,7 @@ obj-$(CONFIG_WR_NODE)   += wrc_main.o
 obj-$(CONFIG_WR_NODE_SIM) += wrc_main_sim.o
 obj-$(CONFIG_TARGET_WR_SWITCH) += ipc/minipc-mem-server.o ipc/rt_ipc.o
 
-obj-$(CONFIG-PPSI) += dump-info.o
+obj-$(CONFIG_PPSI) += dump-info.o
 # our linker script is preprocessed, so have a rule here
 %.ld: %.ld.S $(AUTOCONF) .config
 	$(CC) -include $(AUTOCONF) -E -P $*.ld.S -o $@
@@ -60,7 +60,7 @@ cflags-y += \
 	-I$(PPSI)/arch-wrpc/include \
 	-I$(PPSI)/include
 
-obj-ppsi = $(PPSI)/ppsi.o
+obj-ppsi = $(PPSI)/ppsi.a
 obj-$(CONFIG_PPSI) += $(obj-ppsi)
 
 # Below, CONFIG_PPSI is wrong, as we can't build these for the host
@@ -117,7 +117,7 @@ ASFLAGS = -I.
 LDFLAGS = $(ldflags-y) \
 	-Wl,--gc-sections -Os -lgcc -lc
 
-WRC-O-FLAGS-$(CONFIG_LM32) = --gc-sections -e _start
+WRC-O-FLAGS-$(CONFIG_LM32) =  -e _start
 
 OBJS = $(obj-y)
 
@@ -138,11 +138,11 @@ endif
 all: tools $(OUTPUT).elf $(arch-files-y)
 
 .PRECIOUS: %.elf %.bin
-.PHONY: all tools clean gitmodules $(PPSI)/ppsi.o extest liblinux
+.PHONY: all tools clean gitmodules $(PPSI)/ppsi.a extest liblinux
 
 # we need to remove "ptpdump" support for ppsi if RAM size is small and
 # we include etherbone
-ifneq ($(CONFIG_RAMSIZE),131072)
+ifneq ($(CONFIG_RAMSIZE),196608)
   ifdef CONFIG_IP
     PPSI_USER_CFLAGS = -DCONFIG_NO_PTPDUMP
   endif
@@ -161,8 +161,8 @@ $(obj-ppsi): gitmodules
 	else \
 		echo "Warning: keeping previous ppsi configuration" >& 2; \
 	fi
-	$(MAKE) -C $(PPSI) ppsi.o WRPCSW_ROOT=.. \
-		CROSS_COMPILE=$(CROSS_COMPILE) CONFIG_NO_PRINTF=y
+	$(MAKE) -C $(PPSI) ppsi.a WRPCSW_ROOT=.. \
+		CROSS_COMPILE=$(CROSS_COMPILE) CONFIG_NO_PRINTF=y \
 		USER_CFLAGS="$(PPSI_USER_CFLAGS)"
 
 sdb-lib/libsdbfs.a:
@@ -170,7 +170,7 @@ sdb-lib/libsdbfs.a:
 
 $(OUTPUT).elf: $(LDS-y) $(AUTOCONF) gitmodules config.o pconfig.o $(OBJS)
 	$(CC) $(CFLAGS) -D__GIT_VER__="\"$(GIT_VER)\"" -D__GIT_USR__="\"$(GIT_USR)\"" -c revision.c
-	${CC} -o $@ revision.o config.o pconfig.o $(OBJS) $(LDFLAGS)
+	${CC} -Wl,-Map,$(OUTPUT).map -o $@ revision.o config.o pconfig.o $(OBJS) $(LDFLAGS)
 	${OBJDUMP} -d $(OUTPUT).elf > $(OUTPUT)_disasm.S
 	$(SIZE) $@
 	./save_size.sh $(SIZE) $@

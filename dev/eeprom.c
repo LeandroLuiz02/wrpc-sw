@@ -61,7 +61,7 @@
 
 static uint8_t sfpcount = SFP_DB_EMPTY;
 
-uint8_t has_eeprom = 0;
+static int has_eeprom = 0;
 
 static int i2cif, i2c_addr; /* globals, using the names we always used */
 
@@ -164,7 +164,7 @@ static uint8_t sfp_chksum(uint8_t *ptr)
 
 int storage_get_sfp(struct s_sfpinfo *sfp, uint8_t oper, uint8_t pos)
 {
-	uint8_t i;
+	int i;
 	struct s_sfpinfo dbsfp;
 
 	if (pos >= SFPS_MAX) {
@@ -302,7 +302,7 @@ int storage_init_erase(void)
  */
 int storage_init_add(const char *args[])
 {
-	uint8_t i = 1;
+	int i = 1;
 	uint8_t separator = ' ';
 	uint16_t used, readback;
 
@@ -371,7 +371,7 @@ int storage_init_readcmd(uint8_t *buf, uint8_t bufsize, uint8_t next)
 {
 	static uint16_t ptr;
 	static uint16_t used = 0;
-	uint8_t i = 0;
+	int i = 0;
 
 	if (next == 0) {
 		if (eeprom_read(i2cif, i2c_addr, EE_BASE_INIT,

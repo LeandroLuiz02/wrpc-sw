@@ -25,6 +25,8 @@
 
 #define BOARD_MAX_CONSOLE_DEVICES 2
 
+#define BOARD_USE_EVENTS 1
+
 /* Board-specific parameters */
 #define TICS_PER_SECOND 1000
 
