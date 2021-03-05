@@ -183,8 +183,10 @@ struct ertm_status *ertm_init(const char *address)
 		errno = ENODEV;
 		return NULL;
 	}
-	/* FIXME: useless now */
+	/* we init with fake values, then override with
+	 * actual default hardware configs */
 	ertm_status_init(st->state);
+	ertm_get_board_config(st, &st->state->board_state);
 
 	return st;
 }
