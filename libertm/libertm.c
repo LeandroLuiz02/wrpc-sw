@@ -301,10 +301,11 @@ int ertm_proto_cycle(struct uart_link *link,
 	return 0;
 }
 
-static void copy_config(struct ertm14_board_state *dst, struct ertm14_board_state *src)
+static void copy_config(struct ertm14_board_state *dst, const struct ertm14_board_state *src)
 {
-    memcpy(src, dst, sizeof(struct ertm14_board_state));
+	memcpy(dst, src, sizeof(struct ertm14_board_state));
 }
+
 static void clean_config(struct ertm14_board_state *bs)
 {
 	memset(bs, 0, sizeof(struct ertm14_board_state));
@@ -336,19 +337,18 @@ void host_to_dds_board(struct ertm14_dds_state *host, struct ertm14_dds_state *d
 	}
 }
 
-void state_to_board(struct ertm_state *state, struct ertm14_board_state *board)
+void host_to_board(struct ertm14_board_state *host, struct ertm14_board_state *board)
 {
 	int i;
-	struct ertm14_board_state *bs = &state->board_state;
 
-	host_to_dds_board(&bs->ref, &board->ref);
-	host_to_dds_board(&bs->lo, &board->lo);
-	board->clka_enable_mask = htonl(bs->clka_enable_mask);
-	board->clkb_enable_mask = htonl(bs->clkb_enable_mask);
+	host_to_dds_board(&host->ref, &board->ref);
+	host_to_dds_board(&host->lo,  &board->lo);
+	board->clka_enable_mask = htonl(host->clka_enable_mask);
+	board->clkb_enable_mask = htonl(host->clkb_enable_mask);
 	for (i = ERTM_CLKAB_MIN_CH; i <= ERTM_CLKAB_MAX_CH; i++) {
 		/* FIXME: not enum */
-		board->clka_freq_hz[i] = htonl(bs->clka_freq_hz[i]);
-		board->clkb_freq_hz[i] = htonl(bs->clkb_freq_hz[i]);
+		board->clka_freq_hz[i] = htonl(host->clka_freq_hz[i]);
+		board->clkb_freq_hz[i] = htonl(host->clkb_freq_hz[i]);
 	}
 }
 
@@ -408,12 +408,15 @@ int ertm_get_wr_diags(struct ertm_status *st, struct WRC_DIAGS_WB *wrc_diags)
 }
 
 static int set_board_config(struct ertm_status *st,
-			struct ertm14_board_state *config)
+			const struct ertm14_board_state *config)
 {
 	struct uart_link *link = &st->link;
+	struct ertm14_board_state tmp, *bstmp = &tmp;
 
-	config->valid = 1;
-	return ertm_proto_cycle(link, ertm14_set_board_config, config, NULL);
+	copy_config(bstmp, config);
+	bstmp->valid = 1;
+	host_to_board(bstmp, bstmp);
+	return ertm_proto_cycle(link, ertm14_set_board_config, bstmp, NULL);
 }
 
 static int commit_board_config(struct ertm_status *st,
