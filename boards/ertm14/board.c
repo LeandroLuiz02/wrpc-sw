@@ -100,7 +100,8 @@ static uint16_t ntohs(uint16_t __netshort)
 
 struct ertm14_board board;
 struct ertm14_board_state ertm14_configs[ ERTM14_MAX_CONFIGS ];
-struct ertm14_board_state *ertm14_current_state;
+
+struct ertm14_board_state ertm14_cs, *ertm14_current_state = &ertm14_cs;
 struct ertm14_board_state ertm14_next_state;
 struct ertm14_board_state ertm14_mask;
 struct ertm14_board_state ertm14_hardware;
