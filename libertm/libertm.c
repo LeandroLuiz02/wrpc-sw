@@ -408,7 +408,7 @@ int ertm_get_wr_diags(struct ertm_status *st, struct WRC_DIAGS_WB *wrc_diags)
 }
 
 static int set_board_config(struct ertm_status *st,
-			struct ertm_state *config)
+			struct ertm14_board_state *config)
 {
 	struct uart_link *link = &st->link;
 
@@ -525,7 +525,7 @@ int ertm_channel_enable(struct ertm_status *handle,
 	return 0;
 }
 
-static int get_dds(struct struct ertm14_board_state *bs,
+static int get_dds(struct ertm14_board_state *bs,
 		enum ertm_connector connector, struct ertm14_dds_state **dds)
 {
 	switch (connector) {
@@ -546,7 +546,7 @@ struct ertm14_board_state *get_board_state(struct ertm_status *st)
 {
 	struct ertm14_board_state *bs = NULL;
 
-	if (handle != NULL && handle->state != NULL)
+	if (st != NULL && st->state != NULL)
 		bs = &st->state->board_state;
 	return bs;
 }
@@ -584,9 +584,14 @@ int ertm_get_channel_power_all(struct ertm_status *handle,
 		uint32_t valid_mask, double *power)
 {
 	struct ertm14_dds_state *dds;
+	struct ertm14_board_state *bs;
 	int i, err;
 
-	if ((err = get_dds(handle, connector, &dds)) != 0) {
+	if ((bs = get_board_state(handle)) == NULL) {
+		errno = EINVAL;
+		return ERTM_BAD_HANDLE;
+	}
+	if ((err = get_dds(bs, connector, &dds)) != 0) {
 		errno = EINVAL;
 		return err;
 	}
@@ -611,7 +616,7 @@ static uint8_t float_to_ampl_factor(double level)
 int ertm_dds_set_level_adjust(struct ertm_status *handle,
 		enum ertm_connector connector, double level)
 {
-	struct ertm14_dds_state *dds;
+	struct ertm14_dds_state *dds, *ddsmask;
 	struct ertm14_board_state *bs, mask;
 	int err;
 
@@ -623,18 +628,28 @@ int ertm_dds_set_level_adjust(struct ertm_status *handle,
 		errno = EINVAL;
 		return err;
 	}
+	get_dds(&mask, connector, &ddsmask);
 
 	dds->ampl_factor = float_to_ampl_factor(level);
+	ddsmask->ampl_factor = 1;
+	set_board_config(handle, bs);
+	commit_board_config(handle, &mask);
+
 	return 0;
 }
 
 int ertm_dds_get_level_adjust(struct ertm_status *handle,
 		enum ertm_connector connector, double *level)
 {
+	struct ertm14_board_state *bs;
 	struct ertm14_dds_state *dds;
 	int err;
 
-	if ((err = get_dds(handle, connector, &dds)) != 0)
+	if ((bs = get_board_state(handle)) == NULL) {
+		errno = EINVAL;
+		return ERTM_BAD_HANDLE;
+	}
+	if ((err = get_dds(bs, connector, &dds)) != 0)
 		return err;
 
 	*level = ampl_factor_to_float(dds->ampl_factor);
