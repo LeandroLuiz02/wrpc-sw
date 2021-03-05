@@ -847,7 +847,7 @@ static int control_uart_poll(void)
 
 static void copy_config(struct ertm14_board_state *dst, struct ertm14_board_state *src)
 {
-    memcpy(src, dst, sizeof(struct ertm14_board_state));
+    memcpy(dst, src, sizeof(struct ertm14_board_state));
 }
 static void clean_config(struct ertm14_board_state *bs)
 {
