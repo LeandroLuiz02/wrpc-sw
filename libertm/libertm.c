@@ -301,6 +301,15 @@ int ertm_proto_cycle(struct uart_link *link,
 	return 0;
 }
 
+static void copy_config(struct ertm14_board_state *dst, struct ertm14_board_state *src)
+{
+    memcpy(src, dst, sizeof(struct ertm14_board_state));
+}
+static void clean_config(struct ertm14_board_state *bs)
+{
+	memset(bs, 0, sizeof(struct ertm14_board_state));
+}
+
 void dds_board_to_host(struct ertm14_dds_state *dds, struct ertm14_dds_state *host)
 {
 	int i;
@@ -398,6 +407,22 @@ int ertm_get_wr_diags(struct ertm_status *st, struct WRC_DIAGS_WB *wrc_diags)
 	return 0;
 }
 
+static int set_board_config(struct ertm_status *st,
+			struct ertm_state *config)
+{
+	struct uart_link *link = &st->link;
+
+	config->valid = 1;
+	return ertm_proto_cycle(link, ertm14_set_board_config, config, NULL);
+}
+
+static int commit_board_config(struct ertm_status *st,
+			struct ertm14_board_state *mask)
+{
+	struct uart_link *link = &st->link;
+
+	return ertm_proto_cycle(link, ertm14_commit_board_config, mask, NULL);
+}
 
 static int ertm_get_set_freq(struct ertm_status *handle,
 		enum ertm_connector connector,int channel, uint32_t *freq,
