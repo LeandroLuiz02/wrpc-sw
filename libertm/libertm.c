@@ -525,15 +525,15 @@ int ertm_channel_enable(struct ertm_status *handle,
 	return 0;
 }
 
-static int get_dds(struct ertm_status *handle,
+static int get_dds(struct struct ertm14_board_state *bs,
 		enum ertm_connector connector, struct ertm14_dds_state **dds)
 {
 	switch (connector) {
 	case ERTM_LO:
-		*dds = &handle->state->board_state.lo;
+		*dds = &bs->lo;
 		break;
 	case ERTM_REF:
-		*dds = &handle->state->board_state.ref;
+		*dds = &bs->ref;
 		break;
 	default:
 		return ERTM_BAD_CONNECTOR;
@@ -542,13 +542,27 @@ static int get_dds(struct ertm_status *handle,
 	return 0;
 }
 
+struct ertm14_board_state *get_board_state(struct ertm_status *st)
+{
+	struct ertm14_board_state *bs = NULL;
+
+	if (handle != NULL && handle->state != NULL)
+		bs = &st->state->board_state;
+	return bs;
+}
+
 int ertm_get_power(struct ertm_status *handle,
 		enum ertm_connector connector, double *power)
 {
 	struct ertm14_dds_state *dds;
+	struct ertm14_board_state *bs;
 	int err;
 
-	if ((err = get_dds(handle, connector, &dds)) != 0) {
+	if ((bs = get_board_state(handle)) == NULL) {
+		errno = EINVAL;
+		return ERTM_BAD_HANDLE;
+	}
+	if ((err = get_dds(bs, connector, &dds)) != 0) {
 		errno = EINVAL;
 		return err;
 	}
@@ -598,10 +612,17 @@ int ertm_dds_set_level_adjust(struct ertm_status *handle,
 		enum ertm_connector connector, double level)
 {
 	struct ertm14_dds_state *dds;
+	struct ertm14_board_state *bs, mask;
 	int err;
 
-	if ((err = get_dds(handle, connector, &dds)) != 0)
+	if ((bs = get_board_state(handle)) == NULL) {
+		errno = EINVAL;
+		return ERTM_BAD_HANDLE;
+	}
+	if ((err = get_dds(bs, connector, &dds)) != 0) {
+		errno = EINVAL;
 		return err;
+	}
 
 	dds->ampl_factor = float_to_ampl_factor(level);
 	return 0;
