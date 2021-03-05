@@ -31,6 +31,24 @@ int main(int argc, char *argv[])
 	}
 	ertm_get_board_config(handle, &handle->state->board_state);
 	display_ertm_state(handle->state);
+	printf("----------------------------\n");
+	ertm_dds_set_level_adjust(handle, ERTM_LO, 0.10);
+	ertm_get_board_config(handle, &handle->state->board_state);
+	display_ertm_state(handle->state);
+	printf("----------------------------\n");
+	ertm_dds_set_level_adjust(handle, ERTM_LO, 0.90);
+	ertm_get_board_config(handle, &handle->state->board_state);
+	display_ertm_state(handle->state);
+	printf("----------------------------\n");
+	ertm_dds_set_level_adjust(handle, ERTM_REF, 0.10);
+	ertm_get_board_config(handle, &handle->state->board_state);
+	display_ertm_state(handle->state);
+	printf("----------------------------\n");
+	ertm_dds_set_level_adjust(handle, ERTM_REF, 0.90);
+	ertm_get_board_config(handle, &handle->state->board_state);
+	display_ertm_state(handle->state);
+	printf("----------------------------\n");
+	ertm_get_board_config(handle, &handle->state->board_state);
     	ertm_wr_diags(handle, &handle->state->wr_status);
 	display_wrc_diags(&handle->state->wr_status);
 
