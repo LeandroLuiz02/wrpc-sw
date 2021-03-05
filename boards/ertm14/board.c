@@ -973,9 +973,11 @@ static void apply_config_sim(struct ertm14_board_state *cfg,
 	}
 }
 
-static void (*apply_config)(struct ertm14_board_state *cfg, struct ertm14_board_state *mask) = apply_config_sim;
-
 #if 0
+/* for debugging purposes */
+static void (*apply_config)(struct ertm14_board_state *cfg, struct ertm14_board_state *mask) = apply_config_sim;
+#endif
+
 static void apply_config(struct ertm14_board_state *cfg,
 	struct ertm14_board_state *mask)
 {
@@ -1029,7 +1031,6 @@ static void apply_config(struct ertm14_board_state *cfg,
 
         ertm15_update_rf_switches( &board.rf_distr );
 }
-#endif /* apply_config with real hw */
 
 static void commit_board_config(struct ertm14_board_state *mask)
 {
@@ -1037,6 +1038,7 @@ static void commit_board_config(struct ertm14_board_state *mask)
 
     copy_config(ertm14_current_state, next);
     copy_config(&ertm14_mask, mask);
+    board_state_to_no(&ertm14_mask, 0);
     apply_config(ertm14_current_state, &ertm14_mask);
     event_post(WRC_ERTM14_EVENT_APPLY_NEW_CONFIG);
     clean_config(&ertm14_mask);
