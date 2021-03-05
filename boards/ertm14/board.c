@@ -99,6 +99,7 @@ static uint16_t ntohs(uint16_t __netshort)
 #include <errno.h>
 
 struct ertm14_board board;
+int ertm14_current_config_id = 0;
 struct ertm14_board_state ertm14_configs[ ERTM14_MAX_CONFIGS ];
 
 struct ertm14_board_state ertm14_cs, *ertm14_current_state = &ertm14_cs;
@@ -1903,15 +1904,11 @@ int ertm14_apply_config(int config_id)
     return 0;
 }
 
-int ertm14_get_current_config_id()
+int ertm14_get_current_config_id(void)
 {
     int i;
 
-    for(i = 0; i < ERTM14_MAX_CONFIGS; i++)
-    if( &ertm14_configs[i] == ertm14_current_state )
-            return i;
-
-    return -1;
+    return ertm14_current_config_id;
 }
 
 static int ertm14_commit_config( struct  ertm14_board_state *cfg )
