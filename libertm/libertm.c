@@ -311,7 +311,7 @@ static void clean_config(struct ertm14_board_state *bs)
 	memset(bs, 0, sizeof(struct ertm14_board_state));
 }
 
-void dds_board_to_host(struct ertm14_dds_state *dds, struct ertm14_dds_state *host)
+void dds_to_host_order(struct ertm14_dds_state *dds, struct ertm14_dds_state *host)
 {
 	int i;
 
@@ -324,7 +324,7 @@ void dds_board_to_host(struct ertm14_dds_state *dds, struct ertm14_dds_state *ho
 	}
 }
 
-void host_to_dds_board(struct ertm14_dds_state *host, struct ertm14_dds_state *dds)
+void dds_to_network_order(struct ertm14_dds_state *host, struct ertm14_dds_state *dds)
 {
 	int i;
 
@@ -337,12 +337,12 @@ void host_to_dds_board(struct ertm14_dds_state *host, struct ertm14_dds_state *d
 	}
 }
 
-void host_to_board(struct ertm14_board_state *host, struct ertm14_board_state *board)
+void board_state_to_network_order(struct ertm14_board_state *host, struct ertm14_board_state *board)
 {
 	int i;
 
-	host_to_dds_board(&host->ref, &board->ref);
-	host_to_dds_board(&host->lo,  &board->lo);
+	dds_to_network_order(&host->ref, &board->ref);
+	dds_to_network_order(&host->lo,  &board->lo);
 	board->clka_enable_mask = htonl(host->clka_enable_mask);
 	board->clkb_enable_mask = htonl(host->clkb_enable_mask);
 	for (i = ERTM_CLKAB_MIN_CH; i <= ERTM_CLKAB_MAX_CH; i++) {
@@ -352,12 +352,12 @@ void host_to_board(struct ertm14_board_state *host, struct ertm14_board_state *b
 	}
 }
 
-void board_to_host(struct ertm14_board_state *board, struct ertm14_board_state *host)
+void board_state_to_host_order(struct ertm14_board_state *board, struct ertm14_board_state *host)
 {
 	int i;
 
-	dds_board_to_host(&board->ref, &host->ref);
-	dds_board_to_host(&board->lo, &host->lo);
+	dds_to_host_order(&board->ref, &host->ref);
+	dds_to_host_order(&board->lo, &host->lo);
 	host->clka_enable_mask = ntohl(board->clka_enable_mask);
 	host->clkb_enable_mask = ntohl(board->clkb_enable_mask);
 	for (i = ERTM_CLKAB_MIN_CH; i <= ERTM_CLKAB_MAX_CH; i++) {
@@ -388,7 +388,7 @@ int ertm_get_board_config(struct ertm_status *st, struct ertm14_board_state *bs)
 	if (res < 0)
 		return res;
 
-	board_to_host(board, bs);
+	board_state_to_host_order(board, bs);
 	return 0;
 }
 
@@ -415,7 +415,7 @@ static int set_board_config(struct ertm_status *st,
 
 	copy_config(bstmp, config);
 	bstmp->valid = 1;
-	host_to_board(bstmp, bstmp);
+	board_state_to_network_order(bstmp, bstmp);
 	return ertm_proto_cycle(link, ertm14_set_board_config, bstmp, NULL);
 }
 
