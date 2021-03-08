@@ -155,7 +155,7 @@ int get_board_config_sim(struct ertm_status *st, int sim)
 	fprintf(stderr,"recvd %d bytes: \n", rx_pkt->length);
 
 	board = (struct ertm14_board_state *)&rx_pkt->payload[0];
-	board_to_host(board, &state->board_state);
+	board_state_to_host_order(board, &state->board_state);
 
 	return 0;
 }
