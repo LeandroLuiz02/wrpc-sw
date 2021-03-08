@@ -3,6 +3,7 @@
 
 #include "libertm.h"
 #include "private.h"
+#include <time.h>
 
 static char *state_literal[] = {
 	[ERTM_RF_OUT_ON] = "on",
@@ -77,3 +78,154 @@ void display_wrc_diags(struct ertm_wr_status *diags)
 	printf(fmt, "Board temperature [C degree]", diags->WDIAG_TEMP);
 	
 }
+
+/* pulled from wrpc_diags.c */
+static void print_servo_status(uint32_t val)
+{
+	static char *sstat_str[] = {
+		"Not initialized",
+		"Sync ns",
+		"Sync TAI",
+		"Sync phase",
+		"Track phase",
+		"Wait offset stable",
+	};
+
+	fprintf(stderr, "servo status:\t\t%s\n",
+		sstat_str[val >> WRC_DIAGS_WDIAG_SSTAT_SERVOSTATE_SHIFT]);
+}
+
+static void print_port_status(uint32_t val)
+{
+	static int nbits = 2;
+	static char *pstat_str[][2] = {
+		//bit = 0     	 	bit = 1
+		{"Link down", 		"Link up",},
+		{"PLL not locked",	"PLL locked",},
+	};
+	int i, idx;
+
+	fprintf(stderr, "Port status:\t\t");
+	for (i = 0; i < nbits; ++i) {
+		idx = (val & (1 << i)) ? 1 : 0;
+		fprintf(stderr, "%s, ", pstat_str[i][idx]);
+	}
+	fprintf(stderr, "\n");
+}
+
+static void print_ptp_state(uint32_t val)
+{
+	static char *ptpstat_str[] = {
+		"None",
+		"PPS initializing",
+		"PPS faulty",
+		"disabled",
+		"PPS listening",
+		"PPS pre-master",
+		"PPS master",
+		"PPS passive",
+		"PPS uncalibrated",
+		"PPS slave",
+	};
+
+	fprintf(stderr, "PTP state:\t\t");
+	if (val <= 9)
+		fprintf(stderr, "%s", ptpstat_str[val]);
+	else if (val >= 100 && val <= 116)
+		fprintf(stderr, "WR STATES(see ppsi/ieee1588_types.h): %d", val);
+	else
+		fprintf(stderr, "Unknown");
+	fprintf(stderr, "\n");
+}
+
+static void print_aux_state(uint32_t val)
+{
+	int nch = 8; //should be retrieved from a register
+	int i;
+
+	fprintf(stderr, "Aux state:\t\t");
+	for (i = 0; i < nch; i++) {
+		if (val & (1 << i))
+			fprintf(stderr, "ch%d:enabled ", i);
+	}
+	fprintf(stderr, "\n");
+}
+
+static void print_tx_frame_count(uint32_t val)
+{
+	fprintf(stderr, "TX frame count:\t\t%d\n", val);
+}
+
+static void print_rx_frame_count(uint32_t val)
+{
+	fprintf(stderr, "RX frame count:\t\t%d\n", val);
+}
+
+static void print_local_time(uint32_t sec_msw, uint32_t sec_lsw, uint32_t ns)
+{
+	uint64_t sec = (uint64_t)(sec_msw) << 32 | sec_lsw;
+//	fprintf(stderr, "TAI time:\t\t %" PRIu64 "sec %d nsec\n",
+//		sec, ns);
+	fprintf(stderr, "TAI time:\t\t%s", ctime((time_t *)&sec));
+}
+
+static void print_roundtrip_time(uint32_t msw, uint32_t lsw)
+{
+	uint64_t val = (uint64_t)(msw) << 32 | lsw;
+	fprintf(stderr, "Round trip time:\t%" PRIu64 " ps\n", val);
+}
+
+static void print_master_slave_delay(uint32_t msw, uint32_t lsw)
+{
+	uint64_t val = (uint64_t)(msw) << 32 | lsw;
+	fprintf(stderr, "Master slave delay:\t%" PRIu64 " ps\n", val);
+}
+
+static void print_link_asym(uint32_t val)
+{
+	fprintf(stderr, "Total Link asymmetry:\t%d ps\n", val);
+}
+
+static void print_clock_offset(uint32_t val)
+{
+	fprintf(stderr, "Clock offset:\t\t%d ps\n", val);
+}
+
+static void print_phase_setpoint(uint32_t val)
+{
+	fprintf(stderr, "Phase setpoint:\t\t%d ps\n", val);
+}
+
+static void print_update_counter(uint32_t val)
+{
+	fprintf(stderr, "Update counter:\t\t%d\n", val);
+}
+
+static void print_board_temp(uint32_t val)
+{
+	 fprintf(stderr, "temp:\t\t\t%d.%04d C\n", val >> 16,
+	 	   (int)((val & 0xffff) * 10 * 1000 >> 16));
+}
+
+void display_wrc_diags_cooked(struct ertm_wr_status *diags)
+{
+	char fmt[] = "%-20s\t0x%08x\n";
+
+	printf(fmt, "Version register", diags->VER);
+	printf(fmt, "Ctrl", diags->CTRL);
+	print_servo_status(diags->WDIAG_SSTAT);
+	print_port_status(diags->WDIAG_PSTAT);
+	print_ptp_state(diags->WDIAG_PTPSTAT);
+	print_aux_state(diags->WDIAG_ASTAT);
+	print_tx_frame_count(diags->WDIAG_TXFCNT);
+	print_rx_frame_count(diags->WDIAG_RXFCNT);
+	print_local_time(diags->WDIAG_SEC_MSB, diags->WDIAG_SEC_LSB, diags->WDIAG_NS);
+	print_roundtrip_time(diags->WDIAG_MU_MSB, diags->WDIAG_MU_LSB);
+	print_master_slave_delay(diags->WDIAG_DMS_MSB, diags->WDIAG_DMS_LSB);
+	print_link_asym(diags->WDIAG_ASYM);
+	print_clock_offset(diags->WDIAG_CKO);
+	print_phase_setpoint(diags->WDIAG_SETP);                                     
+	print_update_counter(diags->WDIAG_UCNT);
+	print_board_temp(diags->WDIAG_TEMP);                                     
+}
+

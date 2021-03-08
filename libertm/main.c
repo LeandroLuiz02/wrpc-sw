@@ -50,7 +50,7 @@ int main(int argc, char *argv[])
 	printf("----------------------------\n");
 	ertm_get_board_config(handle, &handle->state->board_state);
     	ertm_wr_diags(handle, &handle->state->wr_status);
-	display_wrc_diags(&handle->state->wr_status);
+	display_wrc_diags_cooked(&handle->state->wr_status);
 
 	ertm_exit(handle);
 
