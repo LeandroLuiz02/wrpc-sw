@@ -306,11 +306,12 @@ static void copy_config(struct ertm14_board_state *dst, const struct ertm14_boar
 	memcpy(dst, src, sizeof(struct ertm14_board_state));
 }
 
+#if 0
 static void clean_config(struct ertm14_board_state *bs)
 {
 	memset(bs, 0, sizeof(struct ertm14_board_state));
 }
-
+#endif
 void dds_to_host_order(struct ertm14_dds_state *dds, struct ertm14_dds_state *host)
 {
 	int i;
