@@ -126,6 +126,9 @@ int set_board_config(struct ertm_status *st, struct ertm_state *config)
 	return 0;
 }
 
+/* get rid of this when rid of get_board_config_sim */
+extern void board_state_to_host_order(struct ertm14_board_state *board, struct ertm14_board_state *host);
+
 int get_board_config_sim(struct ertm_status *st, int sim)
 {
 	int res, stat;
