@@ -14,25 +14,6 @@
 #include "board-state.h"
 #include "ertm14-uart-link.h"
 
-struct ertm_clk {
-	uint32_t		enabled_mask;
-	enum ertm_clkab_freq	chfreq[ERTM_CLKAB_MAX_CH+1];
-					/* only 4..14 legal */
-	uint32_t		reserved[16];
-};
-
-struct ertm_lo_ref {
-	uint32_t	enabled_mask;
-	uint32_t	freq;			/* the ftw */
-	double		chpower[ERTM_LOREF_MAX_CH+1];	/* only 4..12 legal */
-	uint8_t		state[ERTM_LOREF_MAX_CH+1];	/* one of
-					ERTM15_RF_OUT_ON|OFF|MONITOR */
-	uint32_t	pll_output_power;	/* aka amp_power */
-	double		level_adjust;		/* full-scale DDS = 1.0 */
-						/* aka ampl_factor */
-	uint32_t	reserved[16];
-};
-
 struct ertm_wr_status {
 	/* FIXME: copied, not #include'd, from wrc_diags_regs.h */
 	/* eventually replace by struct WRC_DIAGS_WB */
