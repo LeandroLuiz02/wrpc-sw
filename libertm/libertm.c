@@ -299,15 +299,22 @@ static int out_of_range(enum ertm_connector connector, int channel)
 	return 0;
 }
 
+static int bad_handle(struct ertm_status *handle)
+{
+	if (handle == NULL) {
+		errno = EINVAL;
+		return -ERTM_BAD_HANDLE;
+	}
+	return 0;
+}
+
 static int bad_inputs(struct ertm_status *handle,
 		enum ertm_connector connector, int channel)
 {
 	int err = 0;
 
-	if (handle == NULL) {
-		errno = EINVAL;
-		return -ERTM_BAD_HANDLE;
-	}
+	if ((err = bad_handle(handle)) != 0)
+		return err;
 	if ((err = out_of_range(connector, channel)) != 0)
 		return err;
 	return 0;
@@ -838,7 +845,14 @@ int ertm_wr_status(struct ertm_status *handle, int *link_up, int *is_locked)
 
 int ertm_wr_enable(struct ertm_status *handle, int enable)
 {
+	struct uart_link *link;
+	uint8_t e = !!enable;
+
+	if (bad_handle(handle))
+		return -ERTM_BAD_HANDLE;
+
 	/* do a call to ptp start/stop */
-	handle->state->ptp_enabled = enable;
-	return 0;
+	link = &handle->link;
+	handle->state->ptp_enabled = e;
+	return ertm_proto_cycle(link, ertm14_ptp_enable, &e, NULL);
 }
