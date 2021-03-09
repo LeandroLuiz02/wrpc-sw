@@ -729,7 +729,9 @@ int ertm_dds_set_level_adjust(struct ertm_status *handle,
 		enum ertm_connector connector, double level)
 {
 	struct ertm14_dds_state *dds, *ddsmask;
-	struct ertm14_board_state *bs, mask;
+	struct ertm14_board_state *bs;
+	struct ertm14_board_state *next;
+	struct ertm14_board_state *mask;
 	int err;
 
 	if ((bs = get_board_state(handle)) == NULL) {
@@ -740,12 +742,15 @@ int ertm_dds_set_level_adjust(struct ertm_status *handle,
 		errno = EINVAL;
 		return err;
 	}
-	get_dds(&mask, connector, &ddsmask);
+
+	next = &handle->state->next_state;
+	mask = &handle->state->commit_mask;
+	get_dds(mask, connector, &ddsmask);
 
 	dds->ampl_factor = float_to_ampl_factor(level);
 	ddsmask->ampl_factor = 1;
-	set_board_config(handle, bs);
-	commit_board_config(handle, &mask);
+	if (handle->state->mode == ERTM_IMMEDIATE)
+		commit_config(handle, bs, next, mask);
 
 	return 0;
 }
