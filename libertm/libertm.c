@@ -197,6 +197,8 @@ struct ertm_status *ertm_init(const char *address)
 	 * actual default hardware configs */
 	ertm_status_init(st->state);
 	ertm_get_board_config(st, &st->state->board_state);
+	clean_config(&st->state->next_state);
+	clean_config(&st->state->commit_mask);
 
 	return st;
 }
