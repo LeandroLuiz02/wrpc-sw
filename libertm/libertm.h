@@ -64,6 +64,16 @@ enum ertm_connector {
 #define ERTM_LOREF_MIN_CH	ERTM14_RF_OUT_MIN_ID
 #define ERTM_LOREF_MAX_CH	ERTM14_RF_OUT_MAX_ID
 
+/* library operation modes:
+ *
+ *  ERTM_DEFERRED	operations deferred (cached) until ertm_commit() is called
+ *  ERTM_IMMEDIATE	config operations executed synchronously
+ *  ERTM_OPTIMIZED	same as ERTM_IMMEDIATE, but UART comm sped up (not implemented)
+ */
+#define	ERTM_DEFERRED	1
+#define	ERTM_IMMEDIATE	2
+#define	ERTM_OPTIMIZED	3
+
 /* firmware metadata according to The Convention (see
  * https://www.ohwr.org/project/fpga-dev-id/blob/master/device-structure.rst
  * probably, only version and source_id are useful here
