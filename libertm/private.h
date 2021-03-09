@@ -27,6 +27,9 @@ struct ertm_state {
 		struct WRC_DIAGS_WB	diags_wb;
 	};
 	int				ptp_enabled;
+
+	/* one of ERTM_DEFERRED, ERTM_IMMEDIATE, ERTM_OPTIMIZED */
+	int				mode;
 	uint32_t			reserved[64];
 };
 
