@@ -77,6 +77,7 @@ static uint16_t ntohs(uint16_t __netshort)
 #endif
 
 #include "board-state.h"
+#include "board-aux.h"
 #include "ertm14-uart-link.h"
 
 #include "sensors.h"
@@ -843,15 +844,6 @@ static int control_uart_poll(void)
 }
 
 #include "psnmp-proto.h"
-
-static void copy_config(struct ertm14_board_state *dst, struct ertm14_board_state *src)
-{
-    memcpy(dst, src, sizeof(struct ertm14_board_state));
-}
-static void clean_config(struct ertm14_board_state *bs)
-{
-	memset(bs, 0, sizeof(struct ertm14_board_state));
-}
 
 /* ensure all uart traffic is in network order */
 static void dds_state_order(struct ertm14_dds_state *dds, int hton)
