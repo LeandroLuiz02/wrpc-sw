@@ -14,6 +14,7 @@
 #define ertm14_set_wrc_nco		0x16
 #define ertm14_get_sim_board_config	0x17
 #define	ertm14_comm_test		0x18
+#define	ertm14_ptp_enable		0x19
 
 static struct ertm14_protocol_op {
 	int8_t	opcode;
@@ -70,6 +71,13 @@ static struct ertm14_protocol_op {
 	.length1 = /* FIXME: what comes here? */ -1,
 	.offset2 = 1,
 	.length2 = sizeof(struct ertm14_board_state),
+    },
+    {
+	.opcode = ertm14_ptp_enable,
+	.offset1 = 1,
+	.length1 = 1,
+	.offset2 = 1,
+	.length2 = 0,
     },
     {
 	.opcode = -1,
