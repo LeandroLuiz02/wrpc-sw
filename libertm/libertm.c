@@ -19,6 +19,7 @@
 #include "libertm.h"
 #include "private.h"
 #include "psnmp-proto.h"
+#include "board-aux.h"
 
 struct ertm_error_codes ertm_error_codes[] = {
 	[-ERTM_OK]		= { ERTM_OK, "success" },
@@ -155,62 +156,6 @@ static void ertm_status_init(struct ertm_state *st)
 		sizeof(st->voltages));
 	memcpy(&st->wr_status, &wr_status_default, sizeof(st->wr_status));
 	/* FIXME: st->nco_reset */
-}
-
-static void copy_config(struct ertm14_board_state *dst, const struct ertm14_board_state *src)
-{
-	memcpy(dst, src, sizeof(struct ertm14_board_state));
-}
-
-static void clean_config(struct ertm14_board_state *bs)
-{
-	memset(bs, 0, sizeof(struct ertm14_board_state));
-}
-
-static void update_dds_state(struct ertm14_dds_state *dst,
-			    const struct ertm14_dds_state *src,
-			    const struct ertm14_dds_state *mask)
-{
-	int i;
-
-	if (mask->ftw)
-		dst->ftw	 = src->ftw;
-	if (mask->amp_power)
-		dst->amp_power	 = src->amp_power;
-	if (mask->ampl_factor)
-		dst->ampl_factor = src->ampl_factor;
-	if (mask->sync_source)
-		dst->sync_source = src->sync_source;
-	if (mask->sync_count)
-		dst->sync_count	= src->sync_count;
-	for (i = ERTM14_RF_OUT_MIN_ID; i <= ERTM14_RF_OUT_MAX_ID; i++) {
-		if (mask->out_state[i])
-			dst->out_state[i] = src->out_state[i];
-		if (mask->out_power[i])
-			dst->out_power[i] = src->out_power[i];
-	}
-
-}
-static void update_config(struct ertm14_board_state *dst,
-			    const struct ertm14_board_state *src,
-			    const struct ertm14_board_state *mask)
-{
-	int i;
-
-	update_dds_state(&dst->ref, &src->ref, &mask->ref);
-	update_dds_state(&dst->lo, &src->lo, &mask->lo);
-	if (mask->valid)
-		dst->valid = src->valid;
-	if (mask->clka_enable_mask)
-		dst->clka_enable_mask = src->clka_enable_mask;
-	if (mask->clkb_enable_mask)
-		dst->clkb_enable_mask = src->clkb_enable_mask;
-	for (i = ERTM14_CLKAB_OUT_MIN_ID; i <= ERTM14_CLKAB_OUT_MAX_ID; i++) {
-		if (mask->clka_freq_hz[i])
-			dst->clka_freq_hz[i] = src->clka_freq_hz[i];
-		if (mask->clkb_freq_hz[i])
-			dst->clkb_freq_hz[i] = src->clkb_freq_hz[i];
-	}
 }
 
 /* constants of nature for this design */
