@@ -1111,8 +1111,13 @@ static int ertm_process_psnmp(struct uart_packet *rx_pkt, struct uart_packet *tx
 		break;
 	case ertm14_get_wrc_nco:
 		break;
-	case ertm14_set_wrc_nco:
+	case ertm14_ptp_enable:
+		if (rx_pkt->payload[op->offset1])
+			wrc_ptp_start();
+		else
+			wrc_ptp_stop();
 		break;
+
 	case 0x5a:
 		tx_pkt->length = rx_pkt->length;
 		tx_pkt->length = 1;	/* no time to reply */
