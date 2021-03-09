@@ -255,6 +255,20 @@ static int out_of_range(enum ertm_connector connector, int channel)
 	return 0;
 }
 
+static int bad_inputs(struct ertm_status *handle,
+		enum ertm_connector connector, int channel)
+{
+	int err = 0;
+
+	if (handle == NULL) {
+		errno = EINVAL;
+		return -ERTM_BAD_HANDLE;
+	}
+	if ((err = out_of_range(connector, channel)) != 0)
+		return err;
+	return 0;
+}
+
 static void get_set(uint32_t *attr, uint32_t *val, int set)
 {
 	if (!set)
@@ -437,18 +451,11 @@ static int ertm_get_set_freq(struct ertm_status *handle,
 	struct ertm14_board_state *bs;
 	uint32_t *reg;
 
-	if (handle == NULL) {
-		errno = EINVAL;
-		return -ERTM_BAD_HANDLE;
-	}
-
 	/* channel param is irrelevant for lo/ref */
 	if (connector == ERTM_LO || connector == ERTM_REF) {
 		channel = ERTM_LOREF_MIN_CH;
 	}
-
-	/* but it must be within range for CLKA/B */
-	if ((err = out_of_range(connector, channel)) != 0)
+	if ((err = bad_inputs(handle, connector, channel)) != 0)
 		return err;
 
 	bs = &handle->state->board_state;
@@ -501,7 +508,7 @@ int ertm_channel_enable(struct ertm_status *handle,
 	uint32_t *mask;
 	int err;
 
-	if ((err = out_of_range(connector, channel)) != 0) {
+	if ((err = bad_inputs(handle, connector, channel)) != 0) {
 		return err;
 	}
 	bs = &handle->state->board_state;
