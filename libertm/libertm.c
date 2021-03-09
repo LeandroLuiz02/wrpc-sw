@@ -435,8 +435,11 @@ static int commit_board_config(struct ertm_status *st,
 			struct ertm14_board_state *mask)
 {
 	struct uart_link *link = &st->link;
+	struct ertm14_board_state tmp, *bstmp = &tmp;
 
-	return ertm_proto_cycle(link, ertm14_commit_board_config, mask, NULL);
+	copy_config(bstmp, mask);
+	board_state_to_network_order(bstmp, bstmp);
+	return ertm_proto_cycle(link, ertm14_commit_board_config, bstmp, NULL);
 }
 
 static int ertm_get_set_freq(struct ertm_status *handle,
