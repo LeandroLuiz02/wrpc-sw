@@ -220,9 +220,6 @@ int ertm_get_board_info(struct ertm_status *handle, struct ertm_board_info *info
 	return 0;
 }
 
-#define ERTM_WITHIN(ch, min, max)	\
-	((min <= (ch)) && ((ch) <= max))
-
 static struct ertm_ch_range {
 	int	min;
 	int	max;
