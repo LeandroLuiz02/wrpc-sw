@@ -1,3 +1,24 @@
+/*
+ * This work is part of the White Rabbit project
+ *
+ * Copyright (C) 2020-2021 CERN (www.cern.ch)
+ * Author: Tomasz Wlostowski <tomasz.wlostowski@cern.ch>
+ * Author: David Cobas <david.cobas@cern.ch>
+ *
+ * This program is free software: you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License as published by the
+ * Free Software Foundation, either version 3 of the License, or (at your
+ * option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful, but
+ * WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License along
+ * with this program.  If not, see <http://www.gnu.org/licenses/>.
+ */
+
 #include <sys/errno.h>
 #include <string.h>
 
@@ -42,7 +63,7 @@ int uart_link_reset( struct uart_link *link )
 
 int uart_link_send( struct uart_link* link, struct uart_packet* pkt )
 {
-    uint8_t  buf[ ERTM14_MAX_UART_LINK_PAYLOAD + 16 ];
+    uint8_t  buf[ UART_LINK_MAX_PAYLOAD + 16 ];
     uint16_t crc = 0, i;
 
     buf[0] = 0x55;
@@ -82,7 +103,6 @@ static int recv_fsm( struct uart_link* link, struct uart_packet **pkt )
         return RX_FSM_NO_DATA;
 
     ulink_dbg( "Rx %x state %d\n", rx_byte, link->state );
-
 
     switch( link->state )
     {
@@ -139,7 +159,7 @@ static int recv_fsm( struct uart_link* link, struct uart_packet **pkt )
 
             link->check_crc = crc_xmodem_update( link->check_crc, rx_byte);
 
-            if( link->rx_count < ERTM14_MAX_UART_LINK_PAYLOAD )
+            if( link->rx_count < UART_LINK_MAX_PAYLOAD )
                 link->rx_packet.payload[ link->rx_count++ ] = rx_byte;
             break;
 
