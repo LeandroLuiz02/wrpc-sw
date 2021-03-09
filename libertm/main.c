@@ -29,27 +29,40 @@ int main(int argc, char *argv[])
 		fprintf(stderr, "could not open %s\n", usb);
 		exit(1);
 	}
+
+	printf("---------:  get_board_config -------------------------\n");
 	ertm_get_board_config(handle, &handle->state->board_state);
 	display_ertm_state(handle->state);
-	printf("----------------------------\n");
+	printf("---------:  set_level_adjust LO 0.10 -------------------------\n");
 	ertm_dds_set_level_adjust(handle, ERTM_LO, 0.10);
 	ertm_get_board_config(handle, &handle->state->board_state);
 	display_ertm_state(handle->state);
-	printf("----------------------------\n");
+	printf("---------:  set_level_adjust LO 0.90 -------------------------\n");
 	ertm_dds_set_level_adjust(handle, ERTM_LO, 0.90);
 	ertm_get_board_config(handle, &handle->state->board_state);
 	display_ertm_state(handle->state);
-	printf("----------------------------\n");
+	printf("---------:  set_level_adjust REF 0.10 -------------------------\n");
 	ertm_dds_set_level_adjust(handle, ERTM_REF, 0.10);
 	ertm_get_board_config(handle, &handle->state->board_state);
 	display_ertm_state(handle->state);
-	printf("----------------------------\n");
+	printf("---------:  set_level_adjust REF 0.90 -------------------------\n");
 	ertm_dds_set_level_adjust(handle, ERTM_REF, 0.90);
 	ertm_get_board_config(handle, &handle->state->board_state);
 	display_ertm_state(handle->state);
-	printf("----------------------------\n");
-	ertm_get_board_config(handle, &handle->state->board_state);
-    	ertm_wr_diags(handle, &handle->state->wr_status);
+	printf("---------:  wr_diags -------------------------\n");
+	ertm_wr_diags(handle, &handle->state->wr_status);
+	display_wrc_diags_cooked(&handle->state->wr_status);
+	printf("---------:  wr_enable 1 -------------------------\n");
+	ertm_wr_enable(handle, 1);
+	ertm_wr_diags(handle, &handle->state->wr_status);
+	display_wrc_diags_cooked(&handle->state->wr_status);
+	printf("---------:  wr_enable 0 -------------------------\n");
+	ertm_wr_enable(handle, 0);
+	ertm_wr_diags(handle, &handle->state->wr_status);
+	display_wrc_diags_cooked(&handle->state->wr_status);
+	printf("---------:  wr_enable 1 -------------------------\n");
+	ertm_wr_enable(handle, 1);
+	ertm_wr_diags(handle, &handle->state->wr_status);
 	display_wrc_diags_cooked(&handle->state->wr_status);
 
 	ertm_exit(handle);
