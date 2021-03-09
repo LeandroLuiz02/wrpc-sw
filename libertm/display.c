@@ -203,8 +203,7 @@ static void print_update_counter(uint32_t val)
 
 static void print_board_temp(uint32_t val)
 {
-	 printf("temp:\t\t\t%d.%04d C\n", val >> 16,
-	 	   (int)((val & 0xffff) * 10 * 1000 >> 16));
+	 printf("temp:\t\t\t%2d C\n", val);
 }
 
 void display_wrc_diags_cooked(struct ertm_wr_status *diags)
