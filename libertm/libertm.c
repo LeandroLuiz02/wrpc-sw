@@ -596,36 +596,44 @@ int ertm_channel_enable(struct ertm_status *handle,
 		enum ertm_connector connector, int channel, int enable)
 {
 	struct ertm14_board_state *bs;
-	struct ertm14_dds_state *dds;
-	uint32_t *mask;
+	struct ertm14_board_state *next;
+	struct ertm14_board_state *mask;
 	int err;
 
 	if ((err = bad_inputs(handle, connector, channel)) != 0) {
 		return err;
 	}
+
 	bs = &handle->state->board_state;
+	next = &handle->state->next_state;
+	mask = &handle->state->commit_mask;
 	switch (connector) {
 	case ERTM_CLKA:
-		mask = &bs->clka_enable_mask;
-		set_bit(mask, channel, enable);
+		set_bit(&next->clka_enable_mask, channel, enable);
+		set_bit(&mask->clka_enable_mask, channel, 1);
 		break;
 	case ERTM_CLKB:
-		mask = &bs->clkb_enable_mask;
-		set_bit(mask, channel, enable);
+		set_bit(&next->clkb_enable_mask, channel, enable);
+		set_bit(&mask->clkb_enable_mask, channel, 1);
 		//clkab_enable_output(ERTM14_OUT_CLKA, channel, enable);
 		break;
 	case ERTM_LO:
-		dds = &bs->lo;
-		dds->out_state[channel] = (enable ? ERTM_RF_OUT_ON : ERTM_RF_OUT_OFF);
+		next->lo.out_state[channel] =
+			(enable ? ERTM_RF_OUT_ON : ERTM_RF_OUT_OFF);
+		mask->lo.out_state[channel] = 1;
 		break;
 	case ERTM_REF:
-		dds = &bs->ref;
-		dds->out_state[channel] = (enable ? ERTM_RF_OUT_ON : ERTM_RF_OUT_OFF);
+		next->ref.out_state[channel] =
+			(enable ? ERTM_RF_OUT_ON : ERTM_RF_OUT_OFF);
+		mask->ref.out_state[channel] = 1;
 		break;
 	default:
 		errno = EINVAL;
 		return ERTM_BAD_CONNECTOR;
 	}
+
+	if (handle->state->mode == ERTM_IMMEDIATE)
+		commit_config(handle, bs, next, mask);
 	return 0;
 }
 
