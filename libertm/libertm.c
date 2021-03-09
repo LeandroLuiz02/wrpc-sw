@@ -167,6 +167,40 @@ static void clean_config(struct ertm14_board_state *bs)
 	memset(bs, 0, sizeof(struct ertm14_board_state));
 }
 
+static void update_dds_state(struct ertm14_dds_state *dst,
+			    const struct ertm14_dds_state *src,
+			    const struct ertm14_dds_state *mask)
+{
+	int i;
+
+	dst->ftw		= src->ftw;
+	dst->amp_power		= src->amp_power;
+	dst->ampl_factor	= src->ampl_factor;
+	dst->sync_source	= src->sync_source;
+	dst->sync_count	= src->sync_count;
+	for (i = ERTM14_RF_OUT_MIN_ID; i <= ERTM14_RF_OUT_MAX_ID; i++) {
+		dst->out_state[i] = src->out_state[i];
+		dst->out_power[i] = src->out_power[i];
+	}
+
+}
+static void update_config(struct ertm14_board_state *dst,
+			    const struct ertm14_board_state *src,
+			    const struct ertm14_board_state *mask)
+{
+	int i;
+
+	update_dds_state(&dst->ref, &src->ref, &mask->ref);
+	update_dds_state(&dst->lo, &src->lo, &mask->lo);
+	dst->valid			= src->valid;
+	dst->clka_enable_mask	= src->clka_enable_mask;
+	dst->clkb_enable_mask	= src->clkb_enable_mask;
+	for (i = ERTM14_CLKAB_OUT_MIN_ID; i <= ERTM14_CLKAB_OUT_MAX_ID; i++) {
+		dst->clka_freq_hz[i] = src->clka_freq_hz[i];
+		dst->clkb_freq_hz[i] = src->clkb_freq_hz[i];
+	}
+}
+
 /* constants of nature for this design */
 static char *usb_serial = "/dev/ttyUSB2";
 static int serial_speed = 8*115200;
@@ -484,10 +518,59 @@ int ertm_get_freq(struct ertm_status *handle,
 	return ertm_get_set_freq(handle, connector, channel, freq, 0);
 }
 
+static void commit_config(struct ertm_status *handle,
+				struct ertm14_board_state *bs,
+				struct ertm14_board_state *next,
+				struct ertm14_board_state *mask)
+{
+	set_board_config(handle, next);
+	commit_board_config(handle, mask);
+	update_config(bs, next, mask);
+	clean_config(next);
+	clean_config(mask);
+}
+
 int ertm_set_freq(struct ertm_status *handle,
 		enum ertm_connector connector,int channel, uint32_t freq)
 {
-	return ertm_get_set_freq(handle, connector, channel, &freq, 1);
+	int err = 0;
+	struct ertm14_board_state *bs, *next, *mask;
+
+	/* channel param is irrelevant for lo/ref */
+	if (connector == ERTM_LO || connector == ERTM_REF) {
+		channel = ERTM_LOREF_MIN_CH;
+	}
+	if ((err = bad_inputs(handle, connector, channel)) != 0)
+		return err;
+
+	bs = &handle->state->board_state;
+	next = &handle->state->next_state;
+	mask = &handle->state->commit_mask;
+	switch (connector) {
+	case ERTM_CLKA:
+		next->clka_freq_hz[channel] = freq;
+		mask->clka_freq_hz[channel] = 1;
+		// clkab_set_output_divider(ERTM14_OUT_CLKA, channel, freq);
+		break;
+	case ERTM_CLKB:
+		next->clkb_freq_hz[channel] = freq;
+		mask->clkb_freq_hz[channel] = 1;
+		break;
+	case ERTM_LO:
+		next->lo.ftw = freq;
+		mask->lo.ftw = 1;
+		break;
+	case ERTM_REF:
+		next->ref.ftw = freq;
+		mask->ref.ftw = 1;
+		break;
+	default:
+		errno = EINVAL;
+		return ERTM_BAD_CONNECTOR;
+	}
+	if (handle->state->mode == ERTM_IMMEDIATE)
+		commit_config(handle, bs, next, mask);
+	return 0;
 }
 
 static void set_bit(uint32_t *word, unsigned bit, int value)
