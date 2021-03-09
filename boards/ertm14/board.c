@@ -1035,10 +1035,10 @@ static void commit_board_config(struct ertm14_board_state *mask)
 {
     struct ertm14_board_state *next = &ertm14_next_state;
 
-    copy_config(ertm14_current_state, next);
     copy_config(&ertm14_mask, mask);
     board_state_to_no(&ertm14_mask, 0);
-    apply_config(ertm14_current_state, &ertm14_mask);
+    apply_config(next, &ertm14_mask);
+    update_config(ertm14_current_state, next, mask);
     event_post(WRC_ERTM14_EVENT_APPLY_NEW_CONFIG);
     clean_config(&ertm14_mask);
 }
