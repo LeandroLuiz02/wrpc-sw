@@ -91,7 +91,7 @@ static void print_servo_status(uint32_t val)
 		"Wait offset stable",
 	};
 
-	fprintf(stderr, "servo status:\t\t%s\n",
+	printf("servo status:\t\t%s\n",
 		sstat_str[val >> WRC_DIAGS_WDIAG_SSTAT_SERVOSTATE_SHIFT]);
 }
 
@@ -105,12 +105,12 @@ static void print_port_status(uint32_t val)
 	};
 	int i, idx;
 
-	fprintf(stderr, "Port status:\t\t");
+	printf("Port status:\t\t");
 	for (i = 0; i < nbits; ++i) {
 		idx = (val & (1 << i)) ? 1 : 0;
-		fprintf(stderr, "%s, ", pstat_str[i][idx]);
+		printf("%s, ", pstat_str[i][idx]);
 	}
-	fprintf(stderr, "\n");
+	printf("\n");
 }
 
 static void print_ptp_state(uint32_t val)
@@ -128,14 +128,14 @@ static void print_ptp_state(uint32_t val)
 		"PPS slave",
 	};
 
-	fprintf(stderr, "PTP state:\t\t");
+	printf("PTP state:\t\t");
 	if (val <= 9)
-		fprintf(stderr, "%s", ptpstat_str[val]);
+		printf("%s", ptpstat_str[val]);
 	else if (val >= 100 && val <= 116)
-		fprintf(stderr, "WR STATES(see ppsi/ieee1588_types.h): %d", val);
+		printf("WR STATES(see ppsi/ieee1588_types.h): %d", val);
 	else
-		fprintf(stderr, "Unknown");
-	fprintf(stderr, "\n");
+		printf("Unknown");
+	printf("\n");
 }
 
 static void print_aux_state(uint32_t val)
@@ -143,67 +143,67 @@ static void print_aux_state(uint32_t val)
 	int nch = 8; //should be retrieved from a register
 	int i;
 
-	fprintf(stderr, "Aux state:\t\t");
+	printf("Aux state:\t\t");
 	for (i = 0; i < nch; i++) {
 		if (val & (1 << i))
-			fprintf(stderr, "ch%d:enabled ", i);
+			printf("ch%d:enabled ", i);
 	}
-	fprintf(stderr, "\n");
+	printf("\n");
 }
 
 static void print_tx_frame_count(uint32_t val)
 {
-	fprintf(stderr, "TX frame count:\t\t%d\n", val);
+	printf("TX frame count:\t\t%d\n", val);
 }
 
 static void print_rx_frame_count(uint32_t val)
 {
-	fprintf(stderr, "RX frame count:\t\t%d\n", val);
+	printf("RX frame count:\t\t%d\n", val);
 }
 
 static void print_local_time(uint32_t sec_msw, uint32_t sec_lsw, uint32_t ns)
 {
 	uint64_t sec = (uint64_t)(sec_msw) << 32 | sec_lsw;
-//	fprintf(stderr, "TAI time:\t\t %" PRIu64 "sec %d nsec\n",
+//	printf("TAI time:\t\t %" PRIu64 "sec %d nsec\n",
 //		sec, ns);
-	fprintf(stderr, "TAI time:\t\t%s", ctime((time_t *)&sec));
+	printf("TAI time:\t\t%s", ctime((time_t *)&sec));
 }
 
 static void print_roundtrip_time(uint32_t msw, uint32_t lsw)
 {
 	uint64_t val = (uint64_t)(msw) << 32 | lsw;
-	fprintf(stderr, "Round trip time:\t%" PRIu64 " ps\n", val);
+	printf("Round trip time:\t%" PRIu64 " ps\n", val);
 }
 
 static void print_master_slave_delay(uint32_t msw, uint32_t lsw)
 {
 	uint64_t val = (uint64_t)(msw) << 32 | lsw;
-	fprintf(stderr, "Master slave delay:\t%" PRIu64 " ps\n", val);
+	printf("Master slave delay:\t%" PRIu64 " ps\n", val);
 }
 
 static void print_link_asym(uint32_t val)
 {
-	fprintf(stderr, "Total Link asymmetry:\t%d ps\n", val);
+	printf("Total Link asymmetry:\t%d ps\n", val);
 }
 
 static void print_clock_offset(uint32_t val)
 {
-	fprintf(stderr, "Clock offset:\t\t%d ps\n", val);
+	printf("Clock offset:\t\t%d ps\n", val);
 }
 
 static void print_phase_setpoint(uint32_t val)
 {
-	fprintf(stderr, "Phase setpoint:\t\t%d ps\n", val);
+	printf("Phase setpoint:\t\t%d ps\n", val);
 }
 
 static void print_update_counter(uint32_t val)
 {
-	fprintf(stderr, "Update counter:\t\t%d\n", val);
+	printf("Update counter:\t\t%d\n", val);
 }
 
 static void print_board_temp(uint32_t val)
 {
-	 fprintf(stderr, "temp:\t\t\t%d.%04d C\n", val >> 16,
+	 printf("temp:\t\t\t%d.%04d C\n", val >> 16,
 	 	   (int)((val & 0xffff) * 10 * 1000 >> 16));
 }
 
