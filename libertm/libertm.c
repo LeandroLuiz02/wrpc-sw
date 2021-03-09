@@ -173,14 +173,21 @@ static void update_dds_state(struct ertm14_dds_state *dst,
 {
 	int i;
 
-	dst->ftw		= src->ftw;
-	dst->amp_power		= src->amp_power;
-	dst->ampl_factor	= src->ampl_factor;
-	dst->sync_source	= src->sync_source;
-	dst->sync_count	= src->sync_count;
+	if (mask->ftw)
+		dst->ftw	 = src->ftw;
+	if (mask->amp_power)
+		dst->amp_power	 = src->amp_power;
+	if (mask->ampl_factor)
+		dst->ampl_factor = src->ampl_factor;
+	if (mask->sync_source)
+		dst->sync_source = src->sync_source;
+	if (mask->sync_count)
+		dst->sync_count	= src->sync_count;
 	for (i = ERTM14_RF_OUT_MIN_ID; i <= ERTM14_RF_OUT_MAX_ID; i++) {
-		dst->out_state[i] = src->out_state[i];
-		dst->out_power[i] = src->out_power[i];
+		if (mask->out_state[i])
+			dst->out_state[i] = src->out_state[i];
+		if (mask->out_power[i])
+			dst->out_power[i] = src->out_power[i];
 	}
 
 }
@@ -192,12 +199,17 @@ static void update_config(struct ertm14_board_state *dst,
 
 	update_dds_state(&dst->ref, &src->ref, &mask->ref);
 	update_dds_state(&dst->lo, &src->lo, &mask->lo);
-	dst->valid			= src->valid;
-	dst->clka_enable_mask	= src->clka_enable_mask;
-	dst->clkb_enable_mask	= src->clkb_enable_mask;
+	if (mask->valid)
+		dst->valid = src->valid;
+	if (mask->clka_enable_mask)
+		dst->clka_enable_mask = src->clka_enable_mask;
+	if (mask->clkb_enable_mask)
+		dst->clkb_enable_mask = src->clkb_enable_mask;
 	for (i = ERTM14_CLKAB_OUT_MIN_ID; i <= ERTM14_CLKAB_OUT_MAX_ID; i++) {
-		dst->clka_freq_hz[i] = src->clka_freq_hz[i];
-		dst->clkb_freq_hz[i] = src->clkb_freq_hz[i];
+		if (mask->clka_freq_hz[i])
+			dst->clka_freq_hz[i] = src->clka_freq_hz[i];
+		if (mask->clkb_freq_hz[i])
+			dst->clkb_freq_hz[i] = src->clkb_freq_hz[i];
 	}
 }
 
