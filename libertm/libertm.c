@@ -764,10 +764,11 @@ int ertm_dds_set_level_adjust(struct ertm_status *handle,
 
 	next = &handle->state->next_state;
 	mask = &handle->state->commit_mask;
+	get_dds(next, connector, &dds);
 	get_dds(mask, connector, &ddsmask);
-
 	dds->ampl_factor = float_to_ampl_factor(level);
 	ddsmask->ampl_factor = 1;
+
 	if (handle->state->mode == ERTM_IMMEDIATE)
 		commit_config(handle, next, mask);
 
