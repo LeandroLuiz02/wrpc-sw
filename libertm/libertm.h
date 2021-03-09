@@ -69,10 +69,12 @@ enum ertm_connector {
  *  ERTM_DEFERRED	operations deferred (cached) until ertm_commit() is called
  *  ERTM_IMMEDIATE	config operations executed synchronously
  *  ERTM_OPTIMIZED	same as ERTM_IMMEDIATE, but UART comm sped up (not implemented)
+ *  ERTM_SIMULATED	no interaction with actual hardware
  */
 #define	ERTM_DEFERRED	1
 #define	ERTM_IMMEDIATE	2
 #define	ERTM_OPTIMIZED	3
+#define	ERTM_SIMULATED	4
 
 /* firmware metadata according to The Convention (see
  * https://www.ohwr.org/project/fpga-dev-id/blob/master/device-structure.rst

@@ -531,22 +531,36 @@ int ertm_get_freq(struct ertm_status *handle,
 }
 
 static void commit_config(struct ertm_status *handle,
-				struct ertm14_board_state *bs,
 				struct ertm14_board_state *next,
 				struct ertm14_board_state *mask)
 {
-	set_board_config(handle, next);
-	commit_board_config(handle, mask);
-	update_config(bs, next, mask);
-	clean_config(next);
-	clean_config(mask);
+	struct ertm14_board_state *bs = &handle->state->board_state;
+	switch (handle->state->mode) {
+	case ERTM_DEFERRED:
+		break;
+	case ERTM_SIMULATED:
+		update_config(bs, next, mask);
+		clean_config(next);
+		clean_config(mask);
+		break;
+	case ERTM_IMMEDIATE:
+		update_config(bs, next, mask);
+		set_board_config(handle, next);
+		commit_board_config(handle, mask);
+		clean_config(next);
+		clean_config(mask);
+		break;
+	case ERTM_OPTIMIZED:
+		/* all done through immediate calls (when implemented) */
+		break;
+	}
 }
 
 int ertm_set_freq(struct ertm_status *handle,
 		enum ertm_connector connector,int channel, uint32_t freq)
 {
 	int err = 0;
-	struct ertm14_board_state *bs, *next, *mask;
+	struct ertm14_board_state *next, *mask;
 
 	/* channel param is irrelevant for lo/ref */
 	if (connector == ERTM_LO || connector == ERTM_REF) {
@@ -555,7 +569,6 @@ int ertm_set_freq(struct ertm_status *handle,
 	if ((err = bad_inputs(handle, connector, channel)) != 0)
 		return err;
 
-	bs = &handle->state->board_state;
 	next = &handle->state->next_state;
 	mask = &handle->state->commit_mask;
 	switch (connector) {
@@ -581,7 +594,7 @@ int ertm_set_freq(struct ertm_status *handle,
 		return ERTM_BAD_CONNECTOR;
 	}
 	if (handle->state->mode == ERTM_IMMEDIATE)
-		commit_config(handle, bs, next, mask);
+		commit_config(handle, next, mask);
 	return 0;
 }
 
@@ -595,7 +608,6 @@ static void set_bit(uint32_t *word, unsigned bit, int value)
 int ertm_channel_enable(struct ertm_status *handle,
 		enum ertm_connector connector, int channel, int enable)
 {
-	struct ertm14_board_state *bs;
 	struct ertm14_board_state *next;
 	struct ertm14_board_state *mask;
 	int err;
@@ -604,7 +616,6 @@ int ertm_channel_enable(struct ertm_status *handle,
 		return err;
 	}
 
-	bs = &handle->state->board_state;
 	next = &handle->state->next_state;
 	mask = &handle->state->commit_mask;
 	switch (connector) {
@@ -633,7 +644,7 @@ int ertm_channel_enable(struct ertm_status *handle,
 	}
 
 	if (handle->state->mode == ERTM_IMMEDIATE)
-		commit_config(handle, bs, next, mask);
+		commit_config(handle, next, mask);
 	return 0;
 }
 
@@ -750,7 +761,7 @@ int ertm_dds_set_level_adjust(struct ertm_status *handle,
 	dds->ampl_factor = float_to_ampl_factor(level);
 	ddsmask->ampl_factor = 1;
 	if (handle->state->mode == ERTM_IMMEDIATE)
-		commit_config(handle, bs, next, mask);
+		commit_config(handle, next, mask);
 
 	return 0;
 }
