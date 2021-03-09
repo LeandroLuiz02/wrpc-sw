@@ -157,6 +157,16 @@ static void ertm_status_init(struct ertm_state *st)
 	/* FIXME: st->nco_reset */
 }
 
+static void copy_config(struct ertm14_board_state *dst, const struct ertm14_board_state *src)
+{
+	memcpy(dst, src, sizeof(struct ertm14_board_state));
+}
+
+static void clean_config(struct ertm14_board_state *bs)
+{
+	memset(bs, 0, sizeof(struct ertm14_board_state));
+}
+
 /* constants of nature for this design */
 static char *usb_serial = "/dev/ttyUSB2";
 static int serial_speed = 8*115200;
@@ -301,17 +311,6 @@ int ertm_proto_cycle(struct uart_link *link,
 	return 0;
 }
 
-static void copy_config(struct ertm14_board_state *dst, const struct ertm14_board_state *src)
-{
-	memcpy(dst, src, sizeof(struct ertm14_board_state));
-}
-
-#if 0
-static void clean_config(struct ertm14_board_state *bs)
-{
-	memset(bs, 0, sizeof(struct ertm14_board_state));
-}
-#endif
 void dds_to_host_order(struct ertm14_dds_state *dds, struct ertm14_dds_state *host)
 {
 	int i;
