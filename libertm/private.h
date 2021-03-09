@@ -17,6 +17,8 @@
 struct ertm_state {
 	struct ertm_board_info		board_info;
 	struct ertm14_board_state	board_state;
+	struct ertm14_board_state	next_state;
+	struct ertm14_board_state	commit_mask;
 	struct ertm_temperatures	temperatures;
 	struct ertm_voltages		voltages;
 	struct ertm_nco_reset		nco_reset;
