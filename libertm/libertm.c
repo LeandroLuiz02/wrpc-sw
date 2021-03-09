@@ -245,6 +245,7 @@ struct ertm_status *ertm_init(const char *address)
 	ertm_get_board_config(st, &st->state->board_state);
 	clean_config(&st->state->next_state);
 	clean_config(&st->state->commit_mask);
+	st->state->mode = ERTM_IMMEDIATE;
 
 	return st;
 }
