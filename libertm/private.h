@@ -12,7 +12,7 @@
 #include <stdlib.h>
 #include "libertm.h"
 #include "board-state.h"
-#include "ertm14-uart-link.h"
+#include "common-uart-link.h"
 
 struct ertm_state {
 	struct ertm_board_info		board_info;
