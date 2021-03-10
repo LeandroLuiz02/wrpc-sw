@@ -22,7 +22,7 @@
 #include <sys/errno.h>
 #include <string.h>
 
-#include "ertm14-uart-link.h"
+#include "common-uart-link.h"
 
 static uint16_t crc_xmodem_update(uint16_t crc, uint8_t data)
 {
@@ -100,7 +100,7 @@ static int recv_fsm( struct uart_link* link, struct uart_packet **pkt )
     int rx_byte = link->recv_byte( link );
 
     if( rx_byte < 0 )
-        return RX_FSM_NO_DATA;
+        return RX_FSM_NEED_DATA;
 
     ulink_dbg( "Rx %x state %d\n", rx_byte, link->state );
 
