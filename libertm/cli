@@ -142,9 +142,6 @@ class ErtmTest(cmd.Cmd):
     def postloop(self):
         self.lib.ertm_exit(self.handle)
 
-    def do_open(self, args):
-        pass
-
     def do_headers(self, args):
         "display the help headers."
         print(self.doc_header)
