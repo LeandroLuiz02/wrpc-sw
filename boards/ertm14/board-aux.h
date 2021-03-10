@@ -30,10 +30,6 @@ static void update_dds_state(struct ertm14_dds_state *dst,
 		dst->ftw	 = src->ftw;
 	if (mask->amp_power)
 		dst->amp_power	 = src->amp_power;
-#ifndef __linux__
-	pp_printf("ampl_factor dst, src, msk = %d, %d, %d\n", 
-		dst->ampl_factor, src->ampl_factor, mask->ampl_factor);
-#endif
 	if (mask->ampl_factor)
 		dst->ampl_factor = src->ampl_factor;
 	if (mask->sync_source)
