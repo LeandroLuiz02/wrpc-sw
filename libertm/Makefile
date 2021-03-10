@@ -12,7 +12,7 @@ CFLAGS += -I $(WRC_INCLUDES)
 
 all: libs serial ertm-serial main
 
-libs: static-lib so-lib
+libs: static-lib so-lib display.so
 static-lib: $(TARGET).a
 so-lib: $(TARGET).so
 
