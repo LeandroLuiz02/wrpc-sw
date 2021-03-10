@@ -28,6 +28,9 @@ struct ertm_error_codes ertm_error_codes[] = {
 	[-ERTM_NOT_IMPLEMENTED]	= { ERTM_NOT_IMPLEMENTED, "function not implemented" },
 	[-ERTM_UART_LINK_SEND_ERR] ={ ERTM_UART_LINK_SEND_ERR, "USB serial link send failed" },
 	[-ERTM_UART_LINK_RECV_ERR] ={ ERTM_UART_LINK_RECV_ERR, "USB serial link recv failed" },
+	[-ERTM_BAD_HANDLE	] = { ERTM_BAD_HANDLE, "invalid library handle in libertm call" },
+	[-ERTM_BAD_OPCODE	] = { ERTM_BAD_OPCODE, "invalid opcode in UART protocol exchange" },
+	[-ERTM_UART_PROTO_ERR	] = { ERTM_UART_PROTO_ERR, "UART protocol error" },
 };
 
 char *ertm_perror(int error)
