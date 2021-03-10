@@ -30,10 +30,6 @@ static void update_dds_state(struct ertm14_dds_state *dst,
 		dst->ftw	 = src->ftw;
 	if (mask->amp_power)
 		dst->amp_power	 = src->amp_power;
-#ifndef __linux__
-	pp_printf("ampl_factor dst, src, msk = %d, %d, %d\n", 
-		dst->ampl_factor, src->ampl_factor, mask->ampl_factor);
-#endif
 	if (mask->ampl_factor)
 		dst->ampl_factor = src->ampl_factor;
 	if (mask->sync_source)
@@ -48,6 +44,13 @@ static void update_dds_state(struct ertm14_dds_state *dst,
 	}
 
 }
+
+void update_bits(uint32_t *dst, uint32_t src, uint32_t mask)
+{
+	*dst &= ~mask;
+	*dst |= src & mask;
+}
+
 static void update_config(struct ertm14_board_state *dst,
 			    const struct ertm14_board_state *src,
 			    const struct ertm14_board_state *mask)
@@ -59,9 +62,9 @@ static void update_config(struct ertm14_board_state *dst,
 	if (mask->valid)
 		dst->valid = src->valid;
 	if (mask->clka_enable_mask)
-		dst->clka_enable_mask = src->clka_enable_mask;
+		update_bits(&dst->clka_enable_mask, src->clka_enable_mask, mask->clka_enable_mask);
 	if (mask->clkb_enable_mask)
-		dst->clkb_enable_mask = src->clkb_enable_mask;
+		update_bits(&dst->clkb_enable_mask, src->clkb_enable_mask, mask->clkb_enable_mask);
 	for (i = ERTM14_CLKAB_OUT_MIN_ID; i <= ERTM14_CLKAB_OUT_MAX_ID; i++) {
 		if (mask->clka_freq_hz[i])
 			dst->clka_freq_hz[i] = src->clka_freq_hz[i];
