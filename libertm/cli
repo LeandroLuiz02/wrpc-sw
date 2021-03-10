@@ -1,0 +1,90 @@
+#!/usr/bin/env python3
+# vim: et ts=8 sw=4 sts=4 ai
+
+import readline
+import cmd
+from ctypes import *
+
+class uart_packet(Structure):
+    ERTM14_MAX_UART_LINK_PAYLOAD = 512
+    _fields_ =[
+        ("ptype", c_ubyte),
+        ("length", c_ushort), 
+        ("payload", c_ubyte*ERTM14_MAX_UART_LINK_PAYLOAD),
+    ]
+
+class uart_link(Structure):
+    _fields_ =[
+        ("send_byte", c_void_p),
+        ("recv_byte", c_void_p),
+        ("get_ms_tics", c_void_p),
+        ("priv", c_void_p),
+        ("state", c_int),
+        ("rx_count",  c_int),
+        ("rx_crc, check_crc", c_ushort),
+        ("rx_last_tics", c_uint),
+        ("rx_packet", uart_packet),
+    ]
+
+class ertm_connection(Structure):
+    PATH_MAX = 4096
+    _fields_ = [
+        ("address", c_char_p),
+        ("serial_connection", c_char*PATH_MAX),
+    ]
+
+class ertm_status(Structure):
+    _fields_ = [
+	("connection", ertm_connection),
+	("state", c_void_p),
+	("link", uart_link),
+	("reserved", 64*c_uint),
+    ]
+
+class ErtmTest(cmd.Cmd):
+
+    prompt = 'ertm> '
+    ruler = '-'
+
+
+    def preloop(self):
+        self.lib = CDLL('./libertm.so')
+        self.display = CDLL('./display.so')
+        ertm_init = self.lib.ertm_init
+        ertm_init.restype = POINTER(ertm_status)
+        self.handle = ertm_init('/dev/ttyUSB2')
+        if not self.handle:
+            print('could not open USB device')
+            exit()
+
+    def do_get_board_state(self, args):
+        "get complete CLKAB and REF/LO status."
+        buf = create_string_buffer(512)
+        self.lib.ertm_get_board_config(self.handle, byref(buf))
+        self.display.display_ertm_state(self.handle[0].state)
+
+    def postloop(self):
+        self.lib.ertm_exit(self.handle)
+
+    def do_open(self, args):
+        pass
+
+    def do_headers(self, args):
+        "display the help headers."
+        print(self.doc_header)
+        print(self.misc_header)
+        print(self.undoc_header)
+
+    def do_EOF(self, arg):
+        return True
+
+    def do_h(self, arg):
+        self.do_help(arg)
+
+    do_q = do_EOF
+    do_quit = do_EOF
+    do_gbs = do_get_board_state
+
+if __name__ == '__main__':
+    tst = ErtmTest(completekey='tab')
+    tst.cmdloop()

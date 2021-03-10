@@ -46,6 +46,9 @@ ertm-serial.o: $(ERTM_BOARD_LOCATION)/ertm14-uart-link.h $(ERTM_BOARD_LOCATION)/
 ertm-serial.o: private.h libertm.h
 libertm.o: libertm.h private.h
 
+display.so: display.o
+	$(LD) -shared -o $@ $^
+
 clean:
 	rm -f *.o *.a *.so
 	rm -f serial ertm-serial main
