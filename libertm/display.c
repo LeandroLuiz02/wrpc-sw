@@ -20,9 +20,9 @@ void display_dds_state(struct ertm14_dds_state *dds1,
 {
 	int i;
 
-	printf("LO ftw: %08x%19c", dds1->ftw, ' ');
+	printf("LO ftw: %08x (%7.3fMHz)%6c", dds1->ftw, (1000.0 * dds1->ftw) / (1L<<32), ' ');
 	printf(" | ");
-	printf("REF ftw: %08x%19c", dds2->ftw, ' ');
+	printf("REF ftw: %08x (%7.3fMHz)%6c", dds2->ftw, (1000.0 * dds2->ftw) / (1L<<32), ' ');
 	printf("\n");
 	printf("LO level adjust: %6.4f (%3d/256)%2c", ampl_factor_to_float(dds1->ampl_factor), dds1->ampl_factor, ' ');
 	printf(" | ");
