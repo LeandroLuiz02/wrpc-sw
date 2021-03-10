@@ -15,18 +15,31 @@ static double ampl_factor_to_float(uint8_t ampl_factor)
 {
 	return ampl_factor/256.0;
 }
-
-void display_dds_state(struct ertm14_dds_state *dds)
+void display_dds_state(struct ertm14_dds_state *dds1,
+			struct ertm14_dds_state *dds2)
 {
 	int i;
 
-	printf("ftw: %08x\n", dds->ftw);
-	printf("level adjust: %0.4f (%d/256)\n", ampl_factor_to_float(dds->ampl_factor), dds->ampl_factor);
-	printf("pll_out_power: %3.1f dBm (%08x mdBm)\n",  dds->amp_power/1000.0, dds->amp_power);
-	for (i = ERTM14_RF_OUT_MIN_ID; i <= ERTM14_RF_OUT_MAX_ID; i++)
-		printf("ch: %02d pow: %08x mdBm (%8.3f dBm)  %d %-8s\n",
-		    i, dds->out_power[i], dds->out_power[i]/1000.0,
-		    dds->out_state[i], state_literal[dds->out_state[i]]);
+	printf("LO ftw: %08x (%7.3fMHz)%6c", dds1->ftw, (1000.0 * dds1->ftw) / (1L<<32), ' ');
+	printf(" | ");
+	printf("REF ftw: %08x (%7.3fMHz)%6c", dds2->ftw, (1000.0 * dds2->ftw) / (1L<<32), ' ');
+	printf("\n");
+	printf("LO level adjust: %6.4f (%3d/256)%2c", ampl_factor_to_float(dds1->ampl_factor), dds1->ampl_factor, ' ');
+	printf(" | ");
+	printf("REF level adjust: %6.4f (%3d/256)%2c", ampl_factor_to_float(dds2->ampl_factor), dds2->ampl_factor, ' ');
+	printf("\n");
+	printf("LO pll_out_power: %5.1f dBm%8c",  dds1->amp_power/1000.0, ' ');
+	printf(" | ");
+	printf("REF pll_out_power: %5.1f dBm%8c",  dds2->amp_power/1000.0, ' ');
+	printf("\n");
+	for (i = ERTM14_RF_OUT_MIN_ID; i <= ERTM14_RF_OUT_MAX_ID; i++) {
+		printf("LO%02d:   pow: %5.1f dBm  st:%-8s",
+		    i, dds1->out_power[i]/1000.0, state_literal[dds1->out_state[i]]);
+		printf(" | ");
+		printf("REF%02d: pow: %5.1f dBm  st:%-8s",
+		    i, dds2->out_power[i]/1000.0, state_literal[dds2->out_state[i]]);
+		printf("\n");
+	}
 }
 
 void display_ertm_clkab(struct ertm14_board_state *bs)
@@ -35,8 +48,10 @@ void display_ertm_clkab(struct ertm14_board_state *bs)
 	for (i = ERTM_CLKAB_MIN_CH; i <= ERTM_CLKAB_MAX_CH; i++) {
 		char *aonoff = (bs->clka_enable_mask & (1<<i)) ? "on " : "off";
 		char *bonoff = (bs->clkb_enable_mask & (1<<i)) ? "on " : "off";
-		printf("CLKA%02d: %3s  %10dHz\t\t", i, aonoff, bs->clka_freq_hz[i]);
-		printf("CLKB%02d: %3s  %10dHz\n", i, bonoff, bs->clkb_freq_hz[i]);
+		printf("CLKA%02d: %3s %10dHz", i, aonoff, bs->clka_freq_hz[i]);
+		printf("     | ");
+		printf("CLKB%02d: %3s %10dHz", i, bonoff, bs->clkb_freq_hz[i]);
+		printf("\n");
 	}
 }
 
@@ -44,12 +59,11 @@ void display_ertm_state(struct ertm_state *st)
 {
 	struct ertm14_board_state *bs = &st->board_state;
 
-	printf("CLKAB: --------------------------------------------------\n");
+	printf("DDS: -------------------------------------------------------------------\n");
+	display_dds_state(&bs->lo, &bs->ref);
+	printf("CLKAB: -----------------------------------------------------------------\n");
 	display_ertm_clkab(bs);
-	printf("LO: --------------------------------------------------\n");
-	display_dds_state(&bs->lo);
-	printf("REF: --------------------------------------------------\n");
-	display_dds_state(&bs->ref);
+	printf("------------------------------------------------------------------------\n");
 }
 
 void display_wrc_diags(struct ertm_wr_status *diags)

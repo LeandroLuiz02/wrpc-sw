@@ -12,13 +12,14 @@ CFLAGS += -I $(WRC_INCLUDES)
 
 all: libs serial ertm-serial main
 
-libs: static-lib so-lib
+libs: static-lib so-lib display.so
 static-lib: $(TARGET).a
 so-lib: $(TARGET).so
 
-$(TARGET).so: $(TARGET).o
+$(TARGET).a $(TARGET).so: $(TARGET).o linux-uart-link.o common-uart-link.o
+$(TARGET).so:
 	$(LD) -shared -o $@ $^
-$(TARGET).a: $(TARGET).o linux-uart-link.o common-uart-link.o
+$(TARGET).a:
 	$(AR) r $@ $^
 $(TARGET).o: $(TARGET).h
 

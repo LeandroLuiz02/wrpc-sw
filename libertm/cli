@@ -83,6 +83,12 @@ class ErtmTest(cmd.Cmd):
         'clkb': ERTM_CLKB,
     }
 
+    def errmsg(self, errcode):
+        ertm_perror = self.lib.ertm_perror
+        ertm_perror.restype = c_char_p
+        msg = self.lib.ertm_perror(errcode)
+        return str(msg, encoding='utf8')
+
     def preloop(self):
         self.lib = CDLL('./libertm.so')
         self.display = CDLL('./display.so')
@@ -99,13 +105,83 @@ class ErtmTest(cmd.Cmd):
         self.lib.ertm_get_board_config(self.handle, byref(buf))
         self.display.display_ertm_state(self.handle[0].state)
 
+    def do_set_freq(self, args):
+        "set frequency of connector or connector channel."
+        try:
+            connector, rest = args.split(maxsplit=1)
+            connector = self.connector_idx[connector.lower()]
+            if connector in (self.ERTM_CLKA, self.ERTM_CLKB):
+                print(rest)
+                channel, freq = rest.split()
+                channel = int(channel)
+                freq = int(freq, 0)     # FIXME: this needs units
+            else:
+                channel = 10            # don't care
+                freq = rest
+                freq = int(freq, 0)     # FIXME: this needs units
+        except (ValueError, KeyError) as e:
+            print('usage: set_freq/sf {clka|clkb|lo|ref} [channel] freq')
+            return
+        err = self.lib.ertm_set_freq(self.handle, connector, channel, freq)
+        if err:
+            msg = self.errmsg(err)
+            print('error {} in set_freq: {}'.format(err, msg))
+            return
+
+    def do_enable_channel(self, args):
+        "enable/disable individual connector channel."
+        try:
+            connector, channel, *enable = args.split()
+            connector = self.connector_idx[connector.lower()]
+            channel = int(channel)
+            enable = int(enable[0]) if enable else 1
+        except (ValueError, KeyError) as e:
+            print('usage: enable_channel/ec {clka|clkb|lo|ref} channel [0|1]')
+            return
+        err = self.lib.ertm_channel_enable(self.handle, connector, channel, enable)
+        if err:
+            msg = self.errmsg(err)
+            print('error {} in enable_channel: {}'.format(err, msg))
+            return
+
+    def do_disable_channel(self, args):
+        "disable individual connector channel."
+        try:
+            connector, channel = args.split()
+            connector = self.connector_idx[connector.lower()]
+            channel = int(channel)
+        except (ValueError, KeyError) as e:
+            print('usage: disable_channel/dc {clka|clkb|lo|ref} channel')
+            return
+        err = self.lib.ertm_channel_enable(self.handle, connector, channel, 0)
+        if err:
+            msg = self.errmsg(err)
+            print('error {} in disable_channel: {}'.format(err, msg))
+            return
+
+    def do_get_level_adjust(self, args):
+        "display amplification level of connector."
+        try:
+            connector = args
+            connector = self.connector_idx[connector.lower()]
+        except (ValueError, KeyError) as e:
+            print('usage: get_level_adjust/gla {lo|ref}')
+            return
+        level = c_double()
+        err = self.lib.ertm_dds_get_level_adjust(self.handle, connector, byref(level))
+        if err:
+            msg = self.errmsg(err)
+            print('error {} in get_level_adjust: {}'.format(err, msg))
+            return
+        print('{} level = {}'.format(args.upper(), level.value))
+
     def do_set_level_adjust(self, args):
         "set amplification level of connector."
         try:
             connector, level = args.split()
             connector = self.connector_idx[connector.lower()]
             level = float(level)
-        except ValueError as e:
+        except (ValueError, KeyError) as e:
             print('usage: set_level_adjust/sla {lo|ref} LEVEL')
             return
         self.lib.ertm_dds_set_level_adjust(self.handle, connector, c_double(level))
@@ -130,7 +206,7 @@ class ErtmTest(cmd.Cmd):
         "start/stop WR PTP daemon."
         try:
             enable = int(args) if args else 1
-        except ValueError as e:
+        except (ValueError, KeyError) as e:
             print('usage: wr_enable [0|1] (default=1/enable)')
             return
         self.lib.ertm_wr_enable(self.handle, enable)
@@ -159,6 +235,7 @@ class ErtmTest(cmd.Cmd):
     do_quit = do_EOF
     do_gbs = do_get_board_state
     do_sla = do_set_level_adjust
+    do_gla = do_get_level_adjust
     do_wrd = do_wrc_diags
 
 if __name__ == '__main__':
