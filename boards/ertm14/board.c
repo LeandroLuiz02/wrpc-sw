@@ -78,7 +78,7 @@ static uint16_t ntohs(uint16_t __netshort)
 
 #include "board-state.h"
 #include "board-aux.h"
-#include "ertm14-uart-link.h"
+#include "common-uart-link.h"
 
 #include "sensors.h"
 #include "softpll_ng.h"
@@ -188,7 +188,7 @@ struct gpio_pin pin_ertm15_clkab_sck = { &board.gpio_aux, 58 };
 struct gpio_pin pin_ertm15_clka_cs_n = { &board.gpio_aux, 59 };
 struct gpio_pin pin_ertm15_clkb_cs_n = { &board.gpio_aux, 60 };
 
-struct ad95xx_config pll_ext_10mhz_config = 
+struct ad95xx_config pll_ext_10mhz_config =
 #include "configs/ertm_14_pll_ext_10mhz.h"
 
 struct ad95xx_config pll_main_dot050_config =
@@ -365,7 +365,7 @@ uint32_t bswap32(uint32_t v)
     rv |= (v >> 8) & 0xff00;
     rv |= (v << 8) & 0xff0000;
     rv |= (v << 24) & 0xff000000;
-    
+
     return rv;
 }
 
@@ -441,7 +441,7 @@ int bist_summary( struct bist_stage *bist )
 
     if( n_errors )
         pp_printf("--------------------------------\nBIST FAILED with %d ERRORS!\n\n\n", n_errors );
-    else 
+    else
         pp_printf("BIST PASSED.\n");
 
     return n_errors > 0 ? -1 : 0;
@@ -450,6 +450,7 @@ int bist_summary( struct bist_stage *bist )
 static int ertm_init_complete = 0;
 
 void ertm14_set_pps_out_mode(int mode);
+static void mmc_comm_init(void);
 
 #define LTC6950_ID_VALUE 0x65
 
@@ -567,10 +568,10 @@ static void ertm14_spll_setup(void)
     // disable 2nd stage for DOT050 and Morion OCXO
     if ( board.mode & ERTM14_MODE_WITHOUT_ERTM15 )
         gs->n_stages = 1;
-    
+
     if ( board.mode & ERTM14_MODE_OCXO_10MHZ )
         gs->n_stages = 1;
-        
+
 #if 0
     gs->n_stages = 1;
 
@@ -612,7 +613,7 @@ static int ertm14_switch_sys_clock( int use_sys_from_pll )
     return 0;
 }
 
-    
+
 static int ertm14_dds_sync_init(void)
 {
     const int n_params = 4;
@@ -638,7 +639,7 @@ static int ertm14_dds_sync_init(void)
     }
 
 // Sync_in: continuous waveform, use external delay line (inside AD9910)
-    
+
     // produce a continuos sync clock for the DDSes
     fine_pulse_gen_setup_channel ( &board.dds_sync_dev, ERTM14_DDS_SYNC_LO, 1, board.dds_sync_delays[ERTM14_DDS_SYNC_LO], FINE_PULSE_GEN_CONTINUOUS );
     fine_pulse_gen_setup_channel ( &board.dds_sync_dev, ERTM14_DDS_SYNC_REF, 1, board.dds_sync_delays[ERTM14_DDS_SYNC_REF], FINE_PULSE_GEN_CONTINUOUS );
@@ -652,7 +653,7 @@ static int ertm14_dds_sync_init(void)
 // CLKAB Sync: internal delay line, single-shot mode, negative polarity
     fine_pulse_gen_setup_channel ( &board.dds_sync_dev, ERTM14_PLL_SYNC_CLKA, 1, board.dds_sync_delays[ERTM14_PLL_SYNC_CLKA], FINE_PULSE_GEN_NEGATIVE );
     fine_pulse_gen_setup_channel ( &board.dds_sync_dev, ERTM14_PLL_SYNC_CLKB, 1, board.dds_sync_delays[ERTM14_PLL_SYNC_CLKB], FINE_PULSE_GEN_NEGATIVE );
-    
+
     return 0;
 }
 
@@ -734,10 +735,10 @@ static void ertm14_dds_sync_calibrate(void)
 
     for( j=0; j<2; j++ )
     {
-        // sync_in fine delay setpoint is the 
+        // sync_in fine delay setpoint is the
         windows[j].setpoint = windows[j].best_start + ( AD9910_FINE_DELAY_STEP_PS * windows[j].best_length ) / 2;
     }
-    
+
 
     board_dbg("DDS_LO SYNC start=%d ps length=%d ps setpoint=%d ps\n",
         windows[0].best_start, windows[0].best_length, windows[0].setpoint
@@ -749,8 +750,8 @@ static void ertm14_dds_sync_calibrate(void)
     fine_pulse_gen_setup_channel ( &board.dds_sync_dev, ERTM14_DDS_SYNC_LO, 1, 100000 + windows[0].setpoint, FINE_PULSE_GEN_CONTINUOUS );
     fine_pulse_gen_setup_channel ( &board.dds_sync_dev, ERTM14_DDS_SYNC_REF, 1, 100000 + windows[1].setpoint, FINE_PULSE_GEN_CONTINUOUS );
 
-    
-        
+
+
 }
 
 static int ertm14_align_clocks(void)
@@ -795,7 +796,7 @@ void blink(int id)
         pin = &pin_ertm15_led_lo_red;
     else if (id == 2 )
         pin = &pin_ertm15_led_ref_red;
-    
+
     gen_gpio_out( pin, 1 );
     timer_delay_ms(50);
     gen_gpio_out( pin, 0 );
@@ -913,7 +914,7 @@ static void apply_config(struct ertm14_board_state *cfg,
 		int div_b = ertm14_get_clkab_divider( freq_b );
 		int enable_a = ( cfg->clka_enable_mask & (1<<i) ) ? 1 : 0;
 		int enable_b = ( cfg->clkb_enable_mask & (1<<i) ) ? 1 : 0;
-		
+
 		board_dbg("CLKA%d: freq=%d Hz, divider=%d, enable=%d\n", i, freq_a, div_a, enable_a);
 		board_dbg("CLKA%d: freq=%d Hz, divider=%d, enable=%d\n", i, freq_b, div_b, enable_b);
 
@@ -992,13 +993,13 @@ static int ertm_process_psnmp(struct uart_packet *rx_pkt, struct uart_packet *tx
 	/* return board config in case of bad opcode */
 	if ((op = get_proto_op(opcode)) == NULL)
 		op = get_proto_op(ertm14_get_board_config);
-	
+
 	tx_pkt->ptype = ERTM14_UART_PTYPE_SNMP_RESP;
 	tx_pkt->length = op->offset2 + op->length2;
 
 	switch (opcode) {
 	case ertm14_get_board_config:
-		/* return full board configuration */		
+		/* return full board configuration */
 		bs = (struct ertm14_board_state *)&tx_pkt->payload[0];
 		get_board_config(bs);
 		break;
@@ -1016,7 +1017,7 @@ static int ertm_process_psnmp(struct uart_packet *rx_pkt, struct uart_packet *tx
 		break;
 
 	case ertm14_get_sim_board_config:
-		/* return full board configuration */		
+		/* return full board configuration */
 		bs = (struct ertm14_board_state *)&tx_pkt->payload[0];
 		get_sim_board_config(bs);
 		break;
@@ -1165,7 +1166,7 @@ static int ertm14_dds_nco_sync_task(void)
             break;
     }
 
-    
+
 
     switch( dds_nco_sync_state )
     {
@@ -1547,33 +1548,6 @@ int ertm14_init_mac_eeprom(void)
     return 0;
 }
 
-static void mmc_comm_init(void)
-{
-    board_dbg("Init MMC14 UART Link\n");
-    suart_init( &board.mmc_14_uart, BASE_MMC_UART_14, 115200 );
-    uart_link_create_wrpc_suart( &board.mmc_14_link, &board.mmc_14_uart );
-
-    struct ertm14_mmc_state *st14 = mmc_get_status( &board.mmc_14_link );
-    bist_checkpoint( ertm_bist, ERTM14_BIST_MMC_14, 0, st14 != NULL );
-
-    board_dbg("Init MMC15 UART Link\n");
-    suart_init( &board.mmc_15_uart, BASE_MMC_UART_15, 115200 );
-    uart_link_create_wrpc_suart( &board.mmc_15_link, &board.mmc_15_uart );
-
-    struct ertm14_mmc_state *st15 = mmc_get_status( &board.mmc_15_link );
-    bist_checkpoint( ertm_bist, ERTM14_BIST_MMC_15, 0, st15 != NULL );
-
-
-    if( st14 )
-    {
-        mmc_show_version_info( "eRTM14", st14 );
-    }
-
-    if( st15 )
-    {
-        mmc_show_version_info( "eRTM15", st15 );
-    }
-}
 
 void ertm14_set_pps_out_mode(int mode)
 {
@@ -1661,7 +1635,7 @@ int ertm14_low_level_init(void)
         board_dbg( "Configuring board *WITHOUT* eRTM15 support (eRTM15 not found or disabled in software).\n");
     else
         board_dbg( "Configuring board WITH eRTM15 support.\n");
-    
+
 
     /* Initialize the clock monitor core - it monitors the frequencies of all clocks coming to the FPGA.
        We use it to self-diagnose if the board's oscillators are working correctly. */
@@ -1706,7 +1680,7 @@ int ertm14_low_level_init(void)
 
     board_dbg("Init Fine Pulse Generator\n");
 
-    /* Initialize the Fine Pulse Generator - it MUST be done 
+    /* Initialize the Fine Pulse Generator - it MUST be done
        before we touch the DDSes as it drives the DDS IOUPDATE line.
        For my own record: don't touch this, you've wasted time catching the null pointer to
        FPG device already ;-) */
@@ -1791,14 +1765,14 @@ void ertm14_config_init()
         cfg->lo.ftw = ERTM14_DDS_DEFAULT_FTW;
         cfg->ref.ftw = ERTM14_DDS_DEFAULT_FTW;
         cfg->lo.ampl_factor = ERTM14_DDS_DEFAULT_AMPLITUDE;
-        cfg->ref.ampl_factor = ERTM14_DDS_DEFAULT_AMPLITUDE; 
+        cfg->ref.ampl_factor = ERTM14_DDS_DEFAULT_AMPLITUDE;
 
         for( j = 0; j <= ERTM14_RF_OUT_MAX_ID; j++)
         {
             cfg->ref.out_state [j] = ERTM15_RF_OUT_MONITOR;
             cfg->lo.out_state [j] = ERTM15_RF_OUT_MONITOR;
         }
-    
+
         cfg->ref.sync_count = 0;
         cfg->lo.sync_count = 0;
 
@@ -1867,7 +1841,7 @@ static int ertm14_commit_config( struct  ertm14_board_state *cfg )
 
         board_dbg("DDS LO: FTW=0x%08x, ampl=%d\n", cfg->lo.ftw, cfg->lo.ampl_factor );
         board_dbg("DDS REF: FTW=0x%08x, ampl=%d\n", cfg->ref.ftw, cfg->ref.ampl_factor );
-        
+
         for( i = ERTM14_RF_OUT_MIN_ID; i <= ERTM14_RF_OUT_MAX_ID; i++)
         {
             int st_lo = cfg->lo.out_state[i] == ERTM15_RF_OUT_ON ? 1 : 0;
@@ -1927,7 +1901,7 @@ int ertm14_get_clkab_divider( int freq )
         if (clkab_freqs[i].freq == freq)
             return clkab_freqs[i].divider;
     }
-    
+
     return -1;
 }
 
@@ -2027,12 +2001,26 @@ int wrc_board_early_init()
     return ll;
 }
 
+#define MMC_POLL_STATE_IDLE 0
+#define MMC_POLL_STATE_WAIT_RESPONSE 1
+
+#define ERTM14_MMC_POLL_PERIOD_MS 1000 /* milliseconds */
+#define ERTM14_MMC_RX_TIMEOUT_MS 1000 /* milliseconds */
+
+struct ertm14_mmc_link
+{
+    struct uart_link ulink;
+    int poll_state;
+    timeout_t poll_timeout, rx_timeout;
+};
+
+static struct ertm14_mmc_link mmc14_link;
+static struct ertm14_mmc_link mmc15_link;
+
 /* FIXME: these should be in a .h file */
 extern int phy_calibration_poll(void);
 extern void phy_calibration_init(void);
 
-static timeout_t mmc14_tmo;
-static timeout_t mmc15_tmo;
 
 static void mmc_show_version_info( const char *brdname, struct ertm14_mmc_state *st )
 {
@@ -2040,34 +2028,79 @@ static void mmc_show_version_info( const char *brdname, struct ertm14_mmc_state 
     pp_printf("  - Git build commit : %32s\n", st->info.git_sha );
     pp_printf("  - Git build tag    : %32s\n", st->info.git_tag );
     pp_printf("  - Build date       : %d (Unix)\n",   bswap32( st->info.build_date ) );
+    pp_printf("  - Serial Number    : %32s\n",   st->info.board_serial_number );
 }
 
-static struct ertm14_mmc_state* mmc_get_status ( struct uart_link *link )
+int mmc_link_init( struct ertm14_mmc_link *link, struct simple_uart_device *uart_dev, uint32_t uart_base, uint32_t uart_speed )
+{
+    suart_init( uart_dev, uart_base, uart_speed ); // fixme: check errors
+    uart_link_create_wrpc_suart( &link->ulink, uart_dev );
+    tmo_init( &link->poll_timeout, ERTM14_MMC_POLL_PERIOD_MS );
+    link->poll_state = MMC_POLL_STATE_IDLE;
+    return 0;
+}
+
+int mmc_link_request_state(struct ertm14_mmc_link *link)
 {
     struct uart_packet tx_pkt;
-    struct uart_packet *rx_pkt;
+
+    if (link->poll_state != MMC_POLL_STATE_IDLE)
+        return -EBUSY;
 
     tx_pkt.ptype = ERTM14_UART_PTYPE_MMC_STATUS_REQ;
     tx_pkt.length = 0;
-    uart_link_send( link, &tx_pkt );
+    uart_link_send(&link->ulink, &tx_pkt);
+    tmo_init(&link->rx_timeout, ERTM14_MMC_RX_TIMEOUT_MS);
+    link->poll_state = MMC_POLL_STATE_WAIT_RESPONSE;
 
-    if( uart_link_recv( link, &rx_pkt, 100 ) == 1 )
-    {
-        if ( rx_pkt->ptype != ERTM14_UART_PTYPE_MMC_STATUS_RESP )
-            return NULL;
-        if ( rx_pkt->length != sizeof( struct ertm14_mmc_state ) )
-            return NULL;
-        return (struct ertm14_mmc_state*) rx_pkt->payload;
-    }
-
-    return NULL;
+    return 0;
 }
 
-void poll_mmc_sensors(struct uart_link *link)
+int mmc_link_poll_state(struct ertm14_mmc_link *link, struct ertm14_mmc_state *state, int blocking)
 {
-    struct ertm14_mmc_state *state = mmc_get_status(link);
+    if (link->poll_state != MMC_POLL_STATE_WAIT_RESPONSE)
+        return -EAGAIN;
 
-    if (!state) // fixme: report error?
+    do
+    {
+        struct uart_packet *rx_pkt;
+
+        if (tmo_expired(&link->rx_timeout))
+        {
+            link->poll_state = MMC_POLL_STATE_IDLE;
+            return -ETIMEDOUT;
+        }
+
+        int ret = uart_link_recv(&link->ulink, &rx_pkt, 0);
+
+        if (ret < 0)
+        {
+            link->poll_state = MMC_POLL_STATE_IDLE;
+            return ret;
+        }
+        else if (ret > 0)
+        {
+            if ((rx_pkt->ptype != ERTM14_UART_PTYPE_MMC_STATUS_RESP) || rx_pkt->length != sizeof(struct ertm14_mmc_state))
+            {
+                link->poll_state = MMC_POLL_STATE_IDLE;
+                return -EBADMSG;
+            }
+
+            if (state)
+                memcpy( state, rx_pkt->payload, sizeof(struct ertm14_mmc_state ) );
+            return 1;
+        }
+
+    } while (blocking);
+
+    return 0;
+}
+
+void poll_mmc_sensors(struct ertm14_mmc_link *link)
+{
+    struct ertm14_mmc_state state;
+
+    if( mmc_link_poll_state(link, &state, 0) <= 0)
         return;
 
     int i;
@@ -2075,7 +2108,7 @@ void poll_mmc_sensors(struct uart_link *link)
     for (i = 0; i < ERTM14_MAX_SENSORS_COUNT; i++)
     {
         struct ertm14_mmc_sensor_state *s;
-        s = &state->sensors[i];
+        s = &state.sensors[i];
 
         if (!(s->flags & ERTM14_SENSOR_VALID))
             continue;
@@ -2085,30 +2118,49 @@ void poll_mmc_sensors(struct uart_link *link)
         if (!sensor)
             continue;
 
-        //pp_printf("upd s %d v %d\n", s->id, bswap16( s->value ) );
-
         // ARMs are little endian, LM32 is big endian.... Such is life...
         sensor->value = bswap16(s->value);
         sensor->flags |= WRC_SENSOR_VALID;
     }
 }
 
+int mmc_test_communication( struct ertm14_mmc_link *link, struct ertm14_mmc_state *state, int attempts )
+{
+    int i;
+
+    for(i = 0; i < attempts; i++)
+    {
+        board_dbg("Trying to communicate with the MMC, attempt %d/%d\n", i+1, attempts );
+        mmc_link_request_state( link );
+        int ret = mmc_link_poll_state( link, state, 1 );
+
+        if( ret > 0)
+            return ret;
+    }
+
+    return 0;
+}
+
 static void mmc14_link_init(void)
 {
-    tmo_init( &mmc14_tmo, 1000 );
+    tmo_init(&mmc14_link.poll_timeout, ERTM14_MMC_POLL_PERIOD_MS );
 }
 
 static void mmc15_link_init(void)
 {
-    tmo_init( &mmc15_tmo, 1000 );
+    tmo_init(&mmc15_link.poll_timeout, ERTM14_MMC_POLL_PERIOD_MS );
 }
 
 static int mmc14_link_poll(void)
 {
-    if (tmo_expired(&mmc14_tmo))
+    if (tmo_expired(&mmc14_link.poll_timeout))
     {
-        tmo_restart(&mmc14_tmo);
-        poll_mmc_sensors( &board.mmc_14_link );
+        tmo_restart(&mmc14_link.poll_timeout);
+        mmc_link_request_state( &mmc14_link );
+    }
+    else
+    {
+        poll_mmc_sensors( &mmc14_link );
     }
 
     return 0;
@@ -2116,14 +2168,51 @@ static int mmc14_link_poll(void)
 
 static int mmc15_link_poll(void)
 {
-    if (tmo_expired(&mmc15_tmo))
+    if (tmo_expired(&mmc15_link.poll_timeout))
     {
-        tmo_restart(&mmc15_tmo);
-        poll_mmc_sensors( &board.mmc_15_link );
+        tmo_restart(&mmc15_link.poll_timeout);
+        mmc_link_request_state( &mmc15_link );
+    }
+    else
+    {
+        poll_mmc_sensors( &mmc15_link );
     }
 
     return 0;
 }
+
+static void mmc_comm_init(void)
+{
+    struct ertm14_mmc_state st14;
+    struct ertm14_mmc_state st15;
+
+    board_dbg("Init MMC15 UART Link\n");
+
+    mmc_link_init( &mmc14_link, &board.mmc_14_uart, BASE_MMC_UART_14, 115200 );
+    mmc_link_init( &mmc15_link, &board.mmc_15_uart, BASE_MMC_UART_15, 115200 );
+
+    int ertm14_ok = mmc_test_communication( &mmc14_link, &st14, 3 );
+    int ertm15_ok = mmc_test_communication( &mmc15_link, &st15, 3 );
+
+    bist_checkpoint( ertm_bist, ERTM14_BIST_MMC_14, 0, ertm14_ok );
+    bist_checkpoint( ertm_bist, ERTM14_BIST_MMC_15, 0, ertm15_ok );
+
+
+    if( ertm14_ok )
+    {
+        mmc_show_version_info( "eRTM14", &st14 );
+    } else {
+        board_dbg("MMC14 communication attempt failed.\n");
+    }
+
+    if( ertm15_ok )
+    {
+        mmc_show_version_info( "eRTM15", &st15 );
+    } else {
+        board_dbg("MMC15 communication attempt failed.\n");
+    }
+}
+
 
 static timeout_t rfmon_timeout;
 
@@ -2168,8 +2257,6 @@ int wrc_board_init()
     evth_dds_nco_sync = event_listener_create();
     evth_config_update_listener = event_listener_create();
 
-    //wrc_task_create( "iuart14", NULL, iuart_14_poll );
-    
     console_set_mode_switch_hook( &console_uart_dev, control_uart_mode_callback );
 
     wrc_task_create( "control-uart", NULL, control_uart_poll );

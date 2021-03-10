@@ -23,8 +23,7 @@
 #include "ertm14-uart-link.h"
 #include "rf_frame_transceiver.h"
 #include "board-state.h"
-
-#define ERTM14_SECONDARY_DEBUG_UART 1
+#include "common-uart-link.h"
 
 #define WRC_MAX_TASKS 24
 #define ERTM14_SECONDARY_DEBUG_UART 1
@@ -188,9 +187,6 @@ struct ertm14_board
     struct uart_link control_uart_link;
     struct simple_uart_device mmc_14_uart;
     struct simple_uart_device mmc_15_uart;
-    struct uart_link mmc_14_link;
-    struct uart_link mmc_15_link;
-
     int mode;
     int dds_resync_count;
 
