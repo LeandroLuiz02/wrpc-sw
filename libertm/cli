@@ -154,9 +154,12 @@ class ErtmTest(cmd.Cmd):
     def do_h(self, arg):
         self.do_help(arg)
 
+    # convenience aliases
     do_q = do_EOF
     do_quit = do_EOF
     do_gbs = do_get_board_state
+    do_sla = do_set_level_adjust
+    do_wrd = do_wrc_diags
 
 if __name__ == '__main__':
     tst = ErtmTest(completekey='tab')
