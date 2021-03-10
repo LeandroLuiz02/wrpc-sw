@@ -77,7 +77,7 @@ static uint16_t ntohs(uint16_t __netshort)
 #endif
 
 #include "board-state.h"
-#include "ertm14-uart-link.h"
+#include "common-uart-link.h"
 
 #include "sensors.h"
 #include "softpll_ng.h"
@@ -446,6 +446,7 @@ int bist_summary( struct bist_stage *bist )
 static int ertm_init_complete = 0;
 
 void ertm14_set_pps_out_mode(int mode);
+static void mmc_comm_init(void);
 
 #define LTC6950_ID_VALUE 0x65
 
@@ -1617,33 +1618,6 @@ int ertm14_init_mac_eeprom(void)
     return 0;
 }
 
-static void mmc_comm_init(void)
-{
-    board_dbg("Init MMC14 UART Link\n");
-    suart_init( &board.mmc_14_uart, BASE_MMC_UART_14, 115200 );
-    uart_link_create_wrpc_suart( &board.mmc_14_link, &board.mmc_14_uart );
-
-    struct ertm14_mmc_state *st14 = mmc_get_status( &board.mmc_14_link );
-    bist_checkpoint( ertm_bist, ERTM14_BIST_MMC_14, 0, st14 != NULL );
-
-    board_dbg("Init MMC15 UART Link\n");
-    suart_init( &board.mmc_15_uart, BASE_MMC_UART_15, 115200 );
-    uart_link_create_wrpc_suart( &board.mmc_15_link, &board.mmc_15_uart );
-
-    struct ertm14_mmc_state *st15 = mmc_get_status( &board.mmc_15_link );
-    bist_checkpoint( ertm_bist, ERTM14_BIST_MMC_15, 0, st15 != NULL );
-
-
-    if( st14 )
-    {
-        mmc_show_version_info( "eRTM14", st14 );
-    }
-
-    if( st15 )
-    {
-        mmc_show_version_info( "eRTM15", st15 );
-    }
-}
 
 void ertm14_set_pps_out_mode(int mode)
 {
@@ -2104,12 +2078,26 @@ int wrc_board_early_init()
     return ll;
 }
 
+#define MMC_POLL_STATE_IDLE 0
+#define MMC_POLL_STATE_WAIT_RESPONSE 1
+
+#define ERTM14_MMC_POLL_PERIOD_MS 1000 /* milliseconds */
+#define ERTM14_MMC_RX_TIMEOUT_MS 1000 /* milliseconds */
+
+struct ertm14_mmc_link
+{
+    struct uart_link ulink;
+    int poll_state;
+    timeout_t poll_timeout, rx_timeout;
+};
+
+static struct ertm14_mmc_link mmc14_link;
+static struct ertm14_mmc_link mmc15_link;
+
 /* FIXME: these should be in a .h file */
 extern int phy_calibration_poll(void);
 extern void phy_calibration_init(void);
 
-static timeout_t mmc14_tmo;
-static timeout_t mmc15_tmo;
 
 static void mmc_show_version_info( const char *brdname, struct ertm14_mmc_state *st )
 {
@@ -2117,34 +2105,79 @@ static void mmc_show_version_info( const char *brdname, struct ertm14_mmc_state 
     pp_printf("  - Git build commit : %32s\n", st->info.git_sha );
     pp_printf("  - Git build tag    : %32s\n", st->info.git_tag );
     pp_printf("  - Build date       : %d (Unix)\n",   bswap32( st->info.build_date ) );
+    pp_printf("  - Serial Number    : %32s\n",   st->info.board_serial_number );
 }
 
-static struct ertm14_mmc_state* mmc_get_status ( struct uart_link *link )
+int mmc_link_init( struct ertm14_mmc_link *link, struct simple_uart_device *uart_dev, uint32_t uart_base, uint32_t uart_speed )
+{
+    suart_init( uart_dev, uart_base, uart_speed ); // fixme: check errors
+    uart_link_create_wrpc_suart( &link->ulink, uart_dev );
+    tmo_init( &link->poll_timeout, ERTM14_MMC_POLL_PERIOD_MS );
+    link->poll_state = MMC_POLL_STATE_IDLE;
+    return 0;
+}
+
+int mmc_link_request_state(struct ertm14_mmc_link *link)
 {
     struct uart_packet tx_pkt;
-    struct uart_packet *rx_pkt;
+
+    if (link->poll_state != MMC_POLL_STATE_IDLE)
+        return -EBUSY;
 
     tx_pkt.ptype = ERTM14_UART_PTYPE_MMC_STATUS_REQ;
     tx_pkt.length = 0;
-    uart_link_send( link, &tx_pkt );
+    uart_link_send(&link->ulink, &tx_pkt);
+    tmo_init(&link->rx_timeout, ERTM14_MMC_RX_TIMEOUT_MS);
+    link->poll_state = MMC_POLL_STATE_WAIT_RESPONSE;
 
-    if( uart_link_recv( link, &rx_pkt, 100 ) == 1 )
-    {
-        if ( rx_pkt->ptype != ERTM14_UART_PTYPE_MMC_STATUS_RESP )
-            return NULL;
-        if ( rx_pkt->length != sizeof( struct ertm14_mmc_state ) )
-            return NULL;
-        return (struct ertm14_mmc_state*) rx_pkt->payload;
-    }
-
-    return NULL;
+    return 0;
 }
 
-void poll_mmc_sensors(struct uart_link *link)
+int mmc_link_poll_state(struct ertm14_mmc_link *link, struct ertm14_mmc_state *state, int blocking)
 {
-    struct ertm14_mmc_state *state = mmc_get_status(link);
+    if (link->poll_state != MMC_POLL_STATE_WAIT_RESPONSE)
+        return -EAGAIN;
 
-    if (!state) // fixme: report error?
+    do
+    {
+        struct uart_packet *rx_pkt;
+
+        if (tmo_expired(&link->rx_timeout))
+        {
+            link->poll_state = MMC_POLL_STATE_IDLE;
+            return -ETIMEDOUT;
+        }
+
+        int ret = uart_link_recv(&link->ulink, &rx_pkt, 0);
+
+        if (ret < 0)
+        {
+            link->poll_state = MMC_POLL_STATE_IDLE;
+            return ret;
+        }
+        else if (ret > 0)
+        {
+            if ((rx_pkt->ptype != ERTM14_UART_PTYPE_MMC_STATUS_RESP) || rx_pkt->length != sizeof(struct ertm14_mmc_state))
+            {
+                link->poll_state = MMC_POLL_STATE_IDLE;
+                return -EBADMSG;
+            }
+
+            if (state)
+                memcpy( state, rx_pkt->payload, sizeof(struct ertm14_mmc_state ) );
+            return 1;
+        }
+
+    } while (blocking);
+
+    return 0;
+}
+
+void poll_mmc_sensors(struct ertm14_mmc_link *link)
+{
+    struct ertm14_mmc_state state;
+
+    if( mmc_link_poll_state(link, &state, 0) <= 0)
         return;
 
     int i;
@@ -2152,7 +2185,7 @@ void poll_mmc_sensors(struct uart_link *link)
     for (i = 0; i < ERTM14_MAX_SENSORS_COUNT; i++)
     {
         struct ertm14_mmc_sensor_state *s;
-        s = &state->sensors[i];
+        s = &state.sensors[i];
 
         if (!(s->flags & ERTM14_SENSOR_VALID))
             continue;
@@ -2162,30 +2195,49 @@ void poll_mmc_sensors(struct uart_link *link)
         if (!sensor)
             continue;
 
-        //pp_printf("upd s %d v %d\n", s->id, bswap16( s->value ) );
-
         // ARMs are little endian, LM32 is big endian.... Such is life...
         sensor->value = bswap16(s->value);
         sensor->flags |= WRC_SENSOR_VALID;
     }
 }
 
+int mmc_test_communication( struct ertm14_mmc_link *link, struct ertm14_mmc_state *state, int attempts )
+{
+    int i;
+
+    for(i = 0; i < attempts; i++)
+    {
+        board_dbg("Trying to communicate with the MMC, attempt %d/%d\n", i+1, attempts );
+        mmc_link_request_state( link );
+        int ret = mmc_link_poll_state( link, state, 1 );
+
+        if( ret > 0)
+            return ret;
+    }
+
+    return 0;
+}
+
 static void mmc14_link_init(void)
 {
-    tmo_init( &mmc14_tmo, 1000 );
+    tmo_init(&mmc14_link.poll_timeout, ERTM14_MMC_POLL_PERIOD_MS );
 }
 
 static void mmc15_link_init(void)
 {
-    tmo_init( &mmc15_tmo, 1000 );
+    tmo_init(&mmc15_link.poll_timeout, ERTM14_MMC_POLL_PERIOD_MS );
 }
 
 static int mmc14_link_poll(void)
 {
-    if (tmo_expired(&mmc14_tmo))
+    if (tmo_expired(&mmc14_link.poll_timeout))
     {
-        tmo_restart(&mmc14_tmo);
-        poll_mmc_sensors( &board.mmc_14_link );
+        tmo_restart(&mmc14_link.poll_timeout);
+        mmc_link_request_state( &mmc14_link );
+    }
+    else
+    {
+        poll_mmc_sensors( &mmc14_link );
     }
 
     return 0;
@@ -2193,14 +2245,51 @@ static int mmc14_link_poll(void)
 
 static int mmc15_link_poll(void)
 {
-    if (tmo_expired(&mmc15_tmo))
+    if (tmo_expired(&mmc15_link.poll_timeout))
     {
-        tmo_restart(&mmc15_tmo);
-        poll_mmc_sensors( &board.mmc_15_link );
+        tmo_restart(&mmc15_link.poll_timeout);
+        mmc_link_request_state( &mmc15_link );
+    }
+    else
+    {
+        poll_mmc_sensors( &mmc15_link );
     }
 
     return 0;
 }
+
+static void mmc_comm_init(void)
+{
+    struct ertm14_mmc_state st14;
+    struct ertm14_mmc_state st15;
+
+    board_dbg("Init MMC15 UART Link\n");
+
+    mmc_link_init( &mmc14_link, &board.mmc_14_uart, BASE_MMC_UART_14, 115200 );
+    mmc_link_init( &mmc15_link, &board.mmc_15_uart, BASE_MMC_UART_15, 115200 );
+
+    int ertm14_ok = mmc_test_communication( &mmc14_link, &st14, 3 );
+    int ertm15_ok = mmc_test_communication( &mmc15_link, &st15, 3 );
+
+    bist_checkpoint( ertm_bist, ERTM14_BIST_MMC_14, 0, ertm14_ok );
+    bist_checkpoint( ertm_bist, ERTM14_BIST_MMC_15, 0, ertm15_ok );
+
+
+    if( ertm14_ok )
+    {
+        mmc_show_version_info( "eRTM14", &st14 );
+    } else {
+        board_dbg("MMC14 communication attempt failed.\n");
+    }
+
+    if( ertm15_ok )
+    {
+        mmc_show_version_info( "eRTM15", &st15 );
+    } else {
+        board_dbg("MMC15 communication attempt failed.\n");
+    }
+}
+
 
 static timeout_t rfmon_timeout;
 
@@ -2245,8 +2334,6 @@ int wrc_board_init()
     evth_dds_nco_sync = event_listener_create();
     evth_config_update_listener = event_listener_create();
 
-    //wrc_task_create( "iuart14", NULL, iuart_14_poll );
-    
     console_set_mode_switch_hook( &console_uart_dev, control_uart_mode_callback );
 
     wrc_task_create( "control-uart", NULL, control_uart_poll );
