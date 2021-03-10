@@ -105,6 +105,29 @@ class ErtmTest(cmd.Cmd):
         self.lib.ertm_get_board_config(self.handle, byref(buf))
         self.display.display_ertm_state(self.handle[0].state)
 
+    def do_set_freq(self, args):
+        "set frequency of connector or connector channel."
+        try:
+            connector, rest = args.split(maxsplit=1)
+            connector = self.connector_idx[connector.lower()]
+            if connector in (self.ERTM_CLKA, self.ERTM_CLKB):
+                print(rest)
+                channel, freq = rest.split()
+                channel = int(channel)
+                freq = int(freq, 0)     # FIXME: this needs units
+            else:
+                channel = 10            # don't care
+                freq = rest
+                freq = int(freq, 0)     # FIXME: this needs units
+        except (ValueError, KeyError) as e:
+            print('usage: set_freq/sf {clka|clkb|lo|ref} [channel] freq')
+            return
+        err = self.lib.ertm_set_freq(self.handle, connector, channel, freq)
+        if err:
+            msg = self.errmsg(err)
+            print('error {} in set_freq: {}'.format(err, msg))
+            return
+
     def do_enable_channel(self, args):
         "enable/disable individual connector channel."
         try:
