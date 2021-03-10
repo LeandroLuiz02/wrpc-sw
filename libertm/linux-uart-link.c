@@ -6,7 +6,8 @@
 #include <termios.h>
 #include <fcntl.h>
 
-#include "ertm14-uart-link.h"
+#include "board-state.h"
+#include "common-uart-link.h"
 
 #define CON_ESCAPE_CODE 0x1b
 #define CON_SWITCH_BINARY_CODE 'B'
