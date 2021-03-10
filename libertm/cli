@@ -34,19 +34,54 @@ class ertm_connection(Structure):
         ("serial_connection", c_char*PATH_MAX),
     ]
 
+
 class ertm_status(Structure):
     _fields_ = [
-	("connection", ertm_connection),
-	("state", c_void_p),
-	("link", uart_link),
-	("reserved", 64*c_uint),
+        ("connection", ertm_connection),
+        ("state", c_void_p),
+        ("link", uart_link),
+        ("reserved", 64*c_uint),
+    ]
+
+class ertm_wr_status(Structure):
+    _fields_ = [
+	("VER", c_uint),
+	("CTRL", c_uint),
+	("WDIAG_SSTAT", c_uint),
+	("WDIAG_PSTAT", c_uint),
+	("WDIAG_PTPSTAT", c_uint),
+	("WDIAG_ASTAT", c_uint),
+	("WDIAG_TXFCNT", c_uint),
+	("WDIAG_RXFCNT", c_uint),
+	("WDIAG_SEC_MSB", c_uint),
+	("WDIAG_SEC_LSB", c_uint),
+	("WDIAG_NS", c_uint),
+	("WDIAG_MU_MSB", c_uint),
+	("WDIAG_MU_LSB", c_uint),
+	("WDIAG_DMS_MSB", c_uint),
+	("WDIAG_DMS_LSB", c_uint),
+	("WDIAG_ASYM", c_uint),
+	("WDIAG_CKO", c_uint),
+	("WDIAG_SETP", c_uint),
+	("WDIAG_UCNT", c_uint),
+	("WDIAG_TEMP", c_uint),
     ]
 
 class ErtmTest(cmd.Cmd):
 
     prompt = 'ertm> '
     ruler = '-'
+    ERTM_CLKA = 0
+    ERTM_CLKB  = 1
+    ERTM_LO = 2
+    ERTM_REF = 3
 
+    connector_idx = {
+        'lo' : ERTM_LO,
+        'ref' : ERTM_REF,
+        'clka': ERTM_CLKA,
+        'clkb': ERTM_CLKB,
+    }
 
     def preloop(self):
         self.lib = CDLL('./libertm.so')
@@ -63,6 +98,46 @@ class ErtmTest(cmd.Cmd):
         buf = create_string_buffer(512)
         self.lib.ertm_get_board_config(self.handle, byref(buf))
         self.display.display_ertm_state(self.handle[0].state)
+
+    def do_set_level_adjust(self, args):
+        "set amplification level of connector."
+        try:
+            connector, level = args.split()
+            connector = self.connector_idx[connector.lower()]
+            level = float(level)
+        except ValueError as e:
+            print('usage: set_level_adjust/sla {lo|ref} LEVEL')
+            return
+        self.lib.ertm_dds_set_level_adjust(self.handle, connector, c_double(level))
+
+    def do_wrc_diags(self, args):
+        "get WRC diagnostics."
+        buf = ertm_wr_status()
+        self.lib.ertm_wr_diags(self.handle, byref(buf))
+        self.display.display_wrc_diags_cooked(byref(buf))
+
+    def do_wr_status(self, args):
+        "get WRC link/lock status."
+        link_up = c_int()
+        is_locked = c_int()
+        self.lib.ertm_wr_status(self.handle, byref(link_up), byref(is_locked))
+        msg ="link: {} PLL: {}".format(
+                    "up" if link_up else "down",
+                    "locked" if is_locked else "not locked")
+        print(msg)
+
+    def do_wr_enable(self, args):
+        "start/stop WR PTP daemon."
+        try:
+            enable = int(args) if args else 1
+        except ValueError as e:
+            print('usage: wr_enable [0|1] (default=1/enable)')
+            return
+        self.lib.ertm_wr_enable(self.handle, enable)
+
+    def do_wr_disable(self, args):
+        """stop PTP daemon (synonymous to "wr_enable 0")."""
+        self.lib.ertm_wr_enable(self.handle, 0)
 
     def postloop(self):
         self.lib.ertm_exit(self.handle)
