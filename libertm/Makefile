@@ -16,9 +16,10 @@ libs: static-lib so-lib
 static-lib: $(TARGET).a
 so-lib: $(TARGET).so
 
-$(TARGET).so: $(TARGET).o
+$(TARGET).a $(TARGET).so: $(TARGET).o linux-uart-link.o common-uart-link.o
+$(TARGET).so:
 	$(LD) -shared -o $@ $^
-$(TARGET).a: $(TARGET).o linux-uart-link.o common-uart-link.o
+$(TARGET).a:
 	$(AR) r $@ $^
 $(TARGET).o: $(TARGET).h
 
