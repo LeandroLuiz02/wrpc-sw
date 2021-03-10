@@ -99,13 +99,28 @@ class ErtmTest(cmd.Cmd):
         self.lib.ertm_get_board_config(self.handle, byref(buf))
         self.display.display_ertm_state(self.handle[0].state)
 
+    def do_get_level_adjust(self, args):
+        "display amplification level of connector."
+        try:
+            connector = args
+            connector = self.connector_idx[connector.lower()]
+        except (ValueError, KeyError) as e:
+            print('usage: get_level_adjust/gla {lo|ref}')
+            return
+        level = c_double()
+        ret = self.lib.ertm_dds_get_level_adjust(self.handle, connector, byref(level))
+        if ret:
+            print('error %d in get_level_adjust'.format(ret))
+            return
+        print('{} level = {}'.format(args.upper(), level.value))
+
     def do_set_level_adjust(self, args):
         "set amplification level of connector."
         try:
             connector, level = args.split()
             connector = self.connector_idx[connector.lower()]
             level = float(level)
-        except ValueError as e:
+        except (ValueError, KeyError) as e:
             print('usage: set_level_adjust/sla {lo|ref} LEVEL')
             return
         self.lib.ertm_dds_set_level_adjust(self.handle, connector, c_double(level))
@@ -159,6 +174,7 @@ class ErtmTest(cmd.Cmd):
     do_quit = do_EOF
     do_gbs = do_get_board_state
     do_sla = do_set_level_adjust
+    do_gla = do_get_level_adjust
     do_wrd = do_wrc_diags
 
 if __name__ == '__main__':
