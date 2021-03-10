@@ -238,8 +238,10 @@ static int out_of_range(enum ertm_connector connector, int channel)
 			errno = EINVAL;
 			return ERTM_CH_OUT_OF_RANGE;
 		}
+		break;
 	default:
 		return ERTM_BAD_CONNECTOR;
+		break;
 	}
 	return 0;
 }
