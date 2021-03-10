@@ -3,6 +3,7 @@
 
 import readline
 import cmd
+import pdb
 from ctypes import *
 
 class uart_packet(Structure):
