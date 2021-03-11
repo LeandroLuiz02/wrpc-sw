@@ -92,7 +92,7 @@ class ErtmTest(cmd.Cmd):
         msg = self.lib.ertm_perror(errcode)
         return str(msg, encoding='utf8')
 
-    def preloop(self):
+    def my_preloop(self):
         try:
             readline.read_history_file(self.history)
         except FileNotFoundError:
@@ -222,7 +222,7 @@ class ErtmTest(cmd.Cmd):
         """stop PTP daemon (synonymous to "wr_enable 0")."""
         self.lib.ertm_wr_enable(self.handle, 0)
 
-    def postloop(self):
+    def my_postloop(self):
         readline.write_history_file(self.history)
         self.lib.ertm_exit(self.handle)
 
@@ -238,6 +238,17 @@ class ErtmTest(cmd.Cmd):
     def do_h(self, arg):
         self.do_help(arg)
 
+    # catch Ctrl-C and drop me back into cli
+    def cmdloop_intr(self, intro=None):
+        self.my_preloop()
+        while True:
+            try:
+                self.cmdloop()
+                break
+            except KeyboardInterrupt as e:
+                print('^C')
+        self.my_postloop()
+
     # convenience aliases
     do_q = do_EOF
     do_quit = do_EOF
@@ -247,5 +258,6 @@ class ErtmTest(cmd.Cmd):
     do_wrd = do_wrc_diags
 
 if __name__ == '__main__':
+
     tst = ErtmTest(completekey='tab')
-    tst.cmdloop()
+    tst.cmdloop_intr('programa de test')
