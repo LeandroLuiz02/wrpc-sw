@@ -4,6 +4,7 @@
 import readline
 import cmd
 import pdb
+import os.path
 from ctypes import *
 
 class uart_packet(Structure):
@@ -71,6 +72,8 @@ class ErtmTest(cmd.Cmd):
 
     prompt = 'ertm> '
     ruler = '-'
+    history = os.path.join(os.path.expanduser('~'), '.ertm_history')
+
     ERTM_CLKA = 0
     ERTM_CLKB  = 1
     ERTM_LO = 2
@@ -90,6 +93,10 @@ class ErtmTest(cmd.Cmd):
         return str(msg, encoding='utf8')
 
     def preloop(self):
+        try:
+            readline.read_history_file(self.history)
+        except FileNotFoundError:
+            readline.write_history_file(self.history)
         self.lib = CDLL('./libertm.so')
         self.display = CDLL('./display.so')
         ertm_init = self.lib.ertm_init
@@ -216,6 +223,7 @@ class ErtmTest(cmd.Cmd):
         self.lib.ertm_wr_enable(self.handle, 0)
 
     def postloop(self):
+        readline.write_history_file(self.history)
         self.lib.ertm_exit(self.handle)
 
     def do_headers(self, args):
