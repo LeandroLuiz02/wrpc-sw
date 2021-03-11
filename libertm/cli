@@ -233,6 +233,7 @@ class ErtmTest(cmd.Cmd):
         print(self.undoc_header)
 
     def do_EOF(self, arg):
+        print()
         return True
 
     def do_h(self, arg):
