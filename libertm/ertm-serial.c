@@ -21,7 +21,7 @@
 #include "private.h"
 #include "libertm.h"
 #include "display.h"
-#include "ertm14-uart-link.h"
+#include "common-uart-link.h"
 #include "ertm15_rf_distr.h"
 
 #define BUG(expr)	\

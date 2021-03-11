@@ -20,11 +20,13 @@
 #include "dev/spi_flash.h"
 #include "dev/bb_i2c.h"
 #include "dev/iuart.h"
-#include "ertm14-uart-link.h"
 #include "rf_frame_transceiver.h"
 #include "board-state.h"
+#include "common-uart-link.h"
 
 #define ERTM14_SECONDARY_DEBUG_UART 1
+
+#define WRC_MAX_TASKS 24
 
 #define BOARD_USE_CUSTOM_SDBFS 1
 #define BOARD_HAS_CUSTOM_NETWORK_INIT 1
@@ -99,8 +101,14 @@ extern unsigned char *BASE_EP;
 #define BASE_ERTM14_STREAMERS       (BASE_AUXWB + 0x600)
 #define BASE_ERTM14_DEBUG_UART       (BASE_AUXWB + 0x800)
 
+#define ERTM14_RF_OUT_MIN_ID 4
+#define ERTM14_RF_OUT_MAX_ID 12
+
 #define ERTM14_OUT_CLKA 0
 #define ERTM14_OUT_CLKB 1
+
+#define ERTM14_CLKAB_OUT_MIN_ID 4
+#define ERTM14_CLKAB_OUT_MAX_ID 15
 
 #define ERTM14_CLKAB_OUT_FRONT_PANEL 15
 
@@ -183,9 +191,6 @@ struct ertm14_board
     struct uart_link control_uart_link;
     struct simple_uart_device mmc_14_uart;
     struct simple_uart_device mmc_15_uart;
-    struct uart_link mmc_14_link;
-    struct uart_link mmc_15_link;
-
     int mode;
     int dds_resync_count;
 

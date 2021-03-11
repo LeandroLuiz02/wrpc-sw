@@ -2,6 +2,7 @@
 
 TARGET = libertm
 CFLAGS += -fPIC -Wall -g
+CFLAGS += -DCONFIG_TARGET_ERTM14
 
 ERTM_UART_LOCATION = ../lib
 ERTM_BOARD_LOCATION = ../boards/ertm14/
@@ -39,10 +40,10 @@ common-uart-link.o: $(ERTM_BOARD_LOCATION)/common-uart-link.c
 ertm14-uart-link.o: $(ERTM_UART_LOCATION)/ertm14-uart-link.c
 	$(CC) $(CFLAGS) -c -o $@ $^ $(LDLIBS) $(LDFLAGS)
 
-linux-uart-link.o: $(ERTM_BOARD_LOCATION)/ertm14-uart-link.h
+linux-uart-link.o: $(ERTM_BOARD_LOCATION)/common-uart-link.h
 ertm-serial.o: $(WRC_INCLUDES)/hw/wrc_diags_regs.h
 ertm-serial.o: $(ERTM_BOARD_LOCATION)/psnmp-proto.h $(ERTM_BOARD_LOCATION)/board-state.h
-ertm-serial.o: $(ERTM_BOARD_LOCATION)/ertm14-uart-link.h $(ERTM_BOARD_LOCATION)/ertm15_rf_distr.h
+ertm-serial.o: $(ERTM_BOARD_LOCATION)/common-uart-link.h $(ERTM_BOARD_LOCATION)/ertm15_rf_distr.h
 ertm-serial.o: private.h libertm.h
 libertm.o: libertm.h private.h
 

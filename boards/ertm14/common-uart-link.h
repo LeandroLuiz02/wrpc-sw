@@ -1,46 +1,32 @@
-#ifndef __ERTM14_UART_LINK_H
-#define __ERTM14_UART_LINK_H
+/*
+ * This work is part of the White Rabbit project
+ *
+ * Copyright (C) 2020-2021 CERN (www.cern.ch)
+ * Author: Tomasz Wlostowski <tomasz.wlostowski@cern.ch>
+ * Author: David Cobas <david.cobas@cern.ch>
+ *
+ * This program is free software: you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License as published by the
+ * Free Software Foundation, either version 3 of the License, or (at your
+ * option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful, but
+ * WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License along
+ * with this program.  If not, see <http://www.gnu.org/licenses/>.
+ */
+
+#ifndef __COMMON_UART_LINK_H
+#define __COMMON_UART_LINK_H
 
 #include <stdint.h>
 
-#define ERTM14_MAX_UART_LINK_PAYLOAD 512
-
-
-// UART Protocol packet types
-#define ERTM14_UART_PTYPE_PING 1
-#define ERTM14_UART_PTYPE_SNMP_REQ 2
-#define ERTM14_UART_PTYPE_SNMP_RESP 3
-#define ERTM14_UART_PTYPE_MMC_STATUS_REQ 4
-#define ERTM14_UART_PTYPE_MMC_STATUS_RESP 5
-
-
-#define ERTM14_SENSOR_VOLTAGE_MV   (1<<0)
-#define ERTM14_SENSOR_CURRENT_MA   (1<<1)
-#define ERTM14_SENSOR_TEMP_CELSIUS (1<<2)
-#define ERTM14_SENSOR_VALID         (1<<7)
-
-#define ERTM14_VOLTAGE_P3V3 0
-#define ERTM14_VOLTAGE_P12V 1
-#define ERTM14_TEMP_FPGA 2
-#define ERTM14_TEMP_DCDC 3
-
-#define ERTM15_TEMP_PSU 4
-#define ERTM15_TEMP_LO_RF 5
-#define ERTM15_TEMP_REF_RF 6
-#define ERTM15_TEMP_LO_DDS 7
-#define ERTM15_TEMP_REF_DDS 8
-#define ERTM15_TEMP_LTC6150 9
-#define ERTM15_TEMP_OCXO1 10
-#define ERTM15_TEMP_OCXO2 11
-#define ERTM15_TEMP_CLKA_FANOUT 12
-#define ERTM15_TEMP_CLKB_FANOUT 13
-
-#define ERTM15_VOLTAGE_P3V3 14
-#define ERTM15_VOLTAGE_P12V 15
-#define ERTM15_VOLTAGE_P9V0_LO 16
-#define ERTM15_VOLTAGE_P9V0_REF 17
-#define ERTM15_VOLTAGE_POCXO 18
-#define ERTM15_CURRENT_OCXO 19
+/* maximum packet payload size. choose to meet your memory footprint. */
+/* fixme: get config from board.h */
+#define UART_LINK_MAX_PAYLOAD 512
 
 #define LINK_STATE_IDLE 0
 #define LINK_STATE_SYNC 1
@@ -69,7 +55,7 @@ struct uart_packet
 {
     uint8_t ptype;
     uint16_t length;
-    uint8_t payload[ ERTM14_MAX_UART_LINK_PAYLOAD ];
+    uint8_t payload[ UART_LINK_MAX_PAYLOAD ];
 };
 
 struct uart_link
@@ -100,10 +86,6 @@ int uart_link_close_linux( struct uart_link *link );
 #ifdef CONFIG_TARGET_ERTM14
 int uart_link_create_wrpc_console( struct uart_link *link );
 int uart_link_create_wrpc_suart( struct uart_link *link, struct simple_uart_device *uart_dev );
-#endif
-
-#ifdef MODULE_ERTM14_FPGA_UART // openMMC
-
 #endif
 
 int uart_link_reset( struct uart_link *link );

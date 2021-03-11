@@ -7,13 +7,30 @@
 #ifndef __BOARD_STATE_ERTM14_H
 #define __BOARD_STATE_ERTM14_H
 
+#include <stdint.h>
+
 /* beware this header: it is only required for WRC_DIAG_WB,
  * which is not here (yet), and it unconditionally defines
  * the wretched PACKED macro
- * Dependencies, Makefiles and header order suffer accordingly
+ * Dependencies, Makefiles and header order suffer accordingly.
+ * Also, the file is only included when building for WRPC-SW as the target
+ * (the board state structures are shared with the MMC MCUs)
  */
+#if defined(CONFIG_TARGET_ERTM14)
 #include "hw/wrc_diags_regs.h"
 #include "ertm15_rf_distr.h"
+#endif
+
+/* OK, I'm committing an evil thing below, but wbgen and its way of defining packed structures is to blame.
+   On non-wrpc platforms (such as the MMCs), I can't include the 'wrc_diags_regs.h' file (it's platform-dependent),
+   so I had to redefine the wretched macro - Tom. */
+#ifndef PACKED
+    #if defined( __GNUC__)
+    #define PACKED __attribute__ ((packed))
+    #else
+    #error "Unsupported compiler?"
+    #endif
+#endif
 
 #define ERTM14_RF_OUT_MIN_ID 4
 #define ERTM14_RF_OUT_MAX_ID 12
@@ -22,6 +39,44 @@
 #define ERTM14_CLKAB_OUT_MAX_ID 15
 
 #define ERTM14_MAX_SENSORS_COUNT 21
+
+
+#define ERTM14_MAX_UART_LINK_PAYLOAD 512
+
+// UART Protocol packet types
+#define ERTM14_UART_PTYPE_PING 1
+#define ERTM14_UART_PTYPE_SNMP_REQ 2
+#define ERTM14_UART_PTYPE_SNMP_RESP 3
+#define ERTM14_UART_PTYPE_MMC_STATUS_REQ 4
+#define ERTM14_UART_PTYPE_MMC_STATUS_RESP 5
+
+#define ERTM14_SENSOR_VOLTAGE_MV    (1<<0)
+#define ERTM14_SENSOR_CURRENT_MA    (1<<1)
+#define ERTM14_SENSOR_TEMP_CELSIUS  (1<<2)
+#define ERTM14_SENSOR_VALID         (1<<7)
+
+#define ERTM14_VOLTAGE_P3V3 0
+#define ERTM14_VOLTAGE_P12V 1
+#define ERTM14_TEMP_FPGA 2
+#define ERTM14_TEMP_DCDC 3
+
+#define ERTM15_TEMP_PSU 4
+#define ERTM15_TEMP_LO_RF 5
+#define ERTM15_TEMP_REF_RF 6
+#define ERTM15_TEMP_LO_DDS 7
+#define ERTM15_TEMP_REF_DDS 8
+#define ERTM15_TEMP_LTC6150 9
+#define ERTM15_TEMP_OCXO1 10
+#define ERTM15_TEMP_OCXO2 11
+#define ERTM15_TEMP_CLKA_FANOUT 12
+#define ERTM15_TEMP_CLKB_FANOUT 13
+
+#define ERTM15_VOLTAGE_P3V3 14
+#define ERTM15_VOLTAGE_P12V 15
+#define ERTM15_VOLTAGE_P9V0_LO 16
+#define ERTM15_VOLTAGE_P9V0_REF 17
+#define ERTM15_VOLTAGE_POCXO 18
+#define ERTM15_CURRENT_OCXO 19
 
 struct ertm14_dds_state
 {
@@ -50,6 +105,7 @@ PACKED struct ertm14_mmc_version_info
     char git_tag[32];
     char git_sha[32];
     uint32_t build_date;
+    char board_serial_number[32];
 };
 
 PACKED struct ertm14_mmc_sensor_state

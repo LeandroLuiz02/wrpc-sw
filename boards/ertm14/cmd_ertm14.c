@@ -12,7 +12,6 @@
 #include <wrc.h>
 
 #include "board.h"
-#include "dev/console.h"
 #include "dev/clock_monitor.h"
 #include "softpll_ng.h"
 #include "shell.h"
@@ -40,13 +39,15 @@ static const char *get_rf_out_state_string(int state)
 static void dump_dds_state( const char *name, struct ertm14_dds_state *cfg ) 
 {
     int i;
-    pp_printf("%s DDS FTW:                0x%08x\n", name, cfg->ftw);
+    uint64_t freq = ad9910_ftw_to_frequency( cfg->ftw );
+
+    pp_printf("%s DDS FTW:                0x%08x (%d Hz)\n", name, (uint32_t) cfg->ftw, (uint32_t) freq );
     pp_printf("%s DDS amplitude factor:   %d\n", name, cfg->ampl_factor);
-    pp_printf("%s DDS measured power:     %d.%02d dBm\n", name, cfg->amp_power / 1000, cfg->amp_power % 1000);
+    pp_printf("%s DDS measured power:     %d mBm\n", name, cfg->amp_power);
     pp_printf("%s outputs:\n", name);
     for( i = ERTM14_RF_OUT_MIN_ID; i <= ERTM14_RF_OUT_MAX_ID; i++ )
-        pp_printf("- %s%d: %8s (last measured power = %d.%02d dBm)\n", name, i, get_rf_out_state_string( cfg->out_state[i] ),
-        cfg->out_power[i] / 1000, cfg->out_power[i] % 1000
+        pp_printf("- %s%d: %-08s (last measured power = %d mBm)\n", name, i, get_rf_out_state_string( cfg->out_state[i] ),
+        cfg->out_power[i]
         );
 }
 
@@ -224,7 +225,7 @@ extern void phy_calibration_disable(void);
 
 static int cmd_ertm(const char *args[])
 {
-	int i = 0;
+    int i = 0;
     if (!strcasecmp(args[0], "test-dac")) 
     {
         ertm_test_dac();
