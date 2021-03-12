@@ -63,7 +63,7 @@ static struct ertm14_protocol_op {
 	.offset1 = 1,
 	.length1 = 0,
 	.offset2 = 0,
-	.length2 = /* FIXME: what comes here? */ -1,
+	.length2 = sizeof(struct ertm14_nco_reset),
     },
     {
 	.opcode = ertm14_set_wrc_nco,
