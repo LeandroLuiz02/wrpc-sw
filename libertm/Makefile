@@ -11,7 +11,7 @@ WRC_INCLUDES = ../include
 CFLAGS += -I $(ERTM_UART_LOCATION) -I $(ERTM_BOARD_LOCATION)
 CFLAGS += -I $(WRC_INCLUDES)
 
-all: libs serial ertm-serial main
+all: libs main
 
 libs: static-lib so-lib display.so
 static-lib: $(TARGET).a
