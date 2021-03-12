@@ -103,6 +103,7 @@ static uint16_t ntohs(uint16_t __netshort)
 struct ertm14_board board;
 int ertm14_current_config_id = 0;
 struct ertm14_board_state ertm14_configs[ ERTM14_MAX_CONFIGS ];
+struct ertm14_nco_reset ertm14_nco_stats;
 
 struct ertm14_board_state ertm14_cs, *ertm14_current_state = &ertm14_cs;
 struct ertm14_board_state ertm14_next_state;
@@ -983,10 +984,24 @@ static void get_wrc_diags(struct WRC_DIAGS_WB *diags)
 		word[i] = htonl(word[i]);
 }
 
+static void refresh_wrc_nco(struct ertm14_nco_reset *nco)
+{
+	/* FIXME: confirm this is up-to-date
+	    nco->enabled = ;		// FIXME: is this per-board or per-ref/lo?
+	    nco->subscribed = ;
+	    nco->current_stream_id = 0;  // FIXME: clarify
+	*/
+	diag_read_word(8, DIAG_RO_BANK, &nco->rx_count);
+	nco->reset_count_lo = ertm14_current_state->lo.sync_count;
+	nco->reset_count_ref = ertm14_current_state->ref.sync_count;
+	nco->reset_count = nco->reset_count_lo + nco->reset_count_ref;
+}
+
 static int ertm_process_psnmp(struct uart_packet *rx_pkt, struct uart_packet *tx_pkt)
 {
 	struct ertm14_board_state *bs;
 	struct WRC_DIAGS_WB *diags;
+	struct ertm14_nco_reset *nco;
 	uint8_t opcode = rx_pkt->payload[0];
 	struct ertm14_protocol_op *op;
 
@@ -1030,6 +1045,9 @@ static int ertm_process_psnmp(struct uart_packet *rx_pkt, struct uart_packet *tx
 		get_wrc_diags(diags);
 		break;
 	case ertm14_get_wrc_nco:
+		nco = (struct ertm14_nco_reset *)&tx_pkt->payload[op->offset2];
+		refresh_wrc_nco(&ertm14_nco_stats);
+		memcpy(nco, &ertm14_nco_stats, sizeof(*nco));
 		break;
 	case ertm14_ptp_enable:
 		if (rx_pkt->payload[op->offset1])

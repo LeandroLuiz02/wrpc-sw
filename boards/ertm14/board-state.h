@@ -85,8 +85,8 @@ struct ertm14_dds_state
     int out_power[ERTM14_RF_OUT_MAX_ID + 1];
     int amp_power;
     int ampl_factor;
-    int sync_source;
-    int sync_count;
+    int sync_source;	/* one of ERTM14_SYNC_SOURCE_NONE/PPS/TRIGGER */
+    int sync_count;	/* number of sync events */
 };
 
 struct ertm14_board_state
@@ -119,6 +119,17 @@ PACKED struct ertm14_mmc_state
 {
     struct ertm14_mmc_version_info info;
     struct ertm14_mmc_sensor_state sensors[ERTM14_MAX_SENSORS_COUNT];
+};
+
+struct ertm14_nco_reset {
+	int		enabled;
+	int		subscribed;
+	uint32_t	current_stream_id;
+	uint32_t	rx_count;
+	uint32_t	reset_count;
+	uint32_t	reset_count_lo;
+	uint32_t	reset_count_ref;
+	uint32_t	unused[6];
 };
 
 /* FIXME: this is not the best place for this declaration */
