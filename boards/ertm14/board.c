@@ -1247,7 +1247,7 @@ static void ertm14_dds_nco_sync_init(void)
 
 static void rf_nco_sync_disable_channel( struct ertm14_dds_state *state, uint32_t ioupdate_channel )
 {
-    fine_pulse_gen_setup_channel ( &board.dds_sync_dev, ioupdate_channel, 1, board.dds_sync_delays[ioupdate_channel], 0  );
+    fine_pulse_gen_setup_channel ( &board.dds_sync_dev, ioupdate_channel, 0, board.dds_sync_delays[ioupdate_channel], 0  );
     state->sync_count = 0;
 }
 
@@ -1342,7 +1342,7 @@ static int ertm14_dds_nco_sync_task(void)
         case DDS_NCO_STATE_WAIT_TRIGGER:
         {
             int trig_ref = rf_nco_sync_wait_trigger( &ertm14_current_state->ref, ERTM14_DDS_IOUPDATE_REF );
-            int trig_lo = rf_nco_sync_wait_trigger( &ertm14_current_state->lo, ERTM14_DDS_IOUPDATE_REF );
+            int trig_lo = rf_nco_sync_wait_trigger( &ertm14_current_state->lo, ERTM14_DDS_IOUPDATE_LO );
 
 
             if( trig_ref && trig_lo )
