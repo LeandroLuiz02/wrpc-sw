@@ -45,4 +45,34 @@ struct ertm_status {
 	uint32_t reserved[64];
 };
 
+static int ertm_voltage_ids[] = {
+        ERTM15_VOLTAGE_P12V,
+        ERTM15_VOLTAGE_P3V3,
+        ERTM15_VOLTAGE_POCXO,
+        ERTM15_VOLTAGE_P9V0_LO,
+        ERTM15_VOLTAGE_P9V0_REF,
+        ERTM15_CURRENT_OCXO,
+        ERTM14_VOLTAGE_P12V,
+        ERTM14_VOLTAGE_P3V3,
+};
+static const int ertm_nvoltages =
+	sizeof(ertm_voltage_ids)/sizeof(ertm_voltage_ids[0]);
+
+static int ertm_temperature_ids[] = {
+        ERTM14_TEMP_FPGA,
+        ERTM14_TEMP_DCDC,
+        ERTM15_TEMP_LO_DDS,
+        ERTM15_TEMP_REF_DDS,
+        ERTM15_TEMP_LO_RF,
+        ERTM15_TEMP_LTC6150,
+        ERTM15_TEMP_OCXO1,
+        ERTM15_TEMP_OCXO2,
+        ERTM15_TEMP_PSU,
+        ERTM15_TEMP_REF_RF,
+        ERTM15_TEMP_CLKA_FANOUT,
+        ERTM15_TEMP_CLKB_FANOUT,
+};
+static const int ertm_ntemperatures =
+	sizeof(ertm_temperature_ids)/sizeof(ertm_temperature_ids[0]);
+
 extern int ertm_get_board_config(struct ertm_status *st, struct ertm14_board_state *bs);
