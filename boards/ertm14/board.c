@@ -1054,6 +1054,8 @@ static int ertm_process_psnmp(struct uart_packet *rx_pkt, struct uart_packet *tx
 		refresh_wrc_nco(&ertm14_nco_stats);
 		memcpy(nco, &ertm14_nco_stats, sizeof(*nco));
 		break;
+	case ertm14_get_mmc_version_info:
+		break;
 	case ertm14_get_sensors:
 		sensors = (struct wrc_sensor *)&tx_pkt->payload[op->offset2];
 		get_wrc_sensors(sensors);
