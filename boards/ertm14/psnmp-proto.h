@@ -17,6 +17,7 @@
 #define	ertm14_comm_test		0x18
 #define	ertm14_ptp_enable		0x19
 #define	ertm14_get_sensors		0x20
+#define	ertm14_get_mmc_version_info	0x21
 
 static struct ertm14_protocol_op {
 	int8_t	opcode;
@@ -52,6 +53,13 @@ static struct ertm14_protocol_op {
 	.length1 = 0,
 	.offset2 = 0,
 	.length2 = sizeof(struct ertm14_mmc_state),
+    },
+    {
+	.opcode = ertm14_get_mmc_version_info,
+	.offset1 = 1,
+	.length1 = 0,
+	.offset2 = 0,
+	.length2 = sizeof(struct ertm14_mmc_version_info),
     },
     {
 	.opcode = ertm14_get_sensors,
