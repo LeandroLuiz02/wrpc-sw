@@ -15,6 +15,7 @@
 #define ertm14_get_sim_board_config	0x17
 #define	ertm14_comm_test		0x18
 #define	ertm14_ptp_enable		0x19
+#define	ertm14_get_sensors		0x20
 
 static struct ertm14_protocol_op {
 	int8_t	opcode;
@@ -78,6 +79,13 @@ static struct ertm14_protocol_op {
 	.length1 = 1,
 	.offset2 = 1,
 	.length2 = 0,
+    },
+    {
+	.opcode = ertm14_get_sensors,
+	.offset1 = 1,
+	.length1 = 0,
+	.offset2 = 1,
+	.length2 = sizeof(ertm14_sensors),
     },
     {
 	.opcode = -1,
