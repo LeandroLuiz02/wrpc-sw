@@ -424,6 +424,76 @@ int ertm_get_wr_diags(struct ertm_status *st, struct WRC_DIAGS_WB *wrc_diags)
 	return 0;
 }
 
+void sensors_to_host(struct wrc_sensor *s, int nsensors)
+{
+	int i;
+	for (i = 0; i < nsensors; i++)
+		s[i].value = ntohs(s[i].value);
+}
+
+double to_celsius(uint16_t value)
+{
+	return value/1.0;
+}
+
+double to_volts(uint16_t value)
+{
+	return value/1000.0;
+}
+
+/* FIXME: lifted from sensors.c - such is life */
+static struct wrc_sensor* wrc_sensor_find(
+		struct wrc_sensor *sensors,
+		uint8_t id)
+{
+	struct wrc_sensor *s = sensors;
+	while (s->flags) {
+		if( s->id == id )
+			return s;
+		s++;
+	}
+	return NULL;
+}
+
+int ertm_get_sensors(struct ertm_status *st,
+	struct ertm_temperatures *t, struct ertm_voltages *v)
+{
+	int i, res;
+	struct uart_link *link = &st->link;
+
+	struct wrc_sensor sensors[ERTM14_MAX_SENSORS_COUNT];
+
+	res = ertm_proto_cycle(link, ertm14_get_sensors, NULL, sensors);
+	if (res < 0)
+		return res;
+	sensors_to_host(sensors, ERTM14_MAX_SENSORS_COUNT);
+
+	for (i = 0; i < ertm_ntemperatures; i++) {
+		int id = ertm_temperature_ids[i];
+		struct wrc_sensor *sensor = wrc_sensor_find(sensors, id);
+		double *temperatures = (double *)t;
+
+		if (sensor && (sensor->flags & WRC_SENSOR_TEMP_CELSIUS)
+				&& (sensor->flags & WRC_SENSOR_VALID))
+			temperatures[i] = to_celsius(sensor->value);
+		else
+			temperatures[i] = -1.0e9;
+	}
+
+	for (i = 0; i < ertm_nvoltages; i++) {
+		int id = ertm_voltage_ids[i];
+		struct wrc_sensor *sensor = wrc_sensor_find(sensors, id);
+		double *voltages = (double *)v;
+
+		if (sensor && (sensor->flags & WRC_SENSOR_VOLTAGE_MV)
+				&& (sensor->flags & WRC_SENSOR_VALID))
+			voltages[i] = to_volts(sensor->value);
+		else
+			voltages[i] = -1.0e9;
+	}
+	return 0;
+}
+
 static int set_board_config(struct ertm_status *st,
 			const struct ertm14_board_state *config)
 {

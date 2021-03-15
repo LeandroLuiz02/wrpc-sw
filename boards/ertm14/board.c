@@ -983,6 +983,11 @@ static void get_wrc_diags(struct WRC_DIAGS_WB *diags)
 		word[i] = htonl(word[i]);
 }
 
+static void get_wrc_sensors(struct wrc_sensor *dst)
+{
+	memcpy(dst, ertm_sensors, sizeof(ertm_sensors));
+}
+
 static void refresh_wrc_nco(struct ertm14_nco_reset *nco)
 {
 	/* FIXME: confirm this is up-to-date
@@ -1001,6 +1006,7 @@ static int ertm_process_psnmp(struct uart_packet *rx_pkt, struct uart_packet *tx
 	struct ertm14_board_state *bs;
 	struct WRC_DIAGS_WB *diags;
 	struct ertm14_nco_reset *nco;
+	struct wrc_sensor *sensors;
 	uint8_t opcode = rx_pkt->payload[0];
 	struct ertm14_protocol_op *op;
 
@@ -1035,7 +1041,6 @@ static int ertm_process_psnmp(struct uart_packet *rx_pkt, struct uart_packet *tx
 		bs = (struct ertm14_board_state *)&tx_pkt->payload[0];
 		get_sim_board_config(bs);
 		break;
-
 	case ertm14_get_mmc_state:
 		// struct ertm14_mmc_state *mmcs;
 		break;
@@ -1048,6 +1053,11 @@ static int ertm_process_psnmp(struct uart_packet *rx_pkt, struct uart_packet *tx
 		refresh_wrc_nco(&ertm14_nco_stats);
 		memcpy(nco, &ertm14_nco_stats, sizeof(*nco));
 		break;
+	case ertm14_get_sensors:
+		sensors = (struct wrc_sensor *)&tx_pkt->payload[op->offset2];
+		get_wrc_sensors(sensors);
+		break;
+		
 	case ertm14_ptp_enable:
 		if (rx_pkt->payload[op->offset1])
 			wrc_ptp_start();
