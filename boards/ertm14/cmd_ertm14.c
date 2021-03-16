@@ -13,6 +13,7 @@
 
 #include "board.h"
 #include "dev/clock_monitor.h"
+#include "dev/console.h"
 #include "softpll_ng.h"
 #include "shell.h"
 
@@ -46,9 +47,9 @@ static void dump_dds_state( const char *name, struct ertm14_dds_state *cfg )
     pp_printf("%s DDS measured power:     %d mBm\n", name, cfg->amp_power);
     pp_printf("%s outputs:\n", name);
     for( i = ERTM14_RF_OUT_MIN_ID; i <= ERTM14_RF_OUT_MAX_ID; i++ )
-        pp_printf("- %s%d: %-08s (last measured power = %d mBm)\n", name, i, get_rf_out_state_string( cfg->out_state[i] ),
-        cfg->out_power[i]
-        );
+        pp_printf("- %s%d: %-8s (last measured power = %d mBm)\n", name, i,
+		get_rf_out_state_string( cfg->out_state[i] ),
+		cfg->out_power[i]);
 }
 
 static void dump_config( int id, struct ertm14_board_state *cfg )
