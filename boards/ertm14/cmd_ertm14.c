@@ -14,6 +14,7 @@
 #include "board.h"
 #include "dev/console.h"
 #include "dev/clock_monitor.h"
+#include "dev/console.h"
 #include "softpll_ng.h"
 #include "shell.h"
 
