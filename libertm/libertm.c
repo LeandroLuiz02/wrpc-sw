@@ -214,7 +214,7 @@ int ertm_get_board_info(struct ertm_status *handle, struct ertm_board_info *info
 		errno = EINVAL;
 		return -1;
 	}
-	memcpy(info, &handle->state, sizeof(*info));
+	memcpy(info, &handle->state->board_info, sizeof(*info));
 	return 0;
 }
 
