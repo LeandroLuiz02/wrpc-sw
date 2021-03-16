@@ -229,14 +229,12 @@ class ErtmTest(cmd.Cmd):
         """display temperature sensor readings."""
         temps = self.Sensor_Array()
         self.lib.ertm_get_temperatures(self.handle, byref(temps))
-        print(temps[0], temps[1], temps[2])
         self.display.display_temperatures(byref(temps))
 
     def do_voltages(self, args):
         """display voltage sensor readings."""
         volts = self.Sensor_Array()
         self.lib.ertm_get_voltages(self.handle, byref(volts))
-        print(volts[0], volts[1], volts[2])
         self.display.display_voltages(byref(volts))
 
     def do_board_info(self, args):
