@@ -1087,7 +1087,6 @@ static int ertm_process_psnmp(struct uart_packet *rx_pkt, struct uart_packet *tx
 	case ertm14_get_sensors:
 		sensors = (struct wrc_sensor *)&tx_pkt->payload[op->offset2];
 		get_wrc_sensors(sensors);
-		hexdump(sensors, op->length2);
 		break;
 		
 	case ertm14_ptp_enable:
