@@ -111,8 +111,8 @@ struct ertm14_board_state ertm14_next_state;
 struct ertm14_board_state ertm14_mask;
 struct ertm14_board_state ertm14_hardware;
 
-static struct ertm14_mmc_version_info  ertm14_version_info;
-static struct ertm14_mmc_version_info  ertm15_version_info;
+static struct ertm14_mmc_version_info  ertm14_board_info;
+static struct ertm14_mmc_version_info  ertm15_board_info;
 
 struct gpio_pin pin_pll_main_cs_n = { &board.gpio_aux, 0 };
 struct gpio_pin pin_pll_main_sdi = { &board.gpio_aux, 1 };
@@ -977,10 +977,10 @@ static void set_board_config(struct ertm14_board_state *bs)
 
 void get_version_info(struct ertm14_version_info *bi)
 {
-	memcpy(&bi->ertm14_serial, &ertm14_version_info.board_serial_number,
-			     sizeof(ertm14_version_info.board_serial_number));
-	memcpy(&bi->ertm15_serial, &ertm15_version_info.board_serial_number,
-			     sizeof(ertm15_version_info.board_serial_number));
+	memcpy(&bi->ertm14_serial, &ertm14_board_info.board_serial_number,
+			     sizeof(ertm14_board_info.board_serial_number));
+	memcpy(&bi->ertm15_serial, &ertm15_board_info.board_serial_number,
+			     sizeof(ertm15_board_info.board_serial_number));
 	/* FIXME: no mac2 */
 	bi->ertm14_mac1 = 0;
 	ep_get_mac_addr(&wrc_endpoint_dev, &bi->ertm14_mac1_bytes[2]);
@@ -990,9 +990,9 @@ void get_version_info(struct ertm14_version_info *bi)
 	strncpy(bi->wrpc_sw_build_time, build_time, sizeof(bi->wrpc_sw_build_time));
 	strncpy(bi->wrpc_sw_build_by, build_by, sizeof(bi->wrpc_sw_build_by));
 
-	strncpy(bi->ertm14_firmware_version, ertm14_version_info.git_tag,
+	strncpy(bi->ertm14_firmware_version, ertm14_board_info.git_tag,
 				    sizeof(bi->ertm14_firmware_version));
-	strncpy(bi->ertm15_firmware_version, ertm15_version_info.git_tag,
+	strncpy(bi->ertm15_firmware_version, ertm15_board_info.git_tag,
 				    sizeof(bi->ertm15_firmware_version));
 }
 	
@@ -2260,7 +2260,7 @@ static void mmc_comm_init(void)
     if( ertm14_ok )
     {
         mmc_show_version_info( "eRTM14", &st14 );
-	memcpy(&ertm14_version_info, &st14, sizeof(st14));
+	memcpy(&ertm14_board_info, &st14.info, sizeof(ertm14_board_info));
     } else {
         board_dbg("MMC14 communication attempt failed.\n");
     }
@@ -2268,7 +2268,7 @@ static void mmc_comm_init(void)
     if( ertm15_ok )
     {
         mmc_show_version_info( "eRTM15", &st15 );
-	memcpy(&ertm15_version_info, &st15, sizeof(st15));
+	memcpy(&ertm15_board_info, &st15.info, sizeof(ertm15_board_info));
     } else {
         board_dbg("MMC15 communication attempt failed.\n");
     }
