@@ -2,6 +2,7 @@
 #define __PSNMP_PROTO_H
 
 #include <hw/wrc_diags_regs.h>
+#include <sensors.h>
 #include "board-state.h"
 
 /* visually recognizable opcodes */
@@ -15,6 +16,8 @@
 #define ertm14_get_sim_board_config	0x17
 #define	ertm14_comm_test		0x18
 #define	ertm14_ptp_enable		0x19
+#define	ertm14_get_sensors		0x20
+#define	ertm14_get_version_info		0x21
 
 static struct ertm14_protocol_op {
 	int8_t	opcode;
@@ -50,6 +53,20 @@ static struct ertm14_protocol_op {
 	.length1 = 0,
 	.offset2 = 0,
 	.length2 = sizeof(struct ertm14_mmc_state),
+    },
+    {
+	.opcode = ertm14_get_version_info,
+	.offset1 = 1,
+	.length1 = 0,
+	.offset2 = 0,
+	.length2 = sizeof(struct ertm14_version_info),
+    },
+    {
+	.opcode = ertm14_get_sensors,
+	.offset1 = 1,
+	.length1 = 0,
+	.offset2 = 0,
+	.length2 = sizeof(struct proto_wrc_sensor[ERTM14_MAX_SENSORS_COUNT]),
     },
     {
 	.opcode = ertm14_get_wrc_diags,

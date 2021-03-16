@@ -242,3 +242,75 @@ void display_wrc_diags_cooked(struct ertm_wr_status *diags)
 	print_board_temp(diags->WDIAG_TEMP);                                     
 }
 
+void mac_to_str(uint64_t mac, char *dst)
+{
+	sprintf(dst,
+		"%02lx:%02lx:%02lx:%02lx:%02lx:%02lx",
+		(mac >> 40) & 0xff,
+		(mac >> 32) & 0xff,
+		(mac >> 24) & 0xff,
+		(mac >> 16) & 0xff,
+		(mac >>  8) & 0xff,
+		 mac        & 0xff);
+}
+
+void display_version_info(struct ertm_board_info *bi)
+{
+	char mac[20];
+
+	mac_to_str(bi->ertm14_mac1, mac);
+	printf(
+	"ERTM14: Serial No:      %s\n"
+	"ERTM14: MMC FW Version: %s\n"
+	"ERTM15: Serial No:      %s\n"
+	"ERTM15: MMC FW Version: %s\n"
+	"ERTM14: MAC:            %s\n"
+	"WRPCSW: commit:     %s\n"
+	"WRPCSW: build date: %s %s\n"
+	"WRPCSW: build by    %s\n",
+		bi->ertm14_serial, bi->ertm14_firmware_version,
+		bi->ertm15_serial, bi->ertm15_firmware_version,
+		mac,
+		bi->wrpc_sw_commit_id,
+		bi->wrpc_sw_build_date,
+		bi->wrpc_sw_build_time,
+		bi->wrpc_sw_build_by);
+};
+
+void display_temperatures(struct ertm_temperatures *t)
+{
+	printf(
+	    "%-10s %6.2f\n" "%-10s %6.2f\n" "%-10s %6.2f\n"
+	    "%-10s %6.2f\n" "%-10s %6.2f\n" "%-10s %6.2f\n"
+	    "%-10s %6.2f\n" "%-10s %6.2f\n" "%-10s %6.2f\n"
+	    "%-10s %6.2f\n" "%-10s %6.2f\n" "%-10s %6.2f\n",
+		"FPGA: ", t->fpga,
+		"PSU14: ", t->power_supplies14,
+		"PSU15 ", t->power_supplies15,
+		"LO DDS: ", t->dds_lo,
+		"REF DDS: ", t->dds_ref,
+		"LO AMP: ", t->lo_amp,
+		"REF AMP: ", t->ref_amp,
+		"LTC6150: ", t->ltc6150,
+		"OCXO1: ", t->ocxo_near,
+		"OCXO2: ", t->ocxo_under,
+		"CLKA: ", t->clka,
+		"CLKB: ", t->clkb);
+};
+
+void display_voltages(struct ertm_voltages *v)
+{		/* volts SVP */
+	printf(
+	    "%-12s %6.2f\n" "%-12s %6.2f\n" "%-12s %6.2f\n"
+	    "%-12s %6.2f\n" "%-12s %6.2f\n" "%-12s %6.2f\n"
+	    "%-12s %6.2f\n" "%-12s %6.2f\n",
+		    "ERTM14 12V: ", v->p12v_ertm14,
+		    "ERTM14 3V3: ", v->p3v3_ertm14,
+		    "ERTM14 12V: ", v->p12v_ertm15,
+		    "ERTM14 3V3: ", v->p3v3_ertm15,
+		    "OCXO VOLT: ",  v->pocxo,
+		    "LO 9V: ", 	    v->p9v0_lo,
+		    "REF 9V: ",	    v->p9v0_ref,
+		    "OCXO CURR: ",  v->ocxo_curr);
+};
+

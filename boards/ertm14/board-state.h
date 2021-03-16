@@ -121,6 +121,14 @@ PACKED struct ertm14_mmc_state
     struct ertm14_mmc_sensor_state sensors[ERTM14_MAX_SENSORS_COUNT];
 };
 
+struct proto_wrc_sensor
+{
+	uint32_t name;	/* this is a char* in wrpc sw */
+	uint8_t flags;
+	uint8_t id;
+	int16_t value;
+};
+
 struct ertm14_nco_reset {
 	int		enabled;
 	int		subscribed;
@@ -130,6 +138,43 @@ struct ertm14_nco_reset {
 	uint32_t	reset_count_lo;
 	uint32_t	reset_count_ref;
 	uint32_t	unused[6];
+};
+
+/* FIXME: this is lifted from ertm_board_info; structs *must* match */
+struct ertm14_device_metadata {
+	uint32_t	vendor_id;
+	uint32_t	device_id;
+	uint32_t	version;
+	uint32_t	byte_order_mark;
+	unsigned char	source_id[16];
+	uint32_t	capability_mask;
+	unsigned char	vendor_uuid[16];
+};
+
+/* FIXME: this is lifted from ertm_board_info; structs *must* match */
+struct ertm14_version_info {
+	/* module serials and MACs */
+	char		ertm14_serial[32];
+	char		ertm15_serial[32];
+	union {
+	    uint8_t	ertm14_mac1_bytes[8];
+	    uint64_t	ertm14_mac1;
+	};
+	union {
+	    uint8_t	ertm14_mac2_bytes[8];
+	    uint64_t	ertm14_mac2;
+	};
+	/* wrpc-sw version lore */
+        char		wrpc_sw_commit_id[32];
+        char		wrpc_sw_build_date[16];
+        char		wrpc_sw_build_time[16];
+        char		wrpc_sw_build_by[32];
+	/* MMC firmware versions */
+	char		ertm14_firmware_version[32];
+	char		ertm15_firmware_version[32];
+	/* unused */
+	struct ertm14_device_metadata
+			firmware_metadata;
 };
 
 /* FIXME: this is not the best place for this declaration */

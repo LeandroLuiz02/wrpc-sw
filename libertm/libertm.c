@@ -126,17 +126,17 @@ struct ertm_device_metadata device_metadata_defaults = {
 
 /* All fake values to clearly spot simulation */
 struct ertm_board_info board_info_defaults = {
-	.ertm14_storage = 0xbabecafea5a5a514,
-	.ertm14_mac1 = 0x00112233445566,
-	.ertm14_mac2 = 0x00223344556677,
-	.ertm15 = 0xbabecafea5a5a515,
-	.firmware_version = "sim-0.0",		/* FIXME */
-	.wrpc_sw_version = "wrpc_sw-sim-0.0",
+	.ertm14_serial = "HCCFUDE000-0000666",
+	.ertm15_serial = "HCCFUDF000-0000666",
+	.ertm14_mac1 = 0x112233445566,
+	.ertm14_mac2 = 0x223344556677,
         .wrpc_sw_commit_id =
 		"8f087ad4e0aa8ede6736506bfdc1fbde",
         .wrpc_sw_build_date = "Mon Jan 25 2021",
         .wrpc_sw_build_time = "10:40:46 CET",
         .wrpc_sw_build_by = "dcobas@cern.ch",
+	.ertm14_firmware_version = "5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a",
+	.ertm15_firmware_version = "a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5",
 	.firmware_metadata = {
 		    .vendor_id = 0x10dc,
 		    .device_id = 0xbabe,
@@ -165,6 +165,8 @@ static void ertm_status_init(struct ertm_state *st)
 static char *usb_serial = "/dev/ttyUSB2";
 static int serial_speed = 8*115200;
 
+static int get_version_info(struct ertm_status *st,
+			    struct ertm_board_info *bi);
 struct ertm_status *ertm_init(const char *address)
 {
 	struct ertm_status *st = malloc(sizeof(*st));
@@ -190,6 +192,7 @@ struct ertm_status *ertm_init(const char *address)
 	/* we init with fake values, then override with
 	 * actual default hardware configs */
 	ertm_status_init(st->state);
+	get_version_info(st, &st->state->board_info);
 	ertm_get_board_config(st, &st->state->board_state);
 	clean_config(&st->state->next_state);
 	clean_config(&st->state->commit_mask);
@@ -211,7 +214,7 @@ int ertm_get_board_info(struct ertm_status *handle, struct ertm_board_info *info
 		errno = EINVAL;
 		return -1;
 	}
-	memcpy(info, &handle->state, sizeof(*info));
+	memcpy(info, &handle->state->board_info, sizeof(*info));
 	return 0;
 }
 
@@ -421,6 +424,87 @@ int ertm_get_wr_diags(struct ertm_status *st, struct WRC_DIAGS_WB *wrc_diags)
 		return res;
 	diags_to_host(diags, wrc_diags);
 
+	return 0;
+}
+
+static int get_version_info(struct ertm_status *st,
+			    struct ertm_board_info *bi)
+{
+	struct uart_link *link = &st->link;
+	int res;
+
+	res = ertm_proto_cycle(link, ertm14_get_version_info, NULL, bi);
+	if (res < 0)
+		return res;
+	return 0;
+}
+
+void sensors_to_host(struct proto_wrc_sensor *s, int nsensors)
+{
+	int i;
+	for (i = 0; i < nsensors; i++)
+		s[i].value = ntohs(s[i].value);
+}
+
+double to_celsius(uint16_t value)
+{
+	return value/1.0;
+}
+
+double to_volts(uint16_t value)
+{
+	return value/1000.0;
+}
+
+/* FIXME: lifted from sensors.c - such is life */
+static struct proto_wrc_sensor* wrc_sensor_find(
+		struct proto_wrc_sensor *sensors,
+		uint8_t id)
+{
+	struct proto_wrc_sensor *s = sensors;
+	while (s->flags) {
+		if( s->id == id )
+			return s;
+		s++;
+	}
+	return NULL;
+}
+
+int ertm_get_sensors(struct ertm_status *st,
+	struct ertm_temperatures *t, struct ertm_voltages *v)
+{
+	int i, res;
+	struct uart_link *link = &st->link;
+
+	struct proto_wrc_sensor sensors[ERTM14_MAX_SENSORS_COUNT];
+
+	res = ertm_proto_cycle(link, ertm14_get_sensors, NULL, sensors);
+	if (res < 0)
+		return res;
+	sensors_to_host(sensors, ERTM14_MAX_SENSORS_COUNT);
+
+	for (i = 0; i < ertm_ntemperatures; i++) {
+		int id = ertm_temperature_ids[i];
+		struct proto_wrc_sensor *sensor = wrc_sensor_find(sensors, id);
+		double *temperatures = (double *)t;
+
+		if (sensor && (sensor->flags & WRC_SENSOR_TEMP_CELSIUS)
+				&& (sensor->flags & WRC_SENSOR_VALID))
+			temperatures[i] = to_celsius(sensor->value);
+		else
+			temperatures[i] = -1.0e9;
+	}
+	for (i = 0; i < ertm_nvoltages; i++) {
+		int id = ertm_voltage_ids[i];
+		struct proto_wrc_sensor *sensor = wrc_sensor_find(sensors, id);
+		double *voltages = (double *)v;
+
+		if (sensor && (sensor->flags & WRC_SENSOR_VOLTAGE_MV)
+				&& (sensor->flags & WRC_SENSOR_VALID))
+			voltages[i] = to_volts(sensor->value);
+		else
+			voltages[i] = -1.0e9;
+	}
 	return 0;
 }
 
@@ -748,12 +832,22 @@ int ertm_dds_get_level_adjust(struct ertm_status *handle,
 
 int ertm_get_temperatures(struct ertm_status *handle, struct ertm_temperatures *temps)
 {
+	int res;
+
+	res = ertm_get_sensors(handle, &handle->state->temperatures, &handle->state->voltages);
+	if (res < 0)
+		return res;
 	memcpy(temps, &handle->state->temperatures, sizeof(*temps));
 	return 0;
 }
 
 int ertm_get_voltages(struct ertm_status *handle, struct ertm_voltages *volts)
 {
+	int res;
+
+	res = ertm_get_sensors(handle, &handle->state->temperatures, &handle->state->voltages);
+	if (res < 0)
+		return res;
 	memcpy(volts, &handle->state->voltages, sizeof(*volts));
 	return 0;
 }

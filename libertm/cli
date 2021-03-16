@@ -79,6 +79,9 @@ class ErtmTest(cmd.Cmd):
     ERTM_LO = 2
     ERTM_REF = 3
 
+    Sensor_Array = 20 * c_double
+    BoardInfo = 80 * c_uint
+
     connector_idx = {
         'lo' : ERTM_LO,
         'ref' : ERTM_REF,
@@ -222,6 +225,26 @@ class ErtmTest(cmd.Cmd):
         """stop PTP daemon (synonymous to "wr_enable 0")."""
         self.lib.ertm_wr_enable(self.handle, 0)
 
+    def do_temperatures(self, args):
+        """display temperature sensor readings."""
+        temps = self.Sensor_Array()
+        self.lib.ertm_get_temperatures(self.handle, byref(temps))
+        print(temps[0], temps[1], temps[2])
+        self.display.display_temperatures(byref(temps))
+
+    def do_voltages(self, args):
+        """display voltage sensor readings."""
+        volts = self.Sensor_Array()
+        self.lib.ertm_get_voltages(self.handle, byref(volts))
+        print(volts[0], volts[1], volts[2])
+        self.display.display_voltages(byref(volts))
+
+    def do_board_info(self, args):
+        """display board version info."""
+        bi = self.BoardInfo()
+        self.lib.ertm_get_board_info(self.handle, byref(bi))
+        self.display.display_version_info(byref(bi))
+
     def my_postloop(self):
         readline.write_history_file(self.history)
         self.lib.ertm_exit(self.handle)
@@ -257,6 +280,9 @@ class ErtmTest(cmd.Cmd):
     do_sla = do_set_level_adjust
     do_gla = do_get_level_adjust
     do_wrd = do_wrc_diags
+    do_temp = do_temperatures
+    do_volt = do_voltages
+    do_bi = do_board_info
 
 if __name__ == '__main__':
 
