@@ -1089,6 +1089,7 @@ int wrc_diags_dump(struct WRC_DIAGS_WB *buf)
 	/* auxiliar channels (if any) */
 	spll_get_num_channels(NULL, &n_out);
 	if (n_out > 8) n_out = 8; /* hardware limit. */
+	aux_stat = 0;
 	for(i = 0; i < n_out; i++) {
 		aux_stat |= (( SPLL_AUX_SLAVE_LOCKED | SPLL_AUX_TRACKING_READY ) & spll_get_aux_status(i).flags) << i;
 	}
