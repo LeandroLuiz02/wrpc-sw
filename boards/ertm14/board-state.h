@@ -121,6 +121,14 @@ PACKED struct ertm14_mmc_state
     struct ertm14_mmc_sensor_state sensors[ERTM14_MAX_SENSORS_COUNT];
 };
 
+struct proto_wrc_sensor
+{
+	uint32_t name;	/* this is a char* in wrpc sw */
+	uint8_t flags;
+	uint8_t id;
+	int16_t value;
+};
+
 struct ertm14_nco_reset {
 	int		enabled;
 	int		subscribed;

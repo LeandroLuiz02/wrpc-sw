@@ -66,7 +66,7 @@ static struct ertm14_protocol_op {
 	.offset1 = 1,
 	.length1 = 0,
 	.offset2 = 0,
-	.length2 = sizeof(struct wrc_sensor[ERTM14_MAX_SENSORS_COUNT]),
+	.length2 = sizeof(struct proto_wrc_sensor[ERTM14_MAX_SENSORS_COUNT]),
     },
     {
 	.opcode = ertm14_get_wrc_diags,
