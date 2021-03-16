@@ -79,6 +79,8 @@ class ErtmTest(cmd.Cmd):
     ERTM_LO = 2
     ERTM_REF = 3
 
+    Sensor_Array = 20 * c_double
+
     connector_idx = {
         'lo' : ERTM_LO,
         'ref' : ERTM_REF,
@@ -224,10 +226,17 @@ class ErtmTest(cmd.Cmd):
 
     def do_temperatures(self, args):
         """display temperature sensor readings."""
-        pass
+        temps = self.Sensor_Array()
+        self.lib.ertm_get_temperatures(self.handle, byref(temps))
+        print(temps[0], temps[1], temps[2])
+        self.display.display_temperatures(byref(temps))
+
     def do_voltages(self, args):
         """display voltage sensor readings."""
-        pass
+        volts = self.Sensor_Array()
+        self.lib.ertm_get_voltages(self.handle, byref(volts))
+        print(volts[0], volts[1], volts[2])
+        self.display.display_voltages(byref(volts))
 
     def my_postloop(self):
         readline.write_history_file(self.history)

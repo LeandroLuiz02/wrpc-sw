@@ -985,7 +985,12 @@ static void get_wrc_diags(struct WRC_DIAGS_WB *diags)
 
 static void get_wrc_sensors(struct wrc_sensor *dst)
 {
+	int nsensors = sizeof(ertm_sensors)/sizeof(ertm_sensors[0]);
+	int i;
+
 	memcpy(dst, ertm_sensors, sizeof(ertm_sensors));
+	for (i = 0; i < nsensors; i++)
+		htons(dst[i].value);
 }
 
 static void refresh_wrc_nco(struct ertm14_nco_reset *nco)
