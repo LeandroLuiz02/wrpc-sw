@@ -115,6 +115,9 @@ struct ertm_board_info {
 			firmware_metadata;
 };
 
+/* a bad sensor value */
+#define ERTM_MINUS_INFINITY (-1.0e9)
+
 struct ertm_temperatures {	/* celsius SVP */
 	double	fpga;			/* eRTM 14 I2C temp  0x49 */
 	double	power_supplies14;	/* eRTM 14 I2C temp  0x48 */
@@ -137,7 +140,7 @@ struct ertm_voltages {		/* volts SVP */
 	double	pocxo;
 	double	p9v0_lo;
 	double	p9v0_ref;
-	double	ocxo_curr;
+	double	ocxo_curr;	/* this is a bizarre place for mA */
 	double	p12v_ertm14;
 	double	p3v3_ertm14;
 	double	unused[16];

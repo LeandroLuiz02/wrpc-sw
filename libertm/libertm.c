@@ -477,6 +477,7 @@ int ertm_get_sensors(struct ertm_status *st,
 	struct uart_link *link = &st->link;
 
 	struct proto_wrc_sensor sensors[ERTM14_MAX_SENSORS_COUNT];
+	struct proto_wrc_sensor *sensor;
 
 	res = ertm_proto_cycle(link, ertm14_get_sensors, NULL, sensors);
 	if (res < 0)
@@ -485,26 +486,32 @@ int ertm_get_sensors(struct ertm_status *st,
 
 	for (i = 0; i < ertm_ntemperatures; i++) {
 		int id = ertm_temperature_ids[i];
-		struct proto_wrc_sensor *sensor = wrc_sensor_find(sensors, id);
 		double *temperatures = (double *)t;
 
+		sensor = wrc_sensor_find(sensors, id);
 		if (sensor && (sensor->flags & WRC_SENSOR_TEMP_CELSIUS)
 				&& (sensor->flags & WRC_SENSOR_VALID))
 			temperatures[i] = to_celsius(sensor->value);
 		else
-			temperatures[i] = -1.0e9;
+			temperatures[i] = ERTM_MINUS_INFINITY;
 	}
 	for (i = 0; i < ertm_nvoltages; i++) {
 		int id = ertm_voltage_ids[i];
-		struct proto_wrc_sensor *sensor = wrc_sensor_find(sensors, id);
 		double *voltages = (double *)v;
 
+		sensor = wrc_sensor_find(sensors, id);
 		if (sensor && (sensor->flags & WRC_SENSOR_VOLTAGE_MV)
 				&& (sensor->flags & WRC_SENSOR_VALID))
 			voltages[i] = to_volts(sensor->value);
 		else
-			voltages[i] = -1.0e9;
+			voltages[i] = ERTM_MINUS_INFINITY;
 	}
+	sensor = wrc_sensor_find(sensors, ERTM15_CURRENT_OCXO);
+	if (sensor && (sensor->flags & WRC_SENSOR_CURRENT_MA)
+			&& (sensor->flags & WRC_SENSOR_VALID))
+		v->ocxo_curr = to_amps(sensor->value);
+	else
+		v->ocxo_curr = ERTM_MINUS_INFINITY;
 	return 0;
 }
 
@@ -854,8 +861,13 @@ int ertm_get_voltages(struct ertm_status *handle, struct ertm_voltages *volts)
 
 int ertm_get_ocxo_current(struct ertm_status *handle, double *current)
 {
-	/* not implemented */
-	return ERTM_NOT_IMPLEMENTED;
+	int res;
+
+	res = ertm_get_sensors(handle, &handle->state->temperatures, &handle->state->voltages);
+	if (res < 0)
+		return res;
+	*current = handle->state->voltages.ocxo_curr;
+	return 0;
 }
 #if 0
 /* system-wide NCO reset */
