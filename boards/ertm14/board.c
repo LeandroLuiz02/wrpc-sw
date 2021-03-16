@@ -39,6 +39,7 @@
 #include "dev/74x595.h"
 #include "dev/netif.h"
 #include "hw/wrc_diags_regs.h"
+#include "revision.h"
 
 /* FIXME: this is the 127th (re)(non)(un)definition of the ntohl macros
  * in the entire wrpc-sw codebase. This is insane and as non-portable
@@ -108,6 +109,9 @@ struct ertm14_board_state ertm14_cs, *ertm14_current_state = &ertm14_cs;
 struct ertm14_board_state ertm14_next_state;
 struct ertm14_board_state ertm14_mask;
 struct ertm14_board_state ertm14_hardware;
+
+static struct ertm14_mmc_version_info  ertm14_version_info;
+static struct ertm14_mmc_version_info  ertm15_version_info;
 
 struct gpio_pin pin_pll_main_cs_n = { &board.gpio_aux, 0 };
 struct gpio_pin pin_pll_main_sdi = { &board.gpio_aux, 1 };
@@ -354,7 +358,6 @@ static struct wrc_sensor ertm_sensors[] = {
     }
 };
 
-static struct ertm14_mmc_state* mmc_get_status ( struct uart_link *link );
 static void mmc_show_version_info( const char *brdname, struct ertm14_mmc_state *st );
 
 uint32_t bswap32(uint32_t v)
@@ -971,6 +974,27 @@ static void set_board_config(struct ertm14_board_state *bs)
     board_state_to_no(&ertm14_next_state, 0);
 }
 
+void get_version_info(struct ertm14_version_info *bi)
+{
+	memcpy(&bi->ertm14_serial, &ertm14_version_info.board_serial_number,
+			     sizeof(ertm14_version_info.board_serial_number));
+	memcpy(&bi->ertm15_serial, &ertm15_version_info.board_serial_number,
+			     sizeof(ertm15_version_info.board_serial_number));
+	/* FIXME: no mac2 */
+	bi->ertm14_mac1 = 0;
+	ep_get_mac_addr(&wrc_endpoint_dev, &bi->ertm14_mac1_bytes[2]);
+	/* FIXME: wrpc_sw_version makes no sense here */
+	strncpy(bi->wrpc_sw_commit_id, build_revision, sizeof(bi->wrpc_sw_commit_id));
+	strncpy(bi->wrpc_sw_build_date, build_date, sizeof(bi->wrpc_sw_build_date));
+	strncpy(bi->wrpc_sw_build_time, build_time, sizeof(bi->wrpc_sw_build_time));
+	strncpy(bi->wrpc_sw_build_by, build_by, sizeof(bi->wrpc_sw_build_by));
+
+	strncpy(bi->ertm14_firmware_version, ertm14_version_info.git_tag,
+				    sizeof(bi->ertm14_firmware_version));
+	strncpy(bi->ertm15_firmware_version, ertm15_version_info.git_tag,
+				    sizeof(bi->ertm15_firmware_version));
+}
+	
 static void get_wrc_diags(struct WRC_DIAGS_WB *diags)
 {
 	uint32_t *word = (void *)diags;
@@ -1014,6 +1038,7 @@ static int ertm_process_psnmp(struct uart_packet *rx_pkt, struct uart_packet *tx
 	struct wrc_sensor *sensors;
 	uint8_t opcode = rx_pkt->payload[0];
 	struct ertm14_protocol_op *op;
+	struct ertm14_version_info *ver;
 
 	/* return board config in case of bad opcode */
 	if ((op = get_proto_op(opcode)) == NULL)
@@ -1046,9 +1071,6 @@ static int ertm_process_psnmp(struct uart_packet *rx_pkt, struct uart_packet *tx
 		bs = (struct ertm14_board_state *)&tx_pkt->payload[0];
 		get_sim_board_config(bs);
 		break;
-	case ertm14_get_mmc_state:
-		// struct ertm14_mmc_state *mmcs;
-		break;
 	case ertm14_get_wrc_diags:
 		diags = (struct WRC_DIAGS_WB *)&tx_pkt->payload[0];
 		get_wrc_diags(diags);
@@ -1058,11 +1080,14 @@ static int ertm_process_psnmp(struct uart_packet *rx_pkt, struct uart_packet *tx
 		refresh_wrc_nco(&ertm14_nco_stats);
 		memcpy(nco, &ertm14_nco_stats, sizeof(*nco));
 		break;
-	case ertm14_get_mmc_version_info:
+	case ertm14_get_version_info:
+		ver = (struct ertm14_version_info *)&tx_pkt->payload[op->offset2];
+		get_version_info(ver);
 		break;
 	case ertm14_get_sensors:
 		sensors = (struct wrc_sensor *)&tx_pkt->payload[op->offset2];
 		get_wrc_sensors(sensors);
+		hexdump(sensors, op->length2);
 		break;
 		
 	case ertm14_ptp_enable:
@@ -2235,6 +2260,7 @@ static void mmc_comm_init(void)
     if( ertm14_ok )
     {
         mmc_show_version_info( "eRTM14", &st14 );
+	memcpy(&ertm14_version_info, &st14, sizeof(st14));
     } else {
         board_dbg("MMC14 communication attempt failed.\n");
     }
@@ -2242,6 +2268,7 @@ static void mmc_comm_init(void)
     if( ertm15_ok )
     {
         mmc_show_version_info( "eRTM15", &st15 );
+	memcpy(&ertm15_version_info, &st15, sizeof(st15));
     } else {
         board_dbg("MMC15 communication attempt failed.\n");
     }

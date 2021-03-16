@@ -91,16 +91,26 @@ struct ertm_device_metadata {
 };
 
 struct ertm_board_info {
-	uint64_t	ertm14_storage;
-	uint64_t	ertm14_mac1;
-	uint64_t	ertm14_mac2;
-	uint64_t	ertm15;
-	char		firmware_version[32];
-	char		wrpc_sw_version[32];
+	/* module serials and MACs */
+	char		ertm14_serial[32];
+	char		ertm15_serial[32];
+	union {
+	    uint8_t	ertm14_mac1_bytes[8];
+	    uint64_t	ertm14_mac1;
+	};
+	union {
+	    uint8_t	ertm14_mac2_bytes[8];
+	    uint64_t	ertm14_mac2;
+	};
+	/* wrpc-sw version lore */
         char		wrpc_sw_commit_id[32];
         char		wrpc_sw_build_date[16];
         char		wrpc_sw_build_time[16];
         char		wrpc_sw_build_by[32];
+	/* MMC firmware versions */
+	char		ertm14_firmware_version[32];
+	char		ertm15_firmware_version[32];
+	/* unused */
 	struct ertm_device_metadata
 			firmware_metadata;
 };
