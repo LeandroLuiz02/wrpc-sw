@@ -222,6 +222,13 @@ class ErtmTest(cmd.Cmd):
         """stop PTP daemon (synonymous to "wr_enable 0")."""
         self.lib.ertm_wr_enable(self.handle, 0)
 
+    def do_temperatures(self, args):
+        """display temperature sensor readings."""
+        pass
+    def do_voltages(self, args):
+        """display voltage sensor readings."""
+        pass
+
     def my_postloop(self):
         readline.write_history_file(self.history)
         self.lib.ertm_exit(self.handle)
