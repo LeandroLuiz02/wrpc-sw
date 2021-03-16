@@ -456,6 +456,11 @@ double to_volts(uint16_t value)
 	return value/1000.0;
 }
 
+double to_amps(uint16_t value)
+{
+	return value/1000.0;
+}
+
 /* FIXME: lifted from sensors.c - such is life */
 static struct proto_wrc_sensor* wrc_sensor_find(
 		struct proto_wrc_sensor *sensors,
