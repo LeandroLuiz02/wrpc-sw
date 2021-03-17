@@ -1382,7 +1382,7 @@ static void blink_led( struct gpio_pin *pin )
     gen_gpio_out( pin, 0 );
 }
 
-static void ertm14_init_leds()
+static void ertm14_init_leds(void)
 {
     blink_led(&pin_led_sync_green);
     blink_led(&pin_led_sync_red);
