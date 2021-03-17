@@ -1,9 +1,17 @@
+#include <linux/limits.h>
 #include <libudev.h>
 #include <stdio.h>
+#include <string.h>
 
 #define SUBSYSTEM "usb"
 #define SILICON_LABS_ID		"10c4"
 #define CP2108_UART_TO_USB	"ea71"
+
+struct sl_cp2108_port {
+	char	devnode[PATH_MAX];
+	char	symlink[PATH_MAX];
+	int	port;
+} sl_cp2108_port[4];
 
 static void search_dongle(void)
 {
@@ -23,8 +31,27 @@ static void search_dongle(void)
 	const char *devnode = udev_device_get_devnode(dev);
 
 	if (devnode != NULL) {
-		printf("%s\n", devnode);
+		struct udev_list_entry *l, *links = udev_device_get_devlinks_list_entry(dev);
+		int port;
+		udev_list_entry_foreach(l, links) {
+			const char *linkname = udev_list_entry_get_name(l);
+			int i, len = strlen(linkname);
+			const char *ports[]  = { "0-port0", "1-port0", "2-port0", "3-port0", };
+			int trim = strlen(ports[0]);
+
+			for (i = 0; i < 4; i++)
+				if (!strcmp(ports[i], &linkname[len-trim])) {
+					sl_cp2108_port[i].port = port = i;
+					strcpy(sl_cp2108_port[i].symlink, path);
+					strcpy(sl_cp2108_port[i].devnode, devnode);
+					goto found;
+				}
+			goto notfound;
+		}
+found:
+		printf("port%d: %20s %s\n", port, devnode, path);
 	}
+notfound:
 	udev_device_unref(dev);
     }
     udev_enumerate_unref(enumerate);
