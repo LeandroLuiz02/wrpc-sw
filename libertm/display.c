@@ -28,15 +28,15 @@ void display_dds_state(struct ertm14_dds_state *dds1,
 	printf(" | ");
 	printf("REF level adjust: %6.4f (%3d/256)%2c", ampl_factor_to_float(dds2->ampl_factor), dds2->ampl_factor, ' ');
 	printf("\n");
-	printf("LO pll_out_power: %5.1f dBm%8c",  dds1->amp_power/1000.0, ' ');
+	printf("LO pll_out_power: %5.3f dBm%8c",  dds1->amp_power/1000.0, ' ');
 	printf(" | ");
-	printf("REF pll_out_power: %5.1f dBm%8c",  dds2->amp_power/1000.0, ' ');
+	printf("REF pll_out_power: %5.3f dBm%8c",  dds2->amp_power/1000.0, ' ');
 	printf("\n");
 	for (i = ERTM14_RF_OUT_MIN_ID; i <= ERTM14_RF_OUT_MAX_ID; i++) {
-		printf("LO%02d:   pow: %5.1f dBm  st:%-8s",
+		printf("LO%02d:   pow: %5.3f dBm  st:%-8s",
 		    i, dds1->out_power[i]/1000.0, state_literal[dds1->out_state[i]]);
 		printf(" | ");
-		printf("REF%02d: pow: %5.1f dBm  st:%-8s",
+		printf("REF%02d: pow: %5.3f dBm  st:%-8s",
 		    i, dds2->out_power[i]/1000.0, state_literal[dds2->out_state[i]]);
 		printf("\n");
 	}
