@@ -646,7 +646,7 @@ int ertm_set_freq(struct ertm_status *handle,
 	if (connector == ERTM_CLKA || connector == ERTM_CLKB) {
 		if (!valid_clkab_freq(freq)) {
 			errno = EINVAL;
-			return -ERTM_BAD_CLKAB_FREQ;
+			return ERTM_BAD_CLKAB_FREQ;
 		}
 	}
 	next = &handle->state->next_state;
