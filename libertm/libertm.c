@@ -623,6 +623,8 @@ static void commit_config(struct ertm_status *handle,
 
 static int valid_clkab_freq(uint32_t freq)
 {
+	int i;
+
 	for (i = 0; i < clkab_nfreqs; i++)
 		if (clkab_freq_table[i] == freq)
 			return 1;
