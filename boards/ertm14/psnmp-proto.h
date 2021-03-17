@@ -42,7 +42,7 @@ static struct ertm14_protocol_op {
     },
     {
 	.opcode = ertm14_commit_board_config,
-	.offset1 = 1,
+	.offset1 = 4,
 	.length1 = sizeof(struct ertm14_board_state),
 	.offset2 = 1,
 	.length2 = 0,

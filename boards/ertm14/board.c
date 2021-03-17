@@ -1005,7 +1005,7 @@ void get_version_info(struct ertm14_version_info *bi)
 	strncpy(bi->ertm15_firmware_version, ertm15_board_info.git_tag,
 				    sizeof(bi->ertm15_firmware_version));
 }
-	
+
 static void get_wrc_diags(struct WRC_DIAGS_WB *diags)
 {
 	uint32_t *word = (void *)diags;
@@ -1061,25 +1061,32 @@ static int ertm_process_psnmp(struct uart_packet *rx_pkt, struct uart_packet *tx
 	switch (opcode) {
 	case ertm14_get_board_config:
 		/* return full board configuration */
-		bs = (struct ertm14_board_state *)&tx_pkt->payload[0];
+		bs = (struct ertm14_board_state *)&tx_pkt->payload[op->offset2];
 		get_board_config(bs);
 		break;
 
 	case ertm14_set_board_config:
-		bs = (struct ertm14_board_state *)&rx_pkt->payload[4];
+		bs = (struct ertm14_board_state *)&rx_pkt->payload[op->offset1];
 		set_board_config(bs);
 		tx_pkt->payload[0] = ertm14_set_board_config;
 		break;
 
 	case ertm14_commit_board_config:
-		bs = (struct ertm14_board_state *)&rx_pkt->payload[4];
+		bs = (struct ertm14_board_state *)&rx_pkt->payload[op->offset1];
+		pp_printf("commit:\n");
+		hexdump(bs, sizeof(*bs));
 		commit_board_config(bs);
 		tx_pkt->payload[0] = ertm14_commit_board_config;
 		break;
 
 	case ertm14_get_sim_board_config:
+<<<<<<< HEAD
 		/* return full board configuration */
 		bs = (struct ertm14_board_state *)&tx_pkt->payload[0];
+=======
+		/* return full board configuration */
+		bs = (struct ertm14_board_state *)&tx_pkt->payload[op->offset2];
+>>>>>>> use declared offsets for consistency
 		get_sim_board_config(bs);
 		break;
 	case ertm14_get_wrc_diags:
@@ -1099,7 +1106,7 @@ static int ertm_process_psnmp(struct uart_packet *rx_pkt, struct uart_packet *tx
 		sensors = (struct wrc_sensor *)&tx_pkt->payload[op->offset2];
 		get_wrc_sensors(sensors);
 		break;
-		
+
 	case ertm14_ptp_enable:
 		if (rx_pkt->payload[op->offset1])
 			wrc_ptp_start();
@@ -1621,7 +1628,7 @@ int ertm14_init_mac_eeprom(void)
 
     board_dbg("MAC address: Port 0 = %02x:%02x:%02x:%02x:%02x:%02x\n",
         mac[0],mac[1],mac[2],mac[3],mac[4],mac[5] );
-    
+
     return 0;
 }
 
