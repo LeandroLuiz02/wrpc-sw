@@ -114,7 +114,7 @@ static void tx_fsm_init(struct wrc_port_tx_setup_state *fsm)
     tmo_init(&fsm->spll_lock_timeout, FSM_SPLL_LOCK_TIMEOUT_MS);
 }
 
-static int tx_fsm_update()
+static int tx_fsm_update(void)
 {
     struct wrc_port_tx_setup_state *fsm = &tx_state;
 
@@ -250,8 +250,6 @@ static int tx_fsm_update()
 
         if (within_range(phase, phase_min, phase_max, 16000))
         {
-            int i;
-
             fsm->measured_phase = phase;
             phy_dbg("FIX phase %d\n", fsm->measured_phase );
 
@@ -271,7 +269,6 @@ static int tx_fsm_update()
 
     case TX_SETUP_VALIDATE:
     {
-        int phase, enabled;
         //int rv = spll_read_ptracker(0, &phase, &enabled);
 
         //if (!rv)
@@ -316,7 +313,7 @@ static void rx_fsm_init(struct wrc_port_rx_setup_state* fsm)
     memset(fsm->cpos_stat, 0, sizeof(fsm->cpos_stat ));
 }
 
-static int rx_fsm_update(  )
+static int rx_fsm_update(void)
 {
 	struct wrc_port_rx_setup_state* fsm = &rx_state;
 	struct wrc_port_tx_setup_state* fsm_tx = &tx_state;
@@ -478,7 +475,7 @@ static int rx_fsm_update(  )
 	return 0;
 }
 
-int phy_calibration_poll()
+int phy_calibration_poll(void)
 {
     tx_fsm_update();
     rx_fsm_update();
@@ -487,7 +484,7 @@ int phy_calibration_poll()
 
 
 
-void phy_calibration_init()
+void phy_calibration_init(void)
 {
     phy_dbg("Initializing PHY calibrator...\n");
     ep_pcs_write(&wrc_endpoint_dev, MDIO_REG_MCR, MDIO_MCR_PDOWN);	/* reset the PHY */
@@ -502,7 +499,7 @@ void phy_calibration_init()
     rx_fsm_init(&rx_state);
 }
 
-void phy_calibration_disable()
+void phy_calibration_disable(void)
 {
     tx_state.state = TX_SETUP_STATE_DISABLED;
     rx_state.state = RX_SETUP_STATE_DISABLED;
