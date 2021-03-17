@@ -31,6 +31,7 @@ struct ertm_error_codes ertm_error_codes[] = {
 	[-ERTM_BAD_HANDLE	] = { ERTM_BAD_HANDLE, "invalid library handle in libertm call" },
 	[-ERTM_BAD_OPCODE	] = { ERTM_BAD_OPCODE, "invalid opcode in UART protocol exchange" },
 	[-ERTM_UART_PROTO_ERR	] = { ERTM_UART_PROTO_ERR, "UART protocol error" },
+	[-ERTM_BAD_CLKAB_FREQ] = { ERTM_BAD_CLKAB_FREQ, "invalid CLKA/B frequency" },
 };
 
 char *ertm_perror(int error)
@@ -620,6 +621,14 @@ static void commit_config(struct ertm_status *handle,
 	}
 }
 
+static int valid_clkab_freq(uint32_t freq)
+{
+	for (i = 0; i < clkab_nfreqs; i++)
+		if (clkab_freq_table[i] == freq)
+			return 1;
+	return 0;
+}
+	
 int ertm_set_freq(struct ertm_status *handle,
 		enum ertm_connector connector,int channel, uint32_t freq)
 {
@@ -632,7 +641,12 @@ int ertm_set_freq(struct ertm_status *handle,
 	}
 	if ((err = bad_inputs(handle, connector, channel)) != 0)
 		return err;
-
+	if (connector == ERTM_CLKA || connector == ERTM_CLKB) {
+		if (!valid_clkab_freq(freq)) {
+			errno = EINVAL;
+			return -ERTM_BAD_CLKAB_FREQ;
+		}
+	}
 	next = &handle->state->next_state;
 	mask = &handle->state->commit_mask;
 	switch (connector) {
