@@ -280,10 +280,10 @@ void display_version_info(struct ertm_board_info *bi)
 void display_temperatures(struct ertm_temperatures *t)
 {
 	printf(
-	    "%-10s %6.2f\n" "%-10s %6.2f\n" "%-10s %6.2f\n"
-	    "%-10s %6.2f\n" "%-10s %6.2f\n" "%-10s %6.2f\n"
-	    "%-10s %6.2f\n" "%-10s %6.2f\n" "%-10s %6.2f\n"
-	    "%-10s %6.2f\n" "%-10s %6.2f\n" "%-10s %6.2f\n",
+	    "%-10s %3gC\n" "%-10s %3gC\n" "%-10s %3gC\n"
+	    "%-10s %3gC\n" "%-10s %3gC\n" "%-10s %3gC\n"
+	    "%-10s %3gC\n" "%-10s %3gC\n" "%-10s %3gC\n"
+	    "%-10s %3gC\n" "%-10s %3gC\n" "%-10s %3gC\n",
 		"FPGA: ", t->fpga,
 		"PSU14: ", t->power_supplies14,
 		"PSU15 ", t->power_supplies15,
@@ -301,9 +301,9 @@ void display_temperatures(struct ertm_temperatures *t)
 void display_voltages(struct ertm_voltages *v)
 {		/* volts SVP */
 	printf(
-	    "%-12s %6.2f\n" "%-12s %6.2f\n" "%-12s %6.2f\n"
-	    "%-12s %6.2f\n" "%-12s %6.2f\n" "%-12s %6.2f\n"
-	    "%-12s %6.2f\n" "%-12s %6.2f\n",
+	    "%-12s %6.2fV\n" "%-12s %6.2fV\n" "%-12s %6.2fV\n"
+	    "%-12s %6.2fV\n" "%-12s %6.2fV\n" "%-12s %6.2fV\n"
+	    "%-12s %6.2fV\n" "%-12s %6.2fA\n",
 		    "ERTM14 12V: ", v->p12v_ertm14,
 		    "ERTM14 3V3: ", v->p3v3_ertm14,
 		    "ERTM15 12V: ", v->p12v_ertm15,
