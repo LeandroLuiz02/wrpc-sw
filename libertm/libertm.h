@@ -26,6 +26,7 @@ extern "C" {
 #define ERTM_BAD_HANDLE		(-6)
 #define ERTM_BAD_OPCODE		(-7)
 #define	ERTM_UART_PROTO_ERR	(-8)
+#define	ERTM_BAD_CLKAB_FREQ	(-9)
 
 struct ertm_error_codes {
 	int	code;
