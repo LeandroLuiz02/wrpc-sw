@@ -1060,25 +1060,27 @@ static int ertm_process_psnmp(struct uart_packet *rx_pkt, struct uart_packet *tx
 	switch (opcode) {
 	case ertm14_get_board_config:
 		/* return full board configuration */		
-		bs = (struct ertm14_board_state *)&tx_pkt->payload[0];
+		bs = (struct ertm14_board_state *)&tx_pkt->payload[op->offset2];
 		get_board_config(bs);
 		break;
 
 	case ertm14_set_board_config:
-		bs = (struct ertm14_board_state *)&rx_pkt->payload[4];
+		bs = (struct ertm14_board_state *)&rx_pkt->payload[op->offset1];
 		set_board_config(bs);
 		tx_pkt->payload[0] = ertm14_set_board_config;
 		break;
 
 	case ertm14_commit_board_config:
-		bs = (struct ertm14_board_state *)&rx_pkt->payload[4];
+		bs = (struct ertm14_board_state *)&rx_pkt->payload[op->offset1];
+		pp_printf("commit:\n");
+		hexdump(bs, sizeof(*bs));
 		commit_board_config(bs);
 		tx_pkt->payload[0] = ertm14_commit_board_config;
 		break;
 
 	case ertm14_get_sim_board_config:
 		/* return full board configuration */		
-		bs = (struct ertm14_board_state *)&tx_pkt->payload[0];
+		bs = (struct ertm14_board_state *)&tx_pkt->payload[op->offset2];
 		get_sim_board_config(bs);
 		break;
 	case ertm14_get_wrc_diags:
