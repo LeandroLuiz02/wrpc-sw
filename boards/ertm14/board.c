@@ -38,7 +38,10 @@
 #include "dev/endpoint.h"
 #include "dev/74x595.h"
 #include "dev/netif.h"
+#include "dev/leds.h"
+
 #include "hw/wrc_diags_regs.h"
+
 
 /* FIXME: this is the 127th (re)(non)(un)definition of the ntohl macros
  * in the entire wrpc-sw codebase. This is insane and as non-portable
@@ -1371,7 +1374,6 @@ static int measure_vcxo_freq( int cm_channel, int cm_ref, int gate_freq, int n_s
     return 0;
 }
 
-
 static void blink_led( struct gpio_pin *pin )
 {
     gen_gpio_out( pin, 1 );
@@ -1379,14 +1381,10 @@ static void blink_led( struct gpio_pin *pin )
     gen_gpio_out( pin, 0 );
 }
 
-static void ertm14_test_leds(void)
+static void ertm14_init_leds()
 {
-    blink_led( &pin_led_sync_green );
-    blink_led( &pin_led_sync_red );
-}
-
-static void ertm15_test_leds(void)
-{
+    blink_led(&pin_led_sync_green);
+    blink_led(&pin_led_sync_red);
     blink_led(&pin_ertm15_led_ref_green);
     blink_led(&pin_ertm15_led_lo_green);
     blink_led(&pin_ertm15_led_clkb_green);
@@ -1395,6 +1393,17 @@ static void ertm15_test_leds(void)
     blink_led(&pin_ertm15_led_lo_red);
     blink_led(&pin_ertm15_led_clkb_red);
     blink_led(&pin_ertm15_led_clka_red);
+
+    leds_init();
+
+    led_create( &board.leds.clka, &pin_ertm15_led_clka_green, &pin_ertm15_led_clka_red, LED_TYPE_DUAL_COLOR, LED_OFF );
+    led_create( &board.leds.clkb, &pin_ertm15_led_clkb_green, &pin_ertm15_led_clkb_red, LED_TYPE_DUAL_COLOR, LED_OFF );
+    led_create( &board.leds.lo, &pin_ertm15_led_lo_green, &pin_ertm15_led_lo_red, LED_TYPE_DUAL_COLOR, LED_OFF );
+    led_create( &board.leds.ref, &pin_ertm15_led_ref_green, &pin_ertm15_led_ref_red, LED_TYPE_DUAL_COLOR, LED_OFF );
+    led_create( &board.leds.sync, &pin_led_sync_green, &pin_led_sync_red, LED_TYPE_DUAL_COLOR, LED_OFF );
+
+    led_set_blink_timing( &board.leds.sync, 1000, 500 );
+    led_action( &board.leds.sync, LED_COLOR_1, LED_BLINK );
 }
 
 static void set_main_dac( int value )
@@ -1640,6 +1649,8 @@ int ertm14_low_level_init(void)
 #endif
 
 
+    leds_init();
+
     /* apply a default, sane configuration (initialize the config struct) */
     ertm14_config_init();
 
@@ -1721,8 +1732,7 @@ int ertm14_low_level_init(void)
     /* Set up the eRTM14's PLLs (AD9516s) */
     ertm14_init_ref_clock_distribution();
 
-    ertm14_test_leds();
-    ertm15_test_leds();
+    ertm14_init_leds();
 
     // fixme: detect fail
     //ertm15_check_oscillators();
@@ -2327,6 +2337,12 @@ int ertm15_update_rf_monitor( void )
     return 0;
 }
 
+int ertm14_update_leds( void )
+{
+    leds_update();
+    return 0;
+}
+
 int wrc_board_init()
 {
     ertm14_shell_init();
@@ -2343,7 +2359,7 @@ int wrc_board_init()
     wrc_task_create( "mmc14", mmc14_link_init, mmc14_link_poll );
     wrc_task_create( "mmc15", mmc15_link_init, mmc15_link_poll );
     wrc_task_create( "rf-monitor", ertm15_init_rf_monitor, ertm15_update_rf_monitor );
-
+    wrc_task_create( "leds", NULL, ertm14_update_leds );
     ertm14_apply_config( 0 );
 
     return 0;

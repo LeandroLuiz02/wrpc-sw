@@ -15,6 +15,7 @@
 #include "dev/clock_monitor.h"
 #include "dev/24aa025.h"
 #include "dev/ad7888.h"
+#include "dev/leds.h"
 #include "ertm15_rf_distr.h"
 #include "dev/fine_pulse_generator.h"
 #include "dev/spi_flash.h"
@@ -30,6 +31,8 @@
 
 #define BOARD_USE_CUSTOM_SDBFS 1
 #define BOARD_HAS_CUSTOM_NETWORK_INIT 1
+
+#define BOARD_MAX_LEDS 8
 
 #undef BOARD_ERTM14_REV_1
 #define BOARD_ERTM14_REV_2
@@ -191,6 +194,16 @@ struct ertm14_board
     struct uart_link control_uart_link;
     struct simple_uart_device mmc_14_uart;
     struct simple_uart_device mmc_15_uart;
+
+    struct
+    {
+        struct led_device sync;
+        struct led_device ref;
+        struct led_device lo;
+        struct led_device clka;
+        struct led_device clkb;
+    } leds;
+
     int mode;
     int dds_resync_count;
 
