@@ -147,9 +147,9 @@ static int tx_fsm_update(void)
     case TX_SETUP_STATE_RESET_PCS:
     {
         uint32_t dbg1 =  MDIO_DBG1_RESET_TX | MDIO_DBG1_RESET_RX | MDIO_DBG1_DMTD_SOURCE_TXOUTCLK | MDIO_DBG1_GTX_QPLL_RESET | MDIO_DBG1_GTX_TXUSRPLL_RESET;
-        
+
         spll_enable_ptracker(0, 0);
-        
+
         // reset the QPLL
         ep_pcs_write(&wrc_endpoint_dev, MDIO_DBG1, dbg1 );
         dbg1 &= ~MDIO_DBG1_GTX_QPLL_RESET;
@@ -161,9 +161,9 @@ static int tx_fsm_update(void)
         while( !( ep_pcs_read(&wrc_endpoint_dev, MDIO_DBG0) & MDIO_DBG0_GTX_QPLL_LOCKED ) )
             lock_cycles++;
 
-        
-        
-//        pp_printf("QPLL OK [%d]\n", lock_cycles); 
+
+
+//        pp_printf("QPLL OK [%d]\n", lock_cycles);
 
         // QPLL ok: un-reset TX path (+ UsrClk PLL)
         dbg1 &= ~MDIO_DBG1_RESET_TX;
@@ -226,7 +226,7 @@ static int tx_fsm_update(void)
             tmo_restart(&fsm->refresh_timeout);
         }
 
-        
+
         if (!fsm->expected_phase_valid)
         {
             if (fsm->cal_saved_phase_valid)
@@ -244,7 +244,7 @@ static int tx_fsm_update(void)
             fsm->expected_phase_valid = 1;
         }
 
-        
+
         int phase_min = fsm->expected_phase - fsm->tollerance;
         int phase_max = fsm->expected_phase + fsm->tollerance;
 
@@ -252,8 +252,6 @@ static int tx_fsm_update(void)
 
         if (within_range(phase, phase_min, phase_max, 16000))
         {
-            // int i;
-
             fsm->measured_phase = phase;
             phy_dbg("FIX phase %d\n", fsm->measured_phase );
 
@@ -273,7 +271,10 @@ static int tx_fsm_update(void)
 
     case TX_SETUP_VALIDATE:
     {
+<<<<<<< HEAD
         //int phase, enabled;
+=======
+>>>>>>> fix some warnings
         //int rv = spll_read_ptracker(0, &phase, &enabled);
 
         //if (!rv)
@@ -337,12 +338,12 @@ static int rx_fsm_update(void)
 		case RX_SETUP_STATE_INIT:
 		{
 			ep_pcs_write(&wrc_endpoint_dev,  MDIO_DBG1, MDIO_DBG1_TX_ENABLE | MDIO_DBG1_DMTD_SOURCE_RXRECCLK | MDIO_DBG1_COMMA_TARGET_POS(DEFAULT_COMMA_POS) );
-			
+
 			if (early_link_up) {
 				if ( fsm_tx->state == TX_SETUP_DONE )
 				{
 					phy_dbg("RX calibration started.\n");
-	
+
 					fsm->state = RX_SETUP_STATE_RESET_PCS;
 				}
 			}
@@ -354,7 +355,7 @@ static int rx_fsm_update(void)
 
 		case RX_SETUP_STATE_RESET_PCS:
 		{
-			if (early_link_up) 
+			if (early_link_up)
             {
 				fsm->state = RX_SETUP_STATE_WAIT_LOCK;
 
@@ -382,16 +383,16 @@ static int rx_fsm_update(void)
 			if ( tmo_expired(&fsm->link_timeout) && !rx_up) {
 				fsm->state = RX_SETUP_STATE_INIT;
 			}
-			else 
+			else
 			{
 				if ( !rx_up )
 					return 0;
 
 //                fsm->cpos_stat[rx_comma_pos]++;
-                
+
                 if( rx_aligned )
 				{
-                    
+
                     # if 0
                        int i;
 
@@ -400,7 +401,7 @@ static int rx_fsm_update(void)
 
 			                rx_up = dbg0 & MDIO_DBG0_LINK_UP;
 			                rx_aligned = dbg0 & MDIO_DBG0_LINK_ALIGNED;
-            
+
    			rx_comma_pos = (dbg0 >> 7) & 0x7f;
             rx_comma_valid = (dbg0 >> 7) & 0x80 ? 1 : 0;
                         pp_printf("Dbg0 %x up %d algn %d cpos %d cvalid %d\n", dbg0, rx_up, rx_aligned, rx_comma_pos, rx_comma_valid );
@@ -424,7 +425,7 @@ static int rx_fsm_update(void)
 		{
             if( !tmo_expired( &fsm->stabilize_timeout ))
                 return 0;
-                
+
 			uint16_t dbg0 = ep_pcs_read(&wrc_endpoint_dev,  MDIO_DBG0);
 
 
