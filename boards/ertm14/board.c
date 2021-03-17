@@ -1621,8 +1621,7 @@ int ertm14_init_mac_eeprom(void)
 
     board_dbg("MAC address: Port 0 = %02x:%02x:%02x:%02x:%02x:%02x\n",
         mac[0],mac[1],mac[2],mac[3],mac[4],mac[5] );
-    ep_set_mac_addr( &wrc_endpoint_dev, mac );
-
+    
     return 0;
 }
 
@@ -2066,6 +2065,7 @@ int wrc_board_early_init()
 
     /* reset the networking part of the WRCore and start the WR Endpoint */
     ep_init( &wrc_endpoint_dev, (void *) BASE_EP );
+    ep_set_mac_addr( &wrc_endpoint_dev, ertm14_mac );
 
 	netif_register_device( "wru0", "default", &wrc_endpoint_dev );
 
