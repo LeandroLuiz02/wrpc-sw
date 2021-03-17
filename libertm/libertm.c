@@ -453,17 +453,17 @@ void sensors_to_host(struct proto_wrc_sensor *s, int nsensors)
 		s[i].value = ntohs(s[i].value);
 }
 
-double to_celsius(uint16_t value)
+static inline double to_celsius(uint16_t value)
 {
 	return value/1.0;
 }
 
-double to_volts(uint16_t value)
+static inline double to_volts(uint16_t value)
 {
 	return value/1000.0;
 }
 
-double to_amps(uint16_t value)
+static inline double to_amps(uint16_t value)
 {
 	return value/1000.0;
 }
