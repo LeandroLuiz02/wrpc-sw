@@ -1073,8 +1073,6 @@ static int ertm_process_psnmp(struct uart_packet *rx_pkt, struct uart_packet *tx
 
 	case ertm14_commit_board_config:
 		bs = (struct ertm14_board_state *)&rx_pkt->payload[op->offset1];
-		pp_printf("commit:\n");
-		hexdump(bs, sizeof(*bs));
 		commit_board_config(bs);
 		tx_pkt->payload[0] = ertm14_commit_board_config;
 		break;
