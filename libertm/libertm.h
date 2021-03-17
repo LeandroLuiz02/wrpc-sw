@@ -60,8 +60,7 @@ enum ertm_connector {
 
 /* real available channels in connectors */
 #define ERTM_CLKAB_MIN_CH	ERTM14_CLKAB_OUT_MIN_ID
-#define ERTM_CLKAB_MAX_CH	14
-			/* FIXME: ERTM14_CLKAB_OUT_MAX_ID is 15??*/
+#define ERTM_CLKAB_MAX_CH	ERTM14_CLKAB_OUT_MAX_ID
 #define ERTM_LOREF_MIN_CH	ERTM14_RF_OUT_MIN_ID
 #define ERTM_LOREF_MAX_CH	ERTM14_RF_OUT_MAX_ID
 
