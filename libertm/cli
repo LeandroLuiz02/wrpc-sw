@@ -121,7 +121,6 @@ class ErtmTest(cmd.Cmd):
             connector, rest = args.split(maxsplit=1)
             connector = self.connector_idx[connector.lower()]
             if connector in (self.ERTM_CLKA, self.ERTM_CLKB):
-                print(rest)
                 channel, freq = rest.split()
                 channel = int(channel)
                 freq = int(freq, 0)     # FIXME: this needs units
