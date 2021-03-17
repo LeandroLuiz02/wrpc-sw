@@ -860,6 +860,10 @@ int ertm_get_voltages(struct ertm_status *handle, struct ertm_voltages *volts)
 	res = ertm_get_sensors(handle, &handle->state->temperatures, &handle->state->voltages);
 	if (res < 0)
 		return res;
+	/* FIXME: if vdiv is screwed up in PCB, we'll need this.
+	 * To be determined
+	handle->state->voltages.p12v_ertm15 /= 2.0;
+	 */
 	memcpy(volts, &handle->state->voltages, sizeof(*volts));
 	return 0;
 }
