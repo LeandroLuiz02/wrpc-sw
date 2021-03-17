@@ -281,15 +281,6 @@ static void get_set(uint32_t *attr, uint32_t *val, int set)
 		*val = *attr;
 }
 
-#if 0
-static int clkab_set_output_divider(int clka_or_clkb, int output, int divider)
-{
-	struct ertm14_board_state state, *st = &state;
-	struct ertm14_board_state mask, *msk = &mask;
-
-}
-#endif
-
 int ertm_proto_cycle(struct uart_link *link,
 	int8_t opcode, void *payload, void *answer)
 {
@@ -324,7 +315,6 @@ int ertm_proto_cycle(struct uart_link *link,
 		errno = EINVAL;
 		return ERTM_UART_PROTO_ERR;
 	}
-	fprintf(stderr,"recvd %d bytes: \n", r->length);
 	memset(answer, 0x5a, op->length2);
 	memcpy(answer, &r->payload[op->offset2], op->length2);
 
