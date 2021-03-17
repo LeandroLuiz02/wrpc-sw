@@ -106,7 +106,10 @@ int ertm14_current_config_id = 0;
 struct ertm14_board_state ertm14_configs[ ERTM14_MAX_CONFIGS ];
 struct ertm14_nco_reset ertm14_nco_stats;
 
-struct ertm14_board_state ertm14_cs, *ertm14_current_state = &ertm14_cs;
+/* at the moment, only config 0 is in use and current
+ * note that RF power monitoring uses the current config id to
+ * store measured pow values */
+struct ertm14_board_state *ertm14_current_state = &ertm14_configs[0];
 struct ertm14_board_state ertm14_next_state;
 struct ertm14_board_state ertm14_mask;
 struct ertm14_board_state ertm14_hardware;
