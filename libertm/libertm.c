@@ -427,6 +427,18 @@ int ertm_get_wr_diags(struct ertm_status *st, struct WRC_DIAGS_WB *wrc_diags)
 	return 0;
 }
 
+void bytes_to_64_mac(uint64_t *mac, uint8_t src[])
+{
+	uint64_t tmp = 0;
+	int i;
+
+	for (i = 0; i < 6; i++) {
+		tmp <<= 8;
+		tmp |= src[i];
+	}
+	*mac = tmp;
+}
+
 static int get_version_info(struct ertm_status *st,
 			    struct ertm_board_info *bi)
 {
@@ -434,6 +446,11 @@ static int get_version_info(struct ertm_status *st,
 	int res;
 
 	res = ertm_proto_cycle(link, ertm14_get_version_info, NULL, bi);
+	/* FIXME: if they **really** want the MAC in uint64_t shape,
+	 * here it is. I would prefer to have a uint8_t[8]
+	 */
+	bytes_to_64_mac(&bi->ertm14_mac1, bi->ertm14_mac1_bytes);
+	bytes_to_64_mac(&bi->ertm14_mac2, bi->ertm14_mac2_bytes);
 	if (res < 0)
 		return res;
 	return 0;
