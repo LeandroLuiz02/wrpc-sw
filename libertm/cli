@@ -113,7 +113,7 @@ class ErtmTest(cmd.Cmd):
         "get complete CLKAB and REF/LO status."
         buf = create_string_buffer(512)
         self.lib.ertm_get_board_config(self.handle, byref(buf))
-        self.display.display_ertm_state(self.handle[0].state)
+        self.display.display_ertm_state(byref(buf))
 
     def do_set_freq(self, args):
         "set frequency of connector or connector channel."
