@@ -55,10 +55,8 @@ void display_ertm_clkab(struct ertm14_board_state *bs)
 	}
 }
 
-void display_ertm_state(struct ertm_state *st)
+void display_ertm_state(struct ertm14_board_state *bs)
 {
-	struct ertm14_board_state *bs = &st->board_state;
-
 	printf("DDS: -------------------------------------------------------------------\n");
 	display_dds_state(&bs->lo, &bs->ref);
 	printf("CLKAB: -----------------------------------------------------------------\n");
