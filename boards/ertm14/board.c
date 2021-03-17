@@ -113,6 +113,8 @@ struct ertm14_board_state ertm14_hardware;
 static struct ertm14_mmc_version_info  ertm14_board_info;
 static struct ertm14_mmc_version_info  ertm15_board_info;
 
+static uint8_t ertm14_mac[6];
+
 struct gpio_pin pin_pll_main_cs_n = { &board.gpio_aux, 0 };
 struct gpio_pin pin_pll_main_sdi = { &board.gpio_aux, 1 };
 struct gpio_pin pin_pll_main_sdo = { &board.gpio_aux, 2 };
@@ -981,7 +983,7 @@ void get_version_info(struct ertm14_version_info *bi)
 	memcpy(&bi->ertm15_serial, &ertm15_board_info.board_serial_number,
 			     sizeof(ertm15_board_info.board_serial_number));
 	/* FIXME: no mac2 */
-	bi->ertm14_mac1 = 0;
+	memcpy(&bi->ertm14_mac1[2], ertm14_mac, 6);
 	ep_get_mac_addr(&wrc_endpoint_dev, &bi->ertm14_mac1_bytes[2]);
 	/* FIXME: wrpc_sw_version makes no sense here */
 	strncpy(bi->wrpc_sw_commit_id, build_revision, sizeof(bi->wrpc_sw_commit_id));
@@ -1589,9 +1591,12 @@ int ertm14_init_mac_eeprom(void)
     m24aa025_init( &board.m24_mac_ids[0], &board.i2c_mac_addr, 0x50 );
     m24aa025_init( &board.m24_mac_ids[1], &board.i2c_mac_addr, 0x51 );
 
-    uint8_t mac[6];
-
+    /* FIXME: for some reason, ep_get_mac_addr does not retrieve
+     * the herein stored value. This addresses this quirk
+     */
+    uint8_t *mac = &ertm14_mac;
     int err = m24aa025_read_mac( &board.m24_mac_ids[0], mac );
+
     //m24aa025_read_mac( &board.m24_mac_ids[1], mac );
 
     bist_checkpoint( ertm_bist, ERTM14_BIST_MAC_EEPROM, 0, !err );
