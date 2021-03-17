@@ -1,4 +1,33 @@
+<<<<<<< HEAD
 #include <string.h>
+=======
+/*
+ * This work is part of the White Rabbit project
+ *
+ * Copyright (C) 2019 CERN (www.cern.ch)
+ * Author: Tomasz Wlostowski <tomasz.wlostowski@cern.ch>
+ *
+ * This program is free software: you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License as published by the
+ * Free Software Foundation, either version 3 of the License, or (at your
+ * option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful, but
+ * WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License along
+ * with this program.  If not, see <http://www.gnu.org/licenses/>.
+ */
+
+/*
+    LPDC PHY Calibration code.
+
+    Specific for Kintex-7 devices on the WR2RF-VME and eRTM14/15 cards ONLY!
+*/
+
+>>>>>>> ertm14: clean up the PHY LPDC calibration algorithm
 
 #include <board.h>
 #include "dev/syscon.h"
@@ -13,6 +42,12 @@
 #include <hw/endpoint_mdio.h>
 
 #include "dev/clock_monitor.h"
+
+#define LPDC_COARSE_PHASE_MIN_PS 100    /* ps */
+#define LPDC_COARSE_PHASE_MAX_PS 500    /* ps */
+#define LPDC_FINE_PHASE_TOLLERANCE_PS 40 /* ps */
+
+
 
 #define DEFAULT_COMMA_POS 0
 
@@ -73,7 +108,6 @@ struct wrc_port_tx_setup_state
     int tollerance;
     int update_cnt;
     int expected_phase_valid;
-    timeout_t refresh_timeout;
     timeout_t phy_lock_timeout;
     timeout_t spll_lock_timeout;
     timeout_t dmtd_timeout;
@@ -109,7 +143,7 @@ static void tx_fsm_init(struct wrc_port_tx_setup_state *fsm)
      * at the wrc_port_tx_setup_state structure */
     if( !storage_get_calibration_parameter( CAL_PARAM_PHY_TARGET_TX_PHASE, &fsm->cal_saved_phase ) )
     {
-        phy_dbg("read tx target phase :%d ps\n", fsm->cal_saved_phase);
+        phy_dbg("LPDC Tx target phase from calibration data: %d ps\n", fsm->cal_saved_phase);
         fsm->cal_saved_phase_valid = 1;
     }
 
@@ -120,8 +154,6 @@ static int tx_fsm_update(void)
 {
     struct wrc_port_tx_setup_state *fsm = &tx_state;
 
-
-    //pp_printf("Tics %d st %d\n", timer_get_tics(), fsm->state );
     switch (fsm->state)
     {
     case TX_SETUP_STATE_START:
@@ -138,8 +170,6 @@ static int tx_fsm_update(void)
             spll_enable_ptracker(0, 0);
             ep_pcs_write( &wrc_endpoint_dev, MDIO_DBG1, MDIO_DBG1_RESET_RX | MDIO_DBG1_DMTD_SOURCE_TXOUTCLK);
             fsm->state = TX_SETUP_STATE_RESET_PCS;
-
-            tmo_init( &fsm->refresh_timeout, FSM_DEBUG_REFRESH_PERIOD_MS );
         }
         break;
     }
@@ -210,13 +240,12 @@ static int tx_fsm_update(void)
             if( tmo_expired( &fsm->dmtd_timeout ) )
             {
                 phy_dbg("Phase measurement timeout, retrying...\n");
-                //for(;;)
-                  //  spll_show_stats();
                 fsm->state = TX_SETUP_STATE_RESET_PCS;
             }
             return 0;
         }
 
+<<<<<<< HEAD
 //        p2 = fsm->measured_phase = phase;
         phy_dbg("samples %d last-phase %d\n", fsm->attempts, phase );
 
@@ -227,19 +256,31 @@ static int tx_fsm_update(void)
         }
 
 
+=======
+>>>>>>> ertm14: clean up the PHY LPDC calibration algorithm
         if (!fsm->expected_phase_valid)
         {
-            if (fsm->cal_saved_phase_valid)
+            if (fsm->cal_saved_phase_valid )
             {
-                //pr_info("Using phase from file :%d\n",
-                //	fsm->cal_saved_phase);
-                fsm->expected_phase = fsm->cal_saved_phase;
-                fsm->tollerance = 150; /*ps, bins are 200 ps wide*/
+                if ( within_range( fsm->cal_saved_phase, LPDC_COARSE_PHASE_MIN_PS, LPDC_COARSE_PHASE_MAX_PS, 16000 ) )
+                {
+                    fsm->expected_phase = fsm->cal_saved_phase;
+                    fsm->tollerance = LPDC_FINE_PHASE_TOLLERANCE_PS;
+
+                    phy_dbg("LPDC: Using the previous phase setpoint as the target with tollerance = %d ps\n", fsm->tollerance );
+                    //	fsm->cal_saved_phase);
+                } else {
+                    fsm->expected_phase = (LPDC_COARSE_PHASE_MAX_PS + LPDC_COARSE_PHASE_MIN_PS) / 2;
+                    fsm->tollerance = (LPDC_COARSE_PHASE_MAX_PS - LPDC_COARSE_PHASE_MIN_PS) / 2;
+                    fsm->cal_saved_phase_valid = 0;
+                    phy_dbg("LPDC: Previous phase setpoint (%d ps) out of range. Old calibration algorithm? Restarting from scratch.\n", fsm->cal_saved_phase );
+                }
             }
             else // find a sane default
             {
-                fsm->expected_phase = 10;
-                fsm->tollerance = 350; // fixme: this works for PHY oversampling at 5 Gbps (must be made generic at some time...)
+                fsm->expected_phase = (LPDC_COARSE_PHASE_MAX_PS + LPDC_COARSE_PHASE_MIN_PS) / 2;
+                fsm->tollerance = (LPDC_COARSE_PHASE_MAX_PS - LPDC_COARSE_PHASE_MIN_PS) / 2;
+                phy_dbg("LPDC: No LPDC TX Calibration data found. Restarting from scratch.\n" );
             }
             fsm->expected_phase_valid = 1;
         }
@@ -248,17 +289,10 @@ static int tx_fsm_update(void)
         int phase_min = fsm->expected_phase - fsm->tollerance;
         int phase_max = fsm->expected_phase + fsm->tollerance;
 
-
-
         if (within_range(phase, phase_min, phase_max, 16000))
         {
             fsm->measured_phase = phase;
-            phy_dbg("FIX phase %d\n", fsm->measured_phase );
-
-            //spll_enable_ptracker(0, 0);
-            //spll_set_ptracker_average_samples( PTRACKER_AVERAGE_SAMPLES );
-            //spll_enable_ptracker(0, 1);
-
+            phy_dbg("LPDC: Fix phase = %d ps\n", fsm->measured_phase );
             fsm->state = TX_SETUP_VALIDATE;
         }
         else
@@ -271,17 +305,14 @@ static int tx_fsm_update(void)
 
     case TX_SETUP_VALIDATE:
     {
-<<<<<<< HEAD
         //int phase, enabled;
-=======
->>>>>>> fix some warnings
         //int rv = spll_read_ptracker(0, &phase, &enabled);
 
         //if (!rv)
           //  return 0;
 
         //fsm->measured_phase = phase;
-        phy_dbg("TX calibration complete (phase %d ps)\n", fsm->measured_phase);
+        phy_dbg("LPDC: TX calibration complete (phase %d ps)\n", fsm->measured_phase);
         spll_enable_ptracker(0, 0);
 
         // enable the PCS on the port
@@ -289,7 +320,7 @@ static int tx_fsm_update(void)
 
         if( !fsm->cal_saved_phase_valid )
         {
-            phy_dbg("saving new target phase: %d ps\n", fsm->measured_phase);
+            phy_dbg("LPDC: Saving established target phase as calibration parameter: %d ps\n", fsm->measured_phase);
             storage_set_calibration_parameter( CAL_PARAM_PHY_TARGET_TX_PHASE, fsm->measured_phase);
             storage_save_calibration();
         }
@@ -491,7 +522,7 @@ int phy_calibration_poll(void)
 
 void phy_calibration_init(void)
 {
-    phy_dbg("Initializing PHY calibrator...\n");
+    phy_dbg("LPDC: Initializing PHY calibrator...\n");
     ep_pcs_write(&wrc_endpoint_dev, MDIO_REG_MCR, MDIO_MCR_PDOWN);	/* reset the PHY */
 	timer_delay_ms(200);
 	ep_pcs_write(&wrc_endpoint_dev, MDIO_REG_MCR, MDIO_MCR_RESET);	/* reset the PHY */
