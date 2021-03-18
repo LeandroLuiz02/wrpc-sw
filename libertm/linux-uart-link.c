@@ -86,6 +86,20 @@ uint32_t uart_link_get_ms_tics( struct uart_link *link )
     return (uint32_t) tics;
 }
 
+static int uart_link_poll( struct uart_link *link )
+{
+    struct uart_link_priv *priv = (struct uart_link_priv* ) link->priv;
+    fd_set readfs;
+    struct timeval tv = {0, 0};
+    FD_ZERO(&readfs);
+    FD_SET(priv->fd, &readfs);
+    select(priv->fd+1, &readfs, NULL, NULL, &tv);
+    if (FD_ISSET(priv->fd, &readfs))
+        return 1;
+
+    return 0;
+}
+
 int uart_link_create_linux( struct uart_link *link, const char* dev_name, int speed )
 {
     struct uart_link_priv *priv = malloc( sizeof( struct uart_link_priv ));
@@ -124,6 +138,7 @@ int uart_link_create_linux( struct uart_link *link, const char* dev_name, int sp
     link->send_byte = uart_link_send_byte;
     link->recv_byte = uart_link_recv_byte;
     link->get_ms_tics = uart_link_get_ms_tics;
+    link->poll = uart_link_poll;
     link->state = LINK_STATE_IDLE;
     link->priv = priv;
     link->rx_last_tics = 0;

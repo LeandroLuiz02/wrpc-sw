@@ -63,6 +63,7 @@ struct uart_link
     int (*send_byte)(struct uart_link *link, uint8_t byte );
     int (*recv_byte)(struct uart_link *link );
     uint32_t (*get_ms_tics)( struct uart_link *link );
+    int (*poll)(struct uart_link *link);
     void *priv;
     int state;
     int rx_count;
