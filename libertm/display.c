@@ -240,6 +240,17 @@ void display_wrc_diags_cooked(struct ertm_wr_status *diags)
 	print_board_temp(diags->WDIAG_TEMP);                                     
 }
 
+void display_nco_status(struct ertm_nco_reset *nco)
+{
+	printf(
+	    "RX message count:\t%d\n"
+	    "%-3s DDS Sync Source:   %10s  %-3s DDS Sync Source:  %10s\n"
+	    "%-3s DDS Sync Triggers: %10d  %-3s DDS Syn Triggers: %10d\n",
+		rx_count,
+		nco[0].sync_source, nco[1].sync_source,
+		nco[0].reset_count, nco[1].reset_count);
+}
+
 void mac_to_str(uint64_t mac, char *dst)
 {
 	sprintf(dst,
