@@ -315,9 +315,6 @@ static int tx_fsm_update(void)
 
     case TX_SETUP_DONE:
     {
-	/* FIXME: this code seems to have no effect */
-	int early_link_up = ep_pcs_read(&wrc_endpoint_dev, MDIO_DBG0) & MDIO_DBG0_LINK_UP;
-
         return 1;
         break;
     }
