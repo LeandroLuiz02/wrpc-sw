@@ -158,6 +158,16 @@ struct ertm_nco_reset {
 	uint32_t	unused[8];
 };
 
+struct ertm_nco_status {
+	union {
+	    struct ertm_nco_reset nco_status[2];
+	    struct {
+		struct ertm_nco_reset lo;
+		struct ertm_nco_reset ref;
+	    };
+	};
+};
+
 struct ertm_wr_status {
 	/* FIXME: copied, not #include'd, from wrc_diags_regs.h */
 	/* this is an alias of struct WRC_DIAGS_WB */
