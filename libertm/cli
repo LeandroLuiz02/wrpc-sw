@@ -293,13 +293,14 @@ class ErtmTest(cmd.Cmd):
     # convenience aliases
     do_q = do_EOF
     do_quit = do_EOF
-    do_gbs = do_get_board_state
+    do_bs = do_get_board_state
     do_sla = do_set_level_adjust
     do_gla = do_get_level_adjust
     do_wrd = do_wrc_diags
     do_temp = do_temperatures
     do_volt = do_voltages
     do_bi = do_board_info
+    do_nco = do_nco_status
 
 if __name__ == '__main__':
 
