@@ -905,16 +905,18 @@ int ertm_get_ocxo_current(struct ertm_status *handle, double *current)
 /* system-wide NCO reset */
 int ertm_nco_reset_get_status(struct ertm_status *handle, struct ertm_nco_reset status[2])
 {
+	struct uart_link *link = &handle->link;
 	struct ertm14_board_state *bs = &handle->state->board_state;
-	struct ertm14_dds_state *dds;
-	int err;
+	int res;
 
 	if ((bs = get_board_state(handle)) == NULL) {
 		errno = EINVAL;
 		return ERTM_BAD_HANDLE;
 	}
-
-	return ERTM_NOT_IMPLEMENTED;
+	res = ertm_proto_cycle(link, ertm14_get_wrc_nco, NULL, status);
+	if (res < 0)
+		return res;
+	return 0;
 }
 
 int ertm_nco_reset_subscribe(struct ertm_status *handle,
