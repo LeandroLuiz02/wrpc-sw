@@ -49,7 +49,7 @@ int ad951x_configure(struct ad951x_device *dev, struct ad95xx_config *cfg) {
     ad951x_write(dev, 0x232, 0x01);  // commit
 
     for(i = 0; i < cfg->n_regs; i++) {
-        int rdbk = ad951x_read(dev, cfg->regs[i].addr);
+        ad951x_read(dev, cfg->regs[i].addr);
     }
 
     int lock_timeout = 1000;
