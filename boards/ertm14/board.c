@@ -106,7 +106,7 @@ static uint16_t ntohs(uint16_t __netshort)
 struct ertm14_board board;
 int ertm14_current_config_id = 0;
 struct ertm14_board_state ertm14_configs[ ERTM14_MAX_CONFIGS ];
-struct ertm14_nco_reset ertm14_nco_stats;
+struct ertm14_nco_reset ertm14_nco_stats[2];
 
 /* at the moment, only config 0 is in use and current
  * note that RF power monitoring uses the current config id to
@@ -1024,17 +1024,34 @@ static void get_wrc_sensors(struct wrc_sensor *dst)
 		htons(dst[i].value);
 }
 
-static void refresh_wrc_nco(struct ertm14_nco_reset *nco)
+static void refresh_wrc_nco(struct ertm14_nco_reset *nco, int connector)
 {
-	/* FIXME: confirm this is up-to-date
-	    nco->enabled = ;		// FIXME: is this per-board or per-ref/lo?
-	    nco->subscribed = ;
-	    nco->current_stream_id = 0;  // FIXME: clarify
-	*/
+	struct ertm14_dds_state *dds = ((connector == ERTM14_DDS_SYNC_LO) ?
+		&ertm14_current_state->lo : &ertm14_current_state->ref);
+
+	nco->reset_count = dds->sync_count;
+	nco->subscribed = dds->sync_source;
 	diag_read_word(8, DIAG_RO_BANK, &nco->rx_count);
-	nco->reset_count_lo = ertm14_current_state->lo.sync_count;
-	nco->reset_count_ref = ertm14_current_state->ref.sync_count;
-	nco->reset_count = nco->reset_count_lo + nco->reset_count_ref;
+	nco->enabled = (nco->subscribed != ERTM14_SYNC_SOURCE_NONE);
+	nco->current_stream_id = 0;	/* unused */
+}
+
+static void nco_to_network(struct ertm14_nco_reset *nco)
+{
+	nco->enabled		= htonl(nco->enabled);
+	nco->sync_source	= htonl(nco->sync_source);
+	nco->current_stream_id	= htonl(nco->current_stream_id);
+	nco->rx_count		= htonl(nco->rx_count);
+	nco->reset_count	= htonl(nco->reset_count);
+};
+
+static void get_wrc_nco(struct ertm14_nco_reset *nco)
+{
+	refresh_wrc_nco(&ertm14_nco_stats[0], ERTM14_DDS_SYNC_LO);
+	refresh_wrc_nco(&ertm14_nco_stats[1], ERTM14_DDS_SYNC_REF);
+	memcpy(nco, &ertm14_nco_stats, sizeof(ertm14_nco_stats));
+	nco_to_network(nco[0]);
+	nco_to_network(nco[1]);
 }
 
 static int ertm_process_psnmp(struct uart_packet *rx_pkt, struct uart_packet *tx_pkt)
@@ -1084,8 +1101,7 @@ static int ertm_process_psnmp(struct uart_packet *rx_pkt, struct uart_packet *tx
 		break;
 	case ertm14_get_wrc_nco:
 		nco = (struct ertm14_nco_reset *)&tx_pkt->payload[op->offset2];
-		refresh_wrc_nco(&ertm14_nco_stats);
-		memcpy(nco, &ertm14_nco_stats, sizeof(*nco));
+		get_wrc_nco(nco);
 		break;
 	case ertm14_get_version_info:
 		ver = (struct ertm14_version_info *)&tx_pkt->payload[op->offset2];

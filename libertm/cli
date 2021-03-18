@@ -67,6 +67,16 @@ class ertm_wr_status(Structure):
 	("WDIAG_UCNT", c_uint),
 	("WDIAG_TEMP", c_uint),
     ]
+class ertm_nco_reset(Structure):
+    _fields_ = [
+        ("enabled", c_uint),      
+        ("sync_source", c_uint),      		
+        ("current_stream_id", c_uint),      			
+        ("rx_count", c_uint),      		
+        ("reset_count", c_uint),      		
+	("unused", 8*c_uint),
+    ]
+ertm_nco_status = 2 * ertm_nco_reset
 
 class ErtmTest(cmd.Cmd):
 
@@ -195,6 +205,16 @@ class ErtmTest(cmd.Cmd):
             return
         self.lib.ertm_dds_set_level_adjust(self.handle, connector, c_double(level))
 
+    def do_nco_status(self, args):
+        "display NCO subscriptions status."
+        nco = ertm_nco_status()
+        err = self.lib.ertm_nco_reset_get_status(self.handle, byref(nco))
+        if err:
+            msg = self.errmsg(err)
+            print('error {} in nco_status: {}'.format(err, msg))
+            return
+        self.display.display_nco_status(byref(nco))
+
     def do_wrc_diags(self, args):
         "get WRC diagnostics."
         buf = ertm_wr_status()
@@ -273,13 +293,14 @@ class ErtmTest(cmd.Cmd):
     # convenience aliases
     do_q = do_EOF
     do_quit = do_EOF
-    do_gbs = do_get_board_state
+    do_bs = do_get_board_state
     do_sla = do_set_level_adjust
     do_gla = do_get_level_adjust
     do_wrd = do_wrc_diags
     do_temp = do_temperatures
     do_volt = do_voltages
     do_bi = do_board_info
+    do_nco = do_nco_status
 
 if __name__ == '__main__':
 

@@ -148,11 +148,24 @@ struct ertm_voltages {		/* volts SVP */
 
 struct ertm_nco_reset {
 	int		enabled;
-	int		subscribed;
+	union {
+		int	subscribed;
+		int	sync_source;
+	};
 	uint32_t	current_stream_id;
 	uint32_t	rx_count;
 	uint32_t	reset_count;
 	uint32_t	unused[8];
+};
+
+struct ertm_nco_status {
+	union {
+	    struct ertm_nco_reset nco_status[2];
+	    struct {
+		struct ertm_nco_reset lo;
+		struct ertm_nco_reset ref;
+	    };
+	};
 };
 
 struct ertm_wr_status {
@@ -238,7 +251,7 @@ int ertm_rf_nco_reset_enable(struct ertm_status *handle, int enable);
 int ertm_rf_nco_reset(struct ertm_status *handle);
 int ertm_nco_reset_subscribe(struct ertm_status *handle,
 		enum ertm_connector, int enable, int channel, uint32_t stream_id);
-int ertm_nco_reset_get_status(struct ertm_status *handle, struct ertm_nco_reset *status);
+int ertm_nco_reset_get_status(struct ertm_status *handle, struct ertm_nco_reset status[]);
 
 /* WR enable/diagnostics */
 struct ertm_wr_status;						/* to be defined with rabbits */

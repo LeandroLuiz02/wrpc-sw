@@ -901,14 +901,53 @@ int ertm_get_ocxo_current(struct ertm_status *handle, double *current)
 	*current = handle->state->voltages.ocxo_curr;
 	return 0;
 }
-#if 0
+
 /* system-wide NCO reset */
-int ertm_rf_nco_reset_enable(struct ertm_status *handle, int enable);
-int ertm_rf_nco_reset(struct ertm_status *handle);
+void nco_to_host_order(struct ertm_nco_reset *nco)
+{
+	nco->enabled		= ntohl(nco->enabled);
+	nco->sync_source	= ntohl(nco->sync_source);
+	nco->current_stream_id	= ntohl(nco->current_stream_id);
+	nco->rx_count		= ntohl(nco->rx_count);
+	nco->reset_count	= ntohl(nco->reset_count);
+};
+
+int ertm_nco_reset_get_status(struct ertm_status *handle, struct ertm_nco_reset status[2])
+{
+	struct uart_link *link = &handle->link;
+	struct ertm14_board_state *bs = &handle->state->board_state;
+	int res;
+
+	if ((bs = get_board_state(handle)) == NULL) {
+		errno = EINVAL;
+		return ERTM_BAD_HANDLE;
+	}
+	res = ertm_proto_cycle(link, ertm14_get_wrc_nco, NULL, status);
+	if (res < 0)
+		return res;
+	nco_to_host_order(&status[0]);
+	nco_to_host_order(&status[1]);
+	return 0;
+}
+
 int ertm_nco_reset_subscribe(struct ertm_status *handle,
-		enum ertm_connector, int enable, int channel, uint32_t stream_id);
-int ertm_nco_reset_get_status(struct ertm_status *handle, struct ertm_nco_reset *status);
-#endif
+		enum ertm_connector connector, int enable, int channel, uint32_t stream_id)
+{
+	return ERTM_NOT_IMPLEMENTED;
+}
+
+/* FIXME: this has no place in the current ertm implementation,
+ * suppress if possible */
+int ertm_rf_nco_reset(struct ertm_status *handle)
+{
+	return ERTM_NOT_IMPLEMENTED;
+}
+/* FIXME: this has no place in the current ertm implementation,
+ * suppress if possible */
+int ertm_rf_nco_reset_enable(struct ertm_status *handle, int enable)
+{
+	return ERTM_NOT_IMPLEMENTED;
+}
 
 int ertm_wr_diags(struct ertm_status *handle, struct ertm_wr_status *status)
 {
