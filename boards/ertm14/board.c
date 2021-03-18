@@ -1025,11 +1025,14 @@ static void get_wrc_sensors(struct wrc_sensor *dst)
 		htons(dst[i].value);
 }
 
-static void refresh_wrc_nco(struct ertm14_nco_reset *nco)
+static void refresh_wrc_nco(struct ertm14_nco_reset *nco, int connector)
 {
+	struct ertm14_dds_state *dds = ((connector == ERTM14_DDS_SYNC_LO) ?
+		ertm14_current_state->lo : ertm14_current_state->ref);
+
+	nco->reset_count = dds->sync_count;
+	nco->subscribed = dds->sync_source;
 	diag_read_word(8, DIAG_RO_BANK, &nco->rx_count);
-	nco->reset_count = ertm14_current_state->lo.sync_count;
-	nco->subscribed = ertm14_current_state->lo.sync_count;
 	nco->enabled = (nco->subscribed != ERTM14_SYNC_SOURCE_NONE);
 	nco->current_stream_id = 0;	/* unused */
 }
