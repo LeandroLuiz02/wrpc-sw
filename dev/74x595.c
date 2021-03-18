@@ -120,7 +120,7 @@ static void x595_gpio_out(const struct gpio_pin *pin, int value)
     x595_gpio_sync_out( priv );
 }
 
-int x595_gpio_create(struct gpio_device *device, int n_regs, const struct gpio_pin *pin_rclk, const struct gpio_pin *pin_srclk, struct gpio_pin *pin_srclr_n, struct gpio_pin *pin_ser)
+int x595_gpio_create(struct gpio_device *device, int n_regs, const struct gpio_pin *pin_rclk, const struct gpio_pin *pin_srclk, struct gpio_pin *pin_srclr_n, const struct gpio_pin *pin_ser)
 {
     struct x595_gpio_priv_data *priv;
     if( x595_gpio_priv_count >= X595_GPIO_MAX )
