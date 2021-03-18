@@ -1027,15 +1027,11 @@ static void get_wrc_sensors(struct wrc_sensor *dst)
 
 static void refresh_wrc_nco(struct ertm14_nco_reset *nco)
 {
-	/* FIXME: confirm this is up-to-date
-	    nco->enabled = ;		// FIXME: is this per-board or per-ref/lo?
-	    nco->subscribed = ;
-	    nco->current_stream_id = 0;  // FIXME: clarify
-	*/
 	diag_read_word(8, DIAG_RO_BANK, &nco->rx_count);
-	nco->reset_count_lo = ertm14_current_state->lo.sync_count;
-	nco->reset_count_ref = ertm14_current_state->ref.sync_count;
-	nco->reset_count = nco->reset_count_lo + nco->reset_count_ref;
+	nco->reset_count = ertm14_current_state->lo.sync_count;
+	nco->subscribed = ertm14_current_state->lo.sync_count;
+	nco->enabled = (nco->subscribed != ERTM14_SYNC_SOURCE_NONE);
+	nco->current_stream_id = 0;	/* unused */
 }
 
 static int ertm_process_psnmp(struct uart_packet *rx_pkt, struct uart_packet *tx_pkt)
