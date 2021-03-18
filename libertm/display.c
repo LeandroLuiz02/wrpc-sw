@@ -240,15 +240,25 @@ void display_wrc_diags_cooked(struct ertm_wr_status *diags)
 	print_board_temp(diags->WDIAG_TEMP);                                     
 }
 
-void display_nco_status(struct ertm_nco_reset *nco)
+static char *source_name[] = {
+	[ERTM14_SYNC_SOURCE_NONE]	= "none",
+	[ERTM14_SYNC_SOURCE_PPS]	= "PPS",
+	[ERTM14_SYNC_SOURCE_RF_TRIGGER]	= "RF_TRIGGER",
+};
+
+void display_nco_status(struct ertm_nco_status *nco)
 {
+	struct ertm_nco_reset *lo  = &nco->lo;
+	struct ertm_nco_reset *ref = &nco->ref;
+
 	printf(
 	    "RX message count:\t%d\n"
 	    "%-3s DDS Sync Source:   %10s  %-3s DDS Sync Source:  %10s\n"
 	    "%-3s DDS Sync Triggers: %10d  %-3s DDS Syn Triggers: %10d\n",
-		rx_count,
-		nco[0].sync_source, nco[1].sync_source,
-		nco[0].reset_count, nco[1].reset_count);
+		lo->rx_count,
+		"LO ", source_name[lo->sync_source],
+		"REF", source_name[ref->sync_source],
+		"LO ", lo->reset_count, "REF", ref->reset_count);
 }
 
 void mac_to_str(uint64_t mac, char *dst)
