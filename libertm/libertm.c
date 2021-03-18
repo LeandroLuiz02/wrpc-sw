@@ -920,7 +920,7 @@ int ertm_nco_reset_get_status(struct ertm_status *handle, struct ertm_nco_reset 
 }
 
 int ertm_nco_reset_subscribe(struct ertm_status *handle,
-		enum ertm_connector, int enable, int channel, uint32_t stream_id)
+		enum ertm_connector connector, int enable, int channel, uint32_t stream_id)
 {
 	return ERTM_NOT_IMPLEMENTED;
 }
