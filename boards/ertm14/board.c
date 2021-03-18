@@ -1051,8 +1051,8 @@ static void get_wrc_nco(struct ertm14_nco_reset *nco)
 	refresh_wrc_nco(&ertm14_nco_stats[0], ERTM14_DDS_SYNC_LO);
 	refresh_wrc_nco(&ertm14_nco_stats[1], ERTM14_DDS_SYNC_REF);
 	memcpy(nco, &ertm14_nco_stats, sizeof(ertm14_nco_stats));
-	nco_to_network(nco[0]);
-	nco_to_network(nco[1]);
+	nco_to_network(&nco[0]);
+	nco_to_network(&nco[1]);
 }
 
 static int ertm_process_psnmp(struct uart_packet *rx_pkt, struct uart_packet *tx_pkt)
