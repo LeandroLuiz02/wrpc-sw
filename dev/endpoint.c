@@ -15,6 +15,8 @@
 #include "dev/syscon.h"
 #include <dev/endpoint.h>
 #include <dev/minic.h>
+#include "storage.h"
+#include "shell.h"
 
 #include <hw/endpoint_regs.h>
 #include <hw/endpoint_mdio.h>
@@ -211,7 +213,7 @@ int ep_sfp_enable(struct wr_endpoint_device* dev, int ena)
 		val &= (~MDIO_ECTRL_SFP_TX_DISABLE);
 	else
 		val |= MDIO_ECTRL_SFP_TX_DISABLE;
-	
+
 	ep_pcs_write(dev, MDIO_REG_ECTRL, val);
 
 	return 0;
