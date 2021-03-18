@@ -1036,11 +1036,22 @@ static void refresh_wrc_nco(struct ertm14_nco_reset *nco, int connector)
 	nco->current_stream_id = 0;	/* unused */
 }
 
+static void nco_to_network(struct ertm14_nco_reset *nco)
+{
+	nco->enabled		= htonl(nco->enabled);
+	nco->sync_source	= htonl(nco->sync_source);
+	nco->current_stream_id	= htonl(nco->current_stream_id);
+	nco->rx_count		= htonl(nco->rx_count);
+	nco->reset_count	= htonl(nco->reset_count);
+};
+
 static void get_wrc_nco(struct ertm14_nco_reset *nco)
 {
 	refresh_wrc_nco(&ertm14_nco_stats[0], ERTM14_DDS_SYNC_LO);
 	refresh_wrc_nco(&ertm14_nco_stats[1], ERTM14_DDS_SYNC_REF);
 	memcpy(nco, &ertm14_nco_stats, sizeof(ertm14_nco_stats));
+	nco_to_network(nco[0]);
+	nco_to_network(nco[1]);
 }
 
 static int ertm_process_psnmp(struct uart_packet *rx_pkt, struct uart_packet *tx_pkt)
