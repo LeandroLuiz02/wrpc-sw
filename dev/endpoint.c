@@ -15,6 +15,7 @@
 #include "dev/syscon.h"
 #include <dev/endpoint.h>
 #include "storage.h"
+#include "shell.h"
 
 #include <hw/endpoint_regs.h>
 #include <hw/endpoint_mdio.h>
