@@ -25,6 +25,7 @@
 */
 
 
+#include <string.h>
 #include <board.h>
 #include "dev/syscon.h"
 #include "dev/endpoint.h"
