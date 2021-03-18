@@ -288,7 +288,6 @@ static int tx_fsm_update(void)
 
     case TX_SETUP_VALIDATE:
     {
-        int phase, enabled;
         //int rv = spll_read_ptracker(0, &phase, &enabled);
 
         //if (!rv)
