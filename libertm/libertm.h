@@ -241,7 +241,7 @@ int ertm_rf_nco_reset_enable(struct ertm_status *handle, int enable);
 int ertm_rf_nco_reset(struct ertm_status *handle);
 int ertm_nco_reset_subscribe(struct ertm_status *handle,
 		enum ertm_connector, int enable, int channel, uint32_t stream_id);
-int ertm_nco_reset_get_status(struct ertm_status *handle, struct ertm_nco_reset *status);
+int ertm_nco_reset_get_status(struct ertm_status *handle, struct ertm_nco_reset status[]);
 
 /* WR enable/diagnostics */
 struct ertm_wr_status;						/* to be defined with rabbits */

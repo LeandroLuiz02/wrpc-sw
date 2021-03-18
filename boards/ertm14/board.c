@@ -106,7 +106,7 @@ static uint16_t ntohs(uint16_t __netshort)
 struct ertm14_board board;
 int ertm14_current_config_id = 0;
 struct ertm14_board_state ertm14_configs[ ERTM14_MAX_CONFIGS ];
-struct ertm14_nco_reset ertm14_nco_stats;
+struct ertm14_nco_reset ertm14_nco_stats[2];
 
 /* at the moment, only config 0 is in use and current
  * note that RF power monitoring uses the current config id to
