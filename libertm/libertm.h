@@ -148,7 +148,10 @@ struct ertm_voltages {		/* volts SVP */
 
 struct ertm_nco_reset {
 	int		enabled;
-	int		subscribed;
+	union {
+		int	subscribed;
+		int	sync_source;
+	};
 	uint32_t	current_stream_id;
 	uint32_t	rx_count;
 	uint32_t	reset_count;
