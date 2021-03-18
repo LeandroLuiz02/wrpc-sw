@@ -916,13 +916,13 @@ int ertm_nco_reset_subscribe(struct ertm_status *handle,
 
 /* FIXME: this has no place in the current ertm implementation,
  * suppress if possible */
-int ertm_rf_nco_reset(struct ertm_status *handle);
+int ertm_rf_nco_reset(struct ertm_status *handle)
 {
 	return ERTM_NOT_IMPLEMENTED;
 }
 /* FIXME: this has no place in the current ertm implementation,
  * suppress if possible */
-int ertm_rf_nco_reset_enable(struct ertm_status *handle, int enable);
+int ertm_rf_nco_reset_enable(struct ertm_status *handle, int enable)
 {
 	return ERTM_NOT_IMPLEMENTED;
 }
