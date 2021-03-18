@@ -1037,6 +1037,13 @@ static void refresh_wrc_nco(struct ertm14_nco_reset *nco, int connector)
 	nco->current_stream_id = 0;	/* unused */
 }
 
+static void get_wrc_nco(struct ertm14_nco_reset *nco)
+{
+	refresh_wrc_nco(&ertm14_nco_stats[0], ERTM14_DDS_SYNC_LO);
+	refresh_wrc_nco(&ertm14_nco_stats[1], ERTM14_DDS_SYNC_REF);
+	memcpy(nco, &ertm14_nco_stats, sizeof(ertm14_nco_stats));
+}
+
 static int ertm_process_psnmp(struct uart_packet *rx_pkt, struct uart_packet *tx_pkt)
 {
 	struct ertm14_board_state *bs;
@@ -1089,8 +1096,7 @@ static int ertm_process_psnmp(struct uart_packet *rx_pkt, struct uart_packet *tx
 		break;
 	case ertm14_get_wrc_nco:
 		nco = (struct ertm14_nco_reset *)&tx_pkt->payload[op->offset2];
-		refresh_wrc_nco(&ertm14_nco_stats);
-		memcpy(nco, &ertm14_nco_stats, sizeof(*nco));
+		get_wrc_nco(nco);
 		break;
 	case ertm14_get_version_info:
 		ver = (struct ertm14_version_info *)&tx_pkt->payload[op->offset2];
