@@ -1028,7 +1028,7 @@ static void get_wrc_sensors(struct wrc_sensor *dst)
 static void refresh_wrc_nco(struct ertm14_nco_reset *nco, int connector)
 {
 	struct ertm14_dds_state *dds = ((connector == ERTM14_DDS_SYNC_LO) ?
-		ertm14_current_state->lo : ertm14_current_state->ref);
+		&ertm14_current_state->lo : &ertm14_current_state->ref);
 
 	nco->reset_count = dds->sync_count;
 	nco->subscribed = dds->sync_source;
