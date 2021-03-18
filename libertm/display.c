@@ -240,10 +240,18 @@ void display_wrc_diags_cooked(struct ertm_wr_status *diags)
 	print_board_temp(diags->WDIAG_TEMP);                                     
 }
 
-static char *source_name[] = {
-	[ERTM14_SYNC_SOURCE_NONE]	= "none",
-	[ERTM14_SYNC_SOURCE_PPS]	= "PPS",
-	[ERTM14_SYNC_SOURCE_RF_TRIGGER]	= "RF_TRIGGER",
+static const char *source_name(int sync_source)
+{
+	switch (sync_source) {
+	case ERTM14_SYNC_SOURCE_NONE:
+		return "none";
+	case ERTM14_SYNC_SOURCE_PPS:
+		return "PPS";
+	case ERTM14_SYNC_SOURCE_RF_TRIGGER:
+		return "RF_TRIGGER";
+	default:
+		return NULL;
+	};
 };
 
 void display_nco_status(struct ertm_nco_status *nco)
@@ -252,13 +260,13 @@ void display_nco_status(struct ertm_nco_status *nco)
 	struct ertm_nco_reset *ref = &nco->ref;
 
 	printf(
-	    "RX message count:\t%d\n"
 	    "%-3s DDS Sync Source:   %10s  %-3s DDS Sync Source:  %10s\n"
-	    "%-3s DDS Sync Triggers: %10d  %-3s DDS Syn Triggers: %10d\n",
-		lo->rx_count,
-		"LO ", source_name[lo->sync_source],
-		"REF", source_name[ref->sync_source],
-		"LO ", lo->reset_count, "REF", ref->reset_count);
+	    "%-3s DDS Sync Triggers: %10d  %-3s DDS Syn Triggers: %10d\n"
+	    "RX message count:\t%d\n",
+		"LO ", source_name(lo->sync_source),
+		"REF", source_name(ref->sync_source),
+		"LO ", lo->reset_count, "REF", ref->reset_count,
+		lo->rx_count);
 }
 
 void mac_to_str(uint64_t mac, char *dst)
