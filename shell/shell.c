@@ -92,7 +92,7 @@ static int cmd_pos = 0, cmd_len = 0;
 static int state = SH_PROMPT;
 static int current_key = 0;
 
-static struct wrc_shell_cmd *cmds[ SHELL_MAX_COMMANDS ];
+static const struct wrc_shell_cmd *cmds[ SHELL_MAX_COMMANDS ];
 static int n_cmds = 0;
 
 int shell_is_interacting;
@@ -128,7 +128,7 @@ static void esc(char code)
 static int _shell_exec(void)
 {
 	char *tokptr[SH_MAX_ARGS + 1];
-	struct wrc_shell_cmd *p;
+	const struct wrc_shell_cmd *p;
 	int n = 0, i = 0, rv;
 
 	memset(tokptr, 0, sizeof(tokptr));
