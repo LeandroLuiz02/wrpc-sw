@@ -551,6 +551,14 @@ static int commit_board_config(struct ertm_status *st,
 	return ertm_proto_cycle(link, ertm14_commit_board_config, bstmp, NULL);
 }
 
+static void update_board_config(struct ertm_status *st,
+			struct ertm14_board_state *bs)
+{
+	/* call this sparingly; for the time being, let's do it in
+	 * immediate mode */
+	ertm_get_board_config(st, bs);
+}
+
 static int ertm_get_set_freq(struct ertm_status *handle,
 		enum ertm_connector connector,int channel, uint32_t *freq,
 		int set)
@@ -754,6 +762,11 @@ struct ertm14_board_state *get_board_state(struct ertm_status *st)
 	return bs;
 }
 
+static double amp_power_to_dBm(uint32_t amp_power)
+{
+	return amp_power / 1000.0;
+}
+
 int ertm_get_power(struct ertm_status *handle,
 		enum ertm_connector connector, double *power)
 {
@@ -770,16 +783,24 @@ int ertm_get_power(struct ertm_status *handle,
 		return err;
 	}
 
-	*power = dds->amp_power;
+	update_board_config(handle, bs);
+	*power = amp_power_to_dBm(dds->amp_power);
 	return 0;
 }
 
 int ertm_get_channel_power(struct ertm_status *handle,
 		enum ertm_connector connector, int channel, double *power)
 {
+	double pws[ERTM_LOREF_MAX_CH];
+	int res;
 	uint32_t mask = (1<<channel);
-	return ertm_get_channel_power_all(handle,
-		connector, mask, power);
+
+	res = ertm_get_channel_power_all(handle,
+		connector, mask, pws);
+	if (res < 0)
+		return res;
+	*power = pws[channel];
+	return 0;
 }
 
 int ertm_get_channel_power_all(struct ertm_status *handle,
@@ -798,11 +819,11 @@ int ertm_get_channel_power_all(struct ertm_status *handle,
 		errno = EINVAL;
 		return err;
 	}
+	update_board_config(handle, bs);
 	for (i = ERTM_LOREF_MIN_CH; i <= ERTM_LOREF_MAX_CH; i++) {
 		if (valid_mask & (1<<i))
-		    power[i] = dds->out_power[i];
+		    power[i] = amp_power_to_dBm(dds->out_power[i]);
 	}
-
 	return 0;
 }
 
