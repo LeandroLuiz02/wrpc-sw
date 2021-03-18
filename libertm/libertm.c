@@ -903,7 +903,7 @@ int ertm_get_ocxo_current(struct ertm_status *handle, double *current)
 }
 
 /* system-wide NCO reset */
-int ertm_nco_reset_get_status(struct ertm_status *handle, struct ertm_nco_reset *status)
+int ertm_nco_reset_get_status(struct ertm_status *handle, struct ertm_nco_reset status[2])
 {
 	return ERTM_NOT_IMPLEMENTED;
 }

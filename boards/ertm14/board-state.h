@@ -138,9 +138,8 @@ struct ertm14_nco_reset {
 	uint32_t	current_stream_id;
 	uint32_t	rx_count;
 	uint32_t	reset_count;
-	uint32_t	reset_count_lo;
-	uint32_t	reset_count_ref;
-	uint32_t	unused[6];
+	uint32_t	connector;
+	uint32_t	unused[7];
 };
 
 /* FIXME: this is lifted from ertm_board_info; structs *must* match */
