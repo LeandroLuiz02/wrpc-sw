@@ -125,6 +125,50 @@ class ErtmTest(cmd.Cmd):
         self.lib.ertm_get_board_config(self.handle, byref(buf))
         self.display.display_ertm_state(byref(buf))
 
+    def do_get_power(self, args):
+        "get power of LO/REF PLL output"
+        try:
+            connector = args
+            conn = self.connector_idx[connector.lower()]
+        except (ValueError, KeyError) as e:
+            print('usage: get_power/pow {lo|ref}')
+            return
+        power = c_double()
+        self.lib.ertm_get_power(self.handle, conn, byref(power))
+        print("{:3s} power: {:6.3f} dBm".format(connector.upper(), power.value))
+
+    def do_get_channel_power(self, args):
+        "get output power of individual RF channel."
+        try:
+            connector, channel = args.split()
+            conn = self.connector_idx[connector.lower()]
+            channel = int(channel)
+        except (ValueError, KeyError) as e:
+            print('usage: get_channel_power/gcp {lo|ref} channel')
+            return
+        power = c_double()
+        self.lib.ertm_get_channel_power(self.handle, conn, channel, byref(power))
+        print("{:s}{:02d} power: {:6.3f} dBm".format(
+                 connector.upper(), channel, power.value))
+
+    def do_get_channel_power_all(self, args):
+        "get output power of all RF channels in LO/REF"
+        try:
+            connector, channel = args.split()
+            conn = self.connector_idx[connector.lower()]
+            mask = int(channel, 0)
+        except (ValueError, KeyError) as e:
+            print('usage: get_channel_power_all/gcpa {lo|ref} hex_mask')
+            return
+        charray = 16*c_double
+        powers = charray(0)
+        self.lib.ertm_get_channel_power_all(self.handle, conn, mask, byref(powers))
+        for i in range(4, 13):
+            if not (mask & (1<<i)):
+                continue
+            print("{:s}{:02d} power: {:6.3f} dBm".format(
+                 connector.upper(), i, powers[i]))
+
     def do_set_freq(self, args):
         "set frequency of connector or connector channel."
         try:
@@ -301,6 +345,10 @@ class ErtmTest(cmd.Cmd):
     do_volt = do_voltages
     do_bi = do_board_info
     do_nco = do_nco_status
+
+    do_pow = do_get_power
+    do_gcp = do_get_channel_power
+    do_gcpa = do_get_channel_power_all
 
 if __name__ == '__main__':
 
