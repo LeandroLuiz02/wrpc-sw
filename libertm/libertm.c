@@ -905,6 +905,15 @@ int ertm_get_ocxo_current(struct ertm_status *handle, double *current)
 /* system-wide NCO reset */
 int ertm_nco_reset_get_status(struct ertm_status *handle, struct ertm_nco_reset status[2])
 {
+	struct ertm14_board_state *bs = &handle->state->board_state;
+	struct ertm14_dds_state *dds;
+	int err;
+
+	if ((bs = get_board_state(handle)) == NULL) {
+		errno = EINVAL;
+		return ERTM_BAD_HANDLE;
+	}
+
 	return ERTM_NOT_IMPLEMENTED;
 }
 
