@@ -274,7 +274,6 @@ static int tx_fsm_update(void)
 
         if (within_range(phase, phase_min, phase_max, 16000))
         {
-            int i;
             fsm->measured_phase = phase;
             phy_dbg("LPDC: Fix phase = %d ps\n", fsm->measured_phase );
             fsm->state = TX_SETUP_VALIDATE;
