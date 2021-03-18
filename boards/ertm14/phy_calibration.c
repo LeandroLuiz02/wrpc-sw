@@ -1,6 +1,3 @@
-<<<<<<< HEAD
-#include <string.h>
-=======
 /*
  * This work is part of the White Rabbit project
  *
@@ -27,8 +24,8 @@
     Specific for Kintex-7 devices on the WR2RF-VME and eRTM14/15 cards ONLY!
 */
 
->>>>>>> ertm14: clean up the PHY LPDC calibration algorithm
 
+#include <string.h>
 #include <board.h>
 #include "dev/syscon.h"
 #include "dev/endpoint.h"
@@ -245,19 +242,6 @@ static int tx_fsm_update(void)
             return 0;
         }
 
-<<<<<<< HEAD
-//        p2 = fsm->measured_phase = phase;
-        phy_dbg("samples %d last-phase %d\n", fsm->attempts, phase );
-
-        if(tmo_expired(&fsm->refresh_timeout))
-        {
-//            pp_printf("[tx-cal] samples %d last-phase %d\n", fsm->attempts, fsm->measured_phase);
-            tmo_restart(&fsm->refresh_timeout);
-        }
-
-
-=======
->>>>>>> ertm14: clean up the PHY LPDC calibration algorithm
         if (!fsm->expected_phase_valid)
         {
             if (fsm->cal_saved_phase_valid )
