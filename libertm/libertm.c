@@ -32,6 +32,9 @@ struct ertm_error_codes ertm_error_codes[] = {
 	[-ERTM_BAD_OPCODE	] = { ERTM_BAD_OPCODE, "invalid opcode in UART protocol exchange" },
 	[-ERTM_UART_PROTO_ERR	] = { ERTM_UART_PROTO_ERR, "UART protocol error" },
 	[-ERTM_BAD_CLKAB_FREQ   ] = { ERTM_BAD_CLKAB_FREQ, "invalid CLKA/B frequency" },
+	[-ERTM_BAD_CLKAB_FREQ   ] = { ERTM_BAD_CLKAB_FREQ, "invalid CLKA/B frequency" },
+	[-ERTM_BAD_CLKAB_FREQ   ] = { ERTM_BAD_CLKAB_FREQ, "invalid CLKA/B frequency" },
+	[-ERTM_BAD_SYNC_SOURCE	] = { ERTM_BAD_SYNC_SOURCE, "invalid sync source (must be one of NONE, PPS, RF_TRIGGER" },
 };
 
 char *ertm_perror(int error)
