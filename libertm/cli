@@ -74,7 +74,8 @@ class ertm_nco_reset(Structure):
         ("current_stream_id", c_uint),      			
         ("rx_count", c_uint),      		
         ("reset_count", c_uint),      		
-	("unused", 8*c_uint),
+        ("connector", c_uint),      		
+        ("unused", 7*c_uint),
     ]
 ertm_nco_status = 2 * ertm_nco_reset
 
