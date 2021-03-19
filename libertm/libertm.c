@@ -934,6 +934,7 @@ void nco_to_host_order(struct ertm_nco_reset *nco)
 	nco->current_stream_id	= ntohl(nco->current_stream_id);
 	nco->rx_count		= ntohl(nco->rx_count);
 	nco->reset_count	= ntohl(nco->reset_count);
+	nco->connector		= ntohl(nco->connector);
 };
 
 void nco_to_network_order(struct ertm_nco_reset *nco)
@@ -943,6 +944,7 @@ void nco_to_network_order(struct ertm_nco_reset *nco)
 	nco->current_stream_id	= htonl(nco->current_stream_id);
 	nco->rx_count		= htonl(nco->rx_count);
 	nco->reset_count	= htonl(nco->reset_count);
+	nco->connector		= htonl(nco->connector);
 };
 
 int ertm_nco_reset_get_status(struct ertm_status *handle, struct ertm_nco_reset status[2])

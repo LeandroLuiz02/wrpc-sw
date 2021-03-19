@@ -1044,6 +1044,7 @@ static void nco_to_network(struct ertm14_nco_reset *nco)
 	nco->current_stream_id	= htonl(nco->current_stream_id);
 	nco->rx_count		= htonl(nco->rx_count);
 	nco->reset_count	= htonl(nco->reset_count);
+	nco->connector		= htonl(nco->connector);
 };
 
 static void nco_to_host_order(struct ertm14_nco_reset *nco)
@@ -1053,6 +1054,7 @@ static void nco_to_host_order(struct ertm14_nco_reset *nco)
 	nco->current_stream_id	= ntohl(nco->current_stream_id);
 	nco->rx_count		= ntohl(nco->rx_count);
 	nco->reset_count	= ntohl(nco->reset_count);
+	nco->connector		= ntohl(nco->connector);
 };
 
 static void get_wrc_nco(struct ertm14_nco_reset *nco)
