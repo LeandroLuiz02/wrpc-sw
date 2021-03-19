@@ -798,6 +798,11 @@ int ertm_get_channel_power(struct ertm_status *handle,
 	int res;
 	uint32_t mask = (1<<channel);
 
+	if (bad_inputs(handle, connector, channel) ||
+		(connector != ERTM_LO && connector != ERTM_REF)) {
+		errno = EINVAL;
+		return ERTM_CH_OUT_OF_RANGE;
+	}
 	res = ertm_get_channel_power_all(handle,
 		connector, mask, pws);
 	if (res < 0)
