@@ -352,12 +352,6 @@ class ErtmTest(cmd.Cmd):
         readline.write_history_file(self.history)
         self.lib.ertm_exit(self.handle)
 
-    def do_headers(self, args):
-        "display the help headers."
-        print(self.doc_header)
-        print(self.misc_header)
-        print(self.undoc_header)
-
     def do_EOF(self, arg):
         print()
         return True
