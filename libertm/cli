@@ -87,6 +87,15 @@ class ErtmTest(cmd.Cmd):
             '''- type 'help' for a list of commands''')
     history = os.path.join(os.path.expanduser('~'), '.ertm_history')
 
+    clidir = os.path.dirname(__file__)
+    cliparent = os.path.dirname(clidir)
+    libertm_file_default1 = 'libertm.so'
+    libertm_display_file_default1 = 'libertm_display.so'
+    libertm_file_default2 = os.path.join(
+            cliparent, 'lib', libertm_file_default1)
+    libertm_display_file_default2 = os.path.join(
+            cliparent, 'lib', libertm_display_file_default1)
+
     ERTM_CLKA = 0
     ERTM_CLKB  = 1
     ERTM_LO = 2
@@ -117,8 +126,18 @@ class ErtmTest(cmd.Cmd):
             readline.read_history_file(self.history)
         except FileNotFoundError:
             readline.write_history_file(self.history)
-        self.lib = CDLL('./libertm.so')
-        self.display = CDLL('./display.so')
+        try:
+            self.lib = CDLL(self.libertm_file_default1)
+            self.display = CDLL(self.libertm_display_file_default1)
+        except OSError as e:
+            pass
+        try:
+            self.lib = CDLL(self.libertm_file_default2)
+            self.display = CDLL(self.libertm_display_file_default2)
+        except OSError as e:
+            print('could not open library {} nor {}, exiting'.format(
+                self.libertm_file_default1, self.libertm_file_default2))
+            exit()
         ertm_init = self.lib.ertm_init
         ertm_init.restype = POINTER(ertm_status)
         self.handle = ertm_init('/dev/ttyUSB2')
