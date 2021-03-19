@@ -933,6 +933,15 @@ void nco_to_host_order(struct ertm_nco_reset *nco)
 	nco->reset_count	= ntohl(nco->reset_count);
 };
 
+void nco_to_network_order(struct ertm_nco_reset *nco)
+{
+	nco->enabled		= htonl(nco->enabled);
+	nco->sync_source	= htonl(nco->sync_source);
+	nco->current_stream_id	= htonl(nco->current_stream_id);
+	nco->rx_count		= htonl(nco->rx_count);
+	nco->reset_count	= htonl(nco->reset_count);
+};
+
 int ertm_nco_reset_get_status(struct ertm_status *handle, struct ertm_nco_reset status[2])
 {
 	struct uart_link *link = &handle->link;
