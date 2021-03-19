@@ -373,9 +373,11 @@ class ErtmTest(cmd.Cmd):
     # convenience aliases
     do_q = do_EOF
     do_quit = do_EOF
-    do_bs = do_get_board_state
+    do_bs = do_board_state = do_get_board_state
     do_sla = do_set_level_adjust
     do_gla = do_get_level_adjust
+    do_ec = do_enable_channel
+    do_dc = do_disable_channel
     do_wrd = do_wrc_diags
     do_temp = do_temperatures
     do_volt = do_voltages
@@ -383,7 +385,7 @@ class ErtmTest(cmd.Cmd):
     do_nco = do_nco_status
     do_snco = do_subscribe_nco_reset
 
-    do_pow = do_get_power
+    do_gp = do_get_power
     do_gcp = do_get_channel_power
     do_gcpa = do_get_channel_power_all
 
