@@ -1066,15 +1066,20 @@ static void get_wrc_nco(struct ertm14_nco_reset *nco)
 static void subscribe_nco(struct ertm14_nco_reset *nco)
 {
 	struct ertm14_dds_state *dds;
+	char *lo = "lo";
+	char *ref = "ref";
+	char *ddss;
 
 	nco_to_host_order(nco);
 
 	switch (nco->connector) {
 	case ERTM14_DDS_SYNC_LO:
 		dds = &ertm14_current_state->lo;
+		ddss = lo;
 		break;
 	case ERTM14_DDS_SYNC_REF:
 		dds = &ertm14_current_state->ref;
+		ddss = ref;
 		break;
 	default:
 		return;		/* should never happen! */
@@ -1083,6 +1088,7 @@ static void subscribe_nco(struct ertm14_nco_reset *nco)
 
 	dds->sync_count = 0;
 	dds->sync_source = nco->sync_source;
+	pp_printf("subscribing %s in mode %d\n", ddss, nco->sync_source);
 	event_post(WRC_ERTM14_EVENT_RECONFIGURED);
 }
 
