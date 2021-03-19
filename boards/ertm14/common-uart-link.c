@@ -212,7 +212,8 @@ int uart_link_recv( struct uart_link* link, struct uart_packet **pkt, int timeou
                 uart_link_reset( link );
                 return -ECANCELED;
             } else {
-                    linux_usleep(1000);
+                if( !link->poll || ! link->poll(link) )
+                    linux_usleep(10);
             }
         }
     }

@@ -17,6 +17,7 @@ static int wrpc_console_uart_recv_byte( struct uart_link* link )
 
 int uart_link_create_wrpc_console( struct uart_link *link )
 {
+    memset(link, 0, sizeof(struct uart_link));
     link->priv = NULL;
     link->send_byte = wrpc_console_uart_send_byte;
     link->recv_byte = wrpc_console_uart_recv_byte;
@@ -42,6 +43,7 @@ static int wrpc_suart_recv_byte( struct uart_link* link )
 
 int uart_link_create_wrpc_suart( struct uart_link *link, struct simple_uart_device *uart_dev )
 {
+    memset(link, 0, sizeof(struct uart_link));
     link->priv = uart_dev;
     link->send_byte = wrpc_suart_send_byte;
     link->recv_byte = wrpc_suart_recv_byte;
