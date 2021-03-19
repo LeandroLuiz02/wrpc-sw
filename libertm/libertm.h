@@ -156,6 +156,7 @@ struct ertm_nco_reset {
 	uint32_t	current_stream_id;
 	uint32_t	rx_count;
 	uint32_t	reset_count;
+	uint32_t	connector;
 	uint32_t	unused[8];
 };
 
