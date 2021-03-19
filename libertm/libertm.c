@@ -966,7 +966,39 @@ int ertm_nco_reset_get_status(struct ertm_status *handle, struct ertm_nco_reset 
 int ertm_nco_reset_subscribe(struct ertm_status *handle,
 		enum ertm_connector connector, int enable, int channel, uint32_t stream_id)
 {
-	return ERTM_NOT_IMPLEMENTED;
+	struct uart_link *link = &handle->link;
+	struct ertm14_board_state *bs = &handle->state->board_state;
+	struct ertm14_dds_state *dds;
+	struct ertm14_nco_reset tmp, *nco_subscription = &tmp;
+	int res;
+
+	if ((bs = get_board_state(handle)) == NULL) {
+		errno = EINVAL;
+		return ERTM_BAD_HANDLE;
+	}
+	if ((res = get_dds(bs, connector, &dds)) != 0)
+		return res;
+
+	if (!((enable == ERTM14_SYNC_SOURCE_NONE) ||
+		(enable == ERTM14_SYNC_SOURCE_RF_TRIGGER) ||
+		(enable == ERTM14_SYNC_SOURCE_PPS))) {
+			errno = -EINVAL;
+			return ERTM_BAD_SYNC_SOURCE;
+	}
+
+	/* need DDS LO/REF; type of sync; and reset the counter */
+	/* channel does not play any role here, nor stream (yet) */
+	nco_subscription->sync_source = enable;
+	nco_subscription->connector = (connector == ERTM_LO) ?
+		ERTM14_DDS_SYNC_LO : ERTM14_DDS_SYNC_REF;
+	nco_subscription->reset_count = 0;
+	nco_subscription->current_stream_id = stream_id = 0;
+		/* remove this when several streams exist */
+	nco_to_network_order(nco_subscription);
+	res = ertm_proto_cycle(link, ertm14_subscribe_nco, nco_subscription, NULL);
+	if (res < 0)
+		return res;
+	return 0;
 }
 
 /* FIXME: this has no place in the current ertm implementation,
