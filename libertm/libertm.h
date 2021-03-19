@@ -157,7 +157,7 @@ struct ertm_nco_reset {
 	uint32_t	rx_count;
 	uint32_t	reset_count;
 	uint32_t	connector;
-	uint32_t	unused[8];
+	uint32_t	unused[7];
 };
 
 struct ertm_nco_status {
