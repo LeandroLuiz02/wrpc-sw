@@ -138,7 +138,11 @@ class ErtmTest(cmd.Cmd):
             print('usage: get_power/pow {lo|ref}')
             return
         power = c_double()
-        self.lib.ertm_get_power(self.handle, conn, byref(power))
+        err = self.lib.ertm_get_power(self.handle, conn, byref(power))
+        if err:
+            msg = self.errmsg(err)
+            print('error {} in get_channel_power: {}'.format(err, msg))
+            return
         print("{:3s} power: {:6.3f} dBm".format(connector.upper(), power.value))
 
     def do_get_channel_power(self, args):
@@ -151,7 +155,11 @@ class ErtmTest(cmd.Cmd):
             print('usage: get_channel_power/gcp {lo|ref} channel')
             return
         power = c_double()
-        self.lib.ertm_get_channel_power(self.handle, conn, channel, byref(power))
+        err = self.lib.ertm_get_channel_power(self.handle, conn, channel, byref(power))
+        if err:
+            msg = self.errmsg(err)
+            print('error {} in get_channel_power: {}'.format(err, msg))
+            return
         print("{:s}{:02d} power: {:6.3f} dBm".format(
                  connector.upper(), channel, power.value))
 
@@ -166,7 +174,11 @@ class ErtmTest(cmd.Cmd):
             return
         charray = 16*c_double
         powers = charray(0)
-        self.lib.ertm_get_channel_power_all(self.handle, conn, mask, byref(powers))
+        err = self.lib.ertm_get_channel_power_all(self.handle, conn, mask, byref(powers))
+        if err:
+            msg = self.errmsg(err)
+            print('error {} in get_channel_power_all: {}'.format(err, msg))
+            return
         for i in range(4, 13):
             if not (mask & (1<<i)):
                 continue
