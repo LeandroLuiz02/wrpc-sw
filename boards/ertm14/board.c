@@ -1045,6 +1045,15 @@ static void nco_to_network(struct ertm14_nco_reset *nco)
 	nco->reset_count	= htonl(nco->reset_count);
 };
 
+static void nco_to_host_order(struct ertm14_nco_reset *nco)
+{
+	nco->enabled		= ntohl(nco->enabled);
+	nco->sync_source	= ntohl(nco->sync_source);
+	nco->current_stream_id	= ntohl(nco->current_stream_id);
+	nco->rx_count		= ntohl(nco->rx_count);
+	nco->reset_count	= ntohl(nco->reset_count);
+};
+
 static void get_wrc_nco(struct ertm14_nco_reset *nco)
 {
 	refresh_wrc_nco(&ertm14_nco_stats[0], ERTM14_DDS_SYNC_LO);
