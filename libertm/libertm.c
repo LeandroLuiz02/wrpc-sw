@@ -969,7 +969,7 @@ int ertm_nco_reset_subscribe(struct ertm_status *handle,
 	struct uart_link *link = &handle->link;
 	struct ertm14_board_state *bs = &handle->state->board_state;
 	struct ertm14_dds_state *dds;
-	struct ertm14_nco_reset tmp, *nco_subscription = &tmp;
+	struct ertm_nco_reset tmp, *nco_subscription = &tmp;
 	int res;
 
 	if ((bs = get_board_state(handle)) == NULL) {
@@ -978,7 +978,7 @@ int ertm_nco_reset_subscribe(struct ertm_status *handle,
 	}
 	if ((res = get_dds(bs, connector, &dds)) != 0)
 		return res;
-
+		
 	if (!((enable == ERTM14_SYNC_SOURCE_NONE) ||
 		(enable == ERTM14_SYNC_SOURCE_RF_TRIGGER) ||
 		(enable == ERTM14_SYNC_SOURCE_PPS))) {
