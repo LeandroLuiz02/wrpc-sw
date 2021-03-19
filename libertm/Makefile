@@ -13,7 +13,7 @@ CFLAGS += -I $(WRC_INCLUDES)
 
 all: libs main
 
-libs: $(TARGET).a $(TARGET).so display.so
+libs: $(TARGET).a $(TARGET).so libertm_display.so
 
 $(TARGET).a $(TARGET).so: $(TARGET).o linux-uart-link.o common-uart-link.o
 $(TARGET).so:
@@ -32,7 +32,7 @@ ertm14-uart-link.o: $(ERTM_UART_LOCATION)/ertm14-uart-link.c
 linux-uart-link.o: $(ERTM_BOARD_LOCATION)/common-uart-link.h
 libertm.o: libertm.h private.h
 
-display.so: display.o
+libertm_display.so: display.o
 	$(LD) -shared -o $@ $^
 
 clean:
