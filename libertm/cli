@@ -141,6 +141,7 @@ class ErtmTest(cmd.Cmd):
         ertm_init = self.lib.ertm_init
         ertm_init.restype = POINTER(ertm_status)
         self.handle = ertm_init('/dev/ttyUSB2')
+        self.do_h = self.do_help
         if not self.handle:
             print('could not open USB device')
             exit()
@@ -298,6 +299,7 @@ class ErtmTest(cmd.Cmd):
         self.display.display_nco_status(byref(nco))
 
     def do_subscribe_nco_reset(self, args):
+        "configure LO/REF NCO reset."
         sync_mode = {
             'none' : self.ERTM14_SYNC_SOURCE_NONE,
             'pps' : self.ERTM14_SYNC_SOURCE_PPS,
@@ -378,9 +380,6 @@ class ErtmTest(cmd.Cmd):
         print()
         return True
 
-    def do_h(self, arg):
-        self.do_help(arg)
-
     # catch Ctrl-C and drop me back into cli
     def cmdloop_intr(self, intro=None):
         self.my_preloop()
@@ -389,12 +388,15 @@ class ErtmTest(cmd.Cmd):
                 self.cmdloop()
                 break
             except KeyboardInterrupt as e:
+                self.intro = None
                 print('^C')
         self.my_postloop()
 
     # convenience aliases
     do_q = do_EOF
     do_quit = do_EOF
+
+    do_EOF.__doc__ = "exit command line interpreter."
     do_bs = do_board_state = do_get_board_state
     do_sla = do_set_level_adjust
     do_gla = do_get_level_adjust
