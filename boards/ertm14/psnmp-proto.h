@@ -12,7 +12,7 @@
 #define ertm14_get_mmc_state		0x13
 #define ertm14_get_wrc_diags		0x14
 #define ertm14_get_wrc_nco		0x15
-#define ertm14_set_wrc_nco		0x16
+#define ertm14_subscribe_nco		0x16
 #define ertm14_get_sim_board_config	0x17
 #define	ertm14_comm_test		0x18
 #define	ertm14_ptp_enable		0x19
@@ -83,11 +83,11 @@ static struct ertm14_protocol_op {
 	.length2 = sizeof(struct ertm14_nco_reset[2]),
     },
     {
-	.opcode = ertm14_set_wrc_nco,
-	.offset1 = 1,
-	.length1 = /* FIXME: what comes here? */ -1,
-	.offset2 = 1,
-	.length2 = sizeof(struct ertm14_board_state),
+	.opcode = ertm14_subscribe_nco,
+	.offset1 = 4,
+	.length1 = sizeof(struct ertm14_nco_reset),
+	.offset2 = 0,
+	.length2 = 0,
     },
     {
 	.opcode = ertm14_ptp_enable,

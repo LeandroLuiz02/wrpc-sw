@@ -32,6 +32,9 @@ struct ertm_error_codes ertm_error_codes[] = {
 	[-ERTM_BAD_OPCODE	] = { ERTM_BAD_OPCODE, "invalid opcode in UART protocol exchange" },
 	[-ERTM_UART_PROTO_ERR	] = { ERTM_UART_PROTO_ERR, "UART protocol error" },
 	[-ERTM_BAD_CLKAB_FREQ   ] = { ERTM_BAD_CLKAB_FREQ, "invalid CLKA/B frequency" },
+	[-ERTM_BAD_CLKAB_FREQ   ] = { ERTM_BAD_CLKAB_FREQ, "invalid CLKA/B frequency" },
+	[-ERTM_BAD_CLKAB_FREQ   ] = { ERTM_BAD_CLKAB_FREQ, "invalid CLKA/B frequency" },
+	[-ERTM_BAD_SYNC_SOURCE	] = { ERTM_BAD_SYNC_SOURCE, "invalid sync source (must be one of NONE, PPS, RF_TRIGGER" },
 };
 
 char *ertm_perror(int error)
@@ -795,6 +798,11 @@ int ertm_get_channel_power(struct ertm_status *handle,
 	int res;
 	uint32_t mask = (1<<channel);
 
+	if (bad_inputs(handle, connector, channel) ||
+		(connector != ERTM_LO && connector != ERTM_REF)) {
+		errno = EINVAL;
+		return ERTM_CH_OUT_OF_RANGE;
+	}
 	res = ertm_get_channel_power_all(handle,
 		connector, mask, pws);
 	if (res < 0)
@@ -931,6 +939,17 @@ void nco_to_host_order(struct ertm_nco_reset *nco)
 	nco->current_stream_id	= ntohl(nco->current_stream_id);
 	nco->rx_count		= ntohl(nco->rx_count);
 	nco->reset_count	= ntohl(nco->reset_count);
+	nco->connector		= ntohl(nco->connector);
+};
+
+void nco_to_network_order(struct ertm_nco_reset *nco)
+{
+	nco->enabled		= htonl(nco->enabled);
+	nco->sync_source	= htonl(nco->sync_source);
+	nco->current_stream_id	= htonl(nco->current_stream_id);
+	nco->rx_count		= htonl(nco->rx_count);
+	nco->reset_count	= htonl(nco->reset_count);
+	nco->connector		= htonl(nco->connector);
 };
 
 int ertm_nco_reset_get_status(struct ertm_status *handle, struct ertm_nco_reset status[2])
@@ -954,7 +973,39 @@ int ertm_nco_reset_get_status(struct ertm_status *handle, struct ertm_nco_reset 
 int ertm_nco_reset_subscribe(struct ertm_status *handle,
 		enum ertm_connector connector, int enable, int channel, uint32_t stream_id)
 {
-	return ERTM_NOT_IMPLEMENTED;
+	struct uart_link *link = &handle->link;
+	struct ertm14_board_state *bs = &handle->state->board_state;
+	struct ertm14_dds_state *dds;
+	struct ertm_nco_reset tmp, *nco_subscription = &tmp;
+	int res;
+
+	if ((bs = get_board_state(handle)) == NULL) {
+		errno = EINVAL;
+		return ERTM_BAD_HANDLE;
+	}
+	if ((res = get_dds(bs, connector, &dds)) != 0)
+		return res;
+		
+	if (!((enable == ERTM14_SYNC_SOURCE_NONE) ||
+		(enable == ERTM14_SYNC_SOURCE_RF_TRIGGER) ||
+		(enable == ERTM14_SYNC_SOURCE_PPS))) {
+			errno = -EINVAL;
+			return ERTM_BAD_SYNC_SOURCE;
+	}
+
+	/* need DDS LO/REF; type of sync; and reset the counter */
+	/* channel does not play any role here, nor stream (yet) */
+	nco_subscription->sync_source = enable;
+	nco_subscription->connector = (connector == ERTM_LO) ?
+		ERTM14_DDS_SYNC_LO : ERTM14_DDS_SYNC_REF;
+	nco_subscription->reset_count = 0;
+	nco_subscription->current_stream_id = stream_id = 0;
+		/* remove this when several streams exist */
+	nco_to_network_order(nco_subscription);
+	res = ertm_proto_cycle(link, ertm14_subscribe_nco, nco_subscription, NULL);
+	if (res < 0)
+		return res;
+	return 0;
 }
 
 /* FIXME: this has no place in the current ertm implementation,

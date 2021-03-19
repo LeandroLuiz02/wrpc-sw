@@ -89,6 +89,10 @@ class ErtmTest(cmd.Cmd):
     ERTM_LO = 2
     ERTM_REF = 3
 
+    ERTM14_SYNC_SOURCE_NONE = 0
+    ERTM14_SYNC_SOURCE_PPS = 1
+    ERTM14_SYNC_SOURCE_RF_TRIGGER = 2
+
     Sensor_Array = 20 * c_double
     BoardInfo = 80 * c_uint
 
@@ -134,7 +138,11 @@ class ErtmTest(cmd.Cmd):
             print('usage: get_power/pow {lo|ref}')
             return
         power = c_double()
-        self.lib.ertm_get_power(self.handle, conn, byref(power))
+        err = self.lib.ertm_get_power(self.handle, conn, byref(power))
+        if err:
+            msg = self.errmsg(err)
+            print('error {} in get_channel_power: {}'.format(err, msg))
+            return
         print("{:3s} power: {:6.3f} dBm".format(connector.upper(), power.value))
 
     def do_get_channel_power(self, args):
@@ -147,7 +155,11 @@ class ErtmTest(cmd.Cmd):
             print('usage: get_channel_power/gcp {lo|ref} channel')
             return
         power = c_double()
-        self.lib.ertm_get_channel_power(self.handle, conn, channel, byref(power))
+        err = self.lib.ertm_get_channel_power(self.handle, conn, channel, byref(power))
+        if err:
+            msg = self.errmsg(err)
+            print('error {} in get_channel_power: {}'.format(err, msg))
+            return
         print("{:s}{:02d} power: {:6.3f} dBm".format(
                  connector.upper(), channel, power.value))
 
@@ -162,7 +174,11 @@ class ErtmTest(cmd.Cmd):
             return
         charray = 16*c_double
         powers = charray(0)
-        self.lib.ertm_get_channel_power_all(self.handle, conn, mask, byref(powers))
+        err = self.lib.ertm_get_channel_power_all(self.handle, conn, mask, byref(powers))
+        if err:
+            msg = self.errmsg(err)
+            print('error {} in get_channel_power_all: {}'.format(err, msg))
+            return
         for i in range(4, 13):
             if not (mask & (1<<i)):
                 continue
@@ -259,6 +275,32 @@ class ErtmTest(cmd.Cmd):
             return
         self.display.display_nco_status(byref(nco))
 
+    def do_subscribe_nco_reset(self, args):
+        sync_mode = {
+            'none' : self.ERTM14_SYNC_SOURCE_NONE,
+            'pps' : self.ERTM14_SYNC_SOURCE_PPS,
+            'rf-trigger' : self.ERTM14_SYNC_SOURCE_RF_TRIGGER,
+            'rf' : self.ERTM14_SYNC_SOURCE_RF_TRIGGER,
+        }
+        try:
+            connector, *rest  = args.split(maxsplit=1)
+            conn = self.connector_idx[connector.lower()]
+            if conn not in (self.ERTM_LO, self.ERTM_REF):
+                raise ValueError
+            mode = 'rf' if not rest else rest[0]
+            mode = sync_mode[mode]
+            channel = 0xcafe      # don't care
+            stream_id = 0xbabe    # don't care
+        except (ValueError, KeyError) as e:
+            print('usage: subscribe_nco_reset/snco {lo|ref} [none|pps|rf_trigger]')
+            return
+        err = self.lib.ertm_nco_reset_subscribe(self.handle,
+                        conn, mode, channel, stream_id)
+        if err:
+            msg = self.errmsg(err)
+            print('error {} in nco_status: {}'.format(err, msg))
+            return
+
     def do_wrc_diags(self, args):
         "get WRC diagnostics."
         buf = ertm_wr_status()
@@ -310,12 +352,6 @@ class ErtmTest(cmd.Cmd):
         readline.write_history_file(self.history)
         self.lib.ertm_exit(self.handle)
 
-    def do_headers(self, args):
-        "display the help headers."
-        print(self.doc_header)
-        print(self.misc_header)
-        print(self.undoc_header)
-
     def do_EOF(self, arg):
         print()
         return True
@@ -337,16 +373,19 @@ class ErtmTest(cmd.Cmd):
     # convenience aliases
     do_q = do_EOF
     do_quit = do_EOF
-    do_bs = do_get_board_state
+    do_bs = do_board_state = do_get_board_state
     do_sla = do_set_level_adjust
     do_gla = do_get_level_adjust
+    do_ec = do_enable_channel
+    do_dc = do_disable_channel
     do_wrd = do_wrc_diags
     do_temp = do_temperatures
     do_volt = do_voltages
     do_bi = do_board_info
     do_nco = do_nco_status
+    do_snco = do_subscribe_nco_reset
 
-    do_pow = do_get_power
+    do_gp = do_get_power
     do_gcp = do_get_channel_power
     do_gcpa = do_get_channel_power_all
 

@@ -134,19 +134,6 @@ extern unsigned char *BASE_EP;
 #define ERTM14_SYNC_STATE_DONE 2
 #define ERTM14_SYNC_STATE_OFF 3
 
-// sync unit channels
-// SYNC_IN(+/-) of AD9910
-#define ERTM14_DDS_SYNC_LO 0
-#define ERTM14_DDS_SYNC_REF 1 // fixme: inverted cannel order in HDL
-
-// SYNC_N inputs of the AD9520s (backplane clock distribution)
-#define ERTM14_PLL_SYNC_CLKA 2
-#define ERTM14_PLL_SYNC_CLKB 3
-
-// I/O_UPDATE(+/-) of AD9910
-#define ERTM14_DDS_IOUPDATE_LO 4
-#define ERTM14_DDS_IOUPDATE_REF 5
-
 #define ERTM14_DEFAULT_DDS_FREQUENCY_HZ 205000000ULL
 
 #define WRC_ERTM14_EVENT_APPLY_NEW_CONFIG (WRC_EVENT_PRIVATE_START+0)

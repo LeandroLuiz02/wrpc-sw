@@ -27,6 +27,7 @@ extern "C" {
 #define ERTM_BAD_OPCODE		(-7)
 #define	ERTM_UART_PROTO_ERR	(-8)
 #define	ERTM_BAD_CLKAB_FREQ	(-9)
+#define	ERTM_BAD_SYNC_SOURCE	(-10)
 
 struct ertm_error_codes {
 	int	code;
@@ -155,7 +156,8 @@ struct ertm_nco_reset {
 	uint32_t	current_stream_id;
 	uint32_t	rx_count;
 	uint32_t	reset_count;
-	uint32_t	unused[8];
+	uint32_t	connector;
+	uint32_t	unused[7];
 };
 
 struct ertm_nco_status {
