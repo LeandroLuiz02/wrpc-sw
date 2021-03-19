@@ -83,6 +83,8 @@ class ErtmTest(cmd.Cmd):
 
     prompt = 'ertm> '
     ruler = '-'
+    intro = ('''ERTM14/15 command line interpreter '''
+            '''- type 'help' for a list of commands''')
     history = os.path.join(os.path.expanduser('~'), '.ertm_history')
 
     ERTM_CLKA = 0
@@ -391,6 +393,5 @@ class ErtmTest(cmd.Cmd):
     do_gcpa = do_get_channel_power_all
 
 if __name__ == '__main__':
-
     tst = ErtmTest(completekey='tab')
-    tst.cmdloop_intr('programa de test')
+    tst.cmdloop_intr()
