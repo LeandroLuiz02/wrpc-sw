@@ -1063,6 +1063,29 @@ static void get_wrc_nco(struct ertm14_nco_reset *nco)
 	nco_to_network(&nco[1]);
 }
 
+static void subscribe_nco(struct ertm14_nco_reset *nco)
+{
+	struct ertm14_dds_state *dds;
+
+	nco_to_host_order(nco);
+
+	switch (nco->connector) {
+	case ERTM14_DDS_SYNC_LO:
+		dds = &ertm14_current_state->lo;
+		break;
+	case ERTM14_DDS_SYNC_REF:
+		dds = &ertm14_current_state->ref;
+		break;
+	default:
+		return;		/* should never happen! */
+		break;
+	}
+
+	dds->sync_count = 0;
+	dds->sync_source = nco->sync_source;
+	event_post(WRC_ERTM14_EVENT_RECONFIGURED);
+}
+
 static int ertm_process_psnmp(struct uart_packet *rx_pkt, struct uart_packet *tx_pkt)
 {
 	struct ertm14_board_state *bs;
@@ -1112,6 +1135,10 @@ static int ertm_process_psnmp(struct uart_packet *rx_pkt, struct uart_packet *tx
 		nco = (struct ertm14_nco_reset *)&tx_pkt->payload[op->offset2];
 		get_wrc_nco(nco);
 		break;
+	case ertm14_subscribe_nco:
+		nco = (struct ertm14_nco_reset *)&tx_pkt->payload[op->offset1];
+		subscribe_nco(nco);
+		break;
 	case ertm14_get_version_info:
 		ver = (struct ertm14_version_info *)&tx_pkt->payload[op->offset2];
 		get_version_info(ver);
@@ -1120,7 +1147,6 @@ static int ertm_process_psnmp(struct uart_packet *rx_pkt, struct uart_packet *tx
 		sensors = (struct wrc_sensor *)&tx_pkt->payload[op->offset2];
 		get_wrc_sensors(sensors);
 		break;
-		
 	case ertm14_ptp_enable:
 		if (rx_pkt->payload[op->offset1])
 			wrc_ptp_start();
