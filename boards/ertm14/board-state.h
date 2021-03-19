@@ -44,6 +44,19 @@
 #define ERTM14_SYNC_SOURCE_PPS 1
 #define ERTM14_SYNC_SOURCE_RF_TRIGGER 2
 
+// sync unit channels
+// SYNC_IN(+/-) of AD9910
+#define ERTM14_DDS_SYNC_LO 0
+#define ERTM14_DDS_SYNC_REF 1 // fixme: inverted cannel order in HDL
+
+// SYNC_N inputs of the AD9520s (backplane clock distribution)
+#define ERTM14_PLL_SYNC_CLKA 2
+#define ERTM14_PLL_SYNC_CLKB 3
+
+// I/O_UPDATE(+/-) of AD9910
+#define ERTM14_DDS_IOUPDATE_LO 4
+#define ERTM14_DDS_IOUPDATE_REF 5
+
 #define ERTM14_MAX_UART_LINK_PAYLOAD 512
 
 // UART Protocol packet types
