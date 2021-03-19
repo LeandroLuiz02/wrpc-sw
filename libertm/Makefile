@@ -10,9 +10,10 @@ WRC_INCLUDES = ../include
 CFLAGS += -I $(ERTM_UART_LOCATION) -I $(ERTM_BOARD_LOCATION)
 CFLAGS += -I $(WRC_INCLUDES)
 
-all: libs main
+LIBS = $(TARGET).a $(TARGET).so libertm_display.so
 
-libs: $(TARGET).a $(TARGET).so libertm_display.so
+all: libs main
+libs: $(LIBS)
 
 $(TARGET).a $(TARGET).so: $(TARGET).o linux-uart-link.o common-uart-link.o
 $(TARGET).so:
@@ -37,3 +38,5 @@ libertm_display.so: display.o
 clean:
 	rm -f *.o *.a *.so
 	rm -f serial ertm-serial main
+
+include deploy.mk
