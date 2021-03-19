@@ -1144,7 +1144,7 @@ static int ertm_process_psnmp(struct uart_packet *rx_pkt, struct uart_packet *tx
 		get_wrc_nco(nco);
 		break;
 	case ertm14_subscribe_nco:
-		nco = (struct ertm14_nco_reset *)&tx_pkt->payload[op->offset1];
+		nco = (struct ertm14_nco_reset *)&rx_pkt->payload[op->offset1];
 		subscribe_nco(nco);
 		break;
 	case ertm14_get_version_info:
