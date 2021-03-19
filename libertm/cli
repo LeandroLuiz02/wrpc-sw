@@ -259,6 +259,32 @@ class ErtmTest(cmd.Cmd):
             return
         self.display.display_nco_status(byref(nco))
 
+    def subscribe_nco_reset(self, args):
+        sync_mode = {
+            'none' : ERTM14_SYNC_SOURCE_NONE,
+            'pps' : ERTM14_SYNC_SOURCE_PPS,
+            'rf-trigger' : ERTM14_SYNC_SOURCE_RF_TRIGGER,
+            'rf' : ERTM14_SYNC_SOURCE_RF_TRIGGER,
+        }
+        try:
+            connector, rest  = args.split(maxsplit=1)
+            conn = self.connector_idx[connector.lower()]
+            if connector not in (self.ERTM_LO, self.ERTM_REF):
+                raise ValueError
+            mode = 'rf' if not rest else rest
+            mode = sync_mode[mode]
+            channel = 0xcafe      # don't care
+            stream_id = 0xbabe    # don't care
+        except (ValueError, KeyError) as e:
+            print('usage: subscribe_nco_reset/snco {lo|ref} [none|pps|rf_trigger]')
+            return
+        err = self.lib.ertm_nco_reset_subscribe(self.handle,
+                        conn, mode, channel, stream_id)
+        if err:
+            msg = self.errmsg(err)
+            print('error {} in nco_status: {}'.format(err, msg))
+            return
+
     def do_wrc_diags(self, args):
         "get WRC diagnostics."
         buf = ertm_wr_status()
@@ -345,6 +371,7 @@ class ErtmTest(cmd.Cmd):
     do_volt = do_voltages
     do_bi = do_board_info
     do_nco = do_nco_status
+    do_snco = do_subscribe_nco_reset
 
     do_pow = do_get_power
     do_gcp = do_get_channel_power
