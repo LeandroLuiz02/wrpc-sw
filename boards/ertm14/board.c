@@ -1090,7 +1090,6 @@ static void subscribe_nco(struct ertm14_nco_reset *nco)
 
 	dds->sync_count = 0;
 	dds->sync_source = nco->sync_source;
-	pp_printf("subscribing %s in mode %d\n", ddss, nco->sync_source);
 	event_post(WRC_ERTM14_EVENT_RECONFIGURED);
 }
 
