@@ -89,6 +89,10 @@ class ErtmTest(cmd.Cmd):
     ERTM_LO = 2
     ERTM_REF = 3
 
+    ERTM14_SYNC_SOURCE_NONE = 0
+    ERTM14_SYNC_SOURCE_PPS = 1
+    ERTM14_SYNC_SOURCE_RF_TRIGGER = 2
+
     Sensor_Array = 20 * c_double
     BoardInfo = 80 * c_uint
 
@@ -259,19 +263,19 @@ class ErtmTest(cmd.Cmd):
             return
         self.display.display_nco_status(byref(nco))
 
-    def subscribe_nco_reset(self, args):
+    def do_subscribe_nco_reset(self, args):
         sync_mode = {
-            'none' : ERTM14_SYNC_SOURCE_NONE,
-            'pps' : ERTM14_SYNC_SOURCE_PPS,
-            'rf-trigger' : ERTM14_SYNC_SOURCE_RF_TRIGGER,
-            'rf' : ERTM14_SYNC_SOURCE_RF_TRIGGER,
+            'none' : self.ERTM14_SYNC_SOURCE_NONE,
+            'pps' : self.ERTM14_SYNC_SOURCE_PPS,
+            'rf-trigger' : self.ERTM14_SYNC_SOURCE_RF_TRIGGER,
+            'rf' : self.ERTM14_SYNC_SOURCE_RF_TRIGGER,
         }
         try:
-            connector, rest  = args.split(maxsplit=1)
+            connector, *rest  = args.split(maxsplit=1)
             conn = self.connector_idx[connector.lower()]
-            if connector not in (self.ERTM_LO, self.ERTM_REF):
+            if conn not in (self.ERTM_LO, self.ERTM_REF):
                 raise ValueError
-            mode = 'rf' if not rest else rest
+            mode = 'rf' if not rest else rest[0]
             mode = sync_mode[mode]
             channel = 0xcafe      # don't care
             stream_id = 0xbabe    # don't care
