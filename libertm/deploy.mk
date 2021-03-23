@@ -1,4 +1,4 @@
-VERSION = 1.0.0
+VERSION = 1.0.0-rc1
 DEPLOY_TARGET ?= /acc/local/L867/drv/ertm/$(VERSION)
 TOOLS = ../tools/uart-bootloader/usb-bootloader.py ertm-cli
 
