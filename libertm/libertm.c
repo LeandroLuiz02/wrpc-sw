@@ -21,6 +21,13 @@
 #include "psnmp-proto.h"
 #include "board-aux.h"
 
+static char __attribute__((__unused__)) *ertm_lib_version = VERSION;
+static char __attribute__((__unused__)) *ertm_lib_git_commit = GIT_VER;
+static char __attribute__((__unused__)) *ertm_lib_git_user = GIT_USR;
+static char __attribute__((__unused__)) *ertm_lib_git_url = GIT_URL;
+static char __attribute__((__unused__)) *lib_internal_version =
+	"internal_version=" GIT_VER ";" GIT_URL ";" VERSION;
+
 struct ertm_error_codes ertm_error_codes[] = {
 	[-ERTM_OK]		= { ERTM_OK, "success" },
 	[-ERTM_BAD_CONNECTOR]	= { ERTM_BAD_CONNECTOR, "bad connector parameter" },
