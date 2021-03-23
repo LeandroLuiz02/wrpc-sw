@@ -95,8 +95,8 @@ class ErtmTest(cmd.Cmd):
 
     clidir = os.path.dirname(__file__)
     cliparent = os.path.dirname(clidir)
-    libertm_file_default1 = 'libertm.so'
-    libertm_display_file_default1 = 'libertm_display.so'
+    libertm_file_default1 = './libertm.so'
+    libertm_display_file_default1 = './libertm_display.so'
     libertm_file_default2 = os.path.join(
             cliparent, 'lib', libertm_file_default1)
     libertm_display_file_default2 = os.path.join(
