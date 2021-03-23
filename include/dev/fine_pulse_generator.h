@@ -34,11 +34,13 @@
 #define FINE_PULSE_GEN_CH_ARMED 0x20
 
 
-struct fine_pulse_gen_channel {
+struct fine_pulse_gen_channel 
+{
     uint32_t flags;
     int pps_offset_ps;
     int index;
     int delay_tap_size;
+    int ref_clock_period_ps;
     int (*set_external_delay)( struct fine_pulse_gen_channel* ch, int n_taps );
 };
 
