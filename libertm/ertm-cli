@@ -93,15 +93,6 @@ class ErtmTest(cmd.Cmd):
             '''- type 'help' for a list of commands''')
     history = os.path.join(os.path.expanduser('~'), '.ertm_history')
 
-    clidir = os.path.dirname(__file__)
-    cliparent = os.path.dirname(clidir)
-    libertm_file_default1 = './libertm.so'
-    libertm_display_file_default1 = './libertm_display.so'
-    libertm_file_default2 = os.path.join(
-            cliparent, 'lib', libertm_file_default1)
-    libertm_display_file_default2 = os.path.join(
-            cliparent, 'lib', libertm_display_file_default1)
-
     ERTM_CLKA = 0
     ERTM_CLKB  = 1
     ERTM_LO = 2
@@ -127,23 +118,37 @@ class ErtmTest(cmd.Cmd):
         msg = self.lib.ertm_perror(errcode)
         return str(msg, encoding='utf8')
 
+    def load_solibs(self):
+        cli = os.path.realpath(__file__)
+        clidir = os.path.dirname(cli)
+        cliparent = os.path.dirname(clidir)
+        solib = 'libertm.so'
+        solib_display = 'libertm_display.so'
+        solib_default1 = os.path.join(clidir, solib)
+        solib_display_default1 = os.path.join(clidir, solib_display)
+        solib_default2 = os.path.join(cliparent, 'lib', solib)
+        solib_display_default2 = os.path.join(cliparent, 'lib', solib_display)
+        try:
+            self.lib = CDLL(solib_default1)
+            self.display = CDLL(solib_display_default1)
+        except OSError as e:
+            pass
+        else:
+            return
+        try:
+            self.lib = CDLL(solib_default2)
+            self.display = CDLL(solib_display_default2)
+        except OSError as e:
+            print('could not open library {} nor {}, exiting'.format(
+                solib_default1, solib_default2))
+            exit()
+
     def my_preloop(self):
         try:
             readline.read_history_file(self.history)
         except FileNotFoundError:
             readline.write_history_file(self.history)
-        try:
-            self.lib = CDLL(self.libertm_file_default1)
-            self.display = CDLL(self.libertm_display_file_default1)
-        except OSError as e:
-            pass
-            try:
-                self.lib = CDLL(self.libertm_file_default2)
-                self.display = CDLL(self.libertm_display_file_default2)
-            except OSError as e:
-                print('could not open library {} nor {}, exiting'.format(
-                    self.libertm_file_default1, self.libertm_file_default2))
-                exit()
+        self.load_solibs()
         ertm_init = self.lib.ertm_init
         ertm_init.restype = POINTER(ertm_status)
         self.handle = ertm_init('/dev/ttyUSB2')
@@ -156,14 +161,15 @@ class ErtmTest(cmd.Cmd):
         "show library version info."
         self.lib.ertm_lib_version.restype = POINTER(ertm_lib_version)
         lib_version = self.lib.ertm_lib_version()[0]
-        print('lib version:\t{}\n'
-            'git commit:\t{}\n'
-            'git url:\t{}\n'
-            'built by:\t{}'.format(
-                str(lib_version.lib_version, encoding='utf-8'),
-                str(lib_version.git_commit, encoding='utf-8'),
-                str(lib_version.git_url, encoding='utf-8'),
-                str(lib_version.git_user, encoding='utf-8')))
+        print('using library at {}\n'
+              'lib version:\t{}\n'
+              'git commit:\t{}\n'
+              'git url:\t{}\n'
+              'built by:\t{}'.format(self.lib._name,
+                   str(lib_version.lib_version, encoding='utf-8'),
+                   str(lib_version.git_commit, encoding='utf-8'),
+                   str(lib_version.git_url, encoding='utf-8'),
+                   str(lib_version.git_user, encoding='utf-8')))
 
     def do_get_board_state(self, args):
         "get complete CLKAB and REF/LO status."
