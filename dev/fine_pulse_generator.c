@@ -39,13 +39,23 @@ void fine_pulse_gen_create( struct fine_pulse_gen_device *dev, uint32_t base )
     do {
         usleep(10);
     } while( ! ( readl( dev->base + FPG_REG_CSR) & FPG_CSR_PLL_LOCKED ) );
+
+    
+    writel( FPG_ODELAY_CALIB_RST_IDELAYCTRL, dev->base + FPG_REG_ODELAY_CALIB ); // reset idelayctrl
+    usleep(1);
+    writel( 0, dev->base + FPG_REG_ODELAY_CALIB ); // un-reset idelayctrl
+    
+    int n;
+    do {
+           usleep(1);
+    } while( ! ( readl( dev->base + FPG_REG_ODELAY_CALIB) & FPG_ODELAY_CALIB_RDY ) );
     
     writel( 0, dev->base + FPG_REG_CSR ); // PLL locked? release serdes reset
-
     
     for(i=0;i<FINE_PULSE_GEN_MAX_CHANNELS;i++)
     {
         dev->channels[i].delay_tap_size = 78 /* ps */;
+        dev->channels[i].ref_clock_period_ps = 16000 /* ps */; // fixme: make user-configurable?
         dev->channels[i].index = i;
     }
 }
@@ -116,14 +126,15 @@ void fine_pulse_gen_trigger( struct fine_pulse_gen_device* dev, uint32_t mask, i
             uint32_t ocr;
             int polarity = ch->flags & FINE_PULSE_GEN_NEGATIVE;
             int continuous = ch->flags & FINE_PULSE_GEN_CONTINUOUS;
-            
-            uint32_t coarse_par = ch->pps_offset_ps / 16000; // refclk period = 16 ns = 16000 ps
-            uint32_t coarse_ser = ch->pps_offset_ps / 2000 - coarse_par * 8;
-            uint32_t fine = (ch->pps_offset_ps % 2000) / ch->delay_tap_size;
+            int ser_clk_period_ps = ch->ref_clock_period_ps / 8;
+
+            uint32_t coarse_par = ch->pps_offset_ps / ch->ref_clock_period_ps;
+            uint32_t coarse_ser = ch->pps_offset_ps / ser_clk_period_ps - coarse_par * 8;
+            uint32_t fine = (ch->pps_offset_ps % ser_clk_period_ps) / ch->delay_tap_size;
             
             uint32_t mask = coarse_ser; // 24/09 VHDL generates mask internally 
-            
-            //pp_printf("trigger: ch %d coarse %d %d flags %x\n", i, coarse_par, coarse_ser, ch->flags );
+
+//            pp_printf("trigger: ch %d coarse %d %d fine %d flags %x\n", i, coarse_par, coarse_ser, fine, ch->flags );
 
             ocr = (coarse_par << FPG_OCR0_PPS_OFFS_SHIFT)
 	                | (mask << FPG_OCR0_MASK_SHIFT)

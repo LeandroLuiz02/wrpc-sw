@@ -107,9 +107,10 @@ int ltc6953_configure_output( struct ltc695x_device *dev, int output, int divide
 {
     uint8_t div_mp, div_md;
 
-    
-    //dev_dbg("ltc6953 out %d div=%d inv=%d\n", output, divider, invert );
-    
+    dev_dbg("ltc6953 out %d div=%d inv=%d\n", output, divider, invert );
+
+    // Mx = (MPx + 1) • 2^MDx
+    // Note: For proper operation, MDx must be 0 if Mx is less than or equal to 32.
     switch(divider)
     {
         case 1: div_mp = 0; div_md = 1; break;
@@ -118,16 +119,22 @@ int ltc6953_configure_output( struct ltc695x_device *dev, int output, int divide
         case 8: div_mp = 7; div_md = 1; break;
         case 16: div_mp = 15; div_md = 1; break;
         case 10: div_mp = 9; div_md = 1; break;
+        case 100: div_mp = 25 - 1; div_md = 2; break;
         default: return -EINVAL; // unsupported divider
     }
 
     uint8_t or0 = (div_mp << LTC6953_OR0_MP_DIV_SHIFT) | (div_md << LTC6953_OR0_MD_DIV_SHIFT);
     uint8_t or1 = invert ? LTC6953_OR1_OINV : 0;
 
+    or1 |= LTC6953_OR1_SRQEN; // enable sync feature
+
     int base = (output * 4 + 0xc);
 
-    //dev_dbg("ltc6953 r%02x = %02x\n", base+0, or0 );
-    //dev_dbg("ltc6953 r%02x = %02x\n", base+1, or1 );
+    dev_dbg("div_mp = %d, div_md = %d\n", div_mp, div_md);
+
+    dev_dbg("ltc6953 r%02x = %02x\n", base+0, or0 );
+    dev_dbg("ltc6953 r%02x = %02x\n", base+1, or1 );
+
     ltc695x_write( dev, base + 0, or0 );
     ltc695x_write( dev, base + 1, or1 );
 
