@@ -290,14 +290,6 @@ static int bad_inputs(struct ertm_status *handle,
 	return 0;
 }
 
-static void get_set(uint32_t *attr, uint32_t *val, int set)
-{
-	if (!set)
-		*attr = *val;
-	else
-		*val = *attr;
-}
-
 int ertm_proto_cycle(struct uart_link *link,
 	int8_t opcode, void *payload, void *answer)
 {
@@ -575,9 +567,8 @@ static void update_board_config(struct ertm_status *st,
 	ertm_get_board_config(st, bs);
 }
 
-static int ertm_get_set_freq(struct ertm_status *handle,
-		enum ertm_connector connector,int channel, uint32_t *freq,
-		int set)
+int ertm_get_freq(struct ertm_status *handle,
+		enum ertm_connector connector, int channel, uint32_t *freq)
 {
 	int err = 0;
 	struct ertm14_board_state *bs;
@@ -609,14 +600,10 @@ static int ertm_get_set_freq(struct ertm_status *handle,
 		errno = EINVAL;
 		return ERTM_BAD_CONNECTOR;
 	}
-	get_set(freq, reg, set);
-	return 0;
-}
+	update_board_config(handle, &handle->state->board_state);
+	*freq = *reg;
 
-int ertm_get_freq(struct ertm_status *handle,
-		enum ertm_connector connector,int channel, uint32_t *freq)
-{
-	return ertm_get_set_freq(handle, connector, channel, freq, 0);
+	return 0;
 }
 
 static void commit_config(struct ertm_status *handle,
