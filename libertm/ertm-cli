@@ -35,7 +35,13 @@ class ertm_connection(Structure):
         ("serial_connection", c_char*PATH_MAX),
     ]
 
-
+class ertm_lib_version(Structure):
+    _fields_ = [
+        ("lib_version", c_char_p),
+        ("git_commit", c_char_p),
+        ("git_user", c_char_p),
+        ("git_url", c_char_p),
+    ]
 class ertm_status(Structure):
     _fields_ = [
         ("connection", ertm_connection),
@@ -145,6 +151,19 @@ class ErtmTest(cmd.Cmd):
         if not self.handle:
             print('could not open USB device')
             exit()
+
+    def do_lib_version(self, args):
+        "show library version info."
+        self.lib.ertm_lib_version.restype = POINTER(ertm_lib_version)
+        lib_version = self.lib.ertm_lib_version()[0]
+        print('lib version:\t{}\n'
+            'git commit:\t{}\n'
+            'git url:\t{}\n'
+            'built by:\t{}'.format(
+                str(lib_version.lib_version, encoding='utf-8'),
+                str(lib_version.git_commit, encoding='utf-8'),
+                str(lib_version.git_url, encoding='utf-8'),
+                str(lib_version.git_user, encoding='utf-8')))
 
     def do_get_board_state(self, args):
         "get complete CLKAB and REF/LO status."
