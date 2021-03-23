@@ -39,8 +39,8 @@
 
 #include "dev/clock_monitor.h"
 
-#define LPDC_COARSE_PHASE_MIN_PS 100    /* ps */
-#define LPDC_COARSE_PHASE_MAX_PS 500    /* ps */
+#define LPDC_COARSE_PHASE_MIN_PS 15000    /* ps */
+#define LPDC_COARSE_PHASE_MAX_PS 15500    /* ps */
 #define LPDC_FINE_PHASE_TOLLERANCE_PS 40 /* ps */
 
 
