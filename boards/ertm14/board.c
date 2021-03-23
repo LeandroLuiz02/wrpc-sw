@@ -662,10 +662,13 @@ static int ertm14_dds_sync_init(void)
     fine_pulse_gen_setup_channel ( &board.dds_sync_dev, ERTM14_DDS_IOUPDATE_LO, 1, board.dds_sync_delays[ERTM14_DDS_IOUPDATE_LO], 0 );
     fine_pulse_gen_setup_channel ( &board.dds_sync_dev, ERTM14_DDS_IOUPDATE_REF, 1, board.dds_sync_delays[ERTM14_DDS_IOUPDATE_REF], 0 );
 
+<<<<<<< HEAD
 // CLKAB Sync: internal delay line, single-shot mode, negative polarity
     fine_pulse_gen_setup_channel ( &board.dds_sync_dev, ERTM14_PLL_SYNC_CLKA, 1, board.dds_sync_delays[ERTM14_PLL_SYNC_CLKA], FINE_PULSE_GEN_NEGATIVE );
     fine_pulse_gen_setup_channel ( &board.dds_sync_dev, ERTM14_PLL_SYNC_CLKB, 1, board.dds_sync_delays[ERTM14_PLL_SYNC_CLKB], FINE_PULSE_GEN_NEGATIVE );
 
+=======
+>>>>>>> ertm14: wip on fixing the CLKAB sync bug
     return 0;
 }
 
@@ -1155,10 +1158,6 @@ static int ertm_process_psnmp(struct uart_packet *rx_pkt, struct uart_packet *tx
 		sensors = (struct wrc_sensor *)&tx_pkt->payload[op->offset2];
 		get_wrc_sensors(sensors);
 		break;
-<<<<<<< HEAD
-
-=======
->>>>>>> implement nco subscribe in wrc side
 	case ertm14_ptp_enable:
 		if (rx_pkt->payload[op->offset1])
 			wrc_ptp_start();
@@ -1191,28 +1190,44 @@ static void ertm14_clock_monitor_init(void)
     wb_cm_configure(&board.ertm14_cmon, ERTM14_CMON_CLK_DMTD, 2, 6250000 );
 }
 
-static void ertm14_align_ref_out_to_pps(void)
-{
-    int i;
 
+static void ertm14_init_clkab_sync(void)
+{
+
+// CLKAB Sync: internal delay line, single-shot mode, negative polarity
     shw_pps_gen_init();
 
     shw_pps_gen_enable_output(1);
     shw_pps_gen_unmask_output(1);
 
-    for(i=0;i<10;)
+        int i;
+  //  for(i=0;i<=10;i++)
+    //{
+        clkab_set_output_divider( ERTM14_OUT_CLKA, ERTM14_CLKAB_OUT_FRONT_PANEL, 100 );
+    //}
+
+int offset = 0;
+    for(;;)
     {
-        writel( TAU_CSR_TRIG, (void*) TAU_REG_CSR + BASE_ERTM14_10MHZ_ALIGN_UNIT );
-        uint32_t csr = readl( (void*) TAU_REG_CSR + BASE_ERTM14_10MHZ_ALIGN_UNIT);
-        pp_printf("csr %x tau %x\n", csr, TAU_REG_CSR + BASE_ERTM14_10MHZ_ALIGN_UNIT );
-        if (csr & TAU_CSR_DONE)
+        pp_printf("SyncTest dly %d\n", offset );
+
+        fine_pulse_gen_setup_channel ( &board.dds_sync_dev, ERTM14_PLL_SYNC_CLKA, 1, board.dds_sync_delays[ERTM14_PLL_SYNC_CLKA] + offset, 0/*FINE_PULSE_GEN_NEGATIVE*/ );
+//        fine_pulse_gen_setup_channel ( &board.dds_sync_dev, ERTM14_PLL_SYNC_CLKB, 1, board.dds_sync_delays[ERTM14_PLL_SYNC_CLKB] + offset, FINE_PULSE_GEN_NEGATIVE );
+
+        fine_pulse_gen_trigger( &board.dds_sync_dev, (1<<ERTM14_PLL_SYNC_CLKA), 0 );
+
+        while(!fine_pulse_gen_is_triggered(&board.dds_sync_dev, (1<<ERTM14_PLL_SYNC_CLKA)))
         {
-            int val = TAU_CSR_OFFSET_R( csr );
-            pp_printf("measured pps offset: %d\n", val);
-            i++;
+            pp_printf(".");
+            timer_delay_ms(50);
         }
-        usleep(200000);
+
+        if( offset == 8000 )
+            offset = 0;
+        else
+            offset+=500;
     }
+
 }
 
 static int evth_dds_nco_sync;
@@ -1459,6 +1474,9 @@ static void ertm14_init_leds(void)
 
     led_set_blink_timing( &board.leds.sync, 1000, 500 );
     led_action( &board.leds.sync, LED_COLOR_1, LED_BLINK );
+
+    ertm14_set_pps_out_mode( 0 );
+
 }
 
 static void set_main_dac( int value )
@@ -1526,8 +1544,12 @@ static int clkab_set_output_divider( int clka_or_clkb, int output, int divider )
     const struct clkab_output_map_entry *o = clkab_find_map_entry( clka_or_clkb, output );
     struct ltc695x_device* dev = (clka_or_clkb == ERTM14_OUT_CLKA) ? &board.dev_clka_distr : &board.dev_clkb_distr;
 
+    pp_printf("out %p\n", o );
+
     if(!o)
         return -EINVAL;
+
+
 
     ltc6953_configure_output( dev, o->id_ltc6953, divider, o->invert );
 
@@ -1598,6 +1620,8 @@ int ertm14_init_clkab_distribution(void)
 // (so that any clock output is possible)
     fine_pulse_gen_force_pulse( &board.dds_sync_dev, ERTM14_PLL_SYNC_CLKA );
     fine_pulse_gen_force_pulse( &board.dds_sync_dev, ERTM14_PLL_SYNC_CLKB );
+
+
     return 0;
 }
 
@@ -1884,6 +1908,8 @@ int ertm14_low_level_init(void)
     wr_rf_frame_transceiver_create( &board.rf_xcvr, BASE_ERTM14_RF_FRAME_TRANSCEIVER );
 
     board_dbg("eRTM14/15 early init done\n");
+
+  //  ertm14_init_clkab_sync();
 
     ertm_init_complete = 1;
 
