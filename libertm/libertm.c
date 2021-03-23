@@ -21,10 +21,12 @@
 #include "psnmp-proto.h"
 #include "board-aux.h"
 
-static char __attribute__((__unused__)) *ertm_lib_version = VERSION;
-static char __attribute__((__unused__)) *ertm_lib_git_commit = GIT_VER;
-static char __attribute__((__unused__)) *ertm_lib_git_user = GIT_USR;
-static char __attribute__((__unused__)) *ertm_lib_git_url = GIT_URL;
+static struct ertm_lib_version ertm_lib_versions = {
+	.lib_version =	VERSION,
+	.git_commit = GIT_VER,		
+	.git_user = GIT_USR,		
+	.git_url = GIT_URL,		
+};
 static char __attribute__((__unused__)) *lib_internal_version =
 	"internal_version=" GIT_VER ";" GIT_URL ";" VERSION;
 
@@ -170,6 +172,11 @@ static void ertm_status_init(struct ertm_state *st)
 		sizeof(st->voltages));
 	memcpy(&st->wr_status, &wr_status_default, sizeof(st->wr_status));
 	/* FIXME: st->nco_reset */
+}
+
+struct ertm_lib_version *ertm_lib_version(void)
+{
+	return &ertm_lib_versions;
 }
 
 /* constants of nature for this design */

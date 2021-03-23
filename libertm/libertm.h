@@ -16,6 +16,13 @@ extern "C" {
 
 #include <stdint.h>
 
+struct ertm_lib_version {
+	char *lib_version;
+	char *git_commit;
+	char *git_user;
+	char *git_url;
+};
+
 /* error codes */
 #define ERTM_OK		0
 #define ERTM_BAD_CONNECTOR	(-1)
@@ -207,6 +214,7 @@ struct ertm_wr_status {
 struct ertm_status;
 struct ertm_status *ertm_init(const char *address);
 void ertm_exit(struct ertm_status *handle);		/* end connection, destroy handle */
+struct ertm_lib_version *ertm_lib_version(void);
 
 int ertm_get_board_info(struct ertm_status *handle,
 			struct ertm_board_info *info);
