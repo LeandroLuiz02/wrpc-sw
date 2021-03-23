@@ -137,13 +137,13 @@ class ErtmTest(cmd.Cmd):
             self.display = CDLL(self.libertm_display_file_default1)
         except OSError as e:
             pass
-        try:
-            self.lib = CDLL(self.libertm_file_default2)
-            self.display = CDLL(self.libertm_display_file_default2)
-        except OSError as e:
-            print('could not open library {} nor {}, exiting'.format(
-                self.libertm_file_default1, self.libertm_file_default2))
-            exit()
+            try:
+                self.lib = CDLL(self.libertm_file_default2)
+                self.display = CDLL(self.libertm_display_file_default2)
+            except OSError as e:
+                print('could not open library {} nor {}, exiting'.format(
+                    self.libertm_file_default1, self.libertm_file_default2))
+                exit()
         ertm_init = self.lib.ertm_init
         ertm_init.restype = POINTER(ertm_status)
         self.handle = ertm_init('/dev/ttyUSB2')
