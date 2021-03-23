@@ -15,6 +15,11 @@ GIT_VER ?= $(shell git describe --always --dirty | sed  's;^wr-switch-sw-;;')
 GIT_USR ?= $(shell git config --get-all user.name)
 GIT_URL ?= $(shell git remote show -n gitlab| sed -n 's; *Fetch URL: *\(.*\);\1;p')
 
+CFLAGS += "-DVERSION=\"$(VERSION)\""
+CFLAGS += "-DGIT_VER=\"$(GIT_VER)\""
+CFLAGS += "-DGIT_USR=\"$(GIT_USR)\""
+CFLAGS += "-DGIT_URL=\"$(GIT_URL)\""
+
 LIBS = $(TARGET).a $(TARGET).so libertm_display.so
 
 all: libs main
@@ -22,7 +27,6 @@ libs: $(LIBS)
 
 $(TARGET).a $(TARGET).so: $(TARGET).o linux-uart-link.o common-uart-link.o
 $(TARGET).so:
-	echo $(GIT_VER) $(GIT_USR) $(GIT_URL)
 	$(LD) -shared -o $@ $^
 $(TARGET).a:
 	$(AR) r $@ $^
