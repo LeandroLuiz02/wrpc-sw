@@ -632,21 +632,34 @@ static int ertm14_dds_sync_init(void)
         uint32_t id;
         int channel;
         const char *name;
+        int default_value_ps;
     } params[] = {
-        { CAL_PARAM_DDS_LO_IOUPDATE_DELAY_PS, ERTM14_DDS_IOUPDATE_LO, "DDS LO IoUpdate" },
-        { CAL_PARAM_DDS_REF_IOUPDATE_DELAY_PS, ERTM14_DDS_IOUPDATE_REF, "DDS REF IoUpdate" },
-        { CAL_PARAM_CLKA_SYNC_DELAY_PS, ERTM14_PLL_SYNC_CLKA, "CLKA Dist SYNC" },
-        { CAL_PARAM_CLKB_SYNC_DELAY_PS, ERTM14_PLL_SYNC_CLKB, "CLKB Dist SYNC" }
+        { CAL_PARAM_DDS_LO_IOUPDATE_DELAY_PS, ERTM14_DDS_IOUPDATE_LO, "DDS LO IoUpdate", 0 },
+        { CAL_PARAM_DDS_REF_IOUPDATE_DELAY_PS, ERTM14_DDS_IOUPDATE_REF, "DDS REF IoUpdate", 0 },
+        { CAL_PARAM_CLKA_SYNC_DELAY_PS, ERTM14_PLL_SYNC_CLKA, "CLKA Dist SYNC", 200 },
+        { CAL_PARAM_CLKB_SYNC_DELAY_PS, ERTM14_PLL_SYNC_CLKB, "CLKB Dist SYNC", 200 }
     };
 
     int i;
+
+    int need_overwrite = 0;
 
     // retrieve calibration delays on DDS IOUPDATE and CLKAB SYNC lines from the calibration stored in eeprom
     for( i = 0; i < n_params; i++ )
     {
         uint32_t val = board.dds_sync_delays[ params[i].channel ];
-        storage_get_calibration_parameter( params[i].id, &val );
-        board_dbg("Sync Unit channel '%s': delay = %d ps\n", params[i].name, val);
+        if( !storage_get_calibration_parameter( params[i].id, &val ) )
+        {
+            board_dbg("Sync Unit channel '%s': delay (from calibration file) = %d ps\n", params[i].name, val);
+        }
+        else
+        {
+            val = params[i].default_value_ps;
+            storage_set_calibration_parameter( params[i].id, val );
+            board_dbg("Sync Unit channel '%s': delay not found in calibration file, using default = %d ps\n", params[i].name, val );
+            need_overwrite = 1;
+        }
+        board.dds_sync_delays[ params[i].channel ] = val;
     }
 
 // Sync_in: continuous waveform, use external delay line (inside AD9910)
