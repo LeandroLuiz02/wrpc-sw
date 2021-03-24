@@ -23,7 +23,7 @@
 int main(int argc, char *argv[])
 {
 	static char usb[] = "/dev/ttyUSB2";
-	struct ertm_status *handle = ertm_init(usb);
+	struct ertm_status *handle = ertm_init(NULL);
 
 	if (handle == NULL) {
 		fprintf(stderr, "could not open %s\n", usb);
