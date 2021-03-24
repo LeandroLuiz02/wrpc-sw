@@ -1200,7 +1200,7 @@ static void ertm14_init_clkab_sync(void)
     shw_pps_gen_enable_output(1);
     shw_pps_gen_unmask_output(1);
 
-        int i;
+        // int i;
   //  for(i=0;i<=10;i++)
     //{
         clkab_set_output_divider( ERTM14_OUT_CLKA, ERTM14_CLKAB_OUT_FRONT_PANEL, 100 );
