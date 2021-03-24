@@ -41,6 +41,7 @@ struct fine_pulse_gen_channel
     int index;
     int delay_tap_size;
     int ref_clock_period_ps;
+    int pulse_length;
     int (*set_external_delay)( struct fine_pulse_gen_channel* ch, int n_taps );
 };
 
@@ -50,7 +51,7 @@ struct fine_pulse_gen_device {
 };
 
 void fine_pulse_gen_create( struct fine_pulse_gen_device *dev, uint32_t base );
-void fine_pulse_gen_setup_channel ( struct fine_pulse_gen_device* dev, int ch, int enable, int pps_offset_ps, int flags );
+void fine_pulse_gen_setup_channel ( struct fine_pulse_gen_device* dev, int ch, int enable, int pps_offset_ps, int length, int flags );
 void fine_pulse_gen_set_external_fine_delay ( struct fine_pulse_gen_device* dev, int ch, int tap_size,  int (*set_external_delay)( struct fine_pulse_gen_channel* ch, int ) );
 void fine_pulse_gen_trigger( struct fine_pulse_gen_device* dev, uint32_t mask, int force_now );
 int fine_pulse_gen_is_armed( struct fine_pulse_gen_device* dev, int ch );

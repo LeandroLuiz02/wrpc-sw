@@ -59,10 +59,11 @@ void fine_pulse_gen_create( struct fine_pulse_gen_device *dev, uint32_t base )
     }
 }
 
-void fine_pulse_gen_setup_channel ( struct fine_pulse_gen_device* dev, int ch, int enable, int pps_offset_ps, int flags )
+void fine_pulse_gen_setup_channel ( struct fine_pulse_gen_device* dev, int ch, int enable, int pps_offset_ps, int length, int flags )
 {
     dev->channels[ch].flags = flags;
     dev->channels[ch].pps_offset_ps = pps_offset_ps;
+    dev->channels[ch].pulse_length = length;
 
     if( enable )
         dev->channels[ch].flags |= FINE_PULSE_GEN_ENABLED;
@@ -91,8 +92,9 @@ void fine_pulse_gen_force_pulse( struct fine_pulse_gen_device* dev, int channel 
     int polarity = ch->flags & FINE_PULSE_GEN_NEGATIVE;
 
     uint32_t ocr = (1 << FPG_OCR0_PPS_OFFS_SHIFT)
-	                | (0x0 << FPG_OCR0_MASK_SHIFT)
+	                | (0x0 << FPG_OCR0_COARSE_SHIFT)
                     | (0 << FPG_OCR0_FINE_SHIFT)
+                    | (ch->pulse_length << FPG_OCR0_LENGTH_SHIFT)
                     | (polarity ? FPG_OCR0_POL : 0 );
 
     writel( ocr, dev->base + FPG_REG_OCR0 + 4 * channel); // configure
@@ -125,16 +127,15 @@ void fine_pulse_gen_trigger( struct fine_pulse_gen_device* dev, uint32_t mask, i
             uint32_t coarse_par = ch->pps_offset_ps / ch->ref_clock_period_ps;
             uint32_t coarse_ser = ch->pps_offset_ps / ser_clk_period_ps - coarse_par * 8;
             uint32_t fine = (ch->pps_offset_ps % ser_clk_period_ps) / ch->delay_tap_size;
-            
-            uint32_t mask = coarse_ser; // 24/09 VHDL generates mask internally 
 
 //            pp_printf("trigger: ch %d coarse %d %d fine %d flags %x\n", i, coarse_par, coarse_ser, fine, ch->flags );
 
             ocr = (coarse_par << FPG_OCR0_PPS_OFFS_SHIFT)
-	                | (mask << FPG_OCR0_MASK_SHIFT)
+	                | (coarse_ser << FPG_OCR0_COARSE_SHIFT)
                     | (fine << FPG_OCR0_FINE_SHIFT)
                     | (polarity ? FPG_OCR0_POL : 0 )
-                    | (continuous ? FPG_OCR0_CONT : 0 );
+                    | (continuous ? FPG_OCR0_CONT : 0 )
+                    | (ch->pulse_length << FPG_OCR0_LENGTH_SHIFT);
 
             if( ch->flags & FINE_PULSE_GEN_USE_EXT_TRIGGER )
                 ocr |= FPG_OCR0_TRIG_SEL;
