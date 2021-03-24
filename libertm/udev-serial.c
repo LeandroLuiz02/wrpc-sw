@@ -3,7 +3,6 @@
 #include <stdio.h>
 #include <string.h>
 
-#define SUBSYSTEM "usb"
 #define SILICON_LABS_ID		"10c4"
 #define CP2108_UART_TO_USB	"ea71"
 
@@ -13,15 +12,17 @@ struct sl_cp2108_port {
 	int	port;
 } sl_cp2108_port[4];
 
-static void search_dongle(void)
+static int ertm_search_dongle(char *vendor_id, char *device_id,
+	struct sl_cp2108_port *ports_info)
 {
     struct udev *udev = udev_new();
     struct udev_enumerate *enumerate = udev_enumerate_new(udev);
     struct udev_list_entry *devs, *ptr;
+    int found_ports = 0;
 
     udev_enumerate_add_match_subsystem(enumerate, "tty");
-    udev_enumerate_add_match_property(enumerate, "ID_VENDOR_ID", SILICON_LABS_ID);
-    udev_enumerate_add_match_property(enumerate, "ID_MODEL", CP2108_UART_TO_USB);
+    udev_enumerate_add_match_property(enumerate, "ID_VENDOR_ID", vendor_id);
+    udev_enumerate_add_match_property(enumerate, "ID_MODEL", device_id);
     udev_enumerate_scan_devices(enumerate);
 
     devs = udev_enumerate_get_list_entry(enumerate);
@@ -41,25 +42,44 @@ static void search_dongle(void)
 
 			for (i = 0; i < 4; i++)
 				if (!strcmp(ports[i], &linkname[len-trim])) {
-					sl_cp2108_port[i].port = port = i;
-					strcpy(sl_cp2108_port[i].symlink, path);
-					strcpy(sl_cp2108_port[i].devnode, devnode);
+					ports_info[i].port = port = i;
+					strcpy(ports_info[i].symlink, path);
+					strcpy(ports_info[i].devnode, devnode);
 					goto found;
 				}
 			goto notfound;
 		}
 found:
-		printf("port%d: %20s %s\n", port, devnode, path);
+		found_ports++;
 	}
 notfound:
 	udev_device_unref(dev);
     }
     udev_enumerate_unref(enumerate);
+
+    return (found_ports == 4) ? 0 : -1;
 }
 
-
-int main(void)
+char *ertm_find_usb_port(void)
 {
-    search_dongle();
-    return 0;
+	int err;
+
+	err = ertm_search_dongle(SILICON_LABS_ID, CP2108_UART_TO_USB, sl_cp2108_port);
+	if (err < 0)
+		return NULL;
+	return sl_cp2108_port[2].devnode;
+}
+
+static int __attribute__((__unused__)) udev_main(void)
+{
+	int i;
+
+	printf("control port is %s\n", ertm_find_usb_port());
+	for (i = 0; i < 4; i++)
+		printf("port %d:   %s  at %s\n",
+			sl_cp2108_port[i].port,
+			sl_cp2108_port[i].devnode,
+			sl_cp2108_port[i].symlink);
+
+	return 0;
 }
