@@ -25,6 +25,7 @@
 */
 
 
+#include <string.h>
 #include <board.h>
 #include "dev/syscon.h"
 #include "dev/endpoint.h"
@@ -137,7 +138,7 @@ static void tx_fsm_init(struct wrc_port_tx_setup_state *fsm)
 
     /* FIXME: is cal_saved_phase unsigned? uint32_t? declare it so
      * at the wrc_port_tx_setup_state structure */
-    if( !storage_get_calibration_parameter( CAL_PARAM_PHY_TARGET_TX_PHASE, &fsm->cal_saved_phase ) )
+    if( !storage_get_calibration_parameter( CAL_PARAM_PHY_TARGET_TX_PHASE, (uint32_t *)&fsm->cal_saved_phase ) )
     {
         phy_dbg("LPDC Tx target phase from calibration data: %d ps\n", fsm->cal_saved_phase);
         fsm->cal_saved_phase_valid = 1;
@@ -274,7 +275,6 @@ static int tx_fsm_update(void)
 
         if (within_range(phase, phase_min, phase_max, 16000))
         {
-            int i;
             fsm->measured_phase = phase;
             phy_dbg("LPDC: Fix phase = %d ps\n", fsm->measured_phase );
             fsm->state = TX_SETUP_VALIDATE;
@@ -289,7 +289,6 @@ static int tx_fsm_update(void)
 
     case TX_SETUP_VALIDATE:
     {
-        int phase, enabled;
         //int rv = spll_read_ptracker(0, &phase, &enabled);
 
         //if (!rv)
@@ -315,8 +314,6 @@ static int tx_fsm_update(void)
 
     case TX_SETUP_DONE:
     {
-    	int early_link_up = ep_pcs_read(&wrc_endpoint_dev, MDIO_DBG0) & MDIO_DBG0_LINK_UP;
-
         return 1;
         break;
     }
@@ -392,9 +389,6 @@ static int rx_fsm_update(void)
 
 			int rx_up = dbg0 & MDIO_DBG0_LINK_UP;
 			int rx_aligned = dbg0 & MDIO_DBG0_LINK_ALIGNED;
-   			int rx_comma_pos = (dbg0 >> 7) & 0x7f;
-            int rx_comma_valid = (dbg0 >> 7) & 0x80 ? 1 : 0;
-
 
 			if ( tmo_expired(&fsm->link_timeout) && !rx_up) {
 				fsm->state = RX_SETUP_STATE_INIT;

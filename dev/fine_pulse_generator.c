@@ -107,11 +107,6 @@ void fine_pulse_gen_force_pulse( struct fine_pulse_gen_device* dev, int channel 
     writel( trig_mask, dev->base + FPG_REG_CSR ); // configure
 }
 
-static uint8_t rotr( uint8_t x, int n )
-{
-    return (x >> n) | (x << (8-n) );
-}
-
 void fine_pulse_gen_trigger( struct fine_pulse_gen_device* dev, uint32_t mask, int force_now )
 {
     int i;
