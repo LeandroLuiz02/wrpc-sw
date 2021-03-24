@@ -2062,19 +2062,9 @@ static void ertm14_config_update_init(void)
 
 }
 
+/* fixme: we don't need multiple configurations. Get rid of this code */
 static int ertm14_config_update_task(void)
 {
-    //pp_printf("cutask %d\n", ertm_init_complete );
-    if (ertm_init_complete)
-    {
-        int evt = event_poll( evth_config_update_listener );
-
-        if( evt == WRC_ERTM14_EVENT_APPLY_NEW_CONFIG )
-        {
-            board_dbg("New config detected, applying...\n");
-            ertm14_commit_config(ertm14_current_state);
-        }
-    }
     return 0;
 }
 
