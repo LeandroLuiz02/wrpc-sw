@@ -94,6 +94,28 @@
 #define ERTM15_VOLTAGE_POCXO 18
 #define ERTM15_CURRENT_OCXO 19
 
+/* PPS/RF trigger sync state, indicates the status of of the alignment of
+   each clock (LO/REF/CLKA/CLKB) wrs to the PPS/RF NCO Reset
+   Used both by the internal state machines and by the lib. */
+
+/* Clock output sync procedure restarted. This can happen when
+   the output frequency or amplitude is changed by the user */
+#define ERTM14_CLK_SYNC_STATE_RESTART 0
+
+/* The clock sync state machine is waiting for the WR timing to become available */
+#define ERTM14_CLK_SYNC_STATE_WAIT_TIMING 1
+
+/* The clock sync state machine is configuring the sync pulse generator */
+#define ERTM14_CLK_SYNC_STATE_CONFIGURE 2
+
+/* The clock sync state machine is waiting for the sycn pulse to be triggered */
+#define ERTM14_CLK_SYNC_STATE_WAIT_TRIGGER 3
+
+/* Resync done, output clock is ready */
+#define ERTM14_CLK_SYNC_STATE_READY 4
+
+
+
 struct ertm14_dds_state
 {
     uint32_t ftw;
@@ -103,6 +125,7 @@ struct ertm14_dds_state
     int ampl_factor;
     int sync_source;	/* one of ERTM14_SYNC_SOURCE_NONE/PPS/TRIGGER */
     int sync_count;	/* number of sync events */
+    uint8_t sync_state;
 };
 
 struct ertm14_board_state
@@ -114,6 +137,8 @@ struct ertm14_board_state
     uint32_t clkb_freq_hz[ERTM14_CLKAB_OUT_MAX_ID + 1];
     uint32_t clka_enable_mask;
     uint32_t clkb_enable_mask;
+    uint8_t clka_sync_state[ERTM14_CLKAB_OUT_MAX_ID + 1];
+    uint8_t clkb_sync_state[ERTM14_CLKAB_OUT_MAX_ID + 1];
 };
 
 PACKED struct ertm14_mmc_version_info
