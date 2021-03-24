@@ -334,7 +334,7 @@ class ErtmTest(cmd.Cmd):
         sync_mode = {
             'none' : self.ERTM14_SYNC_SOURCE_NONE,
             'pps' : self.ERTM14_SYNC_SOURCE_PPS,
-            'rf-trigger' : self.ERTM14_SYNC_SOURCE_RF_TRIGGER,
+            'rf_trigger' : self.ERTM14_SYNC_SOURCE_RF_TRIGGER,
             'rf' : self.ERTM14_SYNC_SOURCE_RF_TRIGGER,
         }
         try:
