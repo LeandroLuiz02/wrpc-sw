@@ -933,21 +933,27 @@ static void apply_config(struct ertm14_board_state *cfg,
 		board_dbg("CLKA%d: freq=%d Hz, divider=%d, enable=%d\n", i, freq_a, div_a, enable_a);
 		board_dbg("CLKA%d: freq=%d Hz, divider=%d, enable=%d\n", i, freq_b, div_b, enable_b);
 
-		if (mask->clka_freq_hz[i])
+		if (mask->clka_freq_hz[i] && (cfg->clka_freq_hz[i] != ertm14_current_state->clka_freq_hz[i]))
 			clkab_set_output_divider(ERTM14_OUT_CLKA, i, div_a);
-		if (mask->clkb_freq_hz[i])
+		if (mask->clkb_freq_hz[i] && (cfg->clkb_freq_hz[i] != ertm14_current_state->clkb_freq_hz[i]))
 			clkab_set_output_divider(ERTM14_OUT_CLKB, i, div_b);
-		if (mask->clka_enable_mask & (1<<i))
+		if ((mask->clka_enable_mask & (1<<i)) &&
+			((cfg->clka_enable_mask & (1<<i)) != (ertm14_current_state->clka_enable_mask & (1<<i))))
 			clkab_enable_output( ERTM14_OUT_CLKA, i, enable_a );
-		if (mask->clkb_enable_mask & (1<<i))
+		if ((mask->clkb_enable_mask & (1<<i)) &&
+			((cfg->clkb_enable_mask & (1<<i)) != (ertm14_current_state->clkb_enable_mask & (1<<i))))
 			clkab_enable_output( ERTM14_OUT_CLKB, i, enable_b );
 	}
 
 	/* DDSes */
-	if (mask->lo.ampl_factor || mask->lo.ftw)
-		ad9910_program(&board.dds_ad9910_lo, cfg->lo.ftw, 0, cfg->lo.ampl_factor );
-	if (mask->ref.ampl_factor || mask->ref.ftw)
-		ad9910_program(&board.dds_ad9910_ref, cfg->ref.ftw, 0, cfg->ref.ampl_factor );
+	if ((mask->lo.ampl_factor || mask->lo.ftw) &&
+		((cfg->lo.ampl_factor != ertm14_current_state->lo.ampl_factor) ||
+		     (cfg->lo.ftw != ertm14_current_state->lo.ftw)))
+			ad9910_program(&board.dds_ad9910_lo, cfg->lo.ftw, 0, cfg->lo.ampl_factor);
+	if ((mask->ref.ampl_factor || mask->ref.ftw) &&
+		((cfg->ref.ampl_factor != ertm14_current_state->ref.ampl_factor) ||
+		     (cfg->ref.ftw != ertm14_current_state->ref.ftw)))
+			ad9910_program(&board.dds_ad9910_ref, cfg->ref.ftw, 0, cfg->ref.ampl_factor);
 
 	board_dbg("DDS LO: FTW=0x%08x, ampl=%d\n", cfg->lo.ftw, cfg->lo.ampl_factor );
 	board_dbg("DDS REF: FTW=0x%08x, ampl=%d\n", cfg->ref.ftw, cfg->ref.ampl_factor );
@@ -957,12 +963,12 @@ static void apply_config(struct ertm14_board_state *cfg,
 		int st_ref = cfg->ref.out_state[i] == ERTM15_RF_OUT_ON ? 1 : 0;
 		board_dbg("i %d lo %x ref %x\n", i, st_lo, st_ref );
 
-		if (mask->lo.out_state[i])
-			ertm15_rf_distr_output_enable(&board.rf_distr,
-						ERTM15_RF_LO, i, st_lo );
-		if (mask->ref.out_state[i])
-			ertm15_rf_distr_output_enable(&board.rf_distr,
-						ERTM15_RF_REF, i, st_ref );
+		if (mask->lo.out_state[i] &&
+			(cfg->lo.out_state[i] != ertm14_current_state->lo.out_state[i]))
+				ertm15_rf_distr_output_enable(&board.rf_distr, ERTM15_RF_LO, i, st_lo );
+		if (mask->ref.out_state[i] &&
+			(cfg->ref.out_state[i] != ertm14_current_state->ref.out_state[i]))
+				ertm15_rf_distr_output_enable(&board.rf_distr, ERTM15_RF_REF, i, st_ref );
 	}
 
         ertm15_update_rf_switches( &board.rf_distr );
