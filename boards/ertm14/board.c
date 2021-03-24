@@ -663,16 +663,17 @@ static int ertm14_dds_sync_init(void)
     }
 
 // Sync_in: continuous waveform, use external delay line (inside AD9910)
-    
-    // produce a continuos sync clock for the DDSes
-    fine_pulse_gen_setup_channel ( &board.dds_sync_dev, ERTM14_DDS_SYNC_LO, 1, board.dds_sync_delays[ERTM14_DDS_SYNC_LO], FINE_PULSE_GEN_CONTINUOUS );
-    fine_pulse_gen_setup_channel ( &board.dds_sync_dev, ERTM14_DDS_SYNC_REF, 1, board.dds_sync_delays[ERTM14_DDS_SYNC_REF], FINE_PULSE_GEN_CONTINUOUS );
+
+    // produce a continuous sync clock for the DDSes
+    fine_pulse_gen_setup_channel ( &board.dds_sync_dev, ERTM14_DDS_SYNC_LO, 1, board.dds_sync_delays[ERTM14_DDS_SYNC_LO], 0, FINE_PULSE_GEN_CONTINUOUS );
+    fine_pulse_gen_setup_channel ( &board.dds_sync_dev, ERTM14_DDS_SYNC_REF, 1, board.dds_sync_delays[ERTM14_DDS_SYNC_REF], 0, FINE_PULSE_GEN_CONTINUOUS );
+
     fine_pulse_gen_set_external_fine_delay( &board.dds_sync_dev, ERTM14_DDS_SYNC_REF, 75, ad9910_set_fine_delay );
     fine_pulse_gen_set_external_fine_delay( &board.dds_sync_dev, ERTM14_DDS_SYNC_LO, 75, ad9910_set_fine_delay );
 
-    board_dbg("ref delay = %d lo delay = %d\n", board.dds_sync_delays[ERTM14_DDS_IOUPDATE_REF], board.dds_sync_delays[ERTM14_DDS_IOUPDATE_LO] );
-    fine_pulse_gen_setup_channel ( &board.dds_sync_dev, ERTM14_DDS_IOUPDATE_LO, 1, board.dds_sync_delays[ERTM14_DDS_IOUPDATE_LO], 0 );
-    fine_pulse_gen_setup_channel ( &board.dds_sync_dev, ERTM14_DDS_IOUPDATE_REF, 1, board.dds_sync_delays[ERTM14_DDS_IOUPDATE_REF], 0 );
+    //board_dbg("ref delay = %d lo delay = %d\n", board.dds_sync_delays[ERTM14_DDS_IOUPDATE_REF], board.dds_sync_delays[ERTM14_DDS_IOUPDATE_LO] );
+    fine_pulse_gen_setup_channel ( &board.dds_sync_dev, ERTM14_DDS_IOUPDATE_LO, 1, board.dds_sync_delays[ERTM14_DDS_IOUPDATE_LO], 0, 0 );
+    fine_pulse_gen_setup_channel ( &board.dds_sync_dev, ERTM14_DDS_IOUPDATE_REF, 1, board.dds_sync_delays[ERTM14_DDS_IOUPDATE_REF], 0, 0 );
 
     return 0;
 }
@@ -714,8 +715,8 @@ static void ertm14_dds_sync_calibrate(void)
     {
 //        pp_printf("Sync [fine %d]! ", fine);
 
-        fine_pulse_gen_setup_channel ( &board.dds_sync_dev, ERTM14_DDS_SYNC_LO, 1, 100000 + fine, FINE_PULSE_GEN_CONTINUOUS );
-        fine_pulse_gen_setup_channel ( &board.dds_sync_dev, ERTM14_DDS_SYNC_REF, 1, 100000 + fine, FINE_PULSE_GEN_CONTINUOUS );
+        fine_pulse_gen_setup_channel ( &board.dds_sync_dev, ERTM14_DDS_SYNC_LO, 1, 100000 + fine, 0, FINE_PULSE_GEN_CONTINUOUS );
+        fine_pulse_gen_setup_channel ( &board.dds_sync_dev, ERTM14_DDS_SYNC_REF, 1, 100000 + fine, 0, FINE_PULSE_GEN_CONTINUOUS );
         fine_pulse_gen_set_external_fine_delay( &board.dds_sync_dev, ERTM14_DDS_SYNC_REF, 75, ad9910_set_fine_delay );
         fine_pulse_gen_set_external_fine_delay( &board.dds_sync_dev, ERTM14_DDS_SYNC_LO, 75, ad9910_set_fine_delay );
 
@@ -767,11 +768,8 @@ static void ertm14_dds_sync_calibrate(void)
         windows[1].best_start, windows[1].best_length, windows[1].setpoint
     );
 
-    fine_pulse_gen_setup_channel ( &board.dds_sync_dev, ERTM14_DDS_SYNC_LO, 1, 100000 + windows[0].setpoint, FINE_PULSE_GEN_CONTINUOUS );
-    fine_pulse_gen_setup_channel ( &board.dds_sync_dev, ERTM14_DDS_SYNC_REF, 1, 100000 + windows[1].setpoint, FINE_PULSE_GEN_CONTINUOUS );
-
-    
-        
+    fine_pulse_gen_setup_channel ( &board.dds_sync_dev, ERTM14_DDS_SYNC_LO, 1, 100000 + windows[0].setpoint, 0, FINE_PULSE_GEN_CONTINUOUS );
+    fine_pulse_gen_setup_channel ( &board.dds_sync_dev, ERTM14_DDS_SYNC_REF, 1, 100000 + windows[1].setpoint, 0, FINE_PULSE_GEN_CONTINUOUS );
 }
 
 static int ertm14_align_clocks(void)
@@ -1201,46 +1199,6 @@ static void ertm14_clock_monitor_init(void)
     wb_cm_configure(&board.ertm14_cmon, ERTM14_CMON_CLK_DMTD, 2, 6250000 );
 }
 
-
-static void ertm14_init_clkab_sync(void)
-{
-
-// CLKAB Sync: internal delay line, single-shot mode, negative polarity
-    shw_pps_gen_init();
-
-    shw_pps_gen_enable_output(1);
-    shw_pps_gen_unmask_output(1);
-
-        // int i;
-  //  for(i=0;i<=10;i++)
-    //{
-        clkab_set_output_divider( ERTM14_OUT_CLKA, ERTM14_CLKAB_OUT_FRONT_PANEL, 100 );
-    //}
-
-int offset = 0;
-    for(;;)
-    {
-        pp_printf("SyncTest dly %d\n", offset );
-
-        fine_pulse_gen_setup_channel ( &board.dds_sync_dev, ERTM14_PLL_SYNC_CLKA, 1, board.dds_sync_delays[ERTM14_PLL_SYNC_CLKA] + offset, 0/*FINE_PULSE_GEN_NEGATIVE*/ );
-//        fine_pulse_gen_setup_channel ( &board.dds_sync_dev, ERTM14_PLL_SYNC_CLKB, 1, board.dds_sync_delays[ERTM14_PLL_SYNC_CLKB] + offset, FINE_PULSE_GEN_NEGATIVE );
-
-        fine_pulse_gen_trigger( &board.dds_sync_dev, (1<<ERTM14_PLL_SYNC_CLKA), 0 );
-
-        while(!fine_pulse_gen_is_triggered(&board.dds_sync_dev, (1<<ERTM14_PLL_SYNC_CLKA)))
-        {
-            pp_printf(".");
-            timer_delay_ms(50);
-        }
-
-        if( offset == 8000 )
-            offset = 0;
-        else
-            offset+=500;
-    }
-
-}
-
 static int evth_dds_nco_sync;
 
 #define DDS_NCO_STATE_WAIT_TIMING 0
@@ -1258,7 +1216,7 @@ static void ertm14_dds_nco_sync_init(void)
 
 static void rf_nco_sync_disable_channel( struct ertm14_dds_state *state, uint32_t ioupdate_channel )
 {
-    fine_pulse_gen_setup_channel ( &board.dds_sync_dev, ioupdate_channel, 0, board.dds_sync_delays[ioupdate_channel], 0  );
+    fine_pulse_gen_setup_channel ( &board.dds_sync_dev, ioupdate_channel, 0, board.dds_sync_delays[ioupdate_channel], 0, 0  );
     state->sync_count = 0;
 }
 
@@ -1269,7 +1227,7 @@ static void rf_nco_sync_configure_channel( struct ertm14_dds_state *state, uint3
     if( state->sync_source == ERTM14_SYNC_SOURCE_RF_TRIGGER)
         flags |= FINE_PULSE_GEN_USE_EXT_TRIGGER;
 
-    fine_pulse_gen_setup_channel ( &board.dds_sync_dev, ioupdate_channel, 1, board.dds_sync_delays[ioupdate_channel], flags  );
+    fine_pulse_gen_setup_channel ( &board.dds_sync_dev, ioupdate_channel, 1, board.dds_sync_delays[ioupdate_channel], 0, flags  );
     state->sync_count = 0;
 }
 
