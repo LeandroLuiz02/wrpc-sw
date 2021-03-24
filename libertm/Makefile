@@ -26,7 +26,7 @@ libs: $(LIBS)
 
 $(TARGET).a $(TARGET).so: $(TARGET).o linux-uart-link.o common-uart-link.o udev-serial.o
 $(TARGET).so:
-	$(LD) -shared -o $@ $^
+	$(CC) -shared -o $@ $^
 $(TARGET).a:
 	$(AR) r $@ $^
 $(TARGET).o: $(TARGET).h
