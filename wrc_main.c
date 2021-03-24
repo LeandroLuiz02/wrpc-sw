@@ -99,7 +99,12 @@ static void wrc_initialize(void)
 
 	wrc_board_init();
 
-	storage_load_calibration();
+	/* BSP didn't load the calibration parameters? go ahead */
+	if( !storage_is_calibration_loaded() )
+	{
+		storage_load_calibration();
+	}
+
 
 	wrc_ptp_init();
 	/* try reading t24 phase transition from EEPROM */
