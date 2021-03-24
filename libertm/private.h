@@ -76,3 +76,4 @@ static const int ertm_ntemperatures =
 	sizeof(ertm_temperature_ids)/sizeof(ertm_temperature_ids[0]);
 
 extern int ertm_get_board_config(struct ertm_status *st, struct ertm14_board_state *bs);
+extern char *ertm_find_usb_port(void);

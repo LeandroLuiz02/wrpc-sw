@@ -33,7 +33,7 @@ $(TARGET).a:
 $(TARGET).o: $(TARGET).h
 
 main: main.o libertm.a display.o
-	$(CC) $(CFLAGS) -o $@ $^ $(LDLIBS) $(LDFLAGS) -lm
+	$(CC) $(CFLAGS) -o $@ $^ $(LDLIBS) $(LDFLAGS) -lm -ludev
 
 common-uart-link.o: $(ERTM_BOARD_LOCATION)/common-uart-link.c
 	$(CC) $(CFLAGS) -o $@ -c $^
