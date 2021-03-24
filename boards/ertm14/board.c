@@ -676,13 +676,6 @@ static int ertm14_dds_sync_init(void)
     fine_pulse_gen_setup_channel ( &board.dds_sync_dev, ERTM14_DDS_IOUPDATE_LO, 1, board.dds_sync_delays[ERTM14_DDS_IOUPDATE_LO], 0, 0 );
     fine_pulse_gen_setup_channel ( &board.dds_sync_dev, ERTM14_DDS_IOUPDATE_REF, 1, board.dds_sync_delays[ERTM14_DDS_IOUPDATE_REF], 0, 0 );
 
-<<<<<<< HEAD
-// CLKAB Sync: internal delay line, single-shot mode, negative polarity
-    fine_pulse_gen_setup_channel ( &board.dds_sync_dev, ERTM14_PLL_SYNC_CLKA, 1, board.dds_sync_delays[ERTM14_PLL_SYNC_CLKA], FINE_PULSE_GEN_NEGATIVE );
-    fine_pulse_gen_setup_channel ( &board.dds_sync_dev, ERTM14_PLL_SYNC_CLKB, 1, board.dds_sync_delays[ERTM14_PLL_SYNC_CLKB], FINE_PULSE_GEN_NEGATIVE );
-
-=======
->>>>>>> ertm14: wip on fixing the CLKAB sync bug
     return 0;
 }
 
@@ -1119,7 +1112,6 @@ static void subscribe_nco(struct ertm14_nco_reset *nco)
 
 	dds->sync_count = 0;
 	dds->sync_source = nco->sync_source;
-	event_post(WRC_ERTM14_EVENT_RECONFIGURED);
 }
 
 static int ertm_process_psnmp(struct uart_packet *rx_pkt, struct uart_packet *tx_pkt)
@@ -1217,18 +1209,13 @@ static void ertm14_clock_monitor_init(void)
 
 static int evth_dds_nco_sync;
 
-#define DDS_NCO_STATE_WAIT_TIMING 0
-#define DDS_NCO_STATE_RECONFIGURE 1
-#define DDS_NCO_STATE_ARM 2
-#define DDS_NCO_STATE_WAIT_TRIGGER 3
-
-static int dds_nco_sync_state = 0;
-
 static void ertm14_dds_nco_sync_init(void)
 {
-   dds_nco_sync_state = DDS_NCO_STATE_WAIT_TIMING;
+    ertm14_current_state->ref.sync_state = ERTM14_CLK_SYNC_STATE_RESTART;
+    ertm14_current_state->lo.sync_state = ERTM14_CLK_SYNC_STATE_RESTART;
+    ertm14_current_state->ref.sync_count = 0;
+    ertm14_current_state->lo.sync_count = 0;
 }
-
 
 static void rf_nco_sync_disable_channel( struct ertm14_dds_state *state, uint32_t ioupdate_channel )
 {
@@ -1243,6 +1230,7 @@ static void rf_nco_sync_configure_channel( struct ertm14_dds_state *state, uint3
     if( state->sync_source == ERTM14_SYNC_SOURCE_RF_TRIGGER)
         flags |= FINE_PULSE_GEN_USE_EXT_TRIGGER;
 
+    //pp_printf("ConfigChannel ch %x flags %x dly %d src %d\n",ioupdate_channel,flags, board.dds_sync_delays[ioupdate_channel], state->sync_source );
     fine_pulse_gen_setup_channel ( &board.dds_sync_dev, ioupdate_channel, 1, board.dds_sync_delays[ioupdate_channel], 0, flags  );
     state->sync_count = 0;
 }
@@ -1271,69 +1259,102 @@ static int rf_nco_sync_wait_trigger( struct ertm14_dds_state *state, uint32_t io
     return 0;
 }
 
-static int ertm14_dds_nco_sync_task(void)
-{
-    int evt = event_poll( evth_dds_nco_sync );
 
-    switch( evt )
+static int rf_nco_sync_fsm( int is_ref, struct ertm14_dds_state *state, uint32_t ioupdate_channel, int event )
+{
+    const char *name = is_ref ? "ref" : "lo";
+
+    /* fixme: ugly ifs */
+    if( is_ref && event == WRC_ERTM14_EVENT_REF_RECONFIGURED)
     {
-        case WRC_ERTM14_EVENT_RECONFIGURED:
-            board_dbg("nco_sync: reconfig request\n");
-            dds_nco_sync_state = DDS_NCO_STATE_RECONFIGURE;
-            break;
-        case WRC_EVENT_LINK_DOWN:
-        case WRC_EVENT_LINK_UP:
-        case WRC_EVENT_TIMING_DOWN:
-        case WRC_EVENT_TIMING_UP:
-            board_dbg("nco_sync: link/timing status change, restarting\n");
-            rf_nco_sync_disable_channel( &ertm14_current_state->ref, ERTM14_DDS_IOUPDATE_REF );
-            rf_nco_sync_disable_channel( &ertm14_current_state->lo, ERTM14_DDS_IOUPDATE_LO );
-            dds_nco_sync_state = DDS_NCO_STATE_WAIT_TIMING;
-            break;
-        default:
-            break;
+        board_dbg("nco_sync[%s]: reconfiguration request\n", name );
+        state->sync_state = ERTM14_CLK_SYNC_STATE_RESTART;
+        state->sync_count = 0;
     }
 
+<<<<<<< HEAD
 
-
-    switch( dds_nco_sync_state )
+=======
+    if( !is_ref && event == WRC_ERTM14_EVENT_LO_RECONFIGURED)
     {
-        case DDS_NCO_STATE_WAIT_TIMING:
-            if( evt == WRC_EVENT_TIMING_UP)
+        board_dbg("nco_sync[%s]: reconfiguration request\n", name );
+        state->sync_state = ERTM14_CLK_SYNC_STATE_RESTART;
+        state->sync_count = 0;
+    }
+
+    if ( event == WRC_EVENT_LINK_DOWN || event == WRC_EVENT_TIMING_DOWN )
+    {
+        board_dbg("nco_sync[%s]: WR link or timing down, restarting FSM\n", name );
+        state->sync_state = ERTM14_CLK_SYNC_STATE_RESTART;
+        state->sync_count = 0;
+    }
+>>>>>>> ertm14: rewrote the NCO sync state machine:
+
+    switch( state->sync_state )
+    {
+        case ERTM14_CLK_SYNC_STATE_RESTART:
+            rf_nco_sync_disable_channel( state, ioupdate_channel );
+
+            if(state->sync_source == ERTM14_SYNC_SOURCE_NONE)
             {
-                board_dbg("nco_sync: timing up, configuring FPGen\n");
-                dds_nco_sync_state = DDS_NCO_STATE_RECONFIGURE;
+                board_dbg("nco_sync[%s]: disabling DDS sync\n", name );
+                state->sync_state = ERTM14_CLK_SYNC_STATE_READY;
+            }
+            else
+            {
+                board_dbg("nco_sync[%s]: restarting sync FSM\n", name );
+                state->sync_state = ERTM14_CLK_SYNC_STATE_WAIT_TIMING;
             }
             break;
 
-        case DDS_NCO_STATE_RECONFIGURE:
+        case ERTM14_CLK_SYNC_STATE_WAIT_TIMING:
+            if( wrc_is_timing_up() )
+            {
+                board_dbg("nco_sync[%s]: timing up\n", name);
+                state->sync_state = ERTM14_CLK_SYNC_STATE_CONFIGURE;
+            }
+            break;
+
+        case ERTM14_CLK_SYNC_STATE_CONFIGURE:
             if( !wrc_is_timing_up() )
             {
-                dds_nco_sync_state = DDS_NCO_STATE_WAIT_TIMING;
-            } else {
-                rf_nco_sync_configure_channel( &ertm14_current_state->ref, ERTM14_DDS_IOUPDATE_REF );
-                rf_nco_sync_configure_channel( &ertm14_current_state->lo, ERTM14_DDS_IOUPDATE_LO );
+                state->sync_state = ERTM14_CLK_SYNC_STATE_WAIT_TIMING;
+            }
+            else
+            {
+                rf_nco_sync_configure_channel( state, ioupdate_channel );
+                rf_nco_sync_arm_channel( state, ioupdate_channel );
+
+                // DEBUG below
                 ertm14_set_pps_out_mode( 3 ); // observe RF reset NCO triggers on PPS out
-                dds_nco_sync_state = DDS_NCO_STATE_ARM;
+                state->sync_state = ERTM14_CLK_SYNC_STATE_WAIT_TRIGGER;
             }
             break;
 
-        case DDS_NCO_STATE_ARM:
-            //board_dbg("(Arm!)\n");
-            rf_nco_sync_arm_channel( &ertm14_current_state->ref, ERTM14_DDS_IOUPDATE_REF );
-            rf_nco_sync_arm_channel( &ertm14_current_state->lo, ERTM14_DDS_IOUPDATE_LO );
-            dds_nco_sync_state = DDS_NCO_STATE_WAIT_TRIGGER;
-            break;
-        case DDS_NCO_STATE_WAIT_TRIGGER:
+        case ERTM14_CLK_SYNC_STATE_WAIT_TRIGGER:
         {
-            int trig_ref = rf_nco_sync_wait_trigger( &ertm14_current_state->ref, ERTM14_DDS_IOUPDATE_REF );
-            int trig_lo = rf_nco_sync_wait_trigger( &ertm14_current_state->lo, ERTM14_DDS_IOUPDATE_LO );
+            int trigd = rf_nco_sync_wait_trigger(state, ioupdate_channel);
 
-
-            if( trig_ref && trig_lo )
+            if( trigd )
             {
-                //board_dbg("(Trig!)\n");
-                dds_nco_sync_state = DDS_NCO_STATE_ARM;
+                board_dbg("nco_sync[%s]: triggered!\n", name);
+                rf_nco_sync_arm_channel( state, ioupdate_channel );
+                state->sync_state = ERTM14_CLK_SYNC_STATE_READY;
+            }
+
+            break;
+        }
+
+        /* does the same as above, albeit in a neverending loop (sync_state is exported
+           through the library and READY indicates at least one trigger has been received) */
+        case ERTM14_CLK_SYNC_STATE_READY:
+        {
+            int trigd = rf_nco_sync_wait_trigger(state, ioupdate_channel);
+
+            if( trigd )
+            {
+                rf_nco_sync_arm_channel( state, ioupdate_channel );
+                state->sync_state = ERTM14_CLK_SYNC_STATE_READY;
             }
 
             break;
@@ -1342,6 +1363,16 @@ static int ertm14_dds_nco_sync_task(void)
         default:
             break;
     }
+
+    return 0;
+}
+
+static int ertm14_dds_nco_sync_task(void)
+{
+    int evt = event_poll( evth_dds_nco_sync );
+
+    rf_nco_sync_fsm( 1, &ertm14_current_state->ref, ERTM14_DDS_IOUPDATE_REF, evt );
+    rf_nco_sync_fsm( 0, &ertm14_current_state->lo, ERTM14_DDS_IOUPDATE_LO, evt );
 
     return 0;
 }
@@ -1927,14 +1958,17 @@ void ertm14_config_init()
         cfg->ref.sync_source = ERTM14_SYNC_SOURCE_RF_TRIGGER;
         cfg->lo.sync_source = ERTM14_SYNC_SOURCE_RF_TRIGGER;
 
+        cfg->ref.sync_state = ERTM14_CLK_SYNC_STATE_RESTART;
+        cfg->lo.sync_state = ERTM14_CLK_SYNC_STATE_RESTART;
+
         for(j = 0; j <= ERTM14_CLKAB_OUT_MAX_ID; j++)
         {
             cfg->clka_freq_hz[j] = 500000000;
             cfg->clkb_freq_hz[j] = 500000000;
         }
 
-        cfg->clka_enable_mask = -1; //( 1<<11);
-        cfg->clkb_enable_mask = -1; //( 1<<11);
+        cfg->clka_enable_mask = -1; // all CLKA outputs ON
+        cfg->clkb_enable_mask = -1; // all CLKB outputs ON
 
 	copy_config(&ertm14_hardware, cfg);
     }
@@ -2022,7 +2056,6 @@ static int ertm14_config_update_task(void)
         {
             board_dbg("New config detected, applying...\n");
             ertm14_commit_config(ertm14_current_state);
-            event_post( WRC_ERTM14_EVENT_RECONFIGURED );
         }
     }
     return 0;
