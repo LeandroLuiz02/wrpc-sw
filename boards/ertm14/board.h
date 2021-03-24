@@ -134,7 +134,8 @@ extern unsigned char *BASE_EP;
 #define WRC_ERTM14_EVENT_CLKAB_RECONFIGURED     (WRC_EVENT_PRIVATE_START+3)
 
 #define ERTM14_DDS_DEFAULT_FTW 0x39374BC6 /* 223.5 MHz @ 1 GHz refclk */
-#define ERTM14_DDS_DEFAULT_AMPLITUDE 0x7f
+#define ERTM14_DDS_DEFAULT_AMPLITUDE 66 /* 12 dBm */
+
 
 struct ertm14_board
 {
