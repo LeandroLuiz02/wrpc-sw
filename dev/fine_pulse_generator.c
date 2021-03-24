@@ -45,7 +45,6 @@ void fine_pulse_gen_create( struct fine_pulse_gen_device *dev, uint32_t base )
     usleep(1);
     writel( 0, dev->base + FPG_REG_ODELAY_CALIB ); // un-reset idelayctrl
     
-    int n;
     do {
            usleep(1);
     } while( ! ( readl( dev->base + FPG_REG_ODELAY_CALIB) & FPG_ODELAY_CALIB_RDY ) );

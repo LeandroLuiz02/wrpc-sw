@@ -1,3 +1,4 @@
+#include <string.h>
 #include "dev/console.h"
 
 static uint32_t wrpc_get_ms_tics( struct uart_link* link )
