@@ -2180,6 +2180,8 @@ int wrc_board_early_init()
     int rv = storage_mount( &wrc_storage_dev );
     bist_checkpoint( ertm_bist, ERTM14_BIST_FLASH_FS_MOUNT, 0, rv == 0 );
 
+    storage_load_calibration();
+
    	net_rst();
 
     int ll = ertm14_low_level_init();
