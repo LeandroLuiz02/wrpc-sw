@@ -917,6 +917,39 @@ static void get_board_config(struct ertm14_board_state *bs)
 static int clkab_set_output_divider(int clka_or_clkb, int output, int divider);
 static int clkab_enable_output(int clka_or_clkb, int output, int enable);
 
+static int apply_dds_config( struct ad9910_device *dev, struct ertm14_dds_state* new_state, struct ertm14_dds_state *old_state, struct ertm14_dds_state *mask )
+{
+    uint32_t new_ftw = old_state->ftw;
+    uint32_t new_ampl_factor = old_state->ampl_factor;
+
+    int config_changed = 0;
+
+    pp_printf("oaf %d naf %d\n", old_state->ampl_factor, new_state->ampl_factor );
+
+	if( mask->ampl_factor && ( new_state->ampl_factor != old_state->ampl_factor) )
+    {
+        new_ampl_factor = new_state->ampl_factor;
+        config_changed = 1;
+    }
+
+    if( mask->ftw && ( new_state->ftw != old_state->ftw) )
+    {
+        new_ftw = new_state->ftw;
+        config_changed = 1;
+    }
+
+
+    if( config_changed )
+    {
+        board_dbg("DDS[%p]: changing FTW=0x%08x, ampl=%d\n", dev, new_ftw, new_ampl_factor );
+        ad9910_program( dev, new_ftw, 0, new_ampl_factor );
+        return 1;
+    }
+
+    return 0;
+}
+
+
 static void apply_config(struct ertm14_board_state *cfg,
 	struct ertm14_board_state *mask)
 {
@@ -933,8 +966,7 @@ static void apply_config(struct ertm14_board_state *cfg,
 		int enable_a = ( cfg->clka_enable_mask & (1<<i) ) ? 1 : 0;
 		int enable_b = ( cfg->clkb_enable_mask & (1<<i) ) ? 1 : 0;
 		
-		board_dbg("CLKA%d: freq=%d Hz, divider=%d, enable=%d\n", i, freq_a, div_a, enable_a);
-		board_dbg("CLKA%d: freq=%d Hz, divider=%d, enable=%d\n", i, freq_b, div_b, enable_b);
+		//board_dbg("CLKA%d: freq=%d Hz, divider=%d, enable=%d\n", i, freq_b, div_b, enable_b);
 
 		if (mask->clka_freq_hz[i] && (cfg->clka_freq_hz[i] != ertm14_current_state->clka_freq_hz[i]))
 			clkab_set_output_divider(ERTM14_OUT_CLKA, i, div_a);
@@ -948,23 +980,20 @@ static void apply_config(struct ertm14_board_state *cfg,
 			clkab_enable_output( ERTM14_OUT_CLKB, i, enable_b );
 	}
 
-	/* DDSes */
-	if ((mask->lo.ampl_factor || mask->lo.ftw) &&
-		((cfg->lo.ampl_factor != ertm14_current_state->lo.ampl_factor) ||
-		     (cfg->lo.ftw != ertm14_current_state->lo.ftw)))
-			ad9910_program(&board.dds_ad9910_lo, cfg->lo.ftw, 0, cfg->lo.ampl_factor);
-	if ((mask->ref.ampl_factor || mask->ref.ftw) &&
-		((cfg->ref.ampl_factor != ertm14_current_state->ref.ampl_factor) ||
-		     (cfg->ref.ftw != ertm14_current_state->ref.ftw)))
-			ad9910_program(&board.dds_ad9910_ref, cfg->ref.ftw, 0, cfg->ref.ampl_factor);
 
-	board_dbg("DDS LO: FTW=0x%08x, ampl=%d\n", cfg->lo.ftw, cfg->lo.ampl_factor );
-	board_dbg("DDS REF: FTW=0x%08x, ampl=%d\n", cfg->ref.ftw, cfg->ref.ampl_factor );
+	/* DDSes */
+
+    if( apply_dds_config( &board.dds_ad9910_lo, &cfg->lo, &ertm14_current_state->lo, &mask->lo ) )
+        event_post(WRC_ERTM14_EVENT_LO_RECONFIGURED);
+
+    if( apply_dds_config( &board.dds_ad9910_ref, &cfg->ref, &ertm14_current_state->ref, &mask->ref ) )
+        event_post(WRC_ERTM14_EVENT_REF_RECONFIGURED);
+
 
 	for (i = ERTM14_RF_OUT_MIN_ID; i <= ERTM14_RF_OUT_MAX_ID; i++) {
 		int st_lo = cfg->lo.out_state[i] == ERTM15_RF_OUT_ON ? 1 : 0;
 		int st_ref = cfg->ref.out_state[i] == ERTM15_RF_OUT_ON ? 1 : 0;
-		board_dbg("i %d lo %x ref %x\n", i, st_lo, st_ref );
+	//	board_dbg("i %d lo %x ref %x\n", i, st_lo, st_ref );
 
 		if (mask->lo.out_state[i] &&
 			(cfg->lo.out_state[i] != ertm14_current_state->lo.out_state[i]))
@@ -1091,17 +1120,18 @@ static void subscribe_nco(struct ertm14_nco_reset *nco)
 	case ERTM14_DDS_SYNC_LO:
 		dds = &ertm14_current_state->lo;
 		ddss = lo;
+		event_post(WRC_ERTM14_EVENT_LO_RECONFIGURED);
 		break;
 	case ERTM14_DDS_SYNC_REF:
 		dds = &ertm14_current_state->ref;
 		ddss = ref;
+		event_post(WRC_ERTM14_EVENT_REF_RECONFIGURED);
 		break;
 	default:
 		return;		/* should never happen! */
 		break;
 	}
 
-	dds->sync_count = 0;
 	dds->sync_source = nco->sync_source;
 }
 
