@@ -100,6 +100,7 @@ int storage_sdbfs_erase( struct storage_device *dev, uint32_t addr, int force_ba
 int storage_sdbfs_format( struct storage_device *dev, uint32_t addr, int force_base );
 void storage_sdbfs_list(void);
 
+int storage_is_calibration_loaded(void);
 int storage_get_calibration_parameter( int id, uint32_t *valp );
 int storage_set_calibration_parameter( int id, uint32_t val );
 wrc_cal_data_t* storage_get_calibration_data(void);
