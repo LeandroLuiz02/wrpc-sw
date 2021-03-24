@@ -24,7 +24,7 @@ LIBS = $(TARGET).a $(TARGET).so libertm_display.so
 all: libs main
 libs: $(LIBS)
 
-$(TARGET).a $(TARGET).so: $(TARGET).o linux-uart-link.o common-uart-link.o
+$(TARGET).a $(TARGET).so: $(TARGET).o linux-uart-link.o common-uart-link.o udev-serial.o
 $(TARGET).so:
 	$(LD) -shared -o $@ $^
 $(TARGET).a:
