@@ -135,7 +135,7 @@ class ErtmTest(cmd.Cmd):
         except OSError as e:
             raise
         try:
-            self.lib = CDLL(solib_default1)
+            self.lib = CDLL(solib_default1, mode=RTLD_GLOBAL)
             self.display = CDLL(solib_display_default1)
         except OSError as e:
             pass

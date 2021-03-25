@@ -51,6 +51,19 @@ char *ertm_perror(int error)
 	return ertm_error_codes[-error].message;
 }
 
+struct ertm_sync_states ertm_sync_states[] = {
+	[ERTM_SYNC_STATE_RESTART] = { ERTM_SYNC_STATE_RESTART,
+		"rstr", "The output frequency or amplitude is changed by the user" },
+	[ERTM_SYNC_STATE_WAIT_TIMING] = { ERTM_SYNC_STATE_WAIT_TIMING,
+		"wtim", "The clock sync state machine is waiting for the WR timing to become available" },
+	[ERTM_SYNC_STATE_CONFIGURE] = { ERTM_SYNC_STATE_CONFIGURE,
+		"cfg", "The clock sync state machine is configuring the sync pulse generator" },
+	[ERTM_SYNC_STATE_WAIT_TRIGGER] = { ERTM_SYNC_STATE_WAIT_TRIGGER,
+		"wtrg", "The clock sync state machine is waiting for the sycn pulse to be triggered" },
+	[ERTM_SYNC_STATE_READY] = { ERTM_SYNC_STATE_READY,
+		"rdy", "Resync done, output clock is ready", },
+};
+
 /* translate enum to kHz if needed */
 static uint32_t clkab_freq_table[] = {
 	[ERTM_CLKAB_1000MHz] = 1000000000UL,
@@ -342,6 +355,9 @@ void dds_to_host_order(struct ertm14_dds_state *dds, struct ertm14_dds_state *ho
 	host->ftw 		= ntohl(dds->ftw);
 	host->amp_power 	= ntohl(dds->amp_power);
 	host->ampl_factor 	= ntohl(dds->ampl_factor);
+	host->sync_source 	= ntohl(dds->sync_source);
+	host->sync_count 	= ntohl(dds->sync_count);
+	host->sync_state	= dds->sync_state;
 	for (i = ERTM14_RF_OUT_MIN_ID; i <= ERTM14_RF_OUT_MAX_ID; i++) {
 		host->out_power[i] = ntohl(dds->out_power[i]);
 		host->out_state[i] = dds->out_state[i];
@@ -355,6 +371,9 @@ void dds_to_network_order(struct ertm14_dds_state *host, struct ertm14_dds_state
 	dds->ftw                 = htonl(host->ftw);
 	dds->amp_power           = htonl(host->amp_power);
 	dds->ampl_factor         = htonl(host->ampl_factor);
+	dds->sync_source 	 = ntohl(host->sync_source);
+	dds->sync_count 	 = ntohl(host->sync_count);
+	dds->sync_state		 = host->sync_state;
 	for (i = ERTM14_RF_OUT_MIN_ID; i <= ERTM14_RF_OUT_MAX_ID; i++) {
 		dds->out_power[i] = htonl(host->out_power[i]);
 		dds->out_state[i] = host->out_state[i];
@@ -373,6 +392,8 @@ void board_state_to_network_order(struct ertm14_board_state *host, struct ertm14
 		/* FIXME: not enum */
 		board->clka_freq_hz[i] = htonl(host->clka_freq_hz[i]);
 		board->clkb_freq_hz[i] = htonl(host->clkb_freq_hz[i]);
+		board->clka_sync_state[i] = host->clka_sync_state[i];
+		board->clkb_sync_state[i] = host->clkb_sync_state[i];
 	}
 }
 
@@ -388,6 +409,8 @@ void board_state_to_host_order(struct ertm14_board_state *board, struct ertm14_b
 		/* FIXME: not enum */
 		host->clka_freq_hz[i] = ntohl(board->clka_freq_hz[i]);
 		host->clkb_freq_hz[i] = ntohl(board->clkb_freq_hz[i]);
+		host->clka_sync_state[i] = board->clka_sync_state[i];
+		host->clkb_sync_state[i] = board->clkb_sync_state[i];
 	}
 }
 
@@ -572,12 +595,14 @@ static void update_board_config(struct ertm_status *st,
 	ertm_get_board_config(st, bs);
 }
 
-int ertm_get_freq(struct ertm_status *handle,
-		enum ertm_connector connector, int channel, uint32_t *freq)
+static int ertm_get_freq_sync_state(struct ertm_status *handle,
+		enum ertm_connector connector, int channel,
+		uint32_t *freq, int *sync_state)
 {
 	int err = 0;
 	struct ertm14_board_state *bs;
-	uint32_t *reg;
+	uint32_t *freg;
+	uint8_t *ssreg;
 
 	/* channel param is irrelevant for lo/ref */
 	if (connector == ERTM_LO || connector == ERTM_REF) {
@@ -589,25 +614,45 @@ int ertm_get_freq(struct ertm_status *handle,
 	bs = &handle->state->board_state;
 	switch (connector) {
 	case ERTM_CLKA:
-		reg = &bs->clka_freq_hz[channel];
+		freg  = &bs->clka_freq_hz[channel];
+		ssreg = &bs->clka_sync_state[channel];
 		// clkab_set_output_divider(ERTM14_OUT_CLKA, channel, freq);
 		break;
 	case ERTM_CLKB:
-		reg = &bs->clkb_freq_hz[channel];
+		freg  = &bs->clkb_freq_hz[channel];
+		ssreg = &bs->clkb_sync_state[channel];
 		break;
 	case ERTM_LO:
-		reg = &bs->lo.ftw;
+		freg  = &bs->lo.ftw;
+		ssreg = &bs->lo.sync_state;
 		break;
 	case ERTM_REF:
-		reg = &bs->ref.ftw;
+		freg  = &bs->ref.ftw;
+		ssreg = &bs->ref.sync_state;
 		break;
 	default:
 		errno = EINVAL;
 		return ERTM_BAD_CONNECTOR;
 	}
 	update_board_config(handle, &handle->state->board_state);
-	*freq = *reg;
+	*freq = *freg;
+	*sync_state = *ssreg;
 
+	return 0;
+}
+
+int ertm_get_freq(struct ertm_status *handle,
+		enum ertm_connector connector, int channel, uint32_t *freq)
+{
+	int unused;
+	return ertm_get_freq_sync_state(handle, connector, channel, freq, &unused);
+}
+
+int ertm_get_sync_state(struct ertm_status *handle,
+		enum ertm_connector connector, int channel, int *sync_state)
+{
+	uint32_t unused;
+	return ertm_get_freq_sync_state(handle, connector, channel, &unused, sync_state);
 	return 0;
 }
 
