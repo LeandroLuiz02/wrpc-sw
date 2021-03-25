@@ -941,20 +941,6 @@ void ertm14_apply_config(struct ertm14_board_state *cfg,
 		int enable_a = ( cfg->clka_enable_mask & (1<<i) ) ? 1 : 0;
 		int enable_b = ( cfg->clkb_enable_mask & (1<<i) ) ? 1 : 0;
 
-<<<<<<< HEAD
-		//board_dbg("CLKA%d: freq=%d Hz, divider=%d, enable=%d\n", i, freq_b, div_b, enable_b);
-
-		if (mask->clka_freq_hz[i] && (cfg->clka_freq_hz[i] != ertm14_current_state->clka_freq_hz[i]))
-			clkab_set_output_divider(ERTM14_OUT_CLKA, i, div_a);
-		if (mask->clkb_freq_hz[i] && (cfg->clkb_freq_hz[i] != ertm14_current_state->clkb_freq_hz[i]))
-			clkab_set_output_divider(ERTM14_OUT_CLKB, i, div_b);
-		if ((mask->clka_enable_mask & (1<<i)) &&
-			((cfg->clka_enable_mask & (1<<i)) != (ertm14_current_state->clka_enable_mask & (1<<i))))
-			clkab_enable_output( ERTM14_OUT_CLKA, i, enable_a );
-		if ((mask->clkb_enable_mask & (1<<i)) &&
-			((cfg->clkb_enable_mask & (1<<i)) != (ertm14_current_state->clkb_enable_mask & (1<<i))))
-			clkab_enable_output( ERTM14_OUT_CLKB, i, enable_b );
-=======
         if (force_all)
         {
             clkab_set_output_divider( ertm14_current_state, ERTM14_OUT_CLKA, i, div_a);
@@ -975,9 +961,7 @@ void ertm14_apply_config(struct ertm14_board_state *cfg,
                 ((cfg->clkb_enable_mask & (1<<i)) != (ertm14_current_state->clkb_enable_mask & (1<<i))))
                 clkab_enable_output( ertm14_current_state, ERTM14_OUT_CLKB, i, enable_b );
         }
->>>>>>> ertm14: dropped the multiple configurations code, not needed by the client
-	}
-
+        }
 
 	/* DDSes */
 
@@ -1625,9 +1609,12 @@ static void ertm14_init_leds(void)
 
     led_set_blink_timing( &board.leds.sync, 1000, 500 );
     led_action( &board.leds.sync, LED_COLOR_1, LED_BLINK );
+<<<<<<< HEAD
 
     ertm14_set_pps_out_mode( 0 );
 
+=======
+>>>>>>> ertm14: more self-explanatory configuration of the PPS output
 }
 
 static void set_main_dac( int value )
@@ -2068,6 +2055,8 @@ int ertm14_low_level_init(void)
 
     board_dbg("Init RF transceiver\n");
     wr_rf_frame_transceiver_create( &board.rf_xcvr, BASE_ERTM14_RF_FRAME_TRANSCEIVER );
+
+    ertm14_set_pps_out_mode( ERTM14_PPS_OUT_MODE_PPS );
 
     board_dbg("eRTM14/15 early init done\n");
 
