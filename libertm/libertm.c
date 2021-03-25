@@ -51,6 +51,19 @@ char *ertm_perror(int error)
 	return ertm_error_codes[-error].message;
 }
 
+struct ertm_sync_states ertm_sync_states[] = {
+	[ERTM_SYNC_STATE_RESTART] = { ERTM_SYNC_STATE_RESTART,
+		"rstr", "The output frequency or amplitude is changed by the user" },
+	[ERTM_SYNC_STATE_WAIT_TIMING] = { ERTM_SYNC_STATE_WAIT_TIMING,
+		"wtim", "The clock sync state machine is waiting for the WR timing to become available" },
+	[ERTM_SYNC_STATE_CONFIGURE] = { ERTM_SYNC_STATE_CONFIGURE,
+		"cfg", "The clock sync state machine is configuring the sync pulse generator" },
+	[ERTM_SYNC_STATE_WAIT_TRIGGER] = { ERTM_SYNC_STATE_WAIT_TRIGGER,
+		"wtrg", "The clock sync state machine is waiting for the sycn pulse to be triggered" },
+	[ERTM_SYNC_STATE_READY] = { ERTM_SYNC_STATE_READY,
+		"rdy", "Resync done, output clock is ready", },
+};
+
 /* translate enum to kHz if needed */
 static uint32_t clkab_freq_table[] = {
 	[ERTM_CLKAB_1000MHz] = 1000000000UL,
