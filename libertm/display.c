@@ -55,9 +55,11 @@ void display_ertm_clkab(struct ertm14_board_state *bs)
 		char *bonoff = (bs->clkb_enable_mask & (1<<i)) ? "on " : "off";
 		char *async = ertm_sync_states[bs->clka_sync_state[i]].label;
 		char *bsync = ertm_sync_states[bs->clkb_sync_state[i]].label;
-		printf("CLKA%02d: %3s %4s %10dHz", i, aonoff, async, bs->clka_freq_hz[i]);
+		double a_mhz = bs->clka_freq_hz[i] / 1.0e6;
+		double b_mhz = bs->clkb_freq_hz[i] / 1.0e6;
+		printf("CLKA%02d: %3s %4s %6.1f MHz", i, aonoff, async, a_mhz);
 		printf("     | ");
-		printf("CLKB%02d: %3s %4s %10dHz", i, bonoff, bsync, bs->clkb_freq_hz[i]);
+		printf("CLKB%02d: %3s %4s %6.1f MHz", i, bonoff, bsync, b_mhz);
 		printf("\n");
 	}
 }
