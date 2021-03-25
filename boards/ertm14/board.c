@@ -772,7 +772,8 @@ static void ertm14_dds_sync_calibrate(void)
     fine_pulse_gen_setup_channel ( &board.dds_sync_dev, ERTM14_DDS_SYNC_REF, 1, 100000 + windows[1].setpoint, 0, FINE_PULSE_GEN_CONTINUOUS );
 }
 
-static int ertm14_align_clocks(void)
+static int __attribute__((__unused__))
+ertm14_align_clocks(void)
 {
     uint32_t channel_mask = ( 1 << ERTM14_DDS_SYNC_LO ) | ( 1<< ERTM14_DDS_SYNC_REF );
 
@@ -2009,7 +2010,9 @@ int ertm14_get_current_config_id(void)
     return ertm14_current_config_id;
 }
 
-static int ertm14_commit_config( struct  ertm14_board_state *cfg )
+static int __attribute__((__unused__))
+ertm14_commit_config( struct  ertm14_board_state *cfg )
+
 {
     int i;
         for( i = 0; i <= ERTM14_CLKAB_OUT_MAX_ID; i++)
