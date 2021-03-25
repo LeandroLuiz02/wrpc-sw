@@ -11,14 +11,6 @@ static char *state_literal[] = {
 	[ERTM_RF_OUT_MONITOR] = "monitor",
 };
 
-static char *sync_state_literal[] = {
-	[ERTM14_CLK_SYNC_STATE_RESTART] = "rstr",
-	[ERTM14_CLK_SYNC_STATE_WAIT_TIMING] = "wtim",
-	[ERTM14_CLK_SYNC_STATE_CONFIGURE] = "cfg",
-	[ERTM14_CLK_SYNC_STATE_WAIT_TRIGGER] = "wtrg",
-	[ERTM14_CLK_SYNC_STATE_READY] = "rdy",
-};
-
 /* FIXME: all these are repeated, same as above */
 static double ampl_factor_to_float(uint8_t ampl_factor)
 {
@@ -41,9 +33,9 @@ void display_dds_state(struct ertm14_dds_state *dds1,
 	printf(" | ");
 	printf("REF pll_out_power: %5.3f dBm%9c",  dds2->amp_power/100.0, ' ');	/* ditto */
 	printf("\n");
-	printf("LO sync_state: %4s%17c", sync_state_literal[dds1->sync_state], ' ');
+	printf("LO sync_state: %4s%17c", ertm_sync_states[dds1->sync_state].label, ' ');
 	printf(" | ");
-	printf("REF sync_state: %4s%17c", sync_state_literal[dds2->sync_state], ' ');
+	printf("REF sync_state: %4s%17c", ertm_sync_states[dds2->sync_state].label, ' ');
 	printf("\n");
 	for (i = ERTM14_RF_OUT_MIN_ID; i <= ERTM14_RF_OUT_MAX_ID; i++) {
 		printf("LO%02d:   pow: %5.3f dBm  st:%-8s",
@@ -61,8 +53,8 @@ void display_ertm_clkab(struct ertm14_board_state *bs)
 	for (i = ERTM_CLKAB_MIN_CH; i <= ERTM_CLKAB_MAX_CH; i++) {
 		char *aonoff = (bs->clka_enable_mask & (1<<i)) ? "on " : "off";
 		char *bonoff = (bs->clkb_enable_mask & (1<<i)) ? "on " : "off";
-		char *async = sync_state_literal[bs->clka_sync_state[i]];
-		char *bsync = sync_state_literal[bs->clkb_sync_state[i]];
+		char *async = ertm_sync_states[bs->clka_sync_state[i]].label;
+		char *bsync = ertm_sync_states[bs->clkb_sync_state[i]].label;
 		printf("CLKA%02d: %3s %4s %10dHz", i, aonoff, async, bs->clka_freq_hz[i]);
 		printf("     | ");
 		printf("CLKB%02d: %3s %4s %10dHz", i, bonoff, bsync, bs->clkb_freq_hz[i]);
