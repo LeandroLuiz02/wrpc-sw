@@ -725,6 +725,13 @@ wrc_cal_data_t* storage_get_calibration_data(void)
 	return &cal_data;
 }
 
+static int calibration_loaded = 0;
+
+int storage_is_calibration_loaded(void)
+{
+	return calibration_loaded;
+}
+
 
 int storage_load_calibration(void)
 {
@@ -776,6 +783,11 @@ int storage_load_calibration(void)
 			((cal_data.params[i].id) >> 8) & 0xff,
 			((cal_data.params[i].id) >> 0) & 0xff,
 			  cal_data.params[i].value );
+	}
+
+	if( !ret )
+	{
+		calibration_loaded = 1;
 	}
 
 out_close:

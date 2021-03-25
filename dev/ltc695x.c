@@ -78,8 +78,6 @@ int ltc695x_configure(struct ltc695x_device *dev, struct ltc695x_config* cfg)
 #define LTC6953_OR1_MODE_MASK (0x60)
 #define LTC6953_OR1_MODE_SHIFT (5)
 
-#define LTC6953_OR1_MODE_
-
 int ltc6953_set_pdown( struct ltc695x_device *dev, int out, int pd )
 {
     int shift = (out & 0x3) * 2;
@@ -126,8 +124,6 @@ int ltc6953_configure_output( struct ltc695x_device *dev, int output, int divide
     uint8_t or0 = (div_mp << LTC6953_OR0_MP_DIV_SHIFT) | (div_md << LTC6953_OR0_MD_DIV_SHIFT);
     uint8_t or1 = invert ? LTC6953_OR1_OINV : 0;
 
-    or1 |= LTC6953_OR1_SRQEN; // enable sync feature
-
     int base = (output * 4 + 0xc);
 
     dev_dbg("div_mp = %d, div_md = %d\n", div_mp, div_md);
@@ -136,6 +132,21 @@ int ltc6953_configure_output( struct ltc695x_device *dev, int output, int divide
     dev_dbg("ltc6953 r%02x = %02x\n", base+1, or1 );
 
     ltc695x_write( dev, base + 0, or0 );
+    ltc695x_write( dev, base + 1, or1 );
+
+    return 0;
+}
+
+int ltc6953_set_srqen( struct ltc695x_device *dev, int output, int en )
+{
+    int base = (output * 4 + 0xc);
+    uint8_t or1 = ltc695x_read( dev, base + 1 );
+
+    if(en)
+        or1 |= LTC6953_OR1_SRQEN; // enable sync feature
+    else
+        or1 &= ~LTC6953_OR1_SRQEN; // enable sync feature
+
     ltc695x_write( dev, base + 1, or1 );
 
     return 0;

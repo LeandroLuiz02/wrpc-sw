@@ -49,5 +49,6 @@ int ltc695x_configure(struct ltc695x_device *dev, struct ltc695x_config* cfg);
 
 int ltc6953_enable_output( struct ltc695x_device *dev, int output, int enabled );
 int ltc6953_configure_output( struct ltc695x_device *dev, int output, int divider, int invert );
+int ltc6953_set_srqen( struct ltc695x_device *dev, int output, int en );
 
 #endif
