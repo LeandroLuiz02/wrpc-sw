@@ -1609,9 +1609,6 @@ static void ertm14_init_leds(void)
 
     led_set_blink_timing( &board.leds.sync, 1000, 500 );
     led_action( &board.leds.sync, LED_COLOR_1, LED_BLINK );
-
-    ertm14_set_pps_out_mode( 0 );
-        
 }
 
 static void set_main_dac( int value )
@@ -2052,6 +2049,8 @@ int ertm14_low_level_init(void)
 
     board_dbg("Init RF transceiver\n");
     wr_rf_frame_transceiver_create( &board.rf_xcvr, BASE_ERTM14_RF_FRAME_TRANSCEIVER );
+
+    ertm14_set_pps_out_mode( ERTM14_PPS_OUT_MODE_PPS );
 
     board_dbg("eRTM14/15 early init done\n");
 

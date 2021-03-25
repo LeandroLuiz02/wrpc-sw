@@ -141,6 +141,15 @@ extern unsigned char *BASE_EP;
 #define ERTM14_DDS_DEFAULT_AMPLITUDE 66 /* 12 dBm */
 
 
+/* modes of the PPS output, it can output a variety of signals
+   for diagnostics or pure fun ;-) */
+#define ERTM14_PPS_OUT_MODE_PPS 0
+#define ERTM14_PPS_OUT_MODE_RF_FRAME_VALID 1
+#define ERTM14_PPS_OUT_MODE_STRM_RX_VALID 2
+#define ERTM14_PPS_OUT_MODE_RF_RESET_NCO 3
+#define ERTM14_PPS_OUT_MODE_CONSTANT_0 4
+#define ERTM14_PPS_OUT_MODE_CONSTANT_1 5
+
 struct ertm14_board
 {
     struct gpio_device gpio_aux;
