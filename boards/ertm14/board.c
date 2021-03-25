@@ -1390,10 +1390,9 @@ static int evth_clkab_sync;
 
 static int clkab_sync_state;
 
-static int ertm14_clkab_sync_init(void)
+static void ertm14_clkab_sync_init(void)
 {
     clkab_sync_state = CLKAB_SYNC_STATE_IDLE;
-    return 0;
 }
 
 static int ertm14_clkab_sync_task(void)
