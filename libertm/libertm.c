@@ -772,7 +772,9 @@ struct ertm14_board_state *get_board_state(struct ertm_status *st)
 
 static double amp_power_to_dBm(uint32_t amp_power)
 {
-	return amp_power / 1000.0;
+	/* register values are in mBm, *not* mdBm;
+	 * hence the *10/1000.0 factor */
+	return amp_power / 100.0;
 }
 
 int ertm_get_power(struct ertm_status *handle,
