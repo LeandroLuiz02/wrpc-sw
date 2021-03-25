@@ -24,8 +24,6 @@ extern struct wb_clock_monitor_device ertm14_cmon;
 
 const char* clock_names[] = { "clk_dmtd", "clk_sys", "clk_tx1", "clk_tx2", "clk_rx" };
 
-static int selected_config = 0;
-
 static const char *get_rf_out_state_string(int state)
 {
     switch(state)
@@ -53,23 +51,9 @@ static void dump_dds_state( const char *name, struct ertm14_dds_state *cfg )
         );
 }
 
-static void dump_config( int id, struct ertm14_board_state *cfg )
+static void dump_config( struct ertm14_board_state *cfg )
 {
     int i = 0;
-
-    pp_printf("eRTM14 config %d: ", id);
-
-    if (!cfg->valid)
-    {
-        pp_printf("UNUSED\n");
-        return;
-    }
-    if (ertm14_get_current_config_id() == id )
-    {
-        pp_printf("ACTIVE\n");
-    } else {
-        pp_printf("\n");
-    }
 
     dump_dds_state("LO", &cfg->lo);
     dump_dds_state("REF", &cfg->ref);
@@ -89,9 +73,8 @@ static void dump_config( int id, struct ertm14_board_state *cfg )
 #define PARAM_ENABLE 2
 #define PARAM_FREQ 3
 
-static void set_dds_param(int param, const char *name, const char *value, const char *value2)
+static void set_dds_param(struct ertm14_board_state *cfg, struct ertm14_board_state* mask, int param, const char *name, const char *value, const char *value2)
 {
-
     if( !name || !value )
     {
         pp_printf("Too few arguments.\n");
@@ -101,69 +84,83 @@ static void set_dds_param(int param, const char *name, const char *value, const 
     int is_lo = !strcasecmp( name , "lo");
     int is_ref = !strcasecmp( name , "ref");
 
-    struct ertm14_board_state *cfg = ertm14_get_state_for_config(selected_config);
-    cfg->valid = 1;
-
     if(is_lo || is_ref)
     {
         struct ertm14_dds_state *dcfg = is_lo ? &cfg->lo : &cfg->ref;
+        struct ertm14_dds_state *dmask = is_lo ? &mask->lo : &mask->ref;
 
         switch(param)
         {
-            case PARAM_AMPL:    dcfg->ampl_factor = strtol(value, NULL, 0); break;
-            case PARAM_FTW:    dcfg->ftw = strtol(value, NULL, 0); break;
+            case PARAM_AMPL:
+                dcfg->ampl_factor = strtol(value, NULL, 0);
+                dmask->ampl_factor = 1;
+                break;
+            case PARAM_FTW:
+                dcfg->ftw = strtol(value, NULL, 0);
+                dmask->ftw = 1;
+                break;
             case PARAM_ENABLE:
             {
                  int out = atoi(value);
                  if( out >= ERTM14_RF_OUT_MIN_ID && out <= ERTM14_RF_OUT_MAX_ID )
                  {
-                    dcfg->out_state[out] = atoi(value2) ? ERTM15_RF_OUT_ON : ERTM15_RF_OUT_OFF;
-                 } else {
+                     dcfg->out_state[out] = atoi(value2) ? ERTM15_RF_OUT_ON : ERTM15_RF_OUT_OFF;
+                     dmask->out_state[out] = 1;
+                 }
+                 else
+                 {
                      pp_printf("Expected LO/REF output index\n");
                  }
                  break;
             }
-            default: break;
+            default:
+            break;
         }
-    } else {
-        pp_printf("expected DDS name: lo ref\n");
+    }
+    else
+    {
+        pp_printf("Expected DDS channel name: [lo,ref]\n");
     }
 }
 
-static void set_clk_param(int param, const char *name, const char *channel, const char *value)
+static void set_clk_param(struct ertm14_board_state *cfg, struct ertm14_board_state* mask, int param, const char *name, const char *channel, const char *value)
 {
     int is_clka = !strcasecmp( name , "clka");
     int is_clkb = !strcasecmp( name , "clkb");
 
-    struct ertm14_board_state *cfg = ertm14_get_state_for_config(selected_config);
-    cfg->valid = 1;
-
-
     if (is_clka || is_clkb)
     {
-
         uint32_t *freq = is_clka ? cfg->clka_freq_hz : cfg->clkb_freq_hz;
-        uint32_t *enable_mask = is_clka ? &cfg->clka_enable_mask : &cfg->clkb_enable_mask;
+        uint32_t *enable_flag = is_clka ? &cfg->clka_enable_mask : &cfg->clkb_enable_mask;
+
+        uint32_t *freq_mask = is_clka ? mask->clka_freq_hz : mask->clkb_freq_hz;
+        uint32_t *enable_flag_mask = is_clka ? &mask->clka_enable_mask : &mask->clkb_enable_mask;
 
         int ch = atoi(channel);
 
         switch(param)
         {
-            case PARAM_FREQ:    freq[ch] = atoi(value); break;
+            case PARAM_FREQ:
+                freq[ch] = atoi(value);
+                freq_mask[ch] = 1;
+            break;
             case PARAM_ENABLE:
             {
-              if(atoi(value))
-                *enable_mask |= (1<<ch);
-            else
-                *enable_mask &= ~(1<<ch);
+                *enable_flag_mask |= (1<<ch);
+                if(atoi(value))
+                    *enable_flag |= (1<<ch);
+                else
+                    *enable_flag &= ~(1<<ch);
 
-
+                break;
             }
             default: break;
         }
 
-    } else {
-        pp_printf("expected CLK name: clka clkb\n");
+    }
+    else
+    {
+        pp_printf("Expected CLK name: clka clkb\n");
     }
 }
 
@@ -217,7 +214,7 @@ static void ertm_show_cm(void)
     }
 }
 
-static void set_dds_sync_source( const char *channel_name, const char *src_name )
+static void set_dds_sync_source( struct ertm14_board_state *cfg, struct ertm14_board_state* mask, const char *channel_name, const char *src_name )
 {
 
 }
@@ -227,7 +224,11 @@ extern void phy_calibration_disable(void);
 
 static int cmd_ertm(const char *args[])
 {
-	int i = 0;
+    struct ertm14_board_state *cstate = ertm14_get_current_state();
+    struct ertm14_board_state mask, nstate;
+
+    memset(&mask, 0, sizeof(struct ertm14_board_state ) );
+
     if (!strcasecmp(args[0], "test-dac"))
     {
         ertm_test_dac();
@@ -242,17 +243,6 @@ static int cmd_ertm(const char *args[])
 
         phy_calibration_disable();
         spll_init( SPLL_MODE_DISABLED, 0, 0);
-
-      /*  for(;;)
-        {
-        spll_set_dac(-1, 0); // dmtd -> min
-        usleep(500000);
-        spll_set_dac(-1, 65530); // dmtd -> max
-        usleep(500000);
-        pp_printf(".");
-
-        }*/
-
 
         pp_printf("Main Ref clock: ");
 
@@ -285,42 +275,23 @@ static int cmd_ertm(const char *args[])
         int dmtd_mid = measure_clock( ERTM14_CMON_CLK_DMTD, ERTM14_CMON_CLK_REF, 20000000 );
 
         pp_printf("min=%d, max=%d, mid=%d Hz\n", dmtd_min, dmtd_max, dmtd_mid);
-
-
-
     } else if (!strcasecmp(args[0], "show-config") ) {
-        dump_config( i, ertm14_get_state_for_config( selected_config ) );
-
-    } else if (!strcasecmp(args[0], "activate-config") ) {
-        if( !args[1] )
-        {
-            pp_printf("expected configuration ID\n");
-        }
-        int id = atoi(args[1]);
-        pp_printf("Activating configuration %d:\n", id );
-        dump_config( id, ertm14_get_state_for_config( id ) );
-
-        ertm14_apply_config( id );
-
-
-    } else if (!strcasecmp(args[0], "select-config")) {
-        if(args[1])
-            selected_config = atoi( args[1] );
-
-        pp_printf("Selected configuration: %d\n", selected_config);
+        dump_config( cstate );
     } else if (!strcasecmp(args[0], "set-dds-ftw")) {
-        set_dds_param(PARAM_FTW, args[1], args[2], args[3] );
+        set_dds_param( &nstate, &mask, PARAM_FTW, args[1], args[2], args[3] );
     } else if (!strcasecmp(args[0], "set-dds-ampl")) {
-        set_dds_param(PARAM_AMPL, args[1], args[2], 0 );
+        set_dds_param( &nstate, &mask, PARAM_AMPL, args[1], args[2], 0 );
     } else if (!strcasecmp(args[0], "set-dds-enable")) {
-        set_dds_param(PARAM_ENABLE, args[1], args[2], args[3]);
+        set_dds_param( &nstate, &mask, PARAM_ENABLE, args[1], args[2], args[3]);
     } else if (!strcasecmp(args[0], "set-clk-enable")) {
-        set_clk_param(PARAM_ENABLE, args[1], args[2], args[3]);
+        set_clk_param( &nstate, &mask, PARAM_ENABLE, args[1], args[2], args[3]);
     } else if (!strcasecmp(args[0], "set-clk-freq")) {
-        set_clk_param(PARAM_FREQ, args[1], args[2] ,args[3]);
+        set_clk_param( &nstate, &mask, PARAM_FREQ, args[1], args[2] ,args[3]);
     } else if (!strcasecmp(args[0], "set-dds-sync-source")) {
-        set_dds_sync_source(args[1], args[2]);
+        set_dds_sync_source( &nstate, &mask, args[1], args[2]);
     }
+
+    ertm14_apply_config( &nstate, &mask, 0 );
     return 0;
 }
 
@@ -357,8 +328,7 @@ static int ertm14_monitor_ui(void)
 
     ret = diag_read_word(8, DIAG_RO_BANK, &val);
 
-    int id = ertm14_get_current_config_id();
-    struct ertm14_board_state *st = ertm14_get_state_for_config(id);
+    struct ertm14_board_state *st = ertm14_get_current_state();
 
     if(!st)
         return 0;
