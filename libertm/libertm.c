@@ -342,6 +342,9 @@ void dds_to_host_order(struct ertm14_dds_state *dds, struct ertm14_dds_state *ho
 	host->ftw 		= ntohl(dds->ftw);
 	host->amp_power 	= ntohl(dds->amp_power);
 	host->ampl_factor 	= ntohl(dds->ampl_factor);
+	host->sync_source 	= ntohl(dds->sync_source);
+	host->sync_count 	= ntohl(dds->sync_count);
+	host->sync_state	= dds->sync_state;
 	for (i = ERTM14_RF_OUT_MIN_ID; i <= ERTM14_RF_OUT_MAX_ID; i++) {
 		host->out_power[i] = ntohl(dds->out_power[i]);
 		host->out_state[i] = dds->out_state[i];
@@ -355,6 +358,9 @@ void dds_to_network_order(struct ertm14_dds_state *host, struct ertm14_dds_state
 	dds->ftw                 = htonl(host->ftw);
 	dds->amp_power           = htonl(host->amp_power);
 	dds->ampl_factor         = htonl(host->ampl_factor);
+	dds->sync_source 	 = ntohl(host->sync_source);
+	dds->sync_count 	 = ntohl(host->sync_count);
+	dds->sync_state		 = host->sync_state;
 	for (i = ERTM14_RF_OUT_MIN_ID; i <= ERTM14_RF_OUT_MAX_ID; i++) {
 		dds->out_power[i] = htonl(host->out_power[i]);
 		dds->out_state[i] = host->out_state[i];
@@ -373,6 +379,8 @@ void board_state_to_network_order(struct ertm14_board_state *host, struct ertm14
 		/* FIXME: not enum */
 		board->clka_freq_hz[i] = htonl(host->clka_freq_hz[i]);
 		board->clkb_freq_hz[i] = htonl(host->clkb_freq_hz[i]);
+		board->clka_sync_state[i] = host->clka_sync_state[i];
+		board->clkb_sync_state[i] = host->clkb_sync_state[i];
 	}
 }
 
@@ -388,6 +396,8 @@ void board_state_to_host_order(struct ertm14_board_state *board, struct ertm14_b
 		/* FIXME: not enum */
 		host->clka_freq_hz[i] = ntohl(board->clka_freq_hz[i]);
 		host->clkb_freq_hz[i] = ntohl(board->clkb_freq_hz[i]);
+		host->clka_sync_state[i] = board->clka_sync_state[i];
+		host->clkb_sync_state[i] = board->clkb_sync_state[i];
 	}
 }
 
