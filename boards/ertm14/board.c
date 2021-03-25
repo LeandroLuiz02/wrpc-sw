@@ -105,14 +105,10 @@ static uint16_t ntohs(uint16_t __netshort)
 #include <errno.h>
 
 struct ertm14_board board;
-int ertm14_current_config_id = 0;
-struct ertm14_board_state ertm14_configs[ ERTM14_MAX_CONFIGS ];
+struct ertm14_board_state _board_state;
 struct ertm14_nco_reset ertm14_nco_stats[2];
 
-/* at the moment, only config 0 is in use and current
- * note that RF power monitoring uses the current config id to
- * store measured pow values */
-struct ertm14_board_state *ertm14_current_state = &ertm14_configs[0];
+struct ertm14_board_state *ertm14_current_state = &_board_state;
 struct ertm14_board_state ertm14_next_state;
 struct ertm14_board_state ertm14_mask;
 struct ertm14_board_state ertm14_hardware;
@@ -892,14 +888,12 @@ static int clkab_set_output_divider( struct ertm14_board_state *state, int clka_
 static int clkab_enable_output( struct ertm14_board_state *state, int clka_or_clkb, int output, int enable);
 static int clkab_enable_sync( struct ertm14_board_state *state, int clka_or_clkb, int output, int enable );
 
-static int apply_dds_config( struct ad9910_device *dev, struct ertm14_dds_state* new_state, struct ertm14_dds_state *old_state, struct ertm14_dds_state *mask )
+static int apply_dds_config( struct ad9910_device *dev, struct ertm14_dds_state* new_state, struct ertm14_dds_state *old_state, struct ertm14_dds_state *mask, int force_all )
 {
     uint32_t new_ftw = old_state->ftw;
     uint32_t new_ampl_factor = old_state->ampl_factor;
 
     int config_changed = 0;
-
-    pp_printf("oaf %d naf %d\n", old_state->ampl_factor, new_state->ampl_factor );
 
 	if( mask->ampl_factor && ( new_state->ampl_factor != old_state->ampl_factor) )
     {
@@ -913,6 +907,12 @@ static int apply_dds_config( struct ad9910_device *dev, struct ertm14_dds_state*
         config_changed = 1;
     }
 
+    if( force_all )
+    {
+        new_ftw = new_state->ftw;
+        new_ampl_factor = new_state->ampl_factor;
+        config_changed = 1;
+    }
 
     if( config_changed )
     {
@@ -925,8 +925,8 @@ static int apply_dds_config( struct ad9910_device *dev, struct ertm14_dds_state*
 }
 
 
-static void apply_config(struct ertm14_board_state *cfg,
-	struct ertm14_board_state *mask)
+void ertm14_apply_config(struct ertm14_board_state *cfg,
+	struct ertm14_board_state *mask, int force_all)
 {
 	/* this is lifted from Tom's ertm14_commit_board_config,
 	 * adding a condition to each operation to mask them at will
@@ -941,6 +941,7 @@ static void apply_config(struct ertm14_board_state *cfg,
 		int enable_a = ( cfg->clka_enable_mask & (1<<i) ) ? 1 : 0;
 		int enable_b = ( cfg->clkb_enable_mask & (1<<i) ) ? 1 : 0;
 
+<<<<<<< HEAD
 		//board_dbg("CLKA%d: freq=%d Hz, divider=%d, enable=%d\n", i, freq_b, div_b, enable_b);
 
 		if (mask->clka_freq_hz[i] && (cfg->clka_freq_hz[i] != ertm14_current_state->clka_freq_hz[i]))
@@ -953,41 +954,69 @@ static void apply_config(struct ertm14_board_state *cfg,
 		if ((mask->clkb_enable_mask & (1<<i)) &&
 			((cfg->clkb_enable_mask & (1<<i)) != (ertm14_current_state->clkb_enable_mask & (1<<i))))
 			clkab_enable_output( ERTM14_OUT_CLKB, i, enable_b );
+=======
+        if (force_all)
+        {
+            clkab_set_output_divider( ertm14_current_state, ERTM14_OUT_CLKA, i, div_a);
+            clkab_set_output_divider( ertm14_current_state, ERTM14_OUT_CLKB, i, div_b);
+            clkab_enable_output( ertm14_current_state, ERTM14_OUT_CLKA, i, enable_a );
+            clkab_enable_output( ertm14_current_state, ERTM14_OUT_CLKB, i, enable_b );
+        }
+        else
+        {
+            if (mask->clka_freq_hz[i] && (cfg->clka_freq_hz[i] != ertm14_current_state->clka_freq_hz[i]))
+                clkab_set_output_divider( ertm14_current_state, ERTM14_OUT_CLKA, i, div_a);
+            if (mask->clkb_freq_hz[i] && (cfg->clkb_freq_hz[i] != ertm14_current_state->clkb_freq_hz[i]))
+                clkab_set_output_divider( ertm14_current_state, ERTM14_OUT_CLKB, i, div_b);
+            if ((mask->clka_enable_mask & (1<<i)) &&
+                ((cfg->clka_enable_mask & (1<<i)) != (ertm14_current_state->clka_enable_mask & (1<<i))))
+                clkab_enable_output( ertm14_current_state, ERTM14_OUT_CLKA, i, enable_a );
+            if ((mask->clkb_enable_mask & (1<<i)) &&
+                ((cfg->clkb_enable_mask & (1<<i)) != (ertm14_current_state->clkb_enable_mask & (1<<i))))
+                clkab_enable_output( ertm14_current_state, ERTM14_OUT_CLKB, i, enable_b );
+        }
+>>>>>>> ertm14: dropped the multiple configurations code, not needed by the client
 	}
 
 
 	/* DDSes */
 
-    if( apply_dds_config( &board.dds_ad9910_lo, &cfg->lo, &ertm14_current_state->lo, &mask->lo ) )
+    if( apply_dds_config( &board.dds_ad9910_lo, &cfg->lo, &ertm14_current_state->lo, &mask->lo, force_all ) )
         event_post(WRC_ERTM14_EVENT_LO_RECONFIGURED);
 
-    if( apply_dds_config( &board.dds_ad9910_ref, &cfg->ref, &ertm14_current_state->ref, &mask->ref ) )
+    if( apply_dds_config( &board.dds_ad9910_ref, &cfg->ref, &ertm14_current_state->ref, &mask->ref, force_all ) )
         event_post(WRC_ERTM14_EVENT_REF_RECONFIGURED);
-
 
 	for (i = ERTM14_RF_OUT_MIN_ID; i <= ERTM14_RF_OUT_MAX_ID; i++) {
 		int st_lo = cfg->lo.out_state[i] == ERTM15_RF_OUT_ON ? 1 : 0;
 		int st_ref = cfg->ref.out_state[i] == ERTM15_RF_OUT_ON ? 1 : 0;
 	//	board_dbg("i %d lo %x ref %x\n", i, st_lo, st_ref );
 
-		if (mask->lo.out_state[i] &&
-			(cfg->lo.out_state[i] != ertm14_current_state->lo.out_state[i]))
-				ertm15_rf_distr_output_enable(&board.rf_distr, ERTM15_RF_LO, i, st_lo );
-		if (mask->ref.out_state[i] &&
-			(cfg->ref.out_state[i] != ertm14_current_state->ref.out_state[i]))
-				ertm15_rf_distr_output_enable(&board.rf_distr, ERTM15_RF_REF, i, st_ref );
+        if( force_all )
+        {
+    	    ertm15_rf_distr_output_enable(&board.rf_distr, ERTM15_RF_LO, i, st_lo );
+	        ertm15_rf_distr_output_enable(&board.rf_distr, ERTM15_RF_REF, i, st_ref );
+        }
+        else
+        {
+            if (mask->lo.out_state[i] &&
+                (cfg->lo.out_state[i] != ertm14_current_state->lo.out_state[i]))
+                    ertm15_rf_distr_output_enable(&board.rf_distr, ERTM15_RF_LO, i, st_lo );
+            if (mask->ref.out_state[i] &&
+                (cfg->ref.out_state[i] != ertm14_current_state->ref.out_state[i]))
+                    ertm15_rf_distr_output_enable(&board.rf_distr, ERTM15_RF_REF, i, st_ref );
+        }
 	}
 
-        ertm15_update_rf_switches( &board.rf_distr );
+    ertm15_update_rf_switches( &board.rf_distr );
 }
 
 static void commit_board_config(struct ertm14_board_state *mask)
 {
     copy_config(&ertm14_mask, mask);
     board_state_to_no(&ertm14_mask, 0);
-    apply_config(&ertm14_next_state, &ertm14_mask);
+    ertm14_apply_config(&ertm14_next_state, &ertm14_mask, 0);
     update_config(ertm14_current_state, &ertm14_next_state, &ertm14_mask);
-    event_post(WRC_ERTM14_EVENT_APPLY_NEW_CONFIG);
     clean_config(&ertm14_next_state);
     clean_config(&ertm14_mask);
 }
@@ -2047,69 +2076,54 @@ int ertm14_low_level_init(void)
     return 0;
 }
 
-void ertm14_config_init()
+void ertm14_config_init(void)
 {
-    int i, j;
+    int j;
 
-    for(i = 0; i < ERTM14_MAX_CONFIGS; i++)
+    struct ertm14_board_state *cfg = ertm14_current_state;
+
+    cfg->valid = 1;
+    cfg->lo.ftw = ERTM14_DDS_DEFAULT_FTW;
+    cfg->ref.ftw = ERTM14_DDS_DEFAULT_FTW;
+    cfg->lo.ampl_factor = ERTM14_DDS_DEFAULT_AMPLITUDE;
+    cfg->ref.ampl_factor = ERTM14_DDS_DEFAULT_AMPLITUDE;
+
+    for (j = 0; j <= ERTM14_RF_OUT_MAX_ID; j++)
     {
-        struct ertm14_board_state *cfg = &ertm14_configs[i];
-
-        cfg->valid = 1;
-        cfg->lo.ftw = ERTM14_DDS_DEFAULT_FTW;
-        cfg->ref.ftw = ERTM14_DDS_DEFAULT_FTW;
-        cfg->lo.ampl_factor = ERTM14_DDS_DEFAULT_AMPLITUDE;
-        cfg->ref.ampl_factor = ERTM14_DDS_DEFAULT_AMPLITUDE;
-
-        for( j = 0; j <= ERTM14_RF_OUT_MAX_ID; j++)
-        {
-            cfg->ref.out_state [j] = ERTM15_RF_OUT_MONITOR;
-            cfg->lo.out_state [j] = ERTM15_RF_OUT_MONITOR;
-        }
-
-        cfg->ref.sync_count = 0;
-        cfg->lo.sync_count = 0;
-
-        cfg->ref.sync_source = ERTM14_SYNC_SOURCE_RF_TRIGGER;
-        cfg->lo.sync_source = ERTM14_SYNC_SOURCE_RF_TRIGGER;
-
-        cfg->ref.sync_state = ERTM14_CLK_SYNC_STATE_RESTART;
-        cfg->lo.sync_state = ERTM14_CLK_SYNC_STATE_RESTART;
-
-        for(j = 0; j <= ERTM14_CLKAB_OUT_MAX_ID; j++)
-        {
-            cfg->clka_freq_hz[j] = 500000000;
-            cfg->clkb_freq_hz[j] = 500000000;
-        }
-
-        cfg->clka_enable_mask = -1; // all CLKA outputs ON
-        cfg->clkb_enable_mask = -1; // all CLKB outputs ON
-
-	copy_config(&ertm14_hardware, cfg);
+        cfg->ref.out_state[j] = ERTM15_RF_OUT_MONITOR;
+        cfg->lo.out_state[j] = ERTM15_RF_OUT_MONITOR;
     }
+
+    cfg->ref.sync_count = 0;
+    cfg->lo.sync_count = 0;
+
+    cfg->ref.sync_source = ERTM14_SYNC_SOURCE_RF_TRIGGER;
+    cfg->lo.sync_source = ERTM14_SYNC_SOURCE_RF_TRIGGER;
+
+    cfg->ref.sync_state = ERTM14_CLK_SYNC_STATE_RESTART;
+    cfg->lo.sync_state = ERTM14_CLK_SYNC_STATE_RESTART;
+
+    for (j = 0; j <= ERTM14_CLKAB_OUT_MAX_ID; j++)
+    {
+        cfg->clka_freq_hz[j] = 500000000;
+        cfg->clkb_freq_hz[j] = 500000000;
+        cfg->clka_sync_state[j] = ERTM14_CLK_SYNC_STATE_RESTART;
+        cfg->clkb_sync_state[j] = ERTM14_CLK_SYNC_STATE_RESTART;
+    }
+
+    cfg->clka_enable_mask = -1; // all CLKA outputs ON
+    cfg->clkb_enable_mask = -1; // all CLKB outputs ON
+
+    copy_config(&ertm14_hardware, cfg);
 }
 
-struct ertm14_board_state *ertm14_get_state_for_config(int config_id)
+struct ertm14_board_state *ertm14_get_current_state(void)
 {
-    return &ertm14_configs[config_id];
+    return ertm14_current_state;
 }
 
-int ertm14_apply_config(int config_id)
-{
-    board_dbg("Apply_config: %d\n", config_id );
-    copy_config(ertm14_current_state, &ertm14_configs[config_id]);
-    event_post ( WRC_ERTM14_EVENT_APPLY_NEW_CONFIG );
-    return 0;
-}
-
-int ertm14_get_current_config_id(void)
-{
-    return ertm14_current_config_id;
-}
-
-static int __attribute__((__unused__))
-ertm14_commit_config( struct  ertm14_board_state *cfg )
-
+#if 0
+static int ertm14_commit_config( struct  ertm14_board_state *cfg )
 {
     int i;
         for( i = 0; i <= ERTM14_CLKAB_OUT_MAX_ID; i++)
@@ -2127,14 +2141,13 @@ ertm14_commit_config( struct  ertm14_board_state *cfg )
             board_dbg("CLKA%d: freq=%d Hz, divider=%d, enable=%d\n", i, freq_a, div_a, enable_a);
             board_dbg("CLKA%d: freq=%d Hz, divider=%d, enable=%d\n", i, freq_b, div_b, enable_b);
 
-            clkab_set_output_divider( ERTM14_OUT_CLKA, i, div_a );
-            clkab_set_output_divider( ERTM14_OUT_CLKB, i, div_b );
-            clkab_enable_output( ERTM14_OUT_CLKA, i, enable_a );
-            clkab_enable_output( ERTM14_OUT_CLKB, i, enable_b );
+            clkab_set_output_divider( ertm14_current_state, ERTM14_OUT_CLKA, i, div_a );
+            clkab_set_output_divider( ertm14_current_state, ERTM14_OUT_CLKB, i, div_b );
+            clkab_enable_output( ertm14_current_state, ERTM14_OUT_CLKA, i, enable_a );
+            clkab_enable_output( ertm14_current_state, ERTM14_OUT_CLKB, i, enable_b );
         }
 
-            // DDSes
-
+        // DDSes
         ad9910_program(&board.dds_ad9910_lo, cfg->lo.ftw, 0, cfg->lo.ampl_factor );
         ad9910_program(&board.dds_ad9910_ref, cfg->ref.ftw, 0, cfg->ref.ampl_factor );
 
@@ -2154,19 +2167,7 @@ ertm14_commit_config( struct  ertm14_board_state *cfg )
         ertm15_update_rf_switches( &board.rf_distr );
     return 0;
 }
-
-static int evth_config_update_listener;
-
-static void ertm14_config_update_init(void)
-{
-
-}
-
-/* fixme: we don't need multiple configurations. Get rid of this code */
-static int ertm14_config_update_task(void)
-{
-    return 0;
-}
+#endif
 
 static struct {
     int freq;
@@ -2521,12 +2522,7 @@ int ertm15_update_rf_monitor( void )
         tmo_restart(&rfmon_timeout);
         ertm15_rf_distr_measure_power ( &board.rf_distr );
 
-        int id = ertm14_get_current_config_id();
-
-        if( id < 0 || id >= ERTM14_MAX_CONFIGS)
-            return 0;
-
-        struct ertm14_board_state *bstate = ertm14_get_state_for_config( id );
+        struct ertm14_board_state *bstate = ertm14_get_current_state();
 
         int i;
 
@@ -2566,7 +2562,11 @@ int wrc_board_init()
     wrc_task_create( "mmc15", mmc15_link_init, mmc15_link_poll );
     wrc_task_create( "rf-monitor", ertm15_init_rf_monitor, ertm15_update_rf_monitor );
     wrc_task_create( "leds", NULL, ertm14_update_leds );
-    ertm14_apply_config( 0 );
+
+    struct ertm14_board_state mask;
+    memset(&mask, 0xff, sizeof( struct ertm14_board_state )); // make sure we commit everything to HW
+
+    ertm14_apply_config( ertm14_current_state, &mask, 1 );
 
     return 0;
 }
