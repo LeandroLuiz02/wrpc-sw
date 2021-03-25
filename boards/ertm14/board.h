@@ -141,6 +141,15 @@ extern unsigned char *BASE_EP;
 #define ERTM14_DDS_DEFAULT_AMPLITUDE 66 /* 12 dBm */
 
 
+/* modes of the PPS output, it can output a variety of signals
+   for diagnostics or pure fun ;-) */
+#define ERTM14_PPS_OUT_MODE_PPS 0
+#define ERTM14_PPS_OUT_MODE_RF_FRAME_VALID 1
+#define ERTM14_PPS_OUT_MODE_STRM_RX_VALID 2
+#define ERTM14_PPS_OUT_MODE_RF_RESET_NCO 3
+#define ERTM14_PPS_OUT_MODE_CONSTANT_0 4
+#define ERTM14_PPS_OUT_MODE_CONSTANT_1 5
+
 struct ertm14_board
 {
     struct gpio_device gpio_aux;
@@ -194,11 +203,10 @@ struct ertm14_board
 extern struct ertm14_board board;
 
 void ertm14_config_init(void);
-struct ertm14_board_state *ertm14_get_state_for_config(int config_id);
-int ertm14_apply_config(int config_id);
-int ertm14_get_current_config_id(void);
-int ertm14_is_config_ready(void);
+struct ertm14_board_state *ertm14_get_current_state(void);
 int ertm14_get_clkab_divider( int freq );
 void ertm14_shell_init(void);
+void ertm14_apply_config(struct ertm14_board_state *cfg,
+	struct ertm14_board_state *mask, int force_all);
 
 #endif /* __BOARD_WRC_H */

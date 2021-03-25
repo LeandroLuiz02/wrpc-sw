@@ -104,14 +104,10 @@ static uint16_t ntohs(uint16_t __netshort)
 #include <errno.h>
 
 struct ertm14_board board;
-int ertm14_current_config_id = 0;
-struct ertm14_board_state ertm14_configs[ ERTM14_MAX_CONFIGS ];
+struct ertm14_board_state _board_state;
 struct ertm14_nco_reset ertm14_nco_stats[2];
 
-/* at the moment, only config 0 is in use and current
- * note that RF power monitoring uses the current config id to
- * store measured pow values */
-struct ertm14_board_state *ertm14_current_state = &ertm14_configs[0];
+struct ertm14_board_state *ertm14_current_state = &_board_state;
 struct ertm14_board_state ertm14_next_state;
 struct ertm14_board_state ertm14_mask;
 struct ertm14_board_state ertm14_hardware;
@@ -675,6 +671,10 @@ static int ertm14_dds_sync_init(void)
     fine_pulse_gen_setup_channel ( &board.dds_sync_dev, ERTM14_DDS_IOUPDATE_LO, 1, board.dds_sync_delays[ERTM14_DDS_IOUPDATE_LO], 0, 0 );
     fine_pulse_gen_setup_channel ( &board.dds_sync_dev, ERTM14_DDS_IOUPDATE_REF, 1, board.dds_sync_delays[ERTM14_DDS_IOUPDATE_REF], 0, 0 );
 
+    // LTC6953 EZS_SRQ (SYNC) pulse: positive polarity, trigger on PPS, pulse width > 1ms
+    fine_pulse_gen_setup_channel ( &board.dds_sync_dev, ERTM14_PLL_SYNC_CLKA, 1, board.dds_sync_delays[ERTM14_PLL_SYNC_CLKA], 1000, 0 );
+    fine_pulse_gen_setup_channel ( &board.dds_sync_dev, ERTM14_PLL_SYNC_CLKB, 1, board.dds_sync_delays[ERTM14_PLL_SYNC_CLKB], 1000, 0 );
+
     return 0;
 }
 
@@ -772,38 +772,6 @@ static void ertm14_dds_sync_calibrate(void)
     fine_pulse_gen_setup_channel ( &board.dds_sync_dev, ERTM14_DDS_SYNC_REF, 1, 100000 + windows[1].setpoint, 0, FINE_PULSE_GEN_CONTINUOUS );
 }
 
-static int __attribute__((__unused__))
-ertm14_align_clocks(void)
-{
-    uint32_t channel_mask = ( 1 << ERTM14_DDS_SYNC_LO ) | ( 1<< ERTM14_DDS_SYNC_REF );
-
-    fine_pulse_gen_trigger( &board.dds_sync_dev, channel_mask, 1 );
-    while ( !fine_pulse_gen_is_triggered( &board.dds_sync_dev, channel_mask ) );
-
-    int smp_err_lo = !!gen_gpio_in( &pin_ad9910_lo_sync_smp_err );
-    int smp_err_ref = !!gen_gpio_in( &pin_ad9910_ref_sync_smp_err );
-
-    board_dbg( "DDS SYNC complete: errLO=%d errREF=%d\n", smp_err_lo, smp_err_ref);
-    board_dbg("1\n");
-
-// now that we are done syncing DDS internal clocks, disable the fpga SYNC_CLK output
-    if( ! ( board.mode & ERTM14_MODE_WITHOUT_ERTM15 ) )
-    {
-        ad9910_configure_sync( &board.dds_ad9910_ref, 0, 0 );
-        ad9910_configure_sync( &board.dds_ad9910_lo, 0, 0 );
-    }
-
-    channel_mask = (1 << ERTM14_PLL_SYNC_CLKA) |
-                   (1 << ERTM14_PLL_SYNC_CLKB);
-
-
-
-    // fixme: trigger clkab sync to pps
-
-    board_dbg( "CLKAB sync complete\n");
-
-    return 0;
-}
 
 void blink(int id)
 {
@@ -915,17 +883,16 @@ static void get_board_config(struct ertm14_board_state *bs)
     copy_config(bs, result);
 }
 
-static int clkab_set_output_divider(int clka_or_clkb, int output, int divider);
-static int clkab_enable_output(int clka_or_clkb, int output, int enable);
+static int clkab_set_output_divider( struct ertm14_board_state *state, int clka_or_clkb, int output, int divider);
+static int clkab_enable_output( struct ertm14_board_state *state, int clka_or_clkb, int output, int enable);
+static int clkab_enable_sync( struct ertm14_board_state *state, int clka_or_clkb, int output, int enable );
 
-static int apply_dds_config( struct ad9910_device *dev, struct ertm14_dds_state* new_state, struct ertm14_dds_state *old_state, struct ertm14_dds_state *mask )
+static int apply_dds_config( struct ad9910_device *dev, struct ertm14_dds_state* new_state, struct ertm14_dds_state *old_state, struct ertm14_dds_state *mask, int force_all )
 {
     uint32_t new_ftw = old_state->ftw;
     uint32_t new_ampl_factor = old_state->ampl_factor;
 
     int config_changed = 0;
-
-    pp_printf("oaf %d naf %d\n", old_state->ampl_factor, new_state->ampl_factor );
 
 	if( mask->ampl_factor && ( new_state->ampl_factor != old_state->ampl_factor) )
     {
@@ -939,6 +906,12 @@ static int apply_dds_config( struct ad9910_device *dev, struct ertm14_dds_state*
         config_changed = 1;
     }
 
+    if( force_all )
+    {
+        new_ftw = new_state->ftw;
+        new_ampl_factor = new_state->ampl_factor;
+        config_changed = 1;
+    }
 
     if( config_changed )
     {
@@ -951,8 +924,8 @@ static int apply_dds_config( struct ad9910_device *dev, struct ertm14_dds_state*
 }
 
 
-static void apply_config(struct ertm14_board_state *cfg,
-	struct ertm14_board_state *mask)
+void ertm14_apply_config(struct ertm14_board_state *cfg,
+	struct ertm14_board_state *mask, int force_all)
 {
 	/* this is lifted from Tom's ertm14_commit_board_config,
 	 * adding a condition to each operation to mask them at will
@@ -966,54 +939,68 @@ static void apply_config(struct ertm14_board_state *cfg,
 		int div_b = ertm14_get_clkab_divider( freq_b );
 		int enable_a = ( cfg->clka_enable_mask & (1<<i) ) ? 1 : 0;
 		int enable_b = ( cfg->clkb_enable_mask & (1<<i) ) ? 1 : 0;
-		
-		//board_dbg("CLKA%d: freq=%d Hz, divider=%d, enable=%d\n", i, freq_b, div_b, enable_b);
 
-		if (mask->clka_freq_hz[i] && (cfg->clka_freq_hz[i] != ertm14_current_state->clka_freq_hz[i]))
-			clkab_set_output_divider(ERTM14_OUT_CLKA, i, div_a);
-		if (mask->clkb_freq_hz[i] && (cfg->clkb_freq_hz[i] != ertm14_current_state->clkb_freq_hz[i]))
-			clkab_set_output_divider(ERTM14_OUT_CLKB, i, div_b);
-		if ((mask->clka_enable_mask & (1<<i)) &&
-			((cfg->clka_enable_mask & (1<<i)) != (ertm14_current_state->clka_enable_mask & (1<<i))))
-			clkab_enable_output( ERTM14_OUT_CLKA, i, enable_a );
-		if ((mask->clkb_enable_mask & (1<<i)) &&
-			((cfg->clkb_enable_mask & (1<<i)) != (ertm14_current_state->clkb_enable_mask & (1<<i))))
-			clkab_enable_output( ERTM14_OUT_CLKB, i, enable_b );
+        if (force_all)
+        {
+            clkab_set_output_divider( ertm14_current_state, ERTM14_OUT_CLKA, i, div_a);
+            clkab_set_output_divider( ertm14_current_state, ERTM14_OUT_CLKB, i, div_b);
+            clkab_enable_output( ertm14_current_state, ERTM14_OUT_CLKA, i, enable_a );
+            clkab_enable_output( ertm14_current_state, ERTM14_OUT_CLKB, i, enable_b );
+        }
+        else
+        {
+            if (mask->clka_freq_hz[i] && (cfg->clka_freq_hz[i] != ertm14_current_state->clka_freq_hz[i]))
+                clkab_set_output_divider( ertm14_current_state, ERTM14_OUT_CLKA, i, div_a);
+            if (mask->clkb_freq_hz[i] && (cfg->clkb_freq_hz[i] != ertm14_current_state->clkb_freq_hz[i]))
+                clkab_set_output_divider( ertm14_current_state, ERTM14_OUT_CLKB, i, div_b);
+            if ((mask->clka_enable_mask & (1<<i)) &&
+                ((cfg->clka_enable_mask & (1<<i)) != (ertm14_current_state->clka_enable_mask & (1<<i))))
+                clkab_enable_output( ertm14_current_state, ERTM14_OUT_CLKA, i, enable_a );
+            if ((mask->clkb_enable_mask & (1<<i)) &&
+                ((cfg->clkb_enable_mask & (1<<i)) != (ertm14_current_state->clkb_enable_mask & (1<<i))))
+                clkab_enable_output( ertm14_current_state, ERTM14_OUT_CLKB, i, enable_b );
+        }
 	}
 
 
 	/* DDSes */
 
-    if( apply_dds_config( &board.dds_ad9910_lo, &cfg->lo, &ertm14_current_state->lo, &mask->lo ) )
+    if( apply_dds_config( &board.dds_ad9910_lo, &cfg->lo, &ertm14_current_state->lo, &mask->lo, force_all ) )
         event_post(WRC_ERTM14_EVENT_LO_RECONFIGURED);
 
-    if( apply_dds_config( &board.dds_ad9910_ref, &cfg->ref, &ertm14_current_state->ref, &mask->ref ) )
+    if( apply_dds_config( &board.dds_ad9910_ref, &cfg->ref, &ertm14_current_state->ref, &mask->ref, force_all ) )
         event_post(WRC_ERTM14_EVENT_REF_RECONFIGURED);
-
 
 	for (i = ERTM14_RF_OUT_MIN_ID; i <= ERTM14_RF_OUT_MAX_ID; i++) {
 		int st_lo = cfg->lo.out_state[i] == ERTM15_RF_OUT_ON ? 1 : 0;
 		int st_ref = cfg->ref.out_state[i] == ERTM15_RF_OUT_ON ? 1 : 0;
 	//	board_dbg("i %d lo %x ref %x\n", i, st_lo, st_ref );
 
-		if (mask->lo.out_state[i] &&
-			(cfg->lo.out_state[i] != ertm14_current_state->lo.out_state[i]))
-				ertm15_rf_distr_output_enable(&board.rf_distr, ERTM15_RF_LO, i, st_lo );
-		if (mask->ref.out_state[i] &&
-			(cfg->ref.out_state[i] != ertm14_current_state->ref.out_state[i]))
-				ertm15_rf_distr_output_enable(&board.rf_distr, ERTM15_RF_REF, i, st_ref );
+        if( force_all )
+        {
+    	    ertm15_rf_distr_output_enable(&board.rf_distr, ERTM15_RF_LO, i, st_lo );
+	        ertm15_rf_distr_output_enable(&board.rf_distr, ERTM15_RF_REF, i, st_ref );
+        }
+        else
+        {
+            if (mask->lo.out_state[i] &&
+                (cfg->lo.out_state[i] != ertm14_current_state->lo.out_state[i]))
+                    ertm15_rf_distr_output_enable(&board.rf_distr, ERTM15_RF_LO, i, st_lo );
+            if (mask->ref.out_state[i] &&
+                (cfg->ref.out_state[i] != ertm14_current_state->ref.out_state[i]))
+                    ertm15_rf_distr_output_enable(&board.rf_distr, ERTM15_RF_REF, i, st_ref );
+        }
 	}
 
-        ertm15_update_rf_switches( &board.rf_distr );
+    ertm15_update_rf_switches( &board.rf_distr );
 }
 
 static void commit_board_config(struct ertm14_board_state *mask)
 {
     copy_config(&ertm14_mask, mask);
     board_state_to_no(&ertm14_mask, 0);
-    apply_config(&ertm14_next_state, &ertm14_mask);
+    ertm14_apply_config(&ertm14_next_state, &ertm14_mask, 0);
     update_config(ertm14_current_state, &ertm14_next_state, &ertm14_mask);
-    event_post(WRC_ERTM14_EVENT_APPLY_NEW_CONFIG);
     clean_config(&ertm14_next_state);
     clean_config(&ertm14_mask);
 }
@@ -1395,6 +1382,120 @@ static int ertm14_dds_nco_sync_task(void)
     return 0;
 }
 
+static int evth_clkab_sync;
+
+#define CLKAB_SYNC_STATE_IDLE 0
+#define CLKAB_SYNC_STATE_WAIT_AFTER_PPS 1
+#define CLKAB_SYNC_STATE_WAIT_TRIGGER 2
+
+static int clkab_sync_state;
+
+static int ertm14_clkab_sync_init(void)
+{
+    clkab_sync_state = CLKAB_SYNC_STATE_IDLE;
+    return 0;
+}
+
+static int ertm14_clkab_sync_task(void)
+{
+    int evt = event_poll( evth_clkab_sync );
+    uint8_t *stateA = ertm14_current_state->clka_sync_state;
+    uint8_t *stateB = ertm14_current_state->clkb_sync_state;
+
+    if( evt == WRC_EVENT_TIMING_UP )
+    {
+        int i;
+        board_dbg("[clkab_sync] WR timing up, forcing resync of all CLKAB clocks.\n");
+
+        for( i = ERTM14_CLKAB_OUT_MIN_ID; i <= ERTM14_CLKAB_OUT_MAX_ID; i++ )
+        {
+            stateA[i] = ERTM14_CLK_SYNC_STATE_RESTART;
+            stateB[i] = ERTM14_CLK_SYNC_STATE_RESTART;
+        }
+    }
+
+    uint64_t secs;
+    uint32_t nsecs;
+
+    shw_pps_gen_unmask_output(1);
+    shw_pps_gen_get_time( &secs, &nsecs );
+
+    switch(clkab_sync_state)
+    {
+        case CLKAB_SYNC_STATE_IDLE:
+            clkab_sync_state = CLKAB_SYNC_STATE_WAIT_AFTER_PPS;
+            break;
+        case CLKAB_SYNC_STATE_WAIT_AFTER_PPS:
+            /* we wait here until we are rather closer to the previous PPS pulse than the next one.
+               the reason is, subsequent writes to LTC695x take some milliseconds and must be done
+               before the next sync pulse is produced by the fine_pulse_gen */
+            if( nsecs < 300000000 )
+            {
+                int i;
+                for( i = ERTM14_CLKAB_OUT_MIN_ID; i <= ERTM14_CLKAB_OUT_MAX_ID; i++ )
+                {
+                    /* check which CLKA/B outputs have changed their configuration and 
+                    set the SREQN bit in the LTC6953. Next time a PPS pulse arrives to the EZS_SRQ
+                    input of the corresponding clock fanout chip, the clock phases of the outputs
+                    will be aligned with the WR PPS. Note: it's *EXTREMELY IMPORTANT* to only
+                    assert SREQN (clkab_enable_sync) on the outputs that have had their configurations
+                    changed, as sthe sync procedure causes an intermittent squelch of the clock output
+                    being synced */
+                    if( stateA[i] == ERTM14_CLK_SYNC_STATE_RESTART )
+                    {
+                        board_dbg("[clkab_sync] CLKA%d pending\n", i);
+                        clkab_enable_sync( ertm14_current_state, ERTM14_OUT_CLKA, i, 1 );
+                        stateA[i] = ERTM14_CLK_SYNC_STATE_WAIT_TRIGGER;
+                    }
+
+                    if( stateB[i] == ERTM14_CLK_SYNC_STATE_RESTART )
+                    {
+                        board_dbg("[clkab_sync] CLKB%d pending\n", i);
+                        clkab_enable_sync( ertm14_current_state, ERTM14_OUT_CLKB, i, 1 );
+                        stateB[i] = ERTM14_CLK_SYNC_STATE_WAIT_TRIGGER;
+                    }
+                }
+
+                fine_pulse_gen_trigger( &board.dds_sync_dev, (1<<ERTM14_PLL_SYNC_CLKA) | ( 1<<ERTM14_PLL_SYNC_CLKB), 0 );
+                clkab_sync_state = CLKAB_SYNC_STATE_WAIT_TRIGGER;
+            }
+            break;
+        case CLKAB_SYNC_STATE_WAIT_TRIGGER:
+
+            if( fine_pulse_gen_is_triggered( &board.dds_sync_dev, (1<<ERTM14_PLL_SYNC_CLKA) | ( 1<<ERTM14_PLL_SYNC_CLKB) ))
+            {
+                /* the EZS_SRQ pulse is slightly longer than 100 us for correct operation
+                if the LTC6953 sync circuitry, but the FPGen reports 'triggered' at the beginning of the pulse.
+                Add a small, 1ms delay before we start messing around with the SREQN bits again. */
+                timer_delay_ms(1);
+
+                clkab_sync_state = CLKAB_SYNC_STATE_WAIT_AFTER_PPS;
+                int i;
+                for( i = ERTM14_CLKAB_OUT_MIN_ID; i <= ERTM14_CLKAB_OUT_MAX_ID; i++ )
+                {
+                    /* FPGen has produced a sync pulse */
+                    if( stateA[i] == ERTM14_CLK_SYNC_STATE_WAIT_TRIGGER )
+                    {
+                        board_dbg("[clkab_sync] CLKA%d synced!\n", i);
+                        clkab_enable_sync( ertm14_current_state, ERTM14_OUT_CLKA, i, 0 );
+                        stateA[i] = ERTM14_CLK_SYNC_STATE_READY;
+                    }
+
+                    if( stateB[i] == ERTM14_CLK_SYNC_STATE_WAIT_TRIGGER )
+                    {
+                        board_dbg("[clkab_sync] CLKB%d synced!\n", i);
+                        clkab_enable_sync( ertm14_current_state, ERTM14_OUT_CLKB, i, 0 );
+                        stateB[i] = ERTM14_CLK_SYNC_STATE_READY;
+                    }
+                }
+            }
+            break;
+    }
+
+    return 0;
+}
+
+
 // fixme: factor out all this code to a common file (used by sis83k, afcz, ertm)
 static int calc_apr(int meas_min, int meas_max, int f_center )
 {
@@ -1508,9 +1609,6 @@ static void ertm14_init_leds(void)
 
     led_set_blink_timing( &board.leds.sync, 1000, 500 );
     led_action( &board.leds.sync, LED_COLOR_1, LED_BLINK );
-
-    ertm14_set_pps_out_mode( 0 );
-        
 }
 
 static void set_main_dac( int value )
@@ -1573,13 +1671,11 @@ static const struct clkab_output_map_entry *clkab_find_map_entry(  int clka_or_c
     return NULL;
 }
 
-static int clkab_set_output_divider( int clka_or_clkb, int output, int divider )
+static int clkab_set_output_divider( struct ertm14_board_state *state, int clka_or_clkb, int output, int divider )
 {
     const struct clkab_output_map_entry *o = clkab_find_map_entry( clka_or_clkb, output );
     struct ltc695x_device* dev = (clka_or_clkb == ERTM14_OUT_CLKA) ? &board.dev_clka_distr : &board.dev_clkb_distr;
 
-    pp_printf("out %p\n", o );
-    
     if(!o)
         return -EINVAL;
 
@@ -1587,11 +1683,16 @@ static int clkab_set_output_divider( int clka_or_clkb, int output, int divider )
 
     ltc6953_configure_output( dev, o->id_ltc6953, divider, o->invert );
 
+    if(clka_or_clkb == ERTM14_OUT_CLKA)
+        state->clka_sync_state[output] = ERTM14_CLK_SYNC_STATE_RESTART;
+    else
+        state->clkb_sync_state[output] = ERTM14_CLK_SYNC_STATE_RESTART;
+
     return 0;
 }
 
 
-static int clkab_enable_output( int clka_or_clkb, int output, int enable )
+static int clkab_enable_output( struct ertm14_board_state *state, int clka_or_clkb, int output, int enable )
 {
     const struct clkab_output_map_entry *o = clkab_find_map_entry( clka_or_clkb, output );
     struct ltc695x_device* dev = (clka_or_clkb == ERTM14_OUT_CLKA) ? &board.dev_clka_distr : &board.dev_clkb_distr;
@@ -1600,6 +1701,20 @@ static int clkab_enable_output( int clka_or_clkb, int output, int enable )
         return -EINVAL;
 
     ltc6953_enable_output( dev, o->id_ltc6953, enable );
+
+    return 0;
+}
+
+
+static int clkab_enable_sync( struct ertm14_board_state *state, int clka_or_clkb, int output, int enable )
+{
+    const struct clkab_output_map_entry *o = clkab_find_map_entry( clka_or_clkb, output );
+    struct ltc695x_device* dev = (clka_or_clkb == ERTM14_OUT_CLKA) ? &board.dev_clka_distr : &board.dev_clkb_distr;
+
+    if(!o)
+        return -EINVAL;
+
+    ltc6953_set_srqen( dev, o->id_ltc6953, enable );
 
     return 0;
 }
@@ -1644,18 +1759,12 @@ int ertm14_init_clkab_distribution(void)
 
 
 // set 250 MHz output on CLKA/CLKB on the front panel
-    clkab_set_output_divider( ERTM14_OUT_CLKA, ERTM14_CLKAB_OUT_FRONT_PANEL, 4 ); // divide by 4 -> 250 MHz
-    clkab_set_output_divider( ERTM14_OUT_CLKB, ERTM14_CLKAB_OUT_FRONT_PANEL, 4 );
+    clkab_set_output_divider( ertm14_current_state, ERTM14_OUT_CLKA, ERTM14_CLKAB_OUT_FRONT_PANEL, 4 ); // divide by 4 -> 250 MHz
+    clkab_set_output_divider( ertm14_current_state, ERTM14_OUT_CLKB, ERTM14_CLKAB_OUT_FRONT_PANEL, 4 );
 
-    clkab_enable_output( ERTM14_OUT_CLKA, ERTM14_CLKAB_OUT_FRONT_PANEL, 1 );
-    clkab_enable_output( ERTM14_OUT_CLKB, ERTM14_CLKAB_OUT_FRONT_PANEL, 1 );
+    clkab_enable_output( ertm14_current_state, ERTM14_OUT_CLKA, ERTM14_CLKAB_OUT_FRONT_PANEL, 1 );
+    clkab_enable_output( ertm14_current_state, ERTM14_OUT_CLKB, ERTM14_CLKAB_OUT_FRONT_PANEL, 1 );
 
-// force a SYNC pulse to make sure the SYNC_N pins of the AD9520s are high
-// (so that any clock output is possible)
-    fine_pulse_gen_force_pulse( &board.dds_sync_dev, ERTM14_PLL_SYNC_CLKA );
-    fine_pulse_gen_force_pulse( &board.dds_sync_dev, ERTM14_PLL_SYNC_CLKB );
-
-        
     return 0;
 }
 
@@ -1941,78 +2050,63 @@ int ertm14_low_level_init(void)
     board_dbg("Init RF transceiver\n");
     wr_rf_frame_transceiver_create( &board.rf_xcvr, BASE_ERTM14_RF_FRAME_TRANSCEIVER );
 
-    board_dbg("eRTM14/15 early init done\n");
+    ertm14_set_pps_out_mode( ERTM14_PPS_OUT_MODE_PPS );
 
-  //  ertm14_init_clkab_sync();
+    board_dbg("eRTM14/15 early init done\n");
 
     ertm_init_complete = 1;
 
     return 0;
 }
 
-void ertm14_config_init()
+void ertm14_config_init(void)
 {
-    int i, j;
+    int j;
 
-    for(i = 0; i < ERTM14_MAX_CONFIGS; i++)
+    struct ertm14_board_state *cfg = ertm14_current_state;
+
+    cfg->valid = 1;
+    cfg->lo.ftw = ERTM14_DDS_DEFAULT_FTW;
+    cfg->ref.ftw = ERTM14_DDS_DEFAULT_FTW;
+    cfg->lo.ampl_factor = ERTM14_DDS_DEFAULT_AMPLITUDE;
+    cfg->ref.ampl_factor = ERTM14_DDS_DEFAULT_AMPLITUDE;
+
+    for (j = 0; j <= ERTM14_RF_OUT_MAX_ID; j++)
     {
-        struct ertm14_board_state *cfg = &ertm14_configs[i];
-
-        cfg->valid = 1;
-        cfg->lo.ftw = ERTM14_DDS_DEFAULT_FTW;
-        cfg->ref.ftw = ERTM14_DDS_DEFAULT_FTW;
-        cfg->lo.ampl_factor = ERTM14_DDS_DEFAULT_AMPLITUDE;
-        cfg->ref.ampl_factor = ERTM14_DDS_DEFAULT_AMPLITUDE; 
-
-        for( j = 0; j <= ERTM14_RF_OUT_MAX_ID; j++)
-        {
-            cfg->ref.out_state [j] = ERTM15_RF_OUT_MONITOR;
-            cfg->lo.out_state [j] = ERTM15_RF_OUT_MONITOR;
-        }
-    
-        cfg->ref.sync_count = 0;
-        cfg->lo.sync_count = 0;
-
-        cfg->ref.sync_source = ERTM14_SYNC_SOURCE_RF_TRIGGER;
-        cfg->lo.sync_source = ERTM14_SYNC_SOURCE_RF_TRIGGER;
-
-        cfg->ref.sync_state = ERTM14_CLK_SYNC_STATE_RESTART;
-        cfg->lo.sync_state = ERTM14_CLK_SYNC_STATE_RESTART;
-
-        for(j = 0; j <= ERTM14_CLKAB_OUT_MAX_ID; j++)
-        {
-            cfg->clka_freq_hz[j] = 500000000;
-            cfg->clkb_freq_hz[j] = 500000000;
-        }
-
-        cfg->clka_enable_mask = -1; // all CLKA outputs ON
-        cfg->clkb_enable_mask = -1; // all CLKB outputs ON
-
-	copy_config(&ertm14_hardware, cfg);
+        cfg->ref.out_state[j] = ERTM15_RF_OUT_MONITOR;
+        cfg->lo.out_state[j] = ERTM15_RF_OUT_MONITOR;
     }
+
+    cfg->ref.sync_count = 0;
+    cfg->lo.sync_count = 0;
+
+    cfg->ref.sync_source = ERTM14_SYNC_SOURCE_RF_TRIGGER;
+    cfg->lo.sync_source = ERTM14_SYNC_SOURCE_RF_TRIGGER;
+
+    cfg->ref.sync_state = ERTM14_CLK_SYNC_STATE_RESTART;
+    cfg->lo.sync_state = ERTM14_CLK_SYNC_STATE_RESTART;
+
+    for (j = 0; j <= ERTM14_CLKAB_OUT_MAX_ID; j++)
+    {
+        cfg->clka_freq_hz[j] = 500000000;
+        cfg->clkb_freq_hz[j] = 500000000;
+        cfg->clka_sync_state[j] = ERTM14_CLK_SYNC_STATE_RESTART;
+        cfg->clkb_sync_state[j] = ERTM14_CLK_SYNC_STATE_RESTART;
+    }
+
+    cfg->clka_enable_mask = -1; // all CLKA outputs ON
+    cfg->clkb_enable_mask = -1; // all CLKB outputs ON
+
+    copy_config(&ertm14_hardware, cfg);
 }
 
-struct ertm14_board_state *ertm14_get_state_for_config(int config_id)
+struct ertm14_board_state *ertm14_get_current_state(void)
 {
-    return &ertm14_configs[config_id];
+    return ertm14_current_state;
 }
 
-int ertm14_apply_config(int config_id)
-{
-    board_dbg("Apply_config: %d\n", config_id );
-    copy_config(ertm14_current_state, &ertm14_configs[config_id]);
-    event_post ( WRC_ERTM14_EVENT_APPLY_NEW_CONFIG );
-    return 0;
-}
-
-int ertm14_get_current_config_id(void)
-{
-    return ertm14_current_config_id;
-}
-
-static int __attribute__((__unused__))
-ertm14_commit_config( struct  ertm14_board_state *cfg )
-
+#if 0
+static int ertm14_commit_config( struct  ertm14_board_state *cfg )
 {
     int i;
         for( i = 0; i <= ERTM14_CLKAB_OUT_MAX_ID; i++)
@@ -2030,14 +2124,13 @@ ertm14_commit_config( struct  ertm14_board_state *cfg )
             board_dbg("CLKA%d: freq=%d Hz, divider=%d, enable=%d\n", i, freq_a, div_a, enable_a);
             board_dbg("CLKA%d: freq=%d Hz, divider=%d, enable=%d\n", i, freq_b, div_b, enable_b);
 
-            clkab_set_output_divider( ERTM14_OUT_CLKA, i, div_a );
-            clkab_set_output_divider( ERTM14_OUT_CLKB, i, div_b );
-            clkab_enable_output( ERTM14_OUT_CLKA, i, enable_a );
-            clkab_enable_output( ERTM14_OUT_CLKB, i, enable_b );
+            clkab_set_output_divider( ertm14_current_state, ERTM14_OUT_CLKA, i, div_a );
+            clkab_set_output_divider( ertm14_current_state, ERTM14_OUT_CLKB, i, div_b );
+            clkab_enable_output( ertm14_current_state, ERTM14_OUT_CLKA, i, enable_a );
+            clkab_enable_output( ertm14_current_state, ERTM14_OUT_CLKB, i, enable_b );
         }
 
-            // DDSes
-
+        // DDSes
         ad9910_program(&board.dds_ad9910_lo, cfg->lo.ftw, 0, cfg->lo.ampl_factor );
         ad9910_program(&board.dds_ad9910_ref, cfg->ref.ftw, 0, cfg->ref.ampl_factor );
 
@@ -2057,19 +2150,7 @@ ertm14_commit_config( struct  ertm14_board_state *cfg )
         ertm15_update_rf_switches( &board.rf_distr );
     return 0;
 }
-
-static int evth_config_update_listener;
-
-static void ertm14_config_update_init(void)
-{
-
-}
-
-/* fixme: we don't need multiple configurations. Get rid of this code */
-static int ertm14_config_update_task(void)
-{
-    return 0;
-}
+#endif
 
 static struct {
     int freq;
@@ -2424,12 +2505,7 @@ int ertm15_update_rf_monitor( void )
         tmo_restart(&rfmon_timeout);
         ertm15_rf_distr_measure_power ( &board.rf_distr );
 
-        int id = ertm14_get_current_config_id();
-
-        if( id < 0 || id >= ERTM14_MAX_CONFIGS)
-            return 0;
-
-        struct ertm14_board_state *bstate = ertm14_get_state_for_config( id );
+        struct ertm14_board_state *bstate = ertm14_get_current_state();
 
         int i;
 
@@ -2457,19 +2533,23 @@ int wrc_board_init()
     ertm14_shell_init();
 
     evth_dds_nco_sync = event_listener_create();
-    evth_config_update_listener = event_listener_create();
+    evth_clkab_sync = event_listener_create();
 
     console_set_mode_switch_hook( &console_uart_dev, control_uart_mode_callback );
 
     wrc_task_create( "control-uart", NULL, control_uart_poll );
     wrc_task_create( "rf-nco-sync", ertm14_dds_nco_sync_init, ertm14_dds_nco_sync_task );
-    wrc_task_create( "ertm-config", ertm14_config_update_init, ertm14_config_update_task );
+    wrc_task_create( "clkab-sync", ertm14_clkab_sync_init, ertm14_clkab_sync_task );
     wrc_task_create( "phy-cal", phy_calibration_init, phy_calibration_poll );
     wrc_task_create( "mmc14", mmc14_link_init, mmc14_link_poll );
     wrc_task_create( "mmc15", mmc15_link_init, mmc15_link_poll );
     wrc_task_create( "rf-monitor", ertm15_init_rf_monitor, ertm15_update_rf_monitor );
     wrc_task_create( "leds", NULL, ertm14_update_leds );
-    ertm14_apply_config( 0 );
+
+    struct ertm14_board_state mask;
+    memset(&mask, 0xff, sizeof( struct ertm14_board_state )); // make sure we commit everything to HW
+
+    ertm14_apply_config( ertm14_current_state, &mask, 1 );
 
     return 0;
 }
