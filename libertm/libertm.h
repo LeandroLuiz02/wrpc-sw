@@ -72,6 +72,21 @@ enum ertm_connector {
 #define ERTM_LOREF_MIN_CH	ERTM14_RF_OUT_MIN_ID
 #define ERTM_LOREF_MAX_CH	ERTM14_RF_OUT_MAX_ID
 
+/* sync states of DDS and CLKA/B channels */
+
+#define	ERTM_SYNC_STATE_RESTART      ERTM14_CLK_SYNC_STATE_RESTART
+#define	ERTM_SYNC_STATE_WAIT_TIMING  ERTM14_CLK_SYNC_STATE_WAIT_TIMING
+#define	ERTM_SYNC_STATE_CONFIGURE    ERTM14_CLK_SYNC_STATE_CONFIGURE
+#define	ERTM_SYNC_STATE_WAIT_TRIGGER ERTM14_CLK_SYNC_STATE_WAIT_TRIGGER
+#define	ERTM_SYNC_STATE_READY        ERTM14_CLK_SYNC_STATE_READY
+
+struct ertm_sync_states {
+	int	sync_state;
+	char	*label;
+	char	*description;
+};
+extern struct ertm_sync_states ertm_sync_states[];
+
 /* library operation modes:
  *
  *  ERTM_DEFERRED	operations deferred (cached) until ertm_commit() is called
