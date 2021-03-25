@@ -676,6 +676,10 @@ static int ertm14_dds_sync_init(void)
     fine_pulse_gen_setup_channel ( &board.dds_sync_dev, ERTM14_DDS_IOUPDATE_LO, 1, board.dds_sync_delays[ERTM14_DDS_IOUPDATE_LO], 0, 0 );
     fine_pulse_gen_setup_channel ( &board.dds_sync_dev, ERTM14_DDS_IOUPDATE_REF, 1, board.dds_sync_delays[ERTM14_DDS_IOUPDATE_REF], 0, 0 );
 
+    // LTC6953 EZS_SRQ (SYNC) pulse: positive polarity, trigger on PPS, pulse width > 1ms
+    fine_pulse_gen_setup_channel ( &board.dds_sync_dev, ERTM14_PLL_SYNC_CLKA, 1, board.dds_sync_delays[ERTM14_PLL_SYNC_CLKA], 1000, 0 );
+    fine_pulse_gen_setup_channel ( &board.dds_sync_dev, ERTM14_PLL_SYNC_CLKB, 1, board.dds_sync_delays[ERTM14_PLL_SYNC_CLKB], 1000, 0 );
+
     return 0;
 }
 
@@ -773,38 +777,6 @@ static void ertm14_dds_sync_calibrate(void)
     fine_pulse_gen_setup_channel ( &board.dds_sync_dev, ERTM14_DDS_SYNC_REF, 1, 100000 + windows[1].setpoint, 0, FINE_PULSE_GEN_CONTINUOUS );
 }
 
-static int __attribute__((__unused__))
-ertm14_align_clocks(void)
-{
-    uint32_t channel_mask = ( 1 << ERTM14_DDS_SYNC_LO ) | ( 1<< ERTM14_DDS_SYNC_REF );
-
-    fine_pulse_gen_trigger( &board.dds_sync_dev, channel_mask, 1 );
-    while ( !fine_pulse_gen_is_triggered( &board.dds_sync_dev, channel_mask ) );
-
-    int smp_err_lo = !!gen_gpio_in( &pin_ad9910_lo_sync_smp_err );
-    int smp_err_ref = !!gen_gpio_in( &pin_ad9910_ref_sync_smp_err );
-
-    board_dbg( "DDS SYNC complete: errLO=%d errREF=%d\n", smp_err_lo, smp_err_ref);
-    board_dbg("1\n");
-
-// now that we are done syncing DDS internal clocks, disable the fpga SYNC_CLK output
-    if( ! ( board.mode & ERTM14_MODE_WITHOUT_ERTM15 ) )
-    {
-        ad9910_configure_sync( &board.dds_ad9910_ref, 0, 0 );
-        ad9910_configure_sync( &board.dds_ad9910_lo, 0, 0 );
-    }
-
-    channel_mask = (1 << ERTM14_PLL_SYNC_CLKA) |
-                   (1 << ERTM14_PLL_SYNC_CLKB);
-
-
-
-    // fixme: trigger clkab sync to pps
-
-    board_dbg( "CLKAB sync complete\n");
-
-    return 0;
-}
 
 void blink(int id)
 {
@@ -916,8 +888,9 @@ static void get_board_config(struct ertm14_board_state *bs)
     copy_config(bs, result);
 }
 
-static int clkab_set_output_divider(int clka_or_clkb, int output, int divider);
-static int clkab_enable_output(int clka_or_clkb, int output, int enable);
+static int clkab_set_output_divider( struct ertm14_board_state *state, int clka_or_clkb, int output, int divider);
+static int clkab_enable_output( struct ertm14_board_state *state, int clka_or_clkb, int output, int enable);
+static int clkab_enable_sync( struct ertm14_board_state *state, int clka_or_clkb, int output, int enable );
 
 static int apply_dds_config( struct ad9910_device *dev, struct ertm14_dds_state* new_state, struct ertm14_dds_state *old_state, struct ertm14_dds_state *mask )
 {
@@ -967,14 +940,8 @@ static void apply_config(struct ertm14_board_state *cfg,
 		int div_b = ertm14_get_clkab_divider( freq_b );
 		int enable_a = ( cfg->clka_enable_mask & (1<<i) ) ? 1 : 0;
 		int enable_b = ( cfg->clkb_enable_mask & (1<<i) ) ? 1 : 0;
-<<<<<<< HEAD
-
-		board_dbg("CLKA%d: freq=%d Hz, divider=%d, enable=%d\n", i, freq_a, div_a, enable_a);
-		board_dbg("CLKA%d: freq=%d Hz, divider=%d, enable=%d\n", i, freq_b, div_b, enable_b);
-=======
 
 		//board_dbg("CLKA%d: freq=%d Hz, divider=%d, enable=%d\n", i, freq_b, div_b, enable_b);
->>>>>>> ertm14: ensure the FTW and amplitude factor changes in the DDS done over UART link are atomic and independent:
 
 		if (mask->clka_freq_hz[i] && (cfg->clka_freq_hz[i] != ertm14_current_state->clka_freq_hz[i]))
 			clkab_set_output_divider(ERTM14_OUT_CLKA, i, div_a);
@@ -1301,9 +1268,6 @@ static int rf_nco_sync_fsm( int is_ref, struct ertm14_dds_state *state, uint32_t
         state->sync_count = 0;
     }
 
-<<<<<<< HEAD
-
-=======
     if( !is_ref && event == WRC_ERTM14_EVENT_LO_RECONFIGURED)
     {
         board_dbg("nco_sync[%s]: reconfiguration request\n", name );
@@ -1317,7 +1281,6 @@ static int rf_nco_sync_fsm( int is_ref, struct ertm14_dds_state *state, uint32_t
         state->sync_state = ERTM14_CLK_SYNC_STATE_RESTART;
         state->sync_count = 0;
     }
->>>>>>> ertm14: rewrote the NCO sync state machine:
 
     switch( state->sync_state )
     {
@@ -1405,6 +1368,120 @@ static int ertm14_dds_nco_sync_task(void)
 
     return 0;
 }
+
+static int evth_clkab_sync;
+
+#define CLKAB_SYNC_STATE_IDLE 0
+#define CLKAB_SYNC_STATE_WAIT_AFTER_PPS 1
+#define CLKAB_SYNC_STATE_WAIT_TRIGGER 2
+
+static int clkab_sync_state;
+
+static int ertm14_clkab_sync_init(void)
+{
+    clkab_sync_state = CLKAB_SYNC_STATE_IDLE;
+    return 0;
+}
+
+static int ertm14_clkab_sync_task(void)
+{
+    int evt = event_poll( evth_clkab_sync );
+    uint8_t *stateA = ertm14_current_state->clka_sync_state;
+    uint8_t *stateB = ertm14_current_state->clkb_sync_state;
+
+    if( evt == WRC_EVENT_TIMING_UP )
+    {
+        int i;
+        board_dbg("[clkab_sync] WR timing up, forcing resync of all CLKAB clocks.\n");
+
+        for( i = ERTM14_CLKAB_OUT_MIN_ID; i <= ERTM14_CLKAB_OUT_MAX_ID; i++ )
+        {
+            stateA[i] = ERTM14_CLK_SYNC_STATE_RESTART;
+            stateB[i] = ERTM14_CLK_SYNC_STATE_RESTART;
+        }
+    }
+
+    uint64_t secs;
+    uint32_t nsecs;
+
+    shw_pps_gen_unmask_output(1);
+    shw_pps_gen_get_time( &secs, &nsecs );
+
+    switch(clkab_sync_state)
+    {
+        case CLKAB_SYNC_STATE_IDLE:
+            clkab_sync_state = CLKAB_SYNC_STATE_WAIT_AFTER_PPS;
+            break;
+        case CLKAB_SYNC_STATE_WAIT_AFTER_PPS:
+            /* we wait here until we are rather closer to the previous PPS pulse than the next one.
+               the reason is, subsequent writes to LTC695x take some milliseconds and must be done
+               before the next sync pulse is produced by the fine_pulse_gen */
+            if( nsecs < 300000000 )
+            {
+                int i;
+                for( i = ERTM14_CLKAB_OUT_MIN_ID; i <= ERTM14_CLKAB_OUT_MAX_ID; i++ )
+                {
+                    /* check which CLKA/B outputs have changed their configuration and
+                    set the SREQN bit in the LTC6953. Next time a PPS pulse arrives to the EZS_SRQ
+                    input of the corresponding clock fanout chip, the clock phases of the outputs
+                    will be aligned with the WR PPS. Note: it's *EXTREMELY IMPORTANT* to only
+                    assert SREQN (clkab_enable_sync) on the outputs that have had their configurations
+                    changed, as sthe sync procedure causes an intermittent squelch of the clock output
+                    being synced */
+                    if( stateA[i] == ERTM14_CLK_SYNC_STATE_RESTART )
+                    {
+                        board_dbg("[clkab_sync] CLKA%d pending\n", i);
+                        clkab_enable_sync( ertm14_current_state, ERTM14_OUT_CLKA, i, 1 );
+                        stateA[i] = ERTM14_CLK_SYNC_STATE_WAIT_TRIGGER;
+                    }
+
+                    if( stateB[i] == ERTM14_CLK_SYNC_STATE_RESTART )
+                    {
+                        board_dbg("[clkab_sync] CLKB%d pending\n", i);
+                        clkab_enable_sync( ertm14_current_state, ERTM14_OUT_CLKB, i, 1 );
+                        stateB[i] = ERTM14_CLK_SYNC_STATE_WAIT_TRIGGER;
+                    }
+                }
+
+                fine_pulse_gen_trigger( &board.dds_sync_dev, (1<<ERTM14_PLL_SYNC_CLKA) | ( 1<<ERTM14_PLL_SYNC_CLKB), 0 );
+                clkab_sync_state = CLKAB_SYNC_STATE_WAIT_TRIGGER;
+            }
+            break;
+        case CLKAB_SYNC_STATE_WAIT_TRIGGER:
+
+            if( fine_pulse_gen_is_triggered( &board.dds_sync_dev, (1<<ERTM14_PLL_SYNC_CLKA) | ( 1<<ERTM14_PLL_SYNC_CLKB) ))
+            {
+                /* the EZS_SRQ pulse is slightly longer than 100 us for correct operation
+                if the LTC6953 sync circuitry, but the FPGen reports 'triggered' at the beginning of the pulse.
+                Add a small, 1ms delay before we start messing around with the SREQN bits again. */
+                timer_delay_ms(1);
+
+                clkab_sync_state = CLKAB_SYNC_STATE_WAIT_AFTER_PPS;
+                int i;
+                for( i = ERTM14_CLKAB_OUT_MIN_ID; i <= ERTM14_CLKAB_OUT_MAX_ID; i++ )
+                {
+                    /* FPGen has produced a sync pulse */
+                    if( stateA[i] == ERTM14_CLK_SYNC_STATE_WAIT_TRIGGER )
+                    {
+                        board_dbg("[clkab_sync] CLKA%d synced!\n", i);
+                        clkab_enable_sync( ertm14_current_state, ERTM14_OUT_CLKA, i, 0 );
+                        stateA[i] = ERTM14_CLK_SYNC_STATE_READY;
+                    }
+
+                    if( stateB[i] == ERTM14_CLK_SYNC_STATE_WAIT_TRIGGER )
+                    {
+                        board_dbg("[clkab_sync] CLKB%d synced!\n", i);
+                        clkab_enable_sync( ertm14_current_state, ERTM14_OUT_CLKB, i, 0 );
+                        stateB[i] = ERTM14_CLK_SYNC_STATE_READY;
+                    }
+                }
+            }
+            break;
+    }
+
+    return 0;
+}
+
 
 // fixme: factor out all this code to a common file (used by sis83k, afcz, ertm)
 static int calc_apr(int meas_min, int meas_max, int f_center )
@@ -1584,12 +1661,10 @@ static const struct clkab_output_map_entry *clkab_find_map_entry(  int clka_or_c
     return NULL;
 }
 
-static int clkab_set_output_divider( int clka_or_clkb, int output, int divider )
+static int clkab_set_output_divider( struct ertm14_board_state *state, int clka_or_clkb, int output, int divider )
 {
     const struct clkab_output_map_entry *o = clkab_find_map_entry( clka_or_clkb, output );
     struct ltc695x_device* dev = (clka_or_clkb == ERTM14_OUT_CLKA) ? &board.dev_clka_distr : &board.dev_clkb_distr;
-
-    pp_printf("out %p\n", o );
 
     if(!o)
         return -EINVAL;
@@ -1598,11 +1673,16 @@ static int clkab_set_output_divider( int clka_or_clkb, int output, int divider )
 
     ltc6953_configure_output( dev, o->id_ltc6953, divider, o->invert );
 
+    if(clka_or_clkb == ERTM14_OUT_CLKA)
+        state->clka_sync_state[output] = ERTM14_CLK_SYNC_STATE_RESTART;
+    else
+        state->clkb_sync_state[output] = ERTM14_CLK_SYNC_STATE_RESTART;
+
     return 0;
 }
 
 
-static int clkab_enable_output( int clka_or_clkb, int output, int enable )
+static int clkab_enable_output( struct ertm14_board_state *state, int clka_or_clkb, int output, int enable )
 {
     const struct clkab_output_map_entry *o = clkab_find_map_entry( clka_or_clkb, output );
     struct ltc695x_device* dev = (clka_or_clkb == ERTM14_OUT_CLKA) ? &board.dev_clka_distr : &board.dev_clkb_distr;
@@ -1611,6 +1691,20 @@ static int clkab_enable_output( int clka_or_clkb, int output, int enable )
         return -EINVAL;
 
     ltc6953_enable_output( dev, o->id_ltc6953, enable );
+
+    return 0;
+}
+
+
+static int clkab_enable_sync( struct ertm14_board_state *state, int clka_or_clkb, int output, int enable )
+{
+    const struct clkab_output_map_entry *o = clkab_find_map_entry( clka_or_clkb, output );
+    struct ltc695x_device* dev = (clka_or_clkb == ERTM14_OUT_CLKA) ? &board.dev_clka_distr : &board.dev_clkb_distr;
+
+    if(!o)
+        return -EINVAL;
+
+    ltc6953_set_srqen( dev, o->id_ltc6953, enable );
 
     return 0;
 }
@@ -1655,17 +1749,11 @@ int ertm14_init_clkab_distribution(void)
 
 
 // set 250 MHz output on CLKA/CLKB on the front panel
-    clkab_set_output_divider( ERTM14_OUT_CLKA, ERTM14_CLKAB_OUT_FRONT_PANEL, 4 ); // divide by 4 -> 250 MHz
-    clkab_set_output_divider( ERTM14_OUT_CLKB, ERTM14_CLKAB_OUT_FRONT_PANEL, 4 );
+    clkab_set_output_divider( ertm14_current_state, ERTM14_OUT_CLKA, ERTM14_CLKAB_OUT_FRONT_PANEL, 4 ); // divide by 4 -> 250 MHz
+    clkab_set_output_divider( ertm14_current_state, ERTM14_OUT_CLKB, ERTM14_CLKAB_OUT_FRONT_PANEL, 4 );
 
-    clkab_enable_output( ERTM14_OUT_CLKA, ERTM14_CLKAB_OUT_FRONT_PANEL, 1 );
-    clkab_enable_output( ERTM14_OUT_CLKB, ERTM14_CLKAB_OUT_FRONT_PANEL, 1 );
-
-// force a SYNC pulse to make sure the SYNC_N pins of the AD9520s are high
-// (so that any clock output is possible)
-    fine_pulse_gen_force_pulse( &board.dds_sync_dev, ERTM14_PLL_SYNC_CLKA );
-    fine_pulse_gen_force_pulse( &board.dds_sync_dev, ERTM14_PLL_SYNC_CLKB );
-
+    clkab_enable_output( ertm14_current_state, ERTM14_OUT_CLKA, ERTM14_CLKAB_OUT_FRONT_PANEL, 1 );
+    clkab_enable_output( ertm14_current_state, ERTM14_OUT_CLKB, ERTM14_CLKAB_OUT_FRONT_PANEL, 1 );
 
     return 0;
 }
@@ -1953,8 +2041,6 @@ int ertm14_low_level_init(void)
     wr_rf_frame_transceiver_create( &board.rf_xcvr, BASE_ERTM14_RF_FRAME_TRANSCEIVER );
 
     board_dbg("eRTM14/15 early init done\n");
-
-  //  ertm14_init_clkab_sync();
 
     ertm_init_complete = 1;
 
@@ -2468,13 +2554,13 @@ int wrc_board_init()
     ertm14_shell_init();
 
     evth_dds_nco_sync = event_listener_create();
-    evth_config_update_listener = event_listener_create();
+    evth_clkab_sync = event_listener_create();
 
     console_set_mode_switch_hook( &console_uart_dev, control_uart_mode_callback );
 
     wrc_task_create( "control-uart", NULL, control_uart_poll );
     wrc_task_create( "rf-nco-sync", ertm14_dds_nco_sync_init, ertm14_dds_nco_sync_task );
-    wrc_task_create( "ertm-config", ertm14_config_update_init, ertm14_config_update_task );
+    wrc_task_create( "clkab-sync", ertm14_clkab_sync_init, ertm14_clkab_sync_task );
     wrc_task_create( "phy-cal", phy_calibration_init, phy_calibration_poll );
     wrc_task_create( "mmc14", mmc14_link_init, mmc14_link_poll );
     wrc_task_create( "mmc15", mmc15_link_init, mmc15_link_poll );
