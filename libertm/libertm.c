@@ -595,12 +595,14 @@ static void update_board_config(struct ertm_status *st,
 	ertm_get_board_config(st, bs);
 }
 
-int ertm_get_freq(struct ertm_status *handle,
-		enum ertm_connector connector, int channel, uint32_t *freq)
+static int ertm_get_freq_sync_state(struct ertm_status *handle,
+		enum ertm_connector connector, int channel,
+		uint32_t *freq, int *sync_state)
 {
 	int err = 0;
 	struct ertm14_board_state *bs;
-	uint32_t *reg;
+	uint32_t *freg;
+	uint8_t *ssreg;
 
 	/* channel param is irrelevant for lo/ref */
 	if (connector == ERTM_LO || connector == ERTM_REF) {
@@ -612,25 +614,45 @@ int ertm_get_freq(struct ertm_status *handle,
 	bs = &handle->state->board_state;
 	switch (connector) {
 	case ERTM_CLKA:
-		reg = &bs->clka_freq_hz[channel];
+		freg  = &bs->clka_freq_hz[channel];
+		ssreg = &bs->clka_sync_state[channel];
 		// clkab_set_output_divider(ERTM14_OUT_CLKA, channel, freq);
 		break;
 	case ERTM_CLKB:
-		reg = &bs->clkb_freq_hz[channel];
+		freg  = &bs->clkb_freq_hz[channel];
+		ssreg = &bs->clkb_sync_state[channel];
 		break;
 	case ERTM_LO:
-		reg = &bs->lo.ftw;
+		freg  = &bs->lo.ftw;
+		ssreg = &bs->lo.sync_state;
 		break;
 	case ERTM_REF:
-		reg = &bs->ref.ftw;
+		freg  = &bs->ref.ftw;
+		ssreg = &bs->ref.sync_state;
 		break;
 	default:
 		errno = EINVAL;
 		return ERTM_BAD_CONNECTOR;
 	}
 	update_board_config(handle, &handle->state->board_state);
-	*freq = *reg;
+	*freq = *freg;
+	*sync_state = *ssreg;
 
+	return 0;
+}
+
+int ertm_get_freq(struct ertm_status *handle,
+		enum ertm_connector connector, int channel, uint32_t *freq)
+{
+	int unused;
+	return ertm_get_freq_sync_state(handle, connector, channel, freq, &unused);
+}
+
+int ertm_get_sync_state(struct ertm_status *handle,
+		enum ertm_connector connector, int channel, int *sync_state)
+{
+	uint32_t unused;
+	return ertm_get_freq_sync_state(handle, connector, channel, &unused, sync_state);
 	return 0;
 }
 
