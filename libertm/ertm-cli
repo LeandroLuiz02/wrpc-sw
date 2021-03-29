@@ -157,7 +157,7 @@ class ErtmTest(cmd.Cmd):
         self.load_solibs()
         ertm_init = self.lib.ertm_init
         ertm_init.restype = POINTER(ertm_status)
-        self.handle = ertm_init(None)
+        self.handle = ertm_init(c_char_p(None))
         self.do_h = self.do_help
         if not self.handle:
             print('could not open USB device')
