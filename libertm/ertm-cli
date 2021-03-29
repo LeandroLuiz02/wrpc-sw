@@ -162,6 +162,21 @@ class ErtmTest(cmd.Cmd):
             print('could not open USB device')
             exit()
 
+    def do_usb(self, args):
+        if not args:
+            usb = self.handle[0].connection.serial_connection
+            print(str(usb, encoding='utf-8'))
+            return
+        try:
+            usb = bytes(args, encoding='utf-8')
+            handle = self.lib.ertm_init(c_char_p(usb))
+            if not handle:
+                print('could not open USB device')
+            else:
+                self.handle = handle
+        except TypeError as e:
+            print('bad encoding in devname {}'.format(args))
+
     def do_lib_version(self, args):
         "show library version info."
         self.lib.ertm_lib_version.restype = POINTER(ertm_lib_version)
