@@ -192,7 +192,6 @@ struct ertm_lib_version *ertm_lib_version(void)
 }
 
 /* constants of nature for this design */
-static char *usb_serial = "/dev/ttyUSB2";
 static int serial_speed = 8*115200;
 
 static int get_version_info(struct ertm_status *st,
@@ -212,14 +211,13 @@ struct ertm_status *ertm_init(const char *address)
 		errno = ENOMEM;
 		return NULL;
 	}
-	/* FIXME: this has to be parameterized */
 	if ((address == NULL) && ((address = ertm_find_usb_port()) == NULL)) {
 		errno = ENODEV;
 		return NULL;
 	}
 		
 	memcpy(&st->connection.serial_connection, address, strlen(address));
-	err = uart_link_create_linux(&st->link, usb_serial, serial_speed);
+	err = uart_link_create_linux(&st->link, address, serial_speed);
 	if (err != 0) {
 		errno = ENODEV;
 		return NULL;
