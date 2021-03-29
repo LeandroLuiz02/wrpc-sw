@@ -5,4 +5,4 @@
 	-b ertm14m0 \
 	-s 115200 \
 	-f mcu \
-		/user/dcobas/ertm14/tom-bitstreams/Mar02/mmc14_main.bin
+		/user/dcobas/ertm14/tom-bitstreams/Mar25/mmc14_main.bin
