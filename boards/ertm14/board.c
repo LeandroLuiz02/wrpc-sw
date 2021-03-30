@@ -1032,6 +1032,19 @@ void get_version_info(struct ertm14_version_info *bi)
 				    sizeof(bi->ertm15_firmware_version));
 }
 
+void get_fpga_info(struct ertm14_device_metadata *bi)
+{
+	int i;
+	uint32_t *info = (uint32_t *)bi;
+	int len = sizeof(*bi) / sizeof(info[0]);
+
+	pp_printf("len: %d\n", len);
+
+	memcpy(bi, (void*)(BASE_ERTM14_BUILD_INFO), sizeof(*bi));
+	for (i = 0; i < len; i++)
+		info[i] = htonl(info[i]);
+}
+
 static void get_wrc_diags(struct WRC_DIAGS_WB *diags)
 {
 	uint32_t *word = (void *)diags;
@@ -1608,12 +1621,6 @@ static void ertm14_init_leds(void)
 
     led_set_blink_timing( &board.leds.sync, 1000, 500 );
     led_action( &board.leds.sync, LED_COLOR_1, LED_BLINK );
-<<<<<<< HEAD
-
-    ertm14_set_pps_out_mode( 0 );
-
-=======
->>>>>>> ertm14: more self-explanatory configuration of the PPS output
 }
 
 static void set_main_dac( int value )
