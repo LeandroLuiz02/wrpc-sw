@@ -469,6 +469,9 @@ static int get_version_info(struct ertm_status *st,
 {
 	struct uart_link *link = &st->link;
 	int res;
+	struct ertm_device_metadata *fpga = &bi->firmware_metadata;
+	uint32_t *words = (uint32_t *)fpga;
+	int i, size = sizeof(*fpga)/sizeof(uint32_t);
 
 	res = ertm_proto_cycle(link, ertm14_get_version_info, NULL, bi);
 	/* FIXME: if they **really** want the MAC in uint64_t shape,
@@ -478,6 +481,12 @@ static int get_version_info(struct ertm_status *st,
 	bytes_to_64_mac(&bi->ertm14_mac2, bi->ertm14_mac2_bytes);
 	if (res < 0)
 		return res;
+	res = ertm_proto_cycle(link, ertm14_get_fpga_info, NULL, fpga);
+	if (res < 0)
+		return res;
+	for (i = 0; i < size; i++)
+		words[i] = ntohl(words[i]);
+		
 	return 0;
 }
 
