@@ -1145,6 +1145,7 @@ static int ertm_process_psnmp(struct uart_packet *rx_pkt, struct uart_packet *tx
 	uint8_t opcode = rx_pkt->payload[0];
 	struct ertm14_protocol_op *op;
 	struct ertm14_version_info *ver;
+	struct ertm14_device_metadata *fver;
 
 	/* return board config in case of bad opcode */
 	if ((op = get_proto_op(opcode)) == NULL)
@@ -1192,6 +1193,10 @@ static int ertm_process_psnmp(struct uart_packet *rx_pkt, struct uart_packet *tx
 	case ertm14_get_version_info:
 		ver = (struct ertm14_version_info *)&tx_pkt->payload[op->offset2];
 		get_version_info(ver);
+		break;
+	case ertm14_get_fpga_info:
+		fver = (struct ertm14_device_metadata *)&tx_pkt->payload[op->offset2];
+		get_fpga_info(fver);
 		break;
 	case ertm14_get_sensors:
 		sensors = (struct wrc_sensor *)&tx_pkt->payload[op->offset2];
