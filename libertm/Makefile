@@ -21,7 +21,7 @@ CFLAGS += "-DGIT_URL=\"$(GIT_URL)\""
 
 LIBS = $(TARGET).a $(TARGET).so libertm_display.so
 
-all: libs main
+all: libs main udev-find
 libs: $(LIBS)
 
 $(TARGET).a $(TARGET).so: $(TARGET).o linux-uart-link.o common-uart-link.o udev-serial.o
@@ -32,6 +32,8 @@ $(TARGET).a:
 $(TARGET).o: $(TARGET).h
 
 main: main.o libertm.a display.o
+	$(CC) $(CFLAGS) -o $@ $^ $(LDLIBS) $(LDFLAGS) -lm -ludev
+udev-find: udev-find.o libertm.a
 	$(CC) $(CFLAGS) -o $@ $^ $(LDLIBS) $(LDFLAGS) -lm -ludev
 
 common-uart-link.o: $(ERTM_BOARD_LOCATION)/common-uart-link.c

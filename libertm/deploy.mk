@@ -1,6 +1,6 @@
 ERTM_VERSION ?= 1.0.0-rc1
 DEPLOY_TARGET ?= /acc/local/L867/drv/ertm/$(ERTM_VERSION)
-TOOLS = ../tools/uart-bootloader/usb-bootloader.py ertm-cli
+TOOLS = ../tools/uart-bootloader/usb-bootloader.py ertm-cli udev-find
 
 deploy: $(LIBS) libertm.h $(TOOLS) ../wrc.bin ertm-setup
 	mkdir -p $(DEPLOY_TARGET)/lib $(DEPLOY_TARGET)/include \
