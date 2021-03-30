@@ -104,7 +104,7 @@ class ErtmTest(cmd.Cmd):
     ERTM14_SYNC_SOURCE_RF_TRIGGER = 2
 
     Sensor_Array = 20 * c_double
-    BoardInfo = 80 * c_uint
+    BoardInfo = 128 * c_uint
 
     connector_idx = {
         'lo' : ERTM_LO,
