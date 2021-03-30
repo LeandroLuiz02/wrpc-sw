@@ -216,7 +216,7 @@ struct ertm_status *ertm_init(const char *address)
 		return NULL;
 	}
 		
-	memcpy(&st->connection.serial_connection, address, strlen(address));
+	strcpy(st->connection.serial_connection, address);
 	err = uart_link_create_linux(&st->link, address, serial_speed);
 	if (err != 0) {
 		errno = ENODEV;
