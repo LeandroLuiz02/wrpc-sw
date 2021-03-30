@@ -417,6 +417,12 @@ class ErtmTest(cmd.Cmd):
         self.lib.ertm_get_board_info(self.handle, byref(bi))
         self.display.display_version_info(byref(bi))
 
+    def do_fpga(self, args):
+        """display full FPGA buildinfo string."""
+        bi = self.BoardInfo()
+        self.lib.ertm_get_board_info(self.handle, byref(bi))
+        self.display.display_fpga_buildinfo(byref(bi))
+
     def my_postloop(self):
         readline.write_history_file(self.history)
         self.lib.ertm_exit(self.handle)
