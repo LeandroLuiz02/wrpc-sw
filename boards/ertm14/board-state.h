@@ -185,13 +185,18 @@ struct ertm14_nco_reset {
 
 /* FIXME: this is lifted from ertm_board_info; structs *must* match */
 struct ertm14_device_metadata {
-	uint32_t	vendor_id;
-	uint32_t	device_id;
-	uint32_t	version;
-	uint32_t	byte_order_mark;
-	unsigned char	source_id[16];
-	uint32_t	capability_mask;
-	unsigned char	vendor_uuid[16];
+	union {
+	char fpga_build_info[256];
+	struct {
+		uint32_t	vendor_id;
+		uint32_t	device_id;
+		uint32_t	version;
+		uint32_t	byte_order_mark;
+		unsigned char	source_id[16];
+		uint32_t	capability_mask;
+		unsigned char	vendor_uuid[16];
+	};
+	};
 };
 
 /* FIXME: this is lifted from ertm_board_info; structs *must* match */
