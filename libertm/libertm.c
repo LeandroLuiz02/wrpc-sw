@@ -486,7 +486,6 @@ void split_buildinfo(char *fpga, char *tag, char *date)
 		return;
 	}
 	strncpy(date, p + strlen("syndate:"), 16); date[15] = '\0';
-	printf("tag: [%s]\n" "date: [%s]\n", tag, date);
 }
 
 static int get_version_info(struct ertm_status *st,
@@ -510,7 +509,6 @@ static int get_version_info(struct ertm_status *st,
 	res = ertm_proto_cycle(link, ertm14_get_fpga_info, NULL, fpga);
 	if (res < 0)
 		return res;
-	printf("size: %d\n", size);
 	for (i = 0; i < size; i++)
 		words[i] = ntohl(words[i]);
 	split_buildinfo(fpga,
