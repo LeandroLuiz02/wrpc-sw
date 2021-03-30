@@ -77,3 +77,4 @@ static const int ertm_ntemperatures =
 
 extern int ertm_get_board_config(struct ertm_status *st, struct ertm14_board_state *bs);
 extern char *ertm_find_usb_port(void);
+extern char *ertm_usb_by_function(char *func);
