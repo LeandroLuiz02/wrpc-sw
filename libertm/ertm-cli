@@ -142,7 +142,7 @@ class ErtmTest(cmd.Cmd):
         else:
             return
         try:
-            self.lib = CDLL(solib_default2)
+            self.lib = CDLL(solib_default2, mode=RTLD_GLOBAL)
             self.display = CDLL(solib_display_default2)
         except OSError as e:
             print('could not open library {} nor {}, exiting'.format(
