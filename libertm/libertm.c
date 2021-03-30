@@ -464,14 +464,40 @@ void bytes_to_64_mac(uint64_t *mac, uint8_t src[])
 	*mac = tmp;
 }
 
+void split_buildinfo(char *fpga, char *tag, char *date)
+{
+	char *p;
+	char tmp[256];
+
+	memcpy(tmp, fpga, 256);
+	p = strtok(tmp, "\n");
+	p = strtok(NULL, "\n");
+	p = strtok(NULL, "\n");
+	p = strtok(NULL, "\n");
+	if (p == NULL) {
+		*tag = *date = '\0';
+		return;
+	}
+	strncpy(tag, p + strlen("tag:"), 16); tag[15] = '\0';
+	p = strtok(NULL, "\n");
+	p = strtok(NULL, "\n");
+	if (p == NULL) {
+		*date = '\0';
+		return;
+	}
+	strncpy(date, p + strlen("syndate:"), 16); date[15] = '\0';
+	printf("tag: [%s]\n" "date: [%s]\n", tag, date);
+}
+
 static int get_version_info(struct ertm_status *st,
 			    struct ertm_board_info *bi)
 {
 	struct uart_link *link = &st->link;
 	int res;
-	struct ertm_device_metadata *fpga = &bi->firmware_metadata;
+	char *fpga = bi->firmware_metadata.fpga_buildinfo_text;
 	uint32_t *words = (uint32_t *)fpga;
-	int i, size = sizeof(*fpga)/sizeof(uint32_t);
+	int size = sizeof(bi->firmware_metadata.fpga_buildinfo_text)/sizeof(uint32_t);
+	int i;
 
 	res = ertm_proto_cycle(link, ertm14_get_version_info, NULL, bi);
 	/* FIXME: if they **really** want the MAC in uint64_t shape,
@@ -484,9 +510,12 @@ static int get_version_info(struct ertm_status *st,
 	res = ertm_proto_cycle(link, ertm14_get_fpga_info, NULL, fpga);
 	if (res < 0)
 		return res;
+	printf("size: %d\n", size);
 	for (i = 0; i < size; i++)
 		words[i] = ntohl(words[i]);
-		
+	split_buildinfo(fpga,
+		(char *)bi->firmware_metadata.source_id,
+		(char *)bi->firmware_metadata.vendor_uuid);
 	return 0;
 }
 
