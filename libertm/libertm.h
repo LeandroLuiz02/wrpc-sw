@@ -87,6 +87,12 @@ struct ertm_sync_states {
 };
 extern struct ertm_sync_states ertm_sync_states[];
 
+/* WR enable/disable modes */
+#define	ERTM_WR_MASTER		WRC_MODE_MASTER
+#define	ERTM_WR_SLAVE		WRC_MODE_SLAVE
+#define	ERTM_WR_FREE_RUNNING	WRC_MODE_UNKNOWN	/* disable = 0 */
+#define	ERTM_WR_OCXO		ERTM_WR_FREE_RUNNING
+
 /* library operation modes:
  *
  *  ERTM_DEFERRED	operations deferred (cached) until ertm_commit() is called
