@@ -1031,6 +1031,19 @@ void get_version_info(struct ertm14_version_info *bi)
 	strncpy(bi->ertm15_firmware_version, ertm15_board_info.git_tag,
 				    sizeof(bi->ertm15_firmware_version));
 }
+
+void get_fpga_info(struct ertm14_device_metadata *bi)
+{
+	int i;
+	uint32_t *info = (uint32_t *)bi;
+	int len = sizeof(*bi) / sizeof(info[0]);
+	
+	pp_printf("len: %d\n", len);
+
+	memcpy(bi, (void*)(BASE_ERTM14_BUILD_INFO), sizeof(*bi));
+	for (i = 0; i < len; i++)
+		info[i] = htonl(info[i]);
+}
 	
 static void get_wrc_diags(struct WRC_DIAGS_WB *diags)
 {
