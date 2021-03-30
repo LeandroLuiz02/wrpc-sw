@@ -1,4 +1,4 @@
-ERTM_VERSION ?= 1.0.0-rc1
+ERTM_VERSION ?= $(shell git describe --always --dirty | sed 's;libertm-v;;' )
 DEPLOY_TARGET ?= /acc/local/L867/drv/ertm/$(ERTM_VERSION)
 TOOLS = ../tools/uart-bootloader/usb-bootloader.py ertm-cli udev-find
 
