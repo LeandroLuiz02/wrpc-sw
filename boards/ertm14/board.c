@@ -1144,7 +1144,7 @@ static int ertm_process_psnmp(struct uart_packet *rx_pkt, struct uart_packet *tx
 	uint8_t opcode = rx_pkt->payload[0];
 	struct ertm14_protocol_op *op;
 	struct ertm14_version_info *ver;
-	uint8_t *fver;
+	uint8_t *fver, mode;
 
 	/* return board config in case of bad opcode */
 	if ((op = get_proto_op(opcode)) == NULL)
@@ -1202,9 +1202,12 @@ static int ertm_process_psnmp(struct uart_packet *rx_pkt, struct uart_packet *tx
 		get_wrc_sensors(sensors);
 		break;
 	case ertm14_ptp_enable:
-		if (rx_pkt->payload[op->offset1])
+		mode = rx_pkt->payload[op->offset1];
+		if (mode == WRC_MODE_MASTER || mode == WRC_MODE_SLAVE) {
+			wrc_ptp_set_mode(mode);
+			wrc_ptp_stop();
 			wrc_ptp_start();
-		else
+		} else if (mode == WRC_MODE_UNKNOWN)
 			wrc_ptp_stop();
 		break;
 

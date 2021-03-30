@@ -114,8 +114,6 @@
 /* Resync done, output clock is ready */
 #define ERTM14_CLK_SYNC_STATE_READY 4
 
-
-
 struct ertm14_dds_state
 {
     uint32_t ftw;

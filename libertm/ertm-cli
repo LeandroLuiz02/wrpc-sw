@@ -103,6 +103,10 @@ class ErtmTest(cmd.Cmd):
     ERTM14_SYNC_SOURCE_PPS = 1
     ERTM14_SYNC_SOURCE_RF_TRIGGER = 2
 
+    ERTM_WR_MASTER = 2
+    ERTM_WR_SLAVE = 3
+    ERTM_WR_FREE_RUNNING = 0
+
     Sensor_Array = 20 * c_double
     BoardInfo = 128 * c_uint
 
@@ -387,17 +391,22 @@ class ErtmTest(cmd.Cmd):
         print(msg)
 
     def do_wr_enable(self, args):
-        "start/stop WR PTP daemon."
+        "set mode of WR PTP daemon."
+        wr_modes = {
+            'master' : self.ERTM_WR_MASTER,
+            'slave' : self.ERTM_WR_SLAVE,
+            'disable' : self.ERTM_WR_FREE_RUNNING,
+        }
         try:
-            enable = int(args) if args else 1
+            mode = wr_modes[args.lower()]
         except (ValueError, KeyError) as e:
-            print('usage: wr_enable [0|1] (default=1/enable)')
+            print('usage: wr_enable {master|slave|disable}')
             return
-        self.lib.ertm_wr_enable(self.handle, enable)
+        self.lib.ertm_wr_enable(self.handle, mode)
 
     def do_wr_disable(self, args):
-        """stop PTP daemon (synonymous to "wr_enable 0")."""
-        self.lib.ertm_wr_enable(self.handle, 0)
+        """stop PTP daemon (synonymous to "wr_enable disable")."""
+        self.lib.ertm_wr_enable(self.handle, self.ERTM_WR_FREE_RUNNING)
 
     def do_temperatures(self, args):
         """display temperature sensor readings."""

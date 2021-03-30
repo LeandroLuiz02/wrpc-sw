@@ -1126,10 +1126,10 @@ int ertm_wr_status(struct ertm_status *handle, int *link_up, int *is_locked)
 	return 0;
 }
 
-int ertm_wr_enable(struct ertm_status *handle, int enable)
+int ertm_wr_enable(struct ertm_status *handle, int mode)
 {
 	struct uart_link *link;
-	uint8_t e = !!enable;
+	uint8_t e = mode;
 
 	if (bad_handle(handle))
 		return -ERTM_BAD_HANDLE;
