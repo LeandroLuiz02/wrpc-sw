@@ -5,6 +5,7 @@ TOOLS = ../tools/uart-bootloader/usb-bootloader.py ertm-cli
 deploy: $(LIBS) libertm.h $(TOOLS) ../wrc.bin ertm-setup
 	mkdir -p $(DEPLOY_TARGET)/lib $(DEPLOY_TARGET)/include \
 		$(DEPLOY_TARGET)/tools $(DEPLOY_TARGET)/bin
+	ln -s ../pyenv $(DEPLOY_TARGET)
 	install -b ../wrc.bin $(LIBS) -C $(DEPLOY_TARGET)/lib
 	install -b libertm.h -C $(DEPLOY_TARGET)/include
 	install -b $(TOOLS) -C $(DEPLOY_TARGET)/tools
