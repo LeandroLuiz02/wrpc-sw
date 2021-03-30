@@ -1032,17 +1032,16 @@ void get_version_info(struct ertm14_version_info *bi)
 				    sizeof(bi->ertm15_firmware_version));
 }
 
-void get_fpga_info(struct ertm14_device_metadata *bi)
+void get_fpga_info(uint8_t *bi)
 {
 	int i;
 	uint32_t *info = (uint32_t *)bi;
-	int len = sizeof(*bi) / sizeof(info[0]);
+	uint32_t *regs = (uint32_t *)(BASE_ERTM14_BUILD_INFO);
+	size_t size = sizeof(((struct ertm14_device_metadata *)0)->fpga_buildinfo_text);
+	int len = size / sizeof(info[0]);
 	
-	pp_printf("len: %d\n", len);
-
-	memcpy(bi, (void*)(BASE_ERTM14_BUILD_INFO), sizeof(*bi));
 	for (i = 0; i < len; i++)
-		info[i] = htonl(info[i]);
+		info[i] = htonl(regs[i]);
 }
 	
 static void get_wrc_diags(struct WRC_DIAGS_WB *diags)
@@ -1145,7 +1144,7 @@ static int ertm_process_psnmp(struct uart_packet *rx_pkt, struct uart_packet *tx
 	uint8_t opcode = rx_pkt->payload[0];
 	struct ertm14_protocol_op *op;
 	struct ertm14_version_info *ver;
-	struct ertm14_device_metadata *fver;
+	uint8_t *fver;
 
 	/* return board config in case of bad opcode */
 	if ((op = get_proto_op(opcode)) == NULL)
@@ -1195,7 +1194,7 @@ static int ertm_process_psnmp(struct uart_packet *rx_pkt, struct uart_packet *tx
 		get_version_info(ver);
 		break;
 	case ertm14_get_fpga_info:
-		fver = (struct ertm14_device_metadata *)&tx_pkt->payload[op->offset2];
+		fver = (uint8_t *)&tx_pkt->payload[op->offset2];
 		get_fpga_info(fver);
 		break;
 	case ertm14_get_sensors:
