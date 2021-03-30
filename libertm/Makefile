@@ -48,6 +48,6 @@ libertm_display.so: display.o
 
 clean:
 	rm -f *.o *.a *.so
-	rm -f serial ertm-serial main
+	rm -f serial ertm-serial main udev-find
 
 include deploy.mk
