@@ -114,6 +114,7 @@ struct ertm_device_metadata {
 		unsigned char	source_id[16];
 		uint32_t	capability_mask;
 		unsigned char	vendor_uuid[16];
+		char		fpga_buildinfo_text[200];
 	    };
 	};
 };

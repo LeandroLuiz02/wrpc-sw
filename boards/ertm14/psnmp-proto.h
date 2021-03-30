@@ -67,7 +67,7 @@ static struct ertm14_protocol_op {
 	.offset1 = 1,
 	.length1 = 0,
 	.offset2 = 0,
-	.length2 = sizeof(struct ertm14_device_metadata),
+	.length2 = sizeof(((struct ertm14_device_metadata *)0)->fpga_buildinfo_text),
     },
     {
 	.opcode = ertm14_get_sensors,

@@ -311,7 +311,15 @@ void display_version_info(struct ertm_board_info *bi)
 		bi->wrpc_sw_build_date,
 		bi->wrpc_sw_build_time,
 		bi->wrpc_sw_build_by);
-	printf("FPGA buildinfo:\n%s", bi->firmware_metadata.fpga_build_info);
+	printf("FPGA buildinfo:\n\tcommit [%s]\n\tbuild date: [%s]\n",
+		bi->firmware_metadata.source_id,
+		bi->firmware_metadata.vendor_uuid);
+};
+
+void display_fpga_buildinfo(struct ertm_board_info *bi)
+{
+	printf("FPGA buildinfo:\n%s\n",
+		bi->firmware_metadata.fpga_buildinfo_text);
 };
 
 void display_temperatures(struct ertm_temperatures *t)
