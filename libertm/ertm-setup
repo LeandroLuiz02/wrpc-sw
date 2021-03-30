@@ -1,7 +1,7 @@
 #!/bin/sh
 
 SCRIPT_DIR=$(readlink -f $(dirname "${BASH_SOURCE[0]}"))
-SERIAL_LINE=/dev/ttyUSB2
+SERIAL_LINE=$($SCRIPT_DIR/udev-find wrc)
 
 # override default serial line if need be
 if [ x"$1" != x"" ] ; then
