@@ -70,16 +70,23 @@ char *ertm_find_usb_port(void)
 	return sl_cp2108_port[2].devnode;
 }
 
-static int __attribute__((__unused__)) udev_main(void)
+static char *functions[] = {
+	"mmc15",
+	"mmc14",
+	"wrc",
+	"wrc-console",
+};
+
+char *ertm_usb_by_function(char *func)
 {
 	int i;
+	int err;
 
-	printf("control port is %s\n", ertm_find_usb_port());
+	err = ertm_search_dongle(SILICON_LABS_ID, CP2108_UART_TO_USB, sl_cp2108_port);
+	if (err < 0)
+		return NULL;
 	for (i = 0; i < 4; i++)
-		printf("port %d:   %s  at %s\n",
-			sl_cp2108_port[i].port,
-			sl_cp2108_port[i].devnode,
-			sl_cp2108_port[i].symlink);
-
-	return 0;
+		if (strcmp(func, functions[i]) == 0)
+			return sl_cp2108_port[i].devnode;
+	return NULL;
 }
