@@ -167,6 +167,7 @@ class ErtmTest(cmd.Cmd):
             exit()
 
     def do_usb(self, args):
+        "show/change the usb port we connect to."
         if not args:
             usb = self.handle[0].connection.serial_connection
             print(str(usb, encoding='utf-8'))
