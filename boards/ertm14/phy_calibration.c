@@ -40,8 +40,9 @@
 
 #include "dev/clock_monitor.h"
 
-#define LPDC_COARSE_PHASE_MIN_PS 15000    /* ps */
-#define LPDC_COARSE_PHASE_MAX_PS 15500    /* ps */
+/* middle of clock cycle seems the safest, we observed glitches around 15000->1000 ps */
+#define LPDC_COARSE_PHASE_MIN_PS 8500    /* ps */
+#define LPDC_COARSE_PHASE_MAX_PS 9000    /* ps */
 #define LPDC_FINE_PHASE_TOLLERANCE_PS 40 /* ps */
 
 
