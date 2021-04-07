@@ -26,16 +26,13 @@
 #include "lib/ipv4.h"
 #include "shell.h"
 #include "revision.h"
-<<<<<<< HEAD
 #include "wrc_global.h"
+#include "hw/wrc_diags_regs.h"
 
 #ifndef CONFIG_PRINTF_FULL
 #error ("WRPC monitor requires full version of pp_printf implementation")
 #endif
 
-=======
-#include "hw/wrc_diags_regs.h"
->>>>>>> add wr_diags_dump function
 
 #define WRC_MONITOR_REFRESH_PERIOD (1 * TICS_PER_SECOND)
 #define WRC_DIAG_REFRESH_PERIOD (1 * TICS_PER_SECOND)
@@ -635,19 +632,10 @@ void print_servo_description()
 	pp_printf("delayCoefficient :");
 	pprintf(25, 45, "fpa\n");
 
-	pp_printf("ingressLatency   :\n");
-	pp_printf("egressLatency    :\n");
-	pp_printf("semistaticLatency:\n");
-	pp_printf("offsetFromMaster :\n");
-	if (gui_description & DESCRIPTION_WR_SERVO) {
-		pp_printf("Phase setpoint   :\n");
-		pp_printf("Skew             :\n");
-	}
-	pp_printf("Update counter   :\n");
-	if (gui_description & DESCRIPTION_WR_SERVO) {
-		pp_printf("Master PHY delays TX:\n"); /* RX: */
-		pp_printf("Slave  PHY delays TX:\n"); /* RX: */
-	}
+	cprintf(C_GREY, "Extra stats: ");
+	cprintf(C_WHITE, "Sync packet errors: %d followup errors: %d servo restarts: %d\n", ppi->stats.sync_errors, ppi->stats.followup_errors, ppi->stats.servo_restarts);
+
+	return 0;
 }
 
 void print_servo_data(struct pp_instance *ppi)
