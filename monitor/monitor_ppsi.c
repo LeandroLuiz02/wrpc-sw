@@ -274,6 +274,7 @@ void redraw_gui(void)
 	next_update_ticks = 0;
 }
 
+
 int wrc_mon_gui(void)
 {
 	static uint32_t last_servo_count;
@@ -340,9 +341,18 @@ void print_main_description(void)
 	pp_printf(      "Iface |        MAC        |       IP (source)       |    RX   |    TX   | VLAN\n");
 	pp_printf(      "------+-------------------+-------------------------+---------+---------+-----\n");
 
+<<<<<<< HEAD
 	for (i = 0 ; i < ndevs; i++) {
 		/* reuse the string above, strings between "|" will be overwritten anyway */
 		pp_printf("Iface |        MAC        |       IP (source)       |    RX   |    TX   | VLAN\n");
+=======
+		if( i == 0 ) // fixme: independent rx/tx stats for each interface
+		{
+			int rx_er;
+			minic_get_stats(&tx, &rx, &rx_er);
+			cprintf(C_GREY, "(RX: %d, TX: %d, RX errors: %d)", rx, tx, rx_er);
+		}
+>>>>>>> minic: improve error reporting
 	}
 
 	pp_printf("\n----- HAL ---|---------------- PPSI -------------------------------------------------\n");
@@ -633,7 +643,7 @@ void print_servo_description()
 	pprintf(25, 45, "fpa\n");
 
 	cprintf(C_GREY, "Extra stats: ");
-	cprintf(C_WHITE, "Sync packet errors: %d followup errors: %d servo restarts: %d\n", ppi->stats.sync_errors, ppi->stats.followup_errors, ppi->stats.servo_restarts);
+	cprintf(C_WHITE, " Sync packet errors: %d followup errors: %d servo restarts: %d\n", ppi->stats.sync_errors, ppi->stats.followup_errors, ppi->stats.servo_restarts);
 
 	return 0;
 }
@@ -817,9 +827,8 @@ int wrc_log_stats(void)
 
 	shw_pps_gen_get_time(&sec, &nsec);
 	wrpc_get_port_state(&state, NULL);
-	minic_get_stats(&tx, &rx);
-
-	pp_printf("lnk:%d rx:%d tx:%d ", (wrc_global_link.link_up == NETIF_LINK_UP), rx, tx);
+	minic_get_stats(&tx, &rx, NULL);
+	pp_printf("lnk:%d rx:%d tx:%d ", state.state, rx, tx);
 	pp_printf("lock:%d ", state.locked ? 1 : 0);
 	pp_printf("ptp:%s ", get_state_as_string(&ppi_static, ppi_static.state));
 
@@ -927,8 +936,13 @@ int wrc_wr_diags(void)
 	wdiag_set_valid(0);
 
 	/* frame statistics */
+<<<<<<< HEAD
 	minic_get_stats(&tx, &rx);
 	wdiags_write_cnts(tx, rx);
+=======
+	minic_get_stats(&tx, &rx, NULL);
+	wdiags_write_cnts(tx,rx);
+>>>>>>> minic: improve error reporting
 
 	/* local time */
 	shw_pps_gen_get_time(&sec, &nsec);
@@ -1035,7 +1049,7 @@ int wrc_diags_dump(struct WRC_DIAGS_WB *buf)
 	buf->VER = 0x12345678;
 	buf->CTRL = 0xcafebabe;
 	/* frame statistics */
-	minic_get_stats(&tx, &rx);
+	minic_get_stats(&tx, &rx, NULL);
 	buf->WDIAG_TXFCNT = tx;
 	buf->WDIAG_RXFCNT = rx;
 
