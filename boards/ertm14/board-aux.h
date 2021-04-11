@@ -45,7 +45,7 @@ static void update_dds_state(struct ertm14_dds_state *dst,
 
 }
 
-void update_bits(uint32_t *dst, uint32_t src, uint32_t mask)
+static inline void update_bits(uint32_t *dst, uint32_t src, uint32_t mask)
 {
 	*dst &= ~mask;
 	*dst |= src & mask;

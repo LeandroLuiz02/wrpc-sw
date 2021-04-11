@@ -18,6 +18,7 @@
 #include "shell.h"
 
 #include "ertm15_rf_distr.h"
+#include "board-aux.h"
 
 extern struct wb_clock_monitor_device ertm14_cmon;
 
@@ -226,6 +227,7 @@ static int cmd_ertm(const char *args[])
     struct ertm14_board_state *cstate = ertm14_get_current_state();
     struct ertm14_board_state mask, nstate;
 
+    memset(&nstate, 0, sizeof(struct ertm14_board_state ) );
     memset(&mask, 0, sizeof(struct ertm14_board_state ) );
 
     if (!strcasecmp(args[0], "test-dac")) 
@@ -291,6 +293,8 @@ static int cmd_ertm(const char *args[])
     }
  
     ertm14_apply_config( &nstate, &mask, 0 );
+    update_config( cstate, &nstate, &mask );
+
     return 0;
 }
 
