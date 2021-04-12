@@ -127,7 +127,7 @@ Rabbit project. It describes the building and running process, and it provides a
 guide to instantiating the WRPC in your own HDL design.
 
 If you don't want to get your hands dirty and prefer to start with the demo binaries
-available at \url{http://www.ohwr.org/projects/wr-cores/files} for officially
+available at \url{https://ohwr.org/project/wr-cores/wikis/Documents/} for officially
 supported boards, please skip Section~\ref{Building the Core} and move forward
 directly to Section~\ref{Programming FPGA}. For help with instantiating the WRPC in
 your own HDL design, see Section~\ref{sec:wrpc_hdl}.
@@ -147,20 +147,17 @@ distributed in the following places:
 
 \begin{itemize*}
 
-\item \url{http://www.ohwr.org/projects/wr-cores/documents}
+\item \url{https://ohwr.org/project/wr-cores/wikis/Documents/}
 
 	hosts the pdf documentation for every official release.
+	The place where you can find already synthesized demo bitstreams,
+	ready to be downloaded to one of the officially supported boards.
 
-\item \url{http://www.ohwr.org/projects/wr-cores/files}
+\item \url{https://ohwr.org/project/wr-cores.git}
 
-	place where you can find already synthesized demo bitstreams, ready to be
-  downloaded to one of the officially supported boards
+	repository with HDL sources of the WRPC.
 
-\item \url{git://ohwr.org/hdl-core-lib/wr-cores.git}
-
-	repository with HDL sources of the WRPC
-
-\item \url{git://ohwr.org/hdl-core-lib/wr-cores/wrpc-sw.git}
+\item \url{https://ohwr.org/project/wrpc-sw.git}
 
   repository with the LM32 software running inside the WRPC
 
@@ -170,18 +167,18 @@ following locations:
 
 \begin{itemize*}
 
-\item \url{git://ohwr.org/misc/hdl-make.git}
+\item \url{https://ohwr.org/project/hdl-make.git}
 
   \textit{hdlmake} is used in the HDL synthesis process to create a Makefile and
   Xilinx ISE / Altera Quartus project file
 
-\item \url{http://www.ohwr.org/attachments/download/1133/lm32.tar.xz}
+\item {\small\url{https://ohwr.org/project/wrpc-sw/uploads/a2e8eeba448fbc8d580e68004e6f6c7f/lm32.tar.xz}}
 
   LM32 toolchain used to compile the LM32 software running inside the WRPC.
   This is a 32-bit version of the toolchain. If you encounter problems running
-  this toolchain on modern 64bit machines, try 64 version described below.
+  this toolchain on modern 64bit machines, try 64-bit version described below.
 
-\item \url{http://www.ohwr.org/attachments/download/3868/lm32_host_64bit.tar.xz}
+\item {\small\url{https://ohwr.org/project/wrpc-sw/uploads/2776ce0ba43503d1486ae205b48fb450/lm32_host_64bit.tar.xz}}
 
   LM32 toolchain used to compile the LM32 software running inside the WRPC
   (64-bit version of the toolchain).
@@ -200,17 +197,17 @@ The minimum hardware set required to run the WR PTP Core reference firmware
 depends on the hardware platform you want to use. One of the following setups
 can be chosen:
 \begin{itemize}
-\item \href{http://www.ohwr.org/projects/spec}{SPEC PCIe board} +
-  \href{http://www.ohwr.org/projects/fmc-dio-5chttla}{FMC DIO card} + PC
+\item \href{https://ohwr.org/project/spec}{SPEC PCIe board} +
+  \href{https://ohwr.org/project/fmc-dio-5chttla}{FMC DIO card} + PC
   computer running Linux
-\item \href{http://www.ohwr.org/projects/svec}{SVEC VME board} + VME crate with
+\item \href{https://ohwr.org/project/svec}{SVEC VME board} + VME crate with
   a single board computer running Linux\footnote{\label{note_a20}In our test setup
     we used MEN A20 board}
-\item \href{http://www.ohwr.org/projects/vfc-hd}{VFC-HD VME board} +
-  \href{http://www.ohwr.org/projects/fmc-dio-5chttla}{FMC DIO card} +
+\item \href{https://ohwr.org/project/vfc-hd}{VFC-HD VME board} +
+  \href{https://ohwr.org/project/fmc-dio-5chttla}{FMC DIO card} +
   VME crate with a single board computer running Linux\footref{note_a20}
-\item \href{http://www.ohwr.org/projects/fasec}{FASEC board} +
-  \href{http://www.ohwr.org/projects/fmc-dio-5chttla}{FMC DIO card}
+\item \href{https://ohwr.org/project/fasec}{FASEC board} +
+  \href{https://ohwr.org/project/fmc-dio-5chttla}{FMC DIO card}
 \end{itemize}
 
 To be able to test White Rabbit synchronization you would also need
@@ -221,7 +218,7 @@ above:
     White Rabbit Switch
   \item a pair of WR-supported SFP transceivers\footnote{The list of supported
     SFPs can be found on our wiki page
-    \url{http://www.ohwr.org/projects/white-rabbit/wiki/SFP}}
+    \url{https://ohwr.org/project/white-rabbit/wiki/SFP}}
   \item a roll of G652, single mode fiber to connect your WR devices
 \end{itemize}
 
@@ -289,7 +286,7 @@ Manifest.py files that you will find in the \textit{wr-cores} repository.\\
 First, please clone the \textit{hdlmake} repository from its location given in
 section \ref{Repositories and Releases}:
 \begin{lstlisting}
-$ git clone git://ohwr.org/misc/hdl-make.git <your_location>/hdl-make
+$ git clone https://ohwr.org/project/hdl-make.git <your_location>/hdl-make
 $ cd <your_location>/hdl-make
 $ git checkout c4789c4
 \end{lstlisting}
@@ -314,7 +311,7 @@ repository for the v4.1 release. The set of commands below clones the WR PTP Cor
 repository, checks out the release tag, and downloads other HDL repositories
 (submodules) needed to synthesize the core:
 \begin{lstlisting}
-$ git clone git://ohwr.org/hdl-core-lib/wr-cores.git <your_location>/wr-cores
+$ git clone https://ohwr.org/project/wr-cores.git <your_location>/wr-cores
 $ cd <your_location>/wr-cores
 $ git checkout wrpc-v4.1
 $ git submodule init
@@ -435,13 +432,15 @@ First, you need to download and unpack the LM32 toolchain from the location
 mentioned in section \ref{Repositories and Releases}. The following example
 uses 32bit version of a toolchain.
 \begin{lstlisting}
-$ wget https://www.ohwr.org/project/wrpc-sw/uploads/a2e8eeba448fbc8d580e68004e6f6c7f/lm32.tar.xz
+$ wget https://www.ohwr.org/project/wrpc-sw/uploads/a2e8eeba448fbc8d580e68004e6f6c7f/\
+lm32.tar.xz
 $ tar xJf lm32.tar.xz -C <your_location>
 \end{lstlisting}
 
 If you encounter problems running it, please use the 64bit version.
 \begin{lstlisting}
-$ wget https://www.ohwr.org/project/wrpc-sw/uploads/2776ce0ba43503d1486ae205b48fb450/lm32_host_64bit.tar.xz
+$ wget https://www.ohwr.org/project/wrpc-sw/uploads/2776ce0ba43503d1486ae205b48fb450/\
+lm32_host_64bit.tar.xz
 $ tar xJf lm32_host_64bit.tar.xz -C <your_location>
 \end{lstlisting}
 
@@ -455,8 +454,7 @@ To get the sources of the WRPC software, please clone the \textit{wrpc-sw} git
 repository tagged with \texttt{wrpc-v4.1} tag. The commands in the listing below
 clone the \textit{wrpc-sw} repository together with submodules needed for this software.\\
 \begin{lstlisting}
-$ git clone git://ohwr.org/hdl-core-lib/wr-cores/wrpc-sw.git \
-<your_location>/wrpc-sw
+$ git clone https://ohwr.org/project/wrpc-sw.git <your_location>/wrpc-sw
 $ cd <your_location>/wrpc-sw
 $ git checkout wrpc-v4.1
 \end{lstlisting}
@@ -527,7 +525,7 @@ userspace tools, that interacts with a SPEC board plugged into a PCI-Express
 slot.\\
 
 \begin{lstlisting}
-$ git clone git://ohwr.org/fmc-projects/spec/spec-sw.git <your_location>/spec-sw
+$ git clone https://ohwr.org/fmc-projects/spec/spec-sw.git <your_location>/spec-sw
 $ cd <your_location>/spec-sw
 $ git checkout 0745464
 $ make
@@ -536,8 +534,8 @@ $ make
 You have to download also the "golden" firmware for SPEC card. It is used by
 the drivers to recognize the hardware:
 \begin{lstlisting}
-$ wget https://www.ohwr.org/project/spec-sw/uploads/636e7eaa2e1c3a884e2f9f694fdfd1b9/spec-init.bin-2015-09-18
-
+$ wget https://www.ohwr.org/project/spec-sw/uploads/636e7eaa2e1c3a884e2f9f694fdfd1b9/\
+spec-init.bin-2015-09-18
 $ sudo mv spec-init.bin-2015-09-18 /lib/firmware/fmc/spec-init.bin
 \end{lstlisting}
 
@@ -685,10 +683,11 @@ the defaults for wrpc-v4.1 release bitstream available on \textit{ohwr.org},
 running on the SPEC v4 board and calibrated to port 1 of a~WR Switch
 v3.3. These values as well as the default parameters for other boards are
 available on the calibration wiki page
-(\url{http://www.ohwr.org/projects/white-rabbit/wiki/Calibration}). If you
+(\url{https://ohwr.org/project/white-rabbit/wikis/Calibration}). If you
 re-synthesize the firmware or want to use the most accurate estimation of
 the fixed delays and alpha for your fiber, you should read and perform the WR
-Calibration procedure (\url{http://www.ohwr.org/documents/213}).\\
+Calibration procedure
+(\url{https://ohwr.org/project/white-rabbit/wikis/Documents/White-Rabbit-calibration-procedure}).\\
 
 The WRPC  mode of operation (GrandMaster/Master/Slave) can be set
 using the \textit{mode} command:
@@ -1996,15 +1995,15 @@ calibration values loaded to both of your devices (see section \ref{Writing
 configuration}). If you made your own synthesis of the WRPC, then the default
 calibration values are no longer valid and you need to perform the White Rabbit
 Calibration procedure\footnote{Use the latest version of the document available
-at: \url{http://www.ohwr.org/documents/213}}.
+at: \url{https://ohwr.org/project/white-rabbit/wikis/Documents/White-Rabbit-calibration-procedure}}.
 
 % ##########################################################################
 \section{Questions, reporting bugs}
 \label{Questions}
 
 If you have found a bug, you have problems with the WR PTP Core or one of the
-tools used to build and run it, you can write to our mailing list
-\textbf{\textit{white-rabbit-dev@ohwr.org}}
+tools used to build and run it, you can write at our forums
+\url{https://forums.ohwr.org}
 
 
 % ##########################################################################
@@ -2348,7 +2347,8 @@ package.
 
 First, please download the SDBFS image from \textit{ohwr.org}:
 \begin{lstlisting}
-$ wget https://www.ohwr.org/project/wr-cores/uploads/6f33b5a8660bd0f2ff7a07526b4484d6/sdbfs-flash.bin
+$ wget https://ohwr.org/project/wr-cores/uploads/6f33b5a8660bd0f2ff7a07526b4484d6/\
+sdbfs-flash.bin
 \end{lstlisting}
 It contains all the files required by the core. They are empty, but have to
 exist in the SDBFS structure to be filled later from the WR PTP Core shell or
@@ -2387,7 +2387,8 @@ This \textit{mcs} file already includes both SDBFS image and FPGA bitstream.
 In the case when you want to run a custom gateware or you have a custom hardware, you can 
 download a standalone SDBFS image:
 \begin{lstlisting}
-$ wget https://www.ohwr.org/project/wr-cores/uploads/9dad995e74a3d49b472b8654833be01a/sdbfs-standalone-160812.bin
+$ wget https://ohwr.org/project/wr-cores/uploads/9dad995e74a3d49b472b8654833be01a/\
+sdbfs-standalone-160812.bin
 \end{lstlisting}
 and generate a custom \textit{*.mcs} file with your own FPGA bitstream. You should
 use the following layout:
