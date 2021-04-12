@@ -1221,6 +1221,7 @@ static int get_temp(uint8_t *buf, struct snmp_oid *obj)
 	row = obj->oid_match[TABLE_ROW];
 	col = obj->oid_match[TABLE_COL];
 	snmp_verbose("%s: row%d, col%d\n", __func__, row, col);
+	#if 0
 	for (p = wrc_temp_getnext(NULL); p; p = wrc_temp_getnext(p), i++) {
 		if (row == i) {
 			t = p->t;
@@ -1248,6 +1249,7 @@ static int get_temp(uint8_t *buf, struct snmp_oid *obj)
 		/* data found return it */
 		return get_value(buf, obj->asn, buffer);
 	}
+	#endif
 
 	return 0;
 }
