@@ -29,10 +29,10 @@ SIZE =		$(CROSS_COMPILE)size
 
 
 AUTOCONF = $(CURDIR)/include/generated/autoconf.h
-AUTOCONF_PPSI = $(CURDIR)/ppsi/include/generated/autoconf.h
+#AUTOCONF_PPSI = $(CURDIR)/ppsi/include/generated/autoconf.h
 
 export AUTOCONF
-export AUTOCONF_PPSI
+#export AUTOCONF_PPSI
 
 PPSI = ppsi
 
@@ -176,12 +176,6 @@ PPSI-FLAGS-$(CONFIG_ARCH_RISCV) = CONFIG_NO_PRINTF=y
 PPSI-FLAGS-$(CONFIG_TARGET_GENERIC_PHY_8BIT) = CONFIG_TARGET_GENERIC_PHY_8BIT=y
 
 $(obj-ppsi): gitmodules
-	test -s $(PPSI)/.config || $(MAKE) -C $(PPSI) $(PPSI-CFG-y)
-	@if [ "$(CONFIG_PPSI_FORCE_CONFIG)" = "y" ]; then \
-		$(MAKE) -C $(PPSI) $(PPSI-CFG-y); \
-	else \
-		echo "Warning: keeping previous ppsi configuration" >& 2; \
-	fi
 	$(MAKE) -C $(PPSI) ppsi.a WRPCSW_ROOT=.. \
 		CROSS_COMPILE=$(CROSS_COMPILE) CONFIG_NO_PRINTF=y \
 		USER_CFLAGS="$(PPSI_USER_CFLAGS)" \
@@ -190,9 +184,9 @@ $(obj-ppsi): gitmodules
 sdb-lib/libsdbfs.a:
 	$(MAKE) -C sdb-lib CPU_ARCH=$(CPU_ARCH)
 
-$(OUTPUT).elf: $(LDS-y) $(AUTOCONF) gitmodules config.o pconfig.o $(OBJS)
+$(OUTPUT).elf: $(LDS-y) $(AUTOCONF) gitmodules config.o $(OBJS)
 	$(CC) $(CFLAGS) -D__GIT_VER__="\"$(GIT_VER)\"" -D__GIT_USR__="\"$(GIT_USR)\"" -c revision.c
-	${CC} -Wl,-Map,$(OUTPUT).map -o $@ revision.o config.o pconfig.o $(OBJS) $(LDFLAGS)
+	${CC} -Wl,-Map,$(OUTPUT).map -o $@ revision.o config.o $(OBJS) $(LDFLAGS)
 	${OBJDUMP} -d $(OUTPUT).elf > $(OUTPUT)_disasm.S
 	$(SIZE) $@
 	./save_size.sh $(SIZE) $@
@@ -208,14 +202,6 @@ config.o: .config $(AUTOCONF)
 	$(OBJCOPY) -I binary $(OBJCOPY-TARGET-y) .config.bin $@
 	rm -f .config.bin
 
-ppsi/.config: $(obj-ppsi)
-
-pconfig.o: ppsi/.config
-	grep CONFIG ppsi/.config > .ppsiconfig.bin
-	dd bs=1 count=1 if=/dev/zero 2> /dev/null >> .ppsiconfig.bin
-	$(OBJCOPY) -I binary $(OBJCOPY-TARGET-y) .ppsiconfig.bin $@
-	rm -f .ppsiconfig.bin
-
 %.bin: %.elf
 	${OBJCOPY} -O binary $^ $@
 
@@ -230,21 +216,11 @@ pconfig.o: ppsi/.config
 
 $(AUTOCONF): silentoldconfig gitmodules
 
-$(AUTOCONF_PPSI): $(obj-ppsi)
-
-AUTOCONF_PPSI-$(CONFIG_PPSI) = $(AUTOCONF_PPSI)
-
 # below have dependency on $(AUTOCONF_PPSI) file
 REQUIRE_AUTOCONF_PPSI+= \
 	monitor/monitor_ppsi.o \
 	dump-info.o \
 	wrc_main.o \
-
-# some files require $(AUTOCONF_PPSI) to be present before build
-$(REQUIRE_AUTOCONF_PPSI): $(AUTOCONF_PPSI)
-# and wants to include $(AUTOCONF_PPSI) during the build
-$(REQUIRE_AUTOCONF_PPSI): CFLAGS+=-include $(AUTOCONF_PPSI)
-
 
 clean:
 	rm -f $(OBJS) config.o pconfig.o revision.o $(OUTPUT).elf \

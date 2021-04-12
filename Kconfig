@@ -782,3 +782,9 @@ config PPSI
 	boolean
 	help
 	  Select this option for the ppsi engine (now only option)
+
+menu "PPSI config"
+	depends on PPSI
+	source "ppsi/Kconfig_ppsi"
+
+endmenu
