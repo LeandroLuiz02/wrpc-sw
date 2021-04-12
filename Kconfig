@@ -408,7 +408,7 @@ config CMD_LEAPSEC
 config NETCONSOLE
 	depends on WR_NODE && IP && !NET_VERBOSE
 	boolean "Include netconsole via UDP"
-	default y
+	default n
 	help
 	  Include netconsole to be run via UDP
 
