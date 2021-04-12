@@ -22,8 +22,3 @@ obj-$(CONFIG_LATENCY_PROBE) += lib/latency.o
 obj-$(CONFIG_SNMP) += lib/snmp.o
 obj-$(CONFIG_LLDP) += lib/lldp.o
 obj-$(CONFIG_NETCONSOLE) += lib/netconsole.o
-
-# below requires $(AUTOCONF_PPSI) to be present before build
-REQUIRE_AUTOCONF_PPSI += \
-			lib/net.o \
-			lib/events-ptp.o \

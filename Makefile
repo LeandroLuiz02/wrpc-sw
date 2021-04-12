@@ -29,10 +29,8 @@ SIZE =		$(CROSS_COMPILE)size
 
 
 AUTOCONF = $(CURDIR)/include/generated/autoconf.h
-#AUTOCONF_PPSI = $(CURDIR)/ppsi/include/generated/autoconf.h
 
 export AUTOCONF
-#export AUTOCONF_PPSI
 
 PPSI = ppsi
 
@@ -216,12 +214,6 @@ config.o: .config $(AUTOCONF)
 
 $(AUTOCONF): silentoldconfig gitmodules
 
-# below have dependency on $(AUTOCONF_PPSI) file
-REQUIRE_AUTOCONF_PPSI+= \
-	monitor/monitor_ppsi.o \
-	dump-info.o \
-	wrc_main.o \
-
 clean:
 	rm -f $(OBJS) config.o pconfig.o revision.o $(OUTPUT).elf \
 		$(LDS) \
@@ -248,7 +240,7 @@ liblinux:
 extest:
 	$(MAKE) -C liblinux/extest CC=cc
 
-tools: .config gitmodules liblinux extest $(AUTOCONF_PPSI-y)
+tools: .config gitmodules liblinux extest
 	$(MAKE) -C tools
 
 tools-diag: liblinux extest

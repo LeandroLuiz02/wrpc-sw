@@ -30,10 +30,3 @@ obj-$(CONFIG_CMD_LEAPSEC) +=			shell/cmd_leapsec.o
 obj-$(CONFIG_FLASH_INIT) +=			shell/cmd_init.o
 obj-$(CONFIG_VLAN) +=				shell/cmd_vlan.o
 
-# below have dependency on $(AUTOCONF_PPSI) file
-REQUIRE_AUTOCONF_PPSI += \
-	shell/cmd_leapsec.o \
-	shell/cmd_pps.o \
-	shell/cmd_ptp.o \
-	shell/cmd_ptrack.o \
-	shell/cmd_verbose.o \
