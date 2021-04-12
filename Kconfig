@@ -138,7 +138,7 @@ config STACKSIZE
 	int
 	default 2048
 
-config PPSI
+config WRPC_PPSI
 	depends on WR_NODE
 	boolean
 	default y
@@ -763,14 +763,8 @@ config PRINTF_NONE
 	boolean
 	default PRINTF_IS_NONE
 
-config PPSI
-	depends on WR_NODE
-	boolean
-	help
-	  Select this option for the ppsi engine (now only option)
-
 menu "PPSI config"
-	depends on PPSI
+	depends on WRPC_PPSI
 	source "ppsi/Kconfig_ppsi"
 
 endmenu

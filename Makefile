@@ -50,7 +50,7 @@ obj-$(CONFIG_WR_NODE)   += wrc_main.o
 obj-$(CONFIG_WR_NODE_SIM) += wrc_main_sim.o
 obj-$(CONFIG_TARGET_WR_SWITCH) += ipc/minipc-mem-server.o ipc/rt_ipc.o
 
-obj-$(CONFIG_PPSI) += dump-info.o
+obj-$(CONFIG_WRPC_PPSI) += dump-info.o
 # our linker script is preprocessed, so have a rule here
 %.ld: %.ld.S $(AUTOCONF) .config
 	$(CC) -include $(AUTOCONF) -E -P $*.ld.S -o $@
@@ -62,7 +62,7 @@ cflags-y +=	-I$(CURDIR)/pp_printf
 cflags-$(CONFIG_ARCH_LM32)  +=  -Iinclude/std
 cflags-$(CONFIG_ARCH_RISCV) +=  -Iinclude/std
 
-cflags-$(CONFIG_PPSI) += \
+cflags-$(CONFIG_WRPC_PPSI) += \
 	-include include/ppsi-wrappers.h \
 	-I$(PPSI)/arch-wrpc \
 	-I$(PPSI)/proto-ext-whiterabbit \
@@ -74,7 +74,7 @@ cflags-y += \
 	-I$(PPSI)/include
 
 obj-ppsi = $(PPSI)/ppsi.a
-obj-$(CONFIG_PPSI) += $(obj-ppsi)
+obj-$(CONFIG_WRPC_PPSI) += $(obj-ppsi)
 
 # Below, CONFIG_PPSI is wrong, as we can't build these for the host
 obj-$(CONFIG_EMBEDDED_NODE) += \
@@ -112,7 +112,7 @@ include softpll/softpll.mk
 include host/host.mk
 
 # ppsi already has div64 (the same one), so only pick it if not using ppsi.
-ifndef CONFIG_PPSI
+ifndef CONFIG_WRPC_PPSI
   obj-y += pp_printf/div64.o
 endif
 # And always complain if we pick the libgcc division: 64/32 = 32 is enough here.

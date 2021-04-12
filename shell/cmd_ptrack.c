@@ -10,7 +10,7 @@
 #include <string.h>
 #include <wrc.h>
 #include "shell.h"
-#ifdef CONFIG_PPSI
+#ifdef CONFIG_WRPC_PPSI
 #  include <ppsi/ppsi.h>
 #  include "wr-api.h"
 #else

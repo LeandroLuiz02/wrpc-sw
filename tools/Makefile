@@ -14,7 +14,7 @@ ALL   += wrpc-vuart
 ALL   += wr-streamers
 ALL   += wrpc-diags
 ALL   += gensdbfs
-ALL-$(CONFIG_PPSI)  += wrpc-dump
+ALL-$(CONFIG_WRPC_PPSI)  += wrpc-dump
 
 ALL+= $(ALL-y)
 

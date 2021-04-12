@@ -20,7 +20,7 @@ obj-$(CONFIG_EMBEDDED_NODE) += \
 
 
 obj-$(CONFIG_IP) +=				shell/cmd_ip.o
-obj-$(CONFIG_PPSI) +=				shell/cmd_verbose.o
+obj-$(CONFIG_WRPC_PPSI) +=			shell/cmd_verbose.o
 obj-$(CONFIG_CMD_CONFIG) +=			shell/cmd_config.o
 obj-$(CONFIG_CMD_SLEEP) +=			shell/cmd_sleep.o
 obj-$(CONFIG_CMD_NETCONSOLE) +=			shell/cmd_netconsole.o

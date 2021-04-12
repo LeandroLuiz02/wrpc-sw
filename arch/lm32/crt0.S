@@ -119,7 +119,7 @@ _true_reset:
 	.word softpll
 .org FIFO_LOG_PADDR
 	.word fifo_log
-#ifdef CONFIG_PPSI
+#ifdef CONFIG_WRPC_PPSI
 .org PPG_STATIC_PADDR
 	.word ppg_static
 #endif
