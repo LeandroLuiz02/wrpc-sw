@@ -147,6 +147,9 @@ extern unsigned char *BASE_EP;
 #define ERTM14_PPS_OUT_MODE_CONSTANT_0 4
 #define ERTM14_PPS_OUT_MODE_CONSTANT_1 5
 
+#define ERTM14_NCO_RESET_DEFAULT_LATENCY (16000/8)
+#define ERTM14_NCO_RESET_DEFAULT_TIMEOUT (160000/8)
+
 struct ertm14_board
 {
     struct gpio_device gpio_aux;
