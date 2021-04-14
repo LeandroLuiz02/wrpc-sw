@@ -13,6 +13,7 @@
 .tmp_*
 .config
 .config.old
+configs/tmp_defconfig
 include/config
 include/generated
 size_db.txt

@@ -262,8 +262,23 @@ silentoldconfig:
 scripts_basic config:
 	$(MAKE) quiet=quiet_ -f Makefile.kconfig $@
 
+%_defconfig:
+# copy config from WRPC repo
+	@echo "Use configs/$@ as defconfig"
+	@cp configs/$@ configs/tmp_defconfig
+# concatenate ppsi's config if present
+	@if [ -f ppsi/configs/$@ ]; then \
+		echo "Use ppsi/configs/$@ as defconfig for PPSI"; \
+		cat ppsi/configs/$@ >> configs/tmp_defconfig; \
+	else \
+		echo "ppsi/configs/$@ not found. Use default values for PPSI"; \
+	fi
+	$(MAKE) quiet=quiet_ -f Makefile.kconfig tmp_defconfig
+	rm configs/tmp_defconfig
+
 %config:
 	$(MAKE) quiet=quiet_ -f Makefile.kconfig $@
+
 
 defconfig:
 	$(MAKE) quiet=quiet_ -f Makefile.kconfig spec_defconfig
