@@ -137,6 +137,8 @@ struct ertm14_board_state
     uint32_t clkb_enable_mask;
     uint8_t clka_sync_state[ERTM14_CLKAB_OUT_MAX_ID + 1];
     uint8_t clkb_sync_state[ERTM14_CLKAB_OUT_MAX_ID + 1];
+    uint32_t streamers_latency_cycles; // WR Streamer fixed latency (in 8ns cycles)
+    uint32_t streamers_timeout_cycles; // WR Streamer fixed latency timeout (in 8ns cycles)
 };
 
 PACKED struct ertm14_mmc_version_info
@@ -176,6 +178,7 @@ struct ertm14_nco_reset {
 	};
 	uint32_t	current_stream_id;
 	uint32_t	rx_count;
+	uint32_t	rx_timeouts;
 	uint32_t	reset_count;
 	uint32_t	connector;
 	uint32_t	unused[7];
