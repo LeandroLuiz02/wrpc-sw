@@ -22,6 +22,7 @@
 #include <stdint.h>
 #include <string.h>
 #include <stdio.h>
+#include <stddef.h>
 
 #include "dev/gpio.h"
 #include "dev/bb_spi.h"
@@ -364,6 +365,10 @@ static struct wrc_sensor ertm_sensors[] = {
 };
 
 static void mmc_show_version_info( const char *brdname, struct ertm14_mmc_state *st );
+static void streamers_init(void);
+static void streamers_set_rx_latency( uint32_t lat );
+static void streamers_set_rx_timeout( uint32_t tmo );
+void streamers_reset_rx_stats(void);
 
 uint32_t bswap32(uint32_t v)
 {
@@ -924,6 +929,33 @@ static int apply_dds_config( struct ad9910_device *dev, struct ertm14_dds_state*
     return 0;
 }
 
+static void streamers_init(void)
+{
+    streamers_set_rx_latency( ERTM14_NCO_RESET_DEFAULT_LATENCY );
+    streamers_set_rx_timeout( ERTM14_NCO_RESET_DEFAULT_TIMEOUT );
+}
+
+static void streamers_set_rx_latency( uint32_t lat )
+{
+    uint32_t ver = readl( BASE_ERTM14_STREAMERS );
+    
+    board_dbg("streamers: set RX latency = %d cycles %p %p\n", lat, BASE_ERTM14_STREAMERS + offsetof( struct WR_STREAMERS_WB, RX_CFG5 ), ver );
+    writel( lat, BASE_ERTM14_STREAMERS + offsetof( struct WR_STREAMERS_WB, RX_CFG5 ) );
+    writel( WR_STREAMERS_CFG_OR_RX_FIX_LAT, BASE_ERTM14_STREAMERS + offsetof( struct WR_STREAMERS_WB, CFG ) );
+}
+
+static void streamers_set_rx_timeout( uint32_t tmo )
+{
+    board_dbg("streamers: set RX timeout = %d cycles\n", tmo );
+    writel( tmo, BASE_ERTM14_STREAMERS + offsetof( struct WR_STREAMERS_WB, RX_CFG6 ) );
+    writel( WR_STREAMERS_CFG_OR_RX_FIX_LAT, BASE_ERTM14_STREAMERS + offsetof( struct WR_STREAMERS_WB, CFG ) );
+}
+
+
+void streamers_reset_rx_stats(void)
+{
+    writel( WR_STREAMERS_SSCR1_RST_STATS, BASE_ERTM14_STREAMERS + offsetof( struct WR_STREAMERS_WB, SSCR1 ) );
+}
 
 void ertm14_apply_config(struct ertm14_board_state *cfg,
 	struct ertm14_board_state *mask, int force_all)
@@ -991,6 +1023,11 @@ void ertm14_apply_config(struct ertm14_board_state *cfg,
                     ertm15_rf_distr_output_enable(&board.rf_distr, ERTM15_RF_REF, i, st_ref );
         }
 	}
+
+    if( mask->streamers_latency_cycles )
+        streamers_set_rx_latency( cfg->streamers_latency_cycles );
+    if( mask->streamers_timeout_cycles )
+        streamers_set_rx_timeout( cfg->streamers_timeout_cycles );
 
     ertm15_update_rf_switches( &board.rf_distr );
 }
@@ -1337,6 +1374,7 @@ static int rf_nco_sync_fsm( int is_ref, struct ertm14_dds_state *state, uint32_t
             {
                 board_dbg("nco_sync[%s]: timing up\n", name);
                 state->sync_state = ERTM14_CLK_SYNC_STATE_CONFIGURE;
+                streamers_reset_rx_stats();
             }
             break;
 
@@ -2073,7 +2111,10 @@ int ertm14_low_level_init(void)
 
     mmc_comm_init();
 
-    board_dbg("Init RF transceiver\n");
+    board_dbg("Init RF transceiver & streamers\n");
+
+    streamers_init();
+
     wr_rf_frame_transceiver_create( &board.rf_xcvr, BASE_ERTM14_RF_FRAME_TRANSCEIVER );
 
     ertm14_set_pps_out_mode( ERTM14_PPS_OUT_MODE_PPS );
@@ -2122,6 +2163,9 @@ void ertm14_config_init(void)
 
     cfg->clka_enable_mask = -1; // all CLKA outputs ON
     cfg->clkb_enable_mask = -1; // all CLKB outputs ON
+
+    cfg->streamers_latency_cycles = ERTM14_NCO_RESET_DEFAULT_LATENCY;
+    cfg->streamers_timeout_cycles = ERTM14_NCO_RESET_DEFAULT_TIMEOUT;
 
     copy_config(&ertm14_hardware, cfg);
 }
