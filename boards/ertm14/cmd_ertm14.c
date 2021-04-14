@@ -353,9 +353,9 @@ static int ertm14_monitor_ui(void)
     ret = diag_read_word(8, DIAG_RO_BANK, &rx_count);
     ret = diag_read_word(4, DIAG_RO_BANK, &rx_lat_max);
     ret = diag_read_word(5, DIAG_RO_BANK, &rx_lat_min);
-    ret = diag_read_word(18, DIAG_RO_BANK, &rx_match);
-    ret = diag_read_word(20, DIAG_RO_BANK, &rx_late);
-    ret = diag_read_word(22, DIAG_RO_BANK, &rx_timeout);
+    ret = diag_read_word(20, DIAG_RO_BANK, &rx_match);
+    ret = diag_read_word(22, DIAG_RO_BANK, &rx_late);
+    ret = diag_read_word(24, DIAG_RO_BANK, &rx_timeout);
 
     struct ertm14_board_state *st = ertm14_get_current_state();
 
@@ -373,7 +373,11 @@ static int ertm14_monitor_ui(void)
     cprintf(C_WHITE, "%d\n", rx_late);
     cprintf(C_GREY, "RX Timeout:                ");
     cprintf(C_WHITE, "%d\n", rx_timeout);
-
+    cprintf(C_GREY, "RX Config Latency:         ");
+    cprintf(C_WHITE, "%d\n", streamers_get_rx_latency() );
+    cprintf(C_GREY, "RX Config Timeout:         ");
+    cprintf(C_WHITE, "%d\n", streamers_get_rx_timeout() );
+    
     cprintf(C_GREY, "\nNCO Reset status: \n");
     cprintf(C_GREY, "LO DDS Reset Mode:         ");
     cprintf(C_WHITE, "%s\n", nco_sync_source_to_string(st->lo.sync_source));

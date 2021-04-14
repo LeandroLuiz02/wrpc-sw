@@ -943,6 +943,16 @@ static void streamers_set_rx_latency( uint32_t lat )
     writel( WR_STREAMERS_CFG_OR_RX_FIX_LAT, BASE_ERTM14_STREAMERS + offsetof( struct WR_STREAMERS_WB, CFG ) );
 }
 
+int streamers_get_rx_latency()
+{
+    return readl( BASE_ERTM14_STREAMERS + offsetof( struct WR_STREAMERS_WB, RX_CFG5 ) );
+}
+
+int streamers_get_rx_timeout()
+{
+    return readl( BASE_ERTM14_STREAMERS + offsetof( struct WR_STREAMERS_WB, RX_CFG6 ) );
+}
+
 static void streamers_set_rx_timeout( uint32_t tmo )
 {
     board_dbg("streamers: set RX timeout = %d cycles\n", tmo );
