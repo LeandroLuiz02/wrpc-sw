@@ -15,6 +15,7 @@
 #include "dev/pps_gen.h"
 #include "dev/netif.h"
 #include "hw/etherbone-config.h"
+#include "wrc_ptp.h"
 
 enum ip_status ip_status = IP_TRAINING;
 static uint8_t myIP[4];
