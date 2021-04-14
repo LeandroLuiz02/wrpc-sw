@@ -386,6 +386,7 @@ int net_bh_poll(void)
 	q->avail -= wrap_copy_out(q, payload, size);
 	q->n++;
 
+	#if 0
 	pp_printf("Q: Size %d head %d Smac %x:%x:%x:%x:%x:%x dmac %x:%x:%x:%x:%x:%x etype %x\n", recvd,
 		   q->head, hdr.srcmac[0], hdr.srcmac[1], hdr.srcmac[2],
 		   hdr.srcmac[3], hdr.srcmac[4], hdr.srcmac[5],
@@ -396,6 +397,7 @@ int net_bh_poll(void)
 	for( i = 0; i < size; i++)
 		pp_printf("%02x ", payload[i] );
 	pp_printf("\n");
+	#endif
 
 	net_verbose("%s: saved packet to socket %04x:%04x "
 		    "[avail %d n %d size %d]\n", __FUNCTION__,
