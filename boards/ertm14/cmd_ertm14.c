@@ -235,6 +235,9 @@ static void set_dds_sync_source( struct ertm14_board_state *cfg, struct ertm14_b
 
 /* FIXME: this should be in a .h file */
 extern void phy_calibration_disable(void);
+extern void streamers_reset_rx_stats(void);
+extern int streamers_get_rx_latency(void);
+extern int streamers_get_rx_timeout(void);
 
 static int cmd_ertm(const char *args[])
 {
