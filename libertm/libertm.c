@@ -388,6 +388,8 @@ void board_state_to_network_order(struct ertm14_board_state *host, struct ertm14
 	dds_to_network_order(&host->lo,  &board->lo);
 	board->clka_enable_mask = htonl(host->clka_enable_mask);
 	board->clkb_enable_mask = htonl(host->clkb_enable_mask);
+	board->streamers_latency_cycles = htonl(host->streamers_latency_cycles);
+	board->streamers_timeout_cycles = htonl(host->streamers_timeout_cycles);
 	for (i = ERTM_CLKAB_MIN_CH; i <= ERTM_CLKAB_MAX_CH; i++) {
 		/* FIXME: not enum */
 		board->clka_freq_hz[i] = htonl(host->clka_freq_hz[i]);
@@ -405,6 +407,8 @@ void board_state_to_host_order(struct ertm14_board_state *board, struct ertm14_b
 	dds_to_host_order(&board->lo, &host->lo);
 	host->clka_enable_mask = ntohl(board->clka_enable_mask);
 	host->clkb_enable_mask = ntohl(board->clkb_enable_mask);
+	host->streamers_latency_cycles = ntohl(board->streamers_latency_cycles);
+	host->streamers_timeout_cycles = ntohl(board->streamers_timeout_cycles);
 	for (i = ERTM_CLKAB_MIN_CH; i <= ERTM_CLKAB_MAX_CH; i++) {
 		/* FIXME: not enum */
 		host->clka_freq_hz[i] = ntohl(board->clka_freq_hz[i]);
