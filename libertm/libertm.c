@@ -1145,3 +1145,53 @@ int ertm_wr_enable(struct ertm_status *handle, int mode)
 	handle->state->ptp_enabled = e;
 	return ertm_proto_cycle(link, ertm14_ptp_enable, &e, NULL);
 }
+
+/* streamer latency and timeout getter/setters */
+static int ertm_set_streamers_latency_timeout(struct ertm_status *handle, uint32_t cycles16n, int is_latency)
+{
+	struct ertm14_board_state *bs, *next, *mask;
+
+	if ((bs = get_board_state(handle)) == NULL) {
+		errno = EINVAL;
+		return ERTM_BAD_HANDLE;
+	}
+	next = &handle->state->next_state;
+	mask = &handle->state->commit_mask;
+
+	if (is_latency) {
+	    next->streamers_latency_cycles = cycles16n;
+	    mask->streamers_latency_cycles = 1;
+	} else {
+	    next->streamers_timeout_cycles = cycles16n;
+	    mask->streamers_timeout_cycles = 1;
+	}
+
+	if (handle->state->mode == ERTM_IMMEDIATE)
+		commit_config(handle, next, mask);
+	return 0;
+}
+
+int ertm_set_streamers_latency(struct ertm_status *handle, uint32_t cycles16n)
+{
+	return ertm_set_streamers_latency_timeout(handle, cycles16n, 1);
+}
+
+int ertm_set_streamers_timeout(struct ertm_status *handle, uint32_t cycles16n)
+{
+	return ertm_set_streamers_latency_timeout(handle, cycles16n, 0);
+}
+
+int ertm_get_streamers_latency_timeout(struct ertm_status *handle,
+	    uint32_t *latency_cycles, uint32_t *timeout_cycles)
+{
+	struct ertm14_board_state *bs;
+
+	if ((bs = get_board_state(handle)) == NULL) {
+		errno = EINVAL;
+		return ERTM_BAD_HANDLE;
+	}
+	/* FIXME: are these in sync with diag regs? */
+	*latency_cycles = bs->streamers_latency_cycles;
+	*timeout_cycles = bs->streamers_timeout_cycles;
+	return 0;
+}
