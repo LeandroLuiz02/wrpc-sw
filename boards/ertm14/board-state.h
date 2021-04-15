@@ -114,6 +114,10 @@
 /* Resync done, output clock is ready */
 #define ERTM14_CLK_SYNC_STATE_READY 4
 
+/* streamer default latency and timeout */
+#define ERTM14_NCO_RESET_DEFAULT_LATENCY (16000/16)
+#define ERTM14_NCO_RESET_DEFAULT_TIMEOUT (160000/16)
+
 struct ertm14_dds_state
 {
     uint32_t ftw;
