@@ -178,6 +178,8 @@ static void ertm_status_init(struct ertm_state *st)
 	clkab_defaults(bs);
 	dds_defaults(&bs->lo, ERTM_LO_DEFAULT_FREQ);
 	dds_defaults(&bs->ref, ERTM_REF_DEFAULT_FREQ);
+	bs->streamers_latency_cycles = ERTM14_NCO_RESET_DEFAULT_LATENCY;
+	bs->streamers_timeout_cycles = ERTM14_NCO_RESET_DEFAULT_TIMEOUT;
 	memcpy(&st->temperatures, &temperatures_defaults,
 		sizeof(st->temperatures));
 	memcpy(&st->voltages, &voltages_defaults,
