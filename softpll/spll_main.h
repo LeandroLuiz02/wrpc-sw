@@ -47,4 +47,8 @@ int mpll_set_phase_shift(struct spll_main_state *s,
 
 int mpll_shifter_busy(struct spll_main_state *s);
 
+int spll_vco_freeze(int freeze);
+
+int spll_pshifter_freeze(int freeze);
+
 #endif // __SPLL_MAIN_H
