@@ -9,6 +9,7 @@
 
 #include <string.h>
 #include <wrc.h>
+#include <softpll_ng.h>
 #include "shell.h"
 #ifdef CONFIG_PPSI
 #  include <ppsi/ppsi.h>
