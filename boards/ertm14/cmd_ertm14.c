@@ -309,9 +309,9 @@ static int cmd_ertm(const char *args[])
     } else if (!strcasecmp(args[0], "set-dds-sync-source")) {
         set_dds_sync_source( &nstate, &mask, args[1], args[2]);
     } else if (!strcasecmp(args[0], "set-streamers-latency")) {
-        set_streamers_latency( &nstate, &mask, args[1] );
+        set_streamers_latency( &nstate, &mask, strtol(args[1], NULL, 0) );
     } else if (!strcasecmp(args[0], "set-streamers-timeout")) {
-        set_streamers_timeout( &nstate, &mask, args[1] );
+        set_streamers_timeout( &nstate, &mask, strtol(args[1], NULL, 0) );
     } else if (!strcasecmp(args[0], "reset-stats")) {
         streamers_reset_rx_stats();
     }
