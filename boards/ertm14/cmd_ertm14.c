@@ -18,6 +18,7 @@
 #include "shell.h"
 
 #include "ertm15_rf_distr.h"
+#include "board-aux.h"
 
 extern struct wb_clock_monitor_device ertm14_cmon;
 
@@ -103,6 +104,7 @@ static void set_dds_param(struct ertm14_board_state *cfg, struct ertm14_board_st
                  int out = atoi(value);
                  if( out >= ERTM14_RF_OUT_MIN_ID && out <= ERTM14_RF_OUT_MAX_ID )
                  {
+                     pp_printf("DDS %s is %s\n", is_lo?"LO":"REF", atoi(value2)?"ON":"OFF" );
                      dcfg->out_state[out] = atoi(value2) ? ERTM15_RF_OUT_ON : ERTM15_RF_OUT_OFF;
                      dmask->out_state[out] = 1;
                  }
@@ -162,6 +164,19 @@ static void set_clk_param(struct ertm14_board_state *cfg, struct ertm14_board_st
         pp_printf("Expected CLK name: clka clkb\n");
     }
 }
+
+static void set_streamers_timeout(struct ertm14_board_state *cfg, struct ertm14_board_state* mask, int param )
+{
+    cfg->streamers_timeout_cycles = param;
+    mask->streamers_timeout_cycles = 1;
+}
+
+static void set_streamers_latency(struct ertm14_board_state *cfg, struct ertm14_board_state* mask, int param )
+{
+    cfg->streamers_latency_cycles = param;
+    mask->streamers_latency_cycles = 1;
+}
+
 
 static int measure_clock(int id, int ref_channel, int ref_frequency)
 {
@@ -226,6 +241,7 @@ static int cmd_ertm(const char *args[])
     struct ertm14_board_state *cstate = ertm14_get_current_state();
     struct ertm14_board_state mask, nstate;
 
+    memset(&nstate, 0, sizeof(struct ertm14_board_state ) );
     memset(&mask, 0, sizeof(struct ertm14_board_state ) );
 
     if (!strcasecmp(args[0], "test-dac")) 
@@ -288,9 +304,18 @@ static int cmd_ertm(const char *args[])
         set_clk_param( &nstate, &mask, PARAM_FREQ, args[1], args[2] ,args[3]);
     } else if (!strcasecmp(args[0], "set-dds-sync-source")) {
         set_dds_sync_source( &nstate, &mask, args[1], args[2]);
+    } else if (!strcasecmp(args[0], "set-streamers-latency")) {
+        set_streamers_latency( &nstate, &mask, args[1] );
+    } else if (!strcasecmp(args[0], "set-streamers-timeout")) {
+        set_streamers_timeout( &nstate, &mask, args[1] );
+    } else if (!strcasecmp(args[0], "reset-stats")) {
+        streamers_reset_rx_stats();
     }
  
+ 
     ertm14_apply_config( &nstate, &mask, 0 );
+    update_config( cstate, &nstate, &mask );
+
     return 0;
 }
 
@@ -316,7 +341,7 @@ static int ertm14_monitor_ui(void)
         return 0;
 
     uint32_t ret;
-    uint32_t val;
+    uint32_t rx_count, rx_lat_min, rx_lat_max, rx_match, rx_late, rx_timeout;
 
     tmo_restart( &ertm14_mon_timer );
 
@@ -325,23 +350,42 @@ static int ertm14_monitor_ui(void)
 	cprintf(C_BLUE, "eRTM14/15 Board Monitor");
 	cprintf(C_GREY, "\nEsc = exit\n\n");
 
-    ret = diag_read_word(8, DIAG_RO_BANK, &val);
+    ret = diag_read_word(8, DIAG_RO_BANK, &rx_count);
+    ret = diag_read_word(4, DIAG_RO_BANK, &rx_lat_max);
+    ret = diag_read_word(5, DIAG_RO_BANK, &rx_lat_min);
+    ret = diag_read_word(20, DIAG_RO_BANK, &rx_match);
+    ret = diag_read_word(22, DIAG_RO_BANK, &rx_late);
+    ret = diag_read_word(24, DIAG_RO_BANK, &rx_timeout);
 
     struct ertm14_board_state *st = ertm14_get_current_state();
 
     if(!st)
         return 0;
 
-    cprintf(C_WHITE, "NCO Sync Status:\n");
-    cprintf(C_GREY, "Streamer RX Message count: ");
-    cprintf(C_WHITE, "%d\n", val);
-    cprintf(C_GREY, "LO DDS Sync Mode:          ");
+    cprintf(C_GREY, "Streamers status: \n");
+    cprintf(C_GREY, "RX Packets:                ");
+    cprintf(C_WHITE, "%d\n", rx_count);
+    cprintf(C_GREY, "RX Latency:                ");
+    cprintf(C_WHITE, "min: %d, max: %d (cycles)\n", rx_lat_min, rx_lat_max);
+    cprintf(C_GREY, "RX Matches:                ");
+    cprintf(C_WHITE, "%d\n", rx_match);
+    cprintf(C_GREY, "RX Late:                   ");
+    cprintf(C_WHITE, "%d\n", rx_late);
+    cprintf(C_GREY, "RX Timeout:                ");
+    cprintf(C_WHITE, "%d\n", rx_timeout);
+    cprintf(C_GREY, "RX Config Latency:         ");
+    cprintf(C_WHITE, "%d\n", streamers_get_rx_latency() );
+    cprintf(C_GREY, "RX Config Timeout:         ");
+    cprintf(C_WHITE, "%d\n", streamers_get_rx_timeout() );
+    
+    cprintf(C_GREY, "\nNCO Reset status: \n");
+    cprintf(C_GREY, "LO DDS Reset Mode:         ");
     cprintf(C_WHITE, "%s\n", nco_sync_source_to_string(st->lo.sync_source));
-    cprintf(C_GREY, "REF DDS Sync Mode:         ");
+    cprintf(C_GREY, "REF DDS Reset Mode:        ");
     cprintf(C_WHITE, "%s\n", nco_sync_source_to_string(st->ref.sync_source));
-    cprintf(C_GREY, "LO DDS Sync Triggers:      ");
+    cprintf(C_GREY, "LO DDS Resets:             ");
     cprintf(C_WHITE, "%d\n", st->lo.sync_count);
-    cprintf(C_GREY, "REF DDS Sync Triggers:     ");
+    cprintf(C_GREY, "REF DDS Resets:            ");
     cprintf(C_WHITE, "%d\n", st->ref.sync_count);
 
 

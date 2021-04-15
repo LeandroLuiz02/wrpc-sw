@@ -37,6 +37,7 @@
 #include "dev/console.h"
 #include "dev/endpoint.h"
 #include "dev/netif.h"
+#include "dev/24aa025.h"
 
 
 #include "storage.h"
@@ -44,15 +45,14 @@
 #include <wrc-event.h>
 #include "wrc-task.h"
 
+static struct i2c_bus i2c_mac_bus[2];
+static struct m24aa025_device i2c_mac_dev[2];
+static uint8_t board_mac_addr[6];
+
 int wrc_board_early_init()
 {
     static int32_t flash_entry_points[64];
     int i;
-
-
-//    bist_init( ertm_bist );
-
-//    wrc_register_sensors( ertm_sensors );
 
     /* initialize SPI flash */
     bb_spi_create( &spi_wrc_flash,
@@ -63,33 +63,22 @@ int wrc_board_early_init()
 
 	spi_flash_create( &wrc_flash_dev, &spi_wrc_flash, 16384, 0x600000 );
 
+    bb_i2c_create( &i2c_mac_bus[0], &pin_sysc_fmc_scl, &pin_sysc_fmc_sda );
+    bb_i2c_init( &i2c_mac_bus[0] );
 
-#if 0
-    uint32_t ts = timer_get_tics();
+    m24aa025_init( &i2c_mac_dev[0], &i2c_mac_bus[0], 0x50 );
 
-    for(i=0;i<1000000;i++)
-    {
-        //gen_gpio_out(&pin_sysc_spi_sclk, 0);
-        //gen_gpio_out(&pin_sysc_spi_sclk, 1);
+    /* FIXME: for some reason, ep_get_mac_addr does not retrieve
+     * the herein stored value. This addresses this quirk
+     */
 
-        sysc_gpio_set_out(&pin_sysc_spi_sclk, 0);
-        sysc_gpio_set_out(&pin_sysc_spi_sclk, 1);
+    uint8_t *mac = board_mac_addr;
+    int err = m24aa025_read_mac( &i2c_mac_dev[0], mac );
 
-    }
+    board_dbg("MAC address: Port 0 = %02x:%02x:%02x:%02x:%02x:%02x\n",
+        mac[0],mac[1],mac[2],mac[3],mac[4],mac[5] );
 
-    uint32_t te = timer_get_tics();
-    pp_printf("meas: %d ms\n", te - ts);
-    for(;;);
-#endif
-
-
-
-	uint32_t id = spi_flash_read_id( &wrc_flash_dev );
-
-//    bist_checkpoint( ertm_bist, ERTM14_BIST_FLASH_PRESENCE, 0, id == ERTM14_EXPECTED_FLASH_ID );
-
-	/* initialize I2C bus */
-//	bb_i2c_init( &dev_i2c_fmc );
+    uint32_t id = spi_flash_read_id( &wrc_flash_dev );
 
     for(i = 0; i < 32 + 8; i++)
         flash_entry_points[i] = 0x600000 + 0x40000 * i;
@@ -101,12 +90,12 @@ int wrc_board_early_init()
     wrc_storage_dev.entry_points = &flash_entry_points[0];
 
     int rv = storage_mount( &wrc_storage_dev );
-//    bist_checkpoint( ertm_bist, ERTM14_BIST_FLASH_FS_MOUNT, 0, rv == 0 );
 
     /* reset the networking part of the WRCore and start the WR Endpoint */
    	net_rst();
 
     ep_init( &wrc_endpoint_dev, (void *) BASE_EP );
+    ep_set_mac_addr( &wrc_endpoint_dev, board_mac_addr );
 
 	netif_register_device( "wru0", "default", &wrc_endpoint_dev );
 
@@ -115,10 +104,6 @@ int wrc_board_early_init()
 	timer_delay_ms(200);
 	ep_enable( &wrc_endpoint_dev, 1, 1);
 	timer_delay_ms(200);
-
-        //  int ll = ertm14_low_level_init();
-
-//    bist_summary( ertm_bist );
 
     return 0;
 }
