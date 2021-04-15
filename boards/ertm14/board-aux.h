@@ -10,12 +10,14 @@
 #include <string.h>
 #include "board-state.h"
 
-static void copy_config(struct ertm14_board_state *dst, const struct ertm14_board_state *src)
+static void __attribute__((__unused__))
+copy_config(struct ertm14_board_state *dst, const struct ertm14_board_state *src)
 {
 	memcpy(dst, src, sizeof(struct ertm14_board_state));
 }
 
-static void clean_config(struct ertm14_board_state *bs)
+static void __attribute__((__unused__))
+clean_config(struct ertm14_board_state *bs)
 {
 	memset(bs, 0, sizeof(struct ertm14_board_state));
 }
