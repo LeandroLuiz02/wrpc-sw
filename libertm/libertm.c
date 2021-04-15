@@ -178,6 +178,8 @@ static void ertm_status_init(struct ertm_state *st)
 	clkab_defaults(bs);
 	dds_defaults(&bs->lo, ERTM_LO_DEFAULT_FREQ);
 	dds_defaults(&bs->ref, ERTM_REF_DEFAULT_FREQ);
+	bs->streamers_latency_cycles = ERTM14_NCO_RESET_DEFAULT_LATENCY;
+	bs->streamers_timeout_cycles = ERTM14_NCO_RESET_DEFAULT_TIMEOUT;
 	memcpy(&st->temperatures, &temperatures_defaults,
 		sizeof(st->temperatures));
 	memcpy(&st->voltages, &voltages_defaults,
@@ -386,6 +388,8 @@ void board_state_to_network_order(struct ertm14_board_state *host, struct ertm14
 	dds_to_network_order(&host->lo,  &board->lo);
 	board->clka_enable_mask = htonl(host->clka_enable_mask);
 	board->clkb_enable_mask = htonl(host->clkb_enable_mask);
+	board->streamers_latency_cycles = htonl(host->streamers_latency_cycles);
+	board->streamers_timeout_cycles = htonl(host->streamers_timeout_cycles);
 	for (i = ERTM_CLKAB_MIN_CH; i <= ERTM_CLKAB_MAX_CH; i++) {
 		/* FIXME: not enum */
 		board->clka_freq_hz[i] = htonl(host->clka_freq_hz[i]);
@@ -403,6 +407,8 @@ void board_state_to_host_order(struct ertm14_board_state *board, struct ertm14_b
 	dds_to_host_order(&board->lo, &host->lo);
 	host->clka_enable_mask = ntohl(board->clka_enable_mask);
 	host->clkb_enable_mask = ntohl(board->clkb_enable_mask);
+	host->streamers_latency_cycles = ntohl(board->streamers_latency_cycles);
+	host->streamers_timeout_cycles = ntohl(board->streamers_timeout_cycles);
 	for (i = ERTM_CLKAB_MIN_CH; i <= ERTM_CLKAB_MAX_CH; i++) {
 		/* FIXME: not enum */
 		host->clka_freq_hz[i] = ntohl(board->clka_freq_hz[i]);
@@ -1138,4 +1144,62 @@ int ertm_wr_enable(struct ertm_status *handle, int mode)
 	link = &handle->link;
 	handle->state->ptp_enabled = e;
 	return ertm_proto_cycle(link, ertm14_ptp_enable, &e, NULL);
+}
+
+/* streamer latency and timeout getter/setters */
+static int ertm_set_streamers_latency_timeout(struct ertm_status *handle, uint32_t cycles16n, int is_latency)
+{
+	struct ertm14_board_state *bs, *next, *mask;
+
+	if ((bs = get_board_state(handle)) == NULL) {
+		errno = EINVAL;
+		return ERTM_BAD_HANDLE;
+	}
+	next = &handle->state->next_state;
+	mask = &handle->state->commit_mask;
+
+	if (is_latency) {
+	    next->streamers_latency_cycles = cycles16n;
+	    mask->streamers_latency_cycles = 1;
+	} else {
+	    next->streamers_timeout_cycles = cycles16n;
+	    mask->streamers_timeout_cycles = 1;
+	}
+
+	if (handle->state->mode == ERTM_IMMEDIATE)
+		commit_config(handle, next, mask);
+	return 0;
+}
+
+int ertm_set_streamers_latency(struct ertm_status *handle, uint32_t cycles16n)
+{
+	return ertm_set_streamers_latency_timeout(handle, cycles16n, 1);
+}
+
+int ertm_set_streamers_timeout(struct ertm_status *handle, uint32_t cycles16n)
+{
+	return ertm_set_streamers_latency_timeout(handle, cycles16n, 0);
+}
+
+int ertm_get_streamers_latency_timeout(struct ertm_status *handle,
+	    uint32_t *latency_cycles, uint32_t *timeout_cycles)
+{
+	struct uart_link *link = &handle->link;
+	struct ertm14_board_state *bs;
+	int res;
+
+	if ((bs = get_board_state(handle)) == NULL) {
+		errno = EINVAL;
+		return ERTM_BAD_HANDLE;
+	}
+	/* FIXME: are these in sync with diag regs? */
+	*latency_cycles = bs->streamers_latency_cycles;
+	*timeout_cycles = bs->streamers_timeout_cycles;
+
+	/* let's try something bold */
+	res = ertm_proto_cycle(link, ertm14_get_streamers_latency, NULL, latency_cycles);
+	if (res < 0)
+		return res;
+	*latency_cycles = ntohl(*latency_cycles);
+	return 0;
 }

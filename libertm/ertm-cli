@@ -433,6 +433,42 @@ class ErtmTest(cmd.Cmd):
         self.lib.ertm_get_board_info(self.handle, byref(bi))
         self.display.display_fpga_buildinfo(byref(bi))
 
+    def do_latency(self, args):
+        """display/set streamers latency."""
+        if not args:
+            self.do_get_latency(args)
+        else:
+            self.do_set_latency(args)
+
+    def do_get_latency(self, args):
+        """display streamers latency."""
+
+        latency = c_uint(0)
+        timeout = c_uint(0)
+        err = self.lib.ertm_get_streamers_latency_timeout(
+                self.handle, byref(latency), byref(timeout))
+        if err:
+            msg = self.errmsg(err)
+            print('error {} in latency: {}'.format(err, msg))
+            return
+        latency = latency.value
+        timeout = timeout.value
+        print('latency = {} ({} ns)\ntimeout = {} ({} ns)'.format(
+            latency, latency*16, timeout, timeout*16))
+
+    def do_set_latency(self, args):
+        """set streamers latency."""
+        try:
+            latency = int(args)
+        except (ValueError) as e:
+            print('usage: set_latency latency_in_16ns_units')
+            return
+        err = self.lib.ertm_set_streamers_latency(self.handle, latency)
+        if err:
+            msg = self.errmsg(err)
+            print('error {} in set_latency: {}'.format(err, msg))
+            return
+
     def my_postloop(self):
         readline.write_history_file(self.history)
         self.lib.ertm_exit(self.handle)

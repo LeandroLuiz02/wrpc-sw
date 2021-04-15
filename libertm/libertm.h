@@ -296,6 +296,12 @@ int ertm_wr_enable(struct ertm_status *handle, int enable);	/* free-running OCXO
 int ertm_wr_status(struct ertm_status *handle, int *link_up, int *is_locked);
 int ertm_wr_diags(struct ertm_status *handle, struct ertm_wr_status *status);
 
+/* streamer latency and timeout settings */
+int ertm_set_streamers_latency(struct ertm_status *handle, uint32_t cycles16n);
+int ertm_set_streamers_timeout(struct ertm_status *handle, uint32_t cycles16n);
+int ertm_get_streamers_latency_timeout(struct ertm_status *handle,
+	    uint32_t *latency_cycles16n, uint32_t *timeout_cycles16n);
+					/* all in 16ns-cycle units */
 #ifdef __cplusplus
 }
 #endif
