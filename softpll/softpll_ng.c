@@ -888,3 +888,15 @@ void spll_set_aux_mode( int channel, int mode )
 {
 	softpll.aux[channel].mode = mode;
 }
+
+int spll_pshifter_freeze(int freeze)
+{
+	softpll.mpll.ps_freeze = freeze;
+	return 0;
+}
+
+int spll_vco_freeze(int freeze)
+{
+	softpll.mpll.vco_freeze = freeze;
+	return 0;
+}

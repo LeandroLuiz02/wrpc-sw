@@ -11,6 +11,7 @@
  */
 
 #define BOARD_USE_CUSTOM_SDBFS 1
+#define BOARD_HAS_CUSTOM_NETWORK_INIT 1
 
 /* Fixed base addresses */
 #define BASE_MINIC	0x20000
@@ -20,6 +21,9 @@
 #define BASE_SYSCON	0x20400
 #define BASE_UART	0x20500
 #define BASE_ONEWIRE	0x20600
+
+#define BASE_GPIO 0x28080
+
 //#define BASE_ETHERNOBE_CFG	0x20700
 
 /* Board-specific parameters */

@@ -30,6 +30,7 @@ struct spll_main_state {
 	int sample_n;
 	int dac_index;
 	int enabled;
+	int ps_freeze, vco_freeze;
 };
 
 void mpll_init(struct spll_main_state *s, int id_ref,
@@ -45,5 +46,9 @@ int mpll_set_phase_shift(struct spll_main_state *s,
 				int desired_shift_ps);
 
 int mpll_shifter_busy(struct spll_main_state *s);
+
+int spll_vco_freeze(int freeze);
+
+int spll_pshifter_freeze(int freeze);
 
 #endif // __SPLL_MAIN_H

@@ -6,12 +6,39 @@
 #include "storage.h"
 #include <wrc-event.h>
 
+static uint8_t board_mac_addr[6];
+
 extern  uint32_t sdbfs_default_bin[] = 
 {
 	#include "sdbfs-image.h"
 };
 
 static const int32_t flash_entry_points[] = { 0x0f00000, -1 };
+
+static void sis83k_read_persistent_mac( uint8_t *mac )
+{
+	uint32_t id, ver, nrw, nro;
+	uint32_t sn;
+	uint32_t dna[3];
+	diag_read_info(&id, &ver, &nrw, &nro );
+	board_dbg("diags: id %d ver %d nrw %d nro %d\n", id, ver, nrw, nro );
+	diag_read_word(nro - 4, DIAG_RO_BANK, &dna[0] );
+	diag_read_word(nro - 3, DIAG_RO_BANK, &dna[1] );
+	diag_read_word(nro - 2, DIAG_RO_BANK, &dna[2] );
+	diag_read_word(nro - 1, DIAG_RO_BANK, &sn );
+
+	board_dbg("S/N %x DNA %08x %08x %08x\n", sn, dna[0], dna[1], dna[2] );
+
+	// well, we can't do anything else than generate this crap from the device's DNA. The serial numbers
+	// provided by the MMC don't appear to be really UNIQUE...
+	uint32_t seed = dna[0] ^ dna[1] ^ dna[2];
+	mac[0] = 0x22;
+	mac[1] = 0x33;
+	mac[2] = (seed >> 24) & 0xff;
+	mac[3] = (seed >> 16) & 0xff;
+	mac[4] = (seed >> 8) & 0xff;
+	mac[5] = seed & 0xff;
+}
 
 int wrc_board_early_init()
 {
@@ -41,8 +68,7 @@ int wrc_board_early_init()
 
 	if( id != 0x00012018 && id != 0xC22019 )
 	{
-		pp_printf("Can't find a matching flash memory. Read ID = 0x%08x\n", id);
-		return 0;
+		pp_printf("Warning! The flash memory has unsupported JEDEC ID: 0x%08x\n", id);
 	}
 
 	/*
@@ -58,14 +84,23 @@ int wrc_board_early_init()
 	 */
 	storage_mount( &wrc_storage_dev );
 
-	// fixme: read MAC address from the MMC
-    uint8_t mac[6];
+	sis83k_read_persistent_mac( board_mac_addr );
 
-	storage_get_persistent_mac(0, mac);
+	board_dbg("Board MAC Address: %02x:%02x:%02x:%02x:%02x:%02x\n", board_mac_addr[0], board_mac_addr[1], board_mac_addr[2], board_mac_addr[3], board_mac_addr[4], board_mac_addr[5]);
 
-	board_dbg("Board MAC Address: %02x:%02x:%02x:%02x:%02x:%02x\n", mac[0], mac[1], mac[2], mac[3], mac[4], mac[5]);
+	 /* reset the networking part of the WRCore and start the WR Endpoint */
+   	net_rst();
 
-	ep_set_mac_addr( &wrc_endpoint_dev, mac );
+    ep_init( &wrc_endpoint_dev, (void *) BASE_EP );
+    ep_set_mac_addr( &wrc_endpoint_dev, board_mac_addr );
+
+	netif_register_device( "wru0", "default", &wrc_endpoint_dev );
+
+	/* Sleep for 1s to make sure WRS v4.2 always realizes that
+	 * the link is down */
+	timer_delay_ms(200);
+	ep_enable( &wrc_endpoint_dev, 1, 1);
+	timer_delay_ms(200);
 
 	spll_set_aux_mode( 0, SPLL_AUX_MODE_TRACKING_SOURCE );
 	spll_set_aux_mode( 1, SPLL_AUX_MODE_TRACKING_SOURCE );
