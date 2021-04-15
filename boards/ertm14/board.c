@@ -936,34 +936,34 @@ static void streamers_init(void)
 
 static void streamers_set_rx_latency( uint32_t lat )
 {
-    uint32_t ver = readl( BASE_ERTM14_STREAMERS );
+    uint32_t ver = readl( (void*)BASE_ERTM14_STREAMERS );
     
     board_dbg("streamers: set RX latency = %d cycles %p %p\n", lat, BASE_ERTM14_STREAMERS + offsetof( struct WR_STREAMERS_WB, RX_CFG5 ), ver );
-    writel( lat, BASE_ERTM14_STREAMERS + offsetof( struct WR_STREAMERS_WB, RX_CFG5 ) );
-    writel( WR_STREAMERS_CFG_OR_RX_FIX_LAT, BASE_ERTM14_STREAMERS + offsetof( struct WR_STREAMERS_WB, CFG ) );
+    writel( lat, (void*)(BASE_ERTM14_STREAMERS + offsetof( struct WR_STREAMERS_WB, RX_CFG5 )) );
+    writel( WR_STREAMERS_CFG_OR_RX_FIX_LAT, (void*)(BASE_ERTM14_STREAMERS + offsetof( struct WR_STREAMERS_WB, CFG )) );
 }
 
-int streamers_get_rx_latency()
+int streamers_get_rx_latency(void)
 {
-    return readl( BASE_ERTM14_STREAMERS + offsetof( struct WR_STREAMERS_WB, RX_CFG5 ) );
+    return readl( (void*)(BASE_ERTM14_STREAMERS + offsetof( struct WR_STREAMERS_WB, RX_CFG5 )) );
 }
 
-int streamers_get_rx_timeout()
+int streamers_get_rx_timeout(void)
 {
-    return readl( BASE_ERTM14_STREAMERS + offsetof( struct WR_STREAMERS_WB, RX_CFG6 ) );
+    return readl( (void*)(BASE_ERTM14_STREAMERS + offsetof( struct WR_STREAMERS_WB, RX_CFG6 )) );
 }
 
 static void streamers_set_rx_timeout( uint32_t tmo )
 {
     board_dbg("streamers: set RX timeout = %d cycles\n", tmo );
-    writel( tmo, BASE_ERTM14_STREAMERS + offsetof( struct WR_STREAMERS_WB, RX_CFG6 ) );
-    writel( WR_STREAMERS_CFG_OR_RX_FIX_LAT, BASE_ERTM14_STREAMERS + offsetof( struct WR_STREAMERS_WB, CFG ) );
+    writel( tmo, (void*)(BASE_ERTM14_STREAMERS + offsetof( struct WR_STREAMERS_WB, RX_CFG6 )) );
+    writel( WR_STREAMERS_CFG_OR_RX_FIX_LAT, (void*)(BASE_ERTM14_STREAMERS + offsetof( struct WR_STREAMERS_WB, CFG )) );
 }
 
 
 void streamers_reset_rx_stats(void)
 {
-    writel( WR_STREAMERS_SSCR1_RST_STATS, BASE_ERTM14_STREAMERS + offsetof( struct WR_STREAMERS_WB, SSCR1 ) );
+    writel( WR_STREAMERS_SSCR1_RST_STATS, (void*)(BASE_ERTM14_STREAMERS + offsetof( struct WR_STREAMERS_WB, SSCR1 )) );
 }
 
 void ertm14_apply_config(struct ertm14_board_state *cfg,
