@@ -1192,7 +1192,6 @@ static int ertm_process_psnmp(struct uart_packet *rx_pkt, struct uart_packet *tx
 	struct ertm14_protocol_op *op;
 	struct ertm14_version_info *ver;
 	uint8_t *fver, mode;
-	uint32_t *latency;
 
 	/* return board config in case of bad opcode */
 	if ((op = get_proto_op(opcode)) == NULL)
@@ -1258,10 +1257,7 @@ static int ertm_process_psnmp(struct uart_packet *rx_pkt, struct uart_packet *tx
 		} else if (mode == WRC_MODE_UNKNOWN)
 			wrc_ptp_stop();
 		break;
-	case ertm14_get_streamers_latency:
-		latency = (uint32_t *)&tx_pkt->payload[op->offset2];
-		*latency = streamers_get_rx_latency();
-		break;
+
 	case 0x5a:
 		tx_pkt->length = rx_pkt->length;
 		tx_pkt->length = 1;	/* no time to reply */
