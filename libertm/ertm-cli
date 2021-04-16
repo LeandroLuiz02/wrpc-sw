@@ -34,7 +34,8 @@ def load_solibs():
         lib = CDLL(solib_default2, mode=RTLD_GLOBAL)
         display = CDLL(solib_display_default2)
     except OSError as e:
-        print('could not open library {} nor {}, exiting'.format(
+        print('could not open solibs at paths:\n'
+            '{}\n{}\n... exiting'.format(
             solib_default1, solib_default2))
         exit()
     else:
