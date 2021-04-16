@@ -1190,7 +1190,8 @@ int ertm_get_streamers_latency_timeout(struct ertm_status *handle,
 		errno = EINVAL;
 		return ERTM_BAD_HANDLE;
 	}
-	/* FIXME: are these in sync with diag regs? */
+	/* it is correct to assume that these
+	 * are in sync with HW-read values */
 	*latency_cycles = bs->streamers_latency_cycles;
 	*timeout_cycles = bs->streamers_timeout_cycles;
 	return 0;
