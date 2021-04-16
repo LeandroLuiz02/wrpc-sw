@@ -1184,22 +1184,15 @@ int ertm_set_streamers_timeout(struct ertm_status *handle, uint32_t cycles16n)
 int ertm_get_streamers_latency_timeout(struct ertm_status *handle,
 	    uint32_t *latency_cycles, uint32_t *timeout_cycles)
 {
-	struct uart_link *link = &handle->link;
 	struct ertm14_board_state *bs;
-	int res;
 
 	if ((bs = get_board_state(handle)) == NULL) {
 		errno = EINVAL;
 		return ERTM_BAD_HANDLE;
 	}
-	/* FIXME: are these in sync with diag regs? */
+	/* it is correct to assume that these
+	 * are in sync with HW-read values */
 	*latency_cycles = bs->streamers_latency_cycles;
 	*timeout_cycles = bs->streamers_timeout_cycles;
-
-	/* let's try something bold */
-	res = ertm_proto_cycle(link, ertm14_get_streamers_latency, NULL, latency_cycles);
-	if (res < 0)
-		return res;
-	*latency_cycles = ntohl(*latency_cycles);
 	return 0;
 }
