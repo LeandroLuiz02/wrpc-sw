@@ -21,11 +21,12 @@ CFLAGS += "-DGIT_USR=\"$(GIT_USR)\""
 CFLAGS += "-DGIT_URL=\"$(GIT_URL)\""
 
 LIBS = $(TARGET).a $(TARGET).so libertm_display.so
+LIBOBJS = $(TARGET).o linux-uart-link.o common-uart-link.o udev-serial.o magics.o
 
 all: libs main udev-find
 libs: $(LIBS)
 
-$(TARGET).a $(TARGET).so: $(TARGET).o linux-uart-link.o common-uart-link.o udev-serial.o
+$(TARGET).a $(TARGET).so: $(LIBOBJS)
 $(TARGET).so:
 	$(CC) -shared -o $@ $^
 $(TARGET).a:

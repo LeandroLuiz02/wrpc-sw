@@ -8,11 +8,69 @@ import os.path
 from ctypes import *
 from ctypes.util import find_library
 
+def load_solibs():
+    cli = os.path.realpath(__file__)
+    clidir = os.path.dirname(cli)
+    cliparent = os.path.dirname(clidir)
+    solib = 'libertm.so'
+    solib_display = 'libertm_display.so'
+    solib_default1 = os.path.join(clidir, solib)
+    solib_display_default1 = os.path.join(clidir, solib_display)
+    solib_default2 = os.path.join(cliparent, 'lib', solib)
+    solib_display_default2 = os.path.join(cliparent, 'lib', solib_display)
+    try:
+        libudev = find_library('udev')
+        CDLL(libudev, mode=RTLD_GLOBAL)
+    except OSError as e:
+        raise
+    try:
+        lib = CDLL(solib_default1, mode=RTLD_GLOBAL)
+        display = CDLL(solib_display_default1)
+    except OSError as e:
+        pass
+    else:
+        return lib, display
+    try:
+        lib = CDLL(solib_default2, mode=RTLD_GLOBAL)
+        display = CDLL(solib_display_default2)
+    except OSError as e:
+        print('could not open solibs at paths:\n'
+            '{}\n{}\n... exiting'.format(
+            solib_default1, solib_default2))
+        exit()
+    else:
+        return lib, display
+
+lib, display = load_solibs()
+
+class ertm_magics(Structure):
+    _fields_ = [
+	("path_max", c_int),
+	("ertm_clka", c_int),
+	("ertm_clkb", c_int),
+	("ertm_lo", c_int),
+	("ertm_ref", c_int),
+
+	("ertm14_sync_source_none", c_int),
+	("ertm14_sync_source_pps", c_int),
+	("ertm14_sync_source_rf_trigger", c_int),
+	("ertm14_max_uart_link_payload", c_int),
+
+	("ertm_wr_master", c_int),
+	("ertm_wr_slave", c_int),
+	("ertm_wr_free_running", c_int),
+
+	("Sensor_Array", c_int),
+	("BoardInfo", c_int),
+    ]
+
+magics = ertm_magics.in_dll(lib, "ertm_magics")
+
 class uart_packet(Structure):
-    ERTM14_MAX_UART_LINK_PAYLOAD = 512
+    ERTM14_MAX_UART_LINK_PAYLOAD = magics.ertm14_max_uart_link_payload
     _fields_ =[
         ("ptype", c_ubyte),
-        ("length", c_ushort), 
+        ("length", c_ushort),
         ("payload", c_ubyte*ERTM14_MAX_UART_LINK_PAYLOAD),
     ]
 
@@ -30,7 +88,7 @@ class uart_link(Structure):
     ]
 
 class ertm_connection(Structure):
-    PATH_MAX = 4096
+    PATH_MAX = magics.path_max
     _fields_ = [
         ("address", c_char_p),
         ("serial_connection", c_char*PATH_MAX),
@@ -94,21 +152,21 @@ class ErtmTest(cmd.Cmd):
             '''- type 'help' for a list of commands''')
     history = os.path.join(os.path.expanduser('~'), '.ertm_history')
 
-    ERTM_CLKA = 0
-    ERTM_CLKB  = 1
-    ERTM_LO = 2
-    ERTM_REF = 3
+    ERTM_CLKA = magics.ertm_clka
+    ERTM_CLKB  = magics.ertm_clkb
+    ERTM_LO = magics.ertm_lo
+    ERTM_REF = magics.ertm_ref
 
-    ERTM14_SYNC_SOURCE_NONE = 0
-    ERTM14_SYNC_SOURCE_PPS = 1
-    ERTM14_SYNC_SOURCE_RF_TRIGGER = 2
+    ERTM14_SYNC_SOURCE_NONE = magics.ertm14_sync_source_none
+    ERTM14_SYNC_SOURCE_PPS = magics.ertm14_sync_source_pps
+    ERTM14_SYNC_SOURCE_RF_TRIGGER = magics.ertm14_sync_source_rf_trigger
 
-    ERTM_WR_MASTER = 2
-    ERTM_WR_SLAVE = 3
-    ERTM_WR_FREE_RUNNING = 0
+    ERTM_WR_MASTER = magics.ertm_wr_master
+    ERTM_WR_SLAVE = magics.ertm_wr_slave
+    ERTM_WR_FREE_RUNNING = magics.ertm_wr_free_running
 
-    Sensor_Array = 20 * c_double
-    BoardInfo = 128 * c_uint
+    Sensor_Array = magics.Sensor_Array * c_double
+    BoardInfo = magics.BoardInfo * c_uint
 
     connector_idx = {
         'lo' : ERTM_LO,
@@ -123,42 +181,12 @@ class ErtmTest(cmd.Cmd):
         msg = self.lib.ertm_perror(errcode)
         return str(msg, encoding='utf8')
 
-    def load_solibs(self):
-        cli = os.path.realpath(__file__)
-        clidir = os.path.dirname(cli)
-        cliparent = os.path.dirname(clidir)
-        solib = 'libertm.so'
-        solib_display = 'libertm_display.so'
-        solib_default1 = os.path.join(clidir, solib)
-        solib_display_default1 = os.path.join(clidir, solib_display)
-        solib_default2 = os.path.join(cliparent, 'lib', solib)
-        solib_display_default2 = os.path.join(cliparent, 'lib', solib_display)
-        try:
-            libudev = find_library('udev')
-            CDLL(libudev, mode=RTLD_GLOBAL)
-        except OSError as e:
-            raise
-        try:
-            self.lib = CDLL(solib_default1, mode=RTLD_GLOBAL)
-            self.display = CDLL(solib_display_default1)
-        except OSError as e:
-            pass
-        else:
-            return
-        try:
-            self.lib = CDLL(solib_default2, mode=RTLD_GLOBAL)
-            self.display = CDLL(solib_display_default2)
-        except OSError as e:
-            print('could not open library {} nor {}, exiting'.format(
-                solib_default1, solib_default2))
-            exit()
-
     def my_preloop(self):
         try:
             readline.read_history_file(self.history)
         except FileNotFoundError:
             readline.write_history_file(self.history)
-        self.load_solibs()
+        self.lib, self.display = lib, display
         self.lib.ertm_init.restype = POINTER(ertm_status)
         self.handle = self.lib.ertm_init(c_char_p(None))
         self.do_h = self.do_help
