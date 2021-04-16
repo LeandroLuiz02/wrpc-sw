@@ -42,11 +42,34 @@ def load_solibs():
 
 lib, display = load_solibs()
 
+class ertm_magics(Structure):
+    _fields_ = [
+	("path_max", c_int),
+	("ertm_clka", c_int),
+	("ertm_clkb", c_int),
+	("ertm_lo", c_int),
+	("ertm_ref", c_int),
+
+	("ertm14_sync_source_none", c_int),
+	("ertm14_sync_source_pps", c_int),
+	("ertm14_sync_source_rf_trigger", c_int),
+	("ertm14_max_uart_link_payload", c_int),
+
+	("ertm_wr_master", c_int),
+	("ertm_wr_slave", c_int),
+	("ertm_wr_free_running", c_int),
+
+	("Sensor_Array", c_int),
+	("BoardInfo", c_int),
+    ]
+
+magics = ertm_magics.in_dll(lib, "ertm_magics")
+
 class uart_packet(Structure):
-    ERTM14_MAX_UART_LINK_PAYLOAD = 512
+    ERTM14_MAX_UART_LINK_PAYLOAD = magics.ertm14_max_uart_link_payload
     _fields_ =[
         ("ptype", c_ubyte),
-        ("length", c_ushort), 
+        ("length", c_ushort),
         ("payload", c_ubyte*ERTM14_MAX_UART_LINK_PAYLOAD),
     ]
 
@@ -64,7 +87,7 @@ class uart_link(Structure):
     ]
 
 class ertm_connection(Structure):
-    PATH_MAX = 4096
+    PATH_MAX = magics.path_max
     _fields_ = [
         ("address", c_char_p),
         ("serial_connection", c_char*PATH_MAX),
@@ -128,21 +151,21 @@ class ErtmTest(cmd.Cmd):
             '''- type 'help' for a list of commands''')
     history = os.path.join(os.path.expanduser('~'), '.ertm_history')
 
-    ERTM_CLKA = 0
-    ERTM_CLKB  = 1
-    ERTM_LO = 2
-    ERTM_REF = 3
+    ERTM_CLKA = magics.ertm_clka
+    ERTM_CLKB  = magics.ertm_clkb
+    ERTM_LO = magics.ertm_lo
+    ERTM_REF = magics.ertm_ref
 
-    ERTM14_SYNC_SOURCE_NONE = 0
-    ERTM14_SYNC_SOURCE_PPS = 1
-    ERTM14_SYNC_SOURCE_RF_TRIGGER = 2
+    ERTM14_SYNC_SOURCE_NONE = magics.ertm14_sync_source_none
+    ERTM14_SYNC_SOURCE_PPS = magics.ertm14_sync_source_pps
+    ERTM14_SYNC_SOURCE_RF_TRIGGER = magics.ertm14_sync_source_rf_trigger
 
-    ERTM_WR_MASTER = 2
-    ERTM_WR_SLAVE = 3
-    ERTM_WR_FREE_RUNNING = 0
+    ERTM_WR_MASTER = magics.ertm_wr_master
+    ERTM_WR_SLAVE = magics.ertm_wr_slave
+    ERTM_WR_FREE_RUNNING = magics.ertm_wr_free_running
 
-    Sensor_Array = 20 * c_double
-    BoardInfo = 128 * c_uint
+    Sensor_Array = magics.Sensor_Array * c_double
+    BoardInfo = magics.BoardInfo * c_uint
 
     connector_idx = {
         'lo' : ERTM_LO,
