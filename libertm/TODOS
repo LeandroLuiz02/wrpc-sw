@@ -1,10 +1,6 @@
 * move the loading from the build system?
-* locate the USB serial port unambiguously
 * setup Python code in standardized manner:
-  - use acc-py infrastructure
-  - sanitize dep on pyserial
   - clean up dependencies on C code defs (grab from API)
-* this must be standardized to acc-py
 * do the build system stuff for ertm correctly according to
   wrpc-sw guidelines (are there any?)
 * ditto for usb-bootloader
@@ -13,9 +9,9 @@
 ---- plan reports
 * Init and setup
 * RF LO/REF/CLKA/CLKB configuration
-o RF LO/REF/CLKA/CLKB configuration testing
+* RF LO/REF/CLKA/CLKB configuration testing
 * NCO configuration
-o NCO configuration testing
+* NCO configuration testing
 * WR diagnostics
 * board info and sensors
 * board info and sensors testing
