@@ -1,6 +1,8 @@
 obj-y += \
 	lib/util.o \
 	lib/wrc-tasks.o \
+
+obj-$(CONFIG_WRPC_PPSI) += \
 	lib/events-ptp.o \
 
 obj-$(CONFIG_ARCH_LM32) += \

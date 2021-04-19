@@ -148,14 +148,6 @@ void rts_update(void)
     }
 }
 
-
-/* fixme: this assumes the host is BE */
-static int htonl(int i)
-{
-    return i;
-}
-
-
 static int rts_get_state_func(const struct minipc_pd *pd, uint32_t *args, void *ret)
 {
     struct rts_pll_state *tmp = (struct rts_pll_state *)ret;

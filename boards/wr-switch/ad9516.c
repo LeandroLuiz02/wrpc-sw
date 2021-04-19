@@ -13,7 +13,6 @@
  * PLL is AD9516, SPI is opencores
  */
 #include <stdio.h>
-#include <stdlib.h>
 #include <stdint.h>
 #include <wrc.h>
 

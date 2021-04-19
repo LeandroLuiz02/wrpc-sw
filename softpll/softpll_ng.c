@@ -8,7 +8,6 @@
  * Released according to the GNU GPL, version 2 or any later version.
  */
 #include <stdio.h>
-#include <stdlib.h>
 #include <string.h>
 
 #include <wrc.h>
