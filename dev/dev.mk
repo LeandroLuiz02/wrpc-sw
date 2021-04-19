@@ -39,7 +39,6 @@ obj-$(CONFIG_WR_NODE) += \
 obj-$(CONFIG_TARGET_WR_SWITCH) += dev/timer-wrs.o dev/gpio.o
 obj-$(CONFIG_PUTS_SYSLOG) += dev/puts-syslog.o
 
-#obj-$(CONFIG_LEGACY_EEPROM) += dev/eeprom.o
 #obj-$(CONFIG_SDB_STORAGE) += dev/sdb-storage.o
 
 obj-$(CONFIG_DAC_LOG) += dev/dac_log.o

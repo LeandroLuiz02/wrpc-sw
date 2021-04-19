@@ -305,11 +305,6 @@ config GENSDBFS
     This option adds _sdb fs_ command to write empty SDBFS filesystem
     image in Flash/EEPROM.
 
-config LEGACY_EEPROM
-	depends on WR_NODE
-	boolean
-	default !SDB_STORAGE
-
 config VLAN
   depends on WR_NODE
 	boolean "Filter and rx/tx frames in a VLAN (as opposed to untagged)"
