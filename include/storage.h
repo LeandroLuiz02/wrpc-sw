@@ -29,9 +29,7 @@
 
 #define SFP_SECTION_PATTERN 0xdeadbeef
 
-#if defined CONFIG_SDB_STORAGE
 #define SFPS_MAX 4
-#endif
 
 
 #define EE_RET_I2CERR -1
