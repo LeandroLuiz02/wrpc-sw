@@ -31,10 +31,10 @@ ENTRY(_start)
 
 MEMORY
 {
-    ram   : ORIGIN = 0x0000, LENGTH = 0x6800
-    stats : ORIGIN = 0x6800, LENGTH = 0x0800
-    mbox  : ORIGIN = 0x7000, LENGTH = 0x1000
-    stack : ORIGIN = 0x8000, LENGTH = 0x8000
+    ram   : ORIGIN = 0x0000, LENGTH = 0x8000
+    stack : ORIGIN = 0x8000, LENGTH = 0x6800
+    stats : ORIGIN = 0xe800, LENGTH = 0x0800
+    mbox  : ORIGIN = 0xf000, LENGTH = 0x1000
 }
 
 SECTIONS
@@ -56,8 +56,14 @@ SECTIONS
 		_ebss = .;
 	} > ram
 
+	/* End of RAM for checking stack overflows */
+	PROVIDE(_endram = ORIGIN(stack));
+
+	/* First location in stack is highest address in RAM (stack area) */
+	PROVIDE(_fstack = ORIGIN(stack) + LENGTH(stack) - 4);
+
 	/*
-	 * Currently (2014-11) the above goes up to around 0x5a00,
+	 * Currently (2021-04) the ram goes up to around 0x7000,
 	 * so we can "safely" place statistics at a known address.
 	 * If we need to move them later, we have a magic number
 	 * in there.
@@ -67,10 +73,10 @@ SECTIONS
 	} > stats
 
 	/*
-	 * The rt IPC buffer is placed at 0x7000. The value is hardwired
+	 * The rt IPC buffer is placed at 0xf000. The value is hardwired
 	 * in the RPC initialization calls (minipc_server_create() and
 	 * wr-switch-sw::wrsw_hal in minipc_client_create()). However,
-	 * we'd better have an ELF section here, so that the compier
+	 * we'd better have an ELF section here, so that the compiler
 	 * will complain if we overflow the stats structure above.
 	 * We'll be able to move this address ahead when stats move,
 	 * by using the magic in stats (there's no magic in minipc)
@@ -78,12 +84,6 @@ SECTIONS
 	.mbox : {
 		*(.mbox)
 	} > mbox
-
-	/* End of RAM for checking stack overflows */
-	PROVIDE(_endram = ORIGIN(stack));
-
-	/* First location in stack is highest address in RAM (stack area) */
-	PROVIDE(_fstack = ORIGIN(stack) + LENGTH(stack) - 4);
 
 	/* We have no ppi_static nor fifo_log in wrs builds */
 	PROVIDE(ppi_static = 0);
