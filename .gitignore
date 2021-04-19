@@ -3,6 +3,7 @@
 *.elf
 *.bram
 *.bin
+*.map
 *.mif
 *.*~
 *~
