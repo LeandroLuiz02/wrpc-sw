@@ -57,6 +57,11 @@
 #define HAS_CMD_NETCONSOLE 0
 #endif
 
+#ifdef CONFIG_CMD_CONFIG
+#define HAS_CMD_CONFIG 1
+#else
+#define HAS_CMD_CONFIG 0
+#endif
 
 
 
@@ -412,5 +417,7 @@ void shell_register_commands(void)
 		REGISTER_WRC_COMMAND(leapsec);
 	if (HAS_CMD_NETCONSOLE)
 		REGISTER_WRC_COMMAND(netconsole);
+	if (HAS_CMD_CONFIG)
+		REGISTER_WRC_COMMAND(config);
 }
 
