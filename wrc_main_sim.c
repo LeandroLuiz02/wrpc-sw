@@ -77,6 +77,10 @@ static void wrc_sim_initialize(void)
 {
 	uint8_t mac_addr[6];
 
+
+	/* Define addresses only when board uses the sdb
+	 * NOTE: AW: BOARD_USE_SDB is not implemented */
+#ifdef BOARD_USE_SDB
 	// Search SDB for devices takes too long, hard-coded offsets
 	// should work for most WR-PTP core implementations
 	// (unless you add/remove/move peripherals), in which case
@@ -92,6 +96,7 @@ static void wrc_sim_initialize(void)
 	BASE_UART          = (void *)0x20500;
 	BASE_ONEWIRE       = (void *)0x20600;
 	BASE_ETHERBONE_CFG = (void *)0x20700;
+#endif
 
 	timer_init(1);
 
