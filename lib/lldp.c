@@ -105,12 +105,12 @@ static void lldp_add_tlv(int tlv_type) {
 		 * IETF RFC 3418:
 		 * "If the name is unknown, the value is the zero-length
 		 * string."
-		 * However, we put the IP, if not set MAC to be able to
+		 * However, we put the IP or MAC if IP is not set to be able to
 		 * identify a system */
 		char buf[32];
-		getIP(ipWR);
 
 		if (HAS_IP && memcmp(ipWR, "\0\0\0\0", 4)) {
+			getIP(ipWR);
 			/* NOTE: no subtype */
 			format_ip(buf, ipWR);
 			tlv_len = strlen((char *)buf);

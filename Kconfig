@@ -352,7 +352,7 @@ config ABSCAL
 	  described and documented by Peter Jansweijer.
 
 config LLDP
-	depends on WR_NODE && IP
+	depends on WR_NODE
 	boolean "Include LLDP protocol transmit-only"
 	default n
 	help
