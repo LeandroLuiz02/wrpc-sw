@@ -9,8 +9,8 @@ stages:
 
 make_wrpc_sw:
   stage: compile
-  tags:
-    - wrs_sw
+#  tags:
+#    - wrs_sw
   script:
   - make spec_defconfig
   - make
@@ -24,8 +24,8 @@ make_wrpc_sw:
 
 make_all:
   stage: compile
-  tags:
-    - wrs_sw
+#  tags:
+#    - wrs_sw
   script:
     - echo "Using `grep -c ^processor /proc/cpuinfo` parallel jobs".
     - MAKEFLAGS="-j `grep -c ^processor /proc/cpuinfo`" ./MAKEALL -c
@@ -39,8 +39,8 @@ make_all:
 
 make_rt_cpu:
   stage: compile
-  tags:
-    - wrs_sw
+#  tags:
+#    - wrs_sw
   script:
   - make wr_switch_defconfig
   - make
