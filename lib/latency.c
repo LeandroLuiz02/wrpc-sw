@@ -24,6 +24,7 @@ static int lat_verbose = 0;
 static int lat_verbose = 1;
 #endif
 
+#if 0
 static unsigned long prios[] = {7, 6, 0}; /* the prio for the 3 frames */
 
 static int ltest_fake_delay_ns;
@@ -306,3 +307,4 @@ DEFINE_WRC_COMMAND(ltest) = {
 	.exec = cmd_ltest,
 };
 
+#endif

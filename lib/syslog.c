@@ -9,7 +9,7 @@
 #include "dev/netif.h"
 
 #include "ipv4.h"
-
+#if 0
 /* syslog: a tx-only socket: no queue is there */
 static struct wrpc_socket __static_syslog_socket = {
 	.queue.buff = NULL,
@@ -253,10 +253,12 @@ send:
 	syslog_send(buf, ip, len);
 	return 1;
 }
+#endif
 
 /* A report tool for others to call (used by ltest at least) */
 void syslog_report(const char *msg)
 {
+#if 0
 	char buf[256];
 	unsigned char ip[4];
 	int len;
@@ -270,4 +272,5 @@ void syslog_report(const char *msg)
 	strcpy(buf + len, msg);
 	len += strlen(msg);
 	syslog_send(buf, ip, len);
+#endif
 }
