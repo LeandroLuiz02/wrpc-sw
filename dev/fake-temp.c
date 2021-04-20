@@ -22,13 +22,13 @@ static int temp_fake_refresh(struct wrc_temp *t)
 	/* nothing to do */
 	return 0;
 }
-
+#if 0
 /* not static at this point, because it's the only one */
 DEFINE_TEMPERATURE(w1) = {
 	.read = temp_fake_refresh,
 	.t = temp_fake_data,
 };
-
+#endif
 
 static int cmd_faketemp(const char *args[])
 {
