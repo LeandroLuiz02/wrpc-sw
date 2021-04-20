@@ -12,6 +12,8 @@
  * Each OID is divided into the limb and twig part.
  * The twig part can be handled as a group or a table
  */
+#if 0
+
 #include <wrc.h>
 #include <wrpc.h>
 #include <string.h>
@@ -2026,3 +2028,4 @@ int snmp_poll(void)
 	ptpd_netif_sendto(snmp_socket, &addr, buf, len, 0);
 	return 1;
 }
+#endif
