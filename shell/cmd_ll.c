@@ -35,7 +35,7 @@ DEFINE_WRC_COMMAND(devmem) = {
 	.name = "devmem",
 	.exec = cmd_devmem,
 };
-
+#if 0
 extern struct pp_instance ppi_static;
 
 static int cmd_delays(const char *args[])
@@ -66,3 +66,4 @@ DEFINE_WRC_COMMAND(delays) = {
 	.name = "delays",
 	.exec = cmd_delays,
 };
+#endif
