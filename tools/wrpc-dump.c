@@ -310,11 +310,11 @@ void dump_one_field(void *addr, struct dump_info *info, char *info_prefix)
 	case dump_type_delay_mechanism:
 		i = wrpc_get_i32(p);
 		switch(i) {
-		ENUM_TO_P_IN_CASE(E2E, char_p);
-		ENUM_TO_P_IN_CASE(P2P, char_p);
-		ENUM_TO_P_IN_CASE(COMMON_P2P, char_p);
-		ENUM_TO_P_IN_CASE(SPECIAL, char_p);
-		ENUM_TO_P_IN_CASE(NO_MECHANISM, char_p);
+		ENUM_TO_P_IN_CASE(MECH_E2E, char_p);
+		ENUM_TO_P_IN_CASE(MECH_P2P, char_p);
+		ENUM_TO_P_IN_CASE(MECH_COMMON_P2P, char_p);
+		ENUM_TO_P_IN_CASE(MECH_SPECIAL, char_p);
+		ENUM_TO_P_IN_CASE(MECH_NO_MECHANISM, char_p);
 		default:
 			char_p = "Unknown";
 		}
