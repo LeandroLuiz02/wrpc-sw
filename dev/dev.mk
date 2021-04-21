@@ -1,6 +1,6 @@
 
 # Those hardware-specific files should not be built for the host, even if
-# most of them give no error no warning. The host has different implementations
+# most of them give no error or warning. The host has different implementations
 obj-$(CONFIG_ARCH_LM32) += 	dev/simple_uart.o dev/console.o
 obj-$(CONFIG_ARCH_RISCV) += 	dev/simple_uart.o dev/console.o
 
@@ -13,23 +13,12 @@ obj-$(CONFIG_EMBEDDED_NODE) += \
 	dev/devicelist.o \
 	dev/rxts_calibrator.o \
 	dev/flash.o \
-	dev/fram.o \
 	dev/gpio.o \
 	dev/bb_spi.o \
 	dev/bb_i2c.o \
-	dev/24aa025.o \
-	dev/74x595.o \
-	dev/ad7888.o \
-	dev/ad951x.o \
-	dev/ad9910.o \
-	dev/clock_monitor.o \
 	dev/spi_flash.o \
-	dev/iuart.o \
-	dev/ltc6950.o \
-	dev/ad9520.o \
 	dev/i2c_eeprom.o \
 	dev/storage.o \
-	dev/fine_pulse_generator.o \
 	dev/netif.o
 
 obj-$(CONFIG_WR_NODE) += \
@@ -47,6 +36,33 @@ obj-$(CONFIG_W1) +=		dev/temp-w1.o
 obj-$(CONFIG_FAKE_TEMPERATURES) += dev/fake-temp.o
 
 obj-$(CONFIG_ETHERBONE) += dev/etherbone.o
+
+# board specific dev
+obj-$(CONFIG_TARGET_GENERIC_PHY_8BIT) += \
+
+obj-$(CONFIG_TARGET_GENERIC_PHY_16BIT) += \
+
+obj-$(CONFIG_TARGET_WR_SWITCH) += \
+
+obj-$(CONFIG_TARGET_AFCZ) += \
+				dev/clock_monitor.o \
+
+obj-$(CONFIG_TARGET_SIS8300KU) += \
+
+obj-$(CONFIG_TARGET_ERTM14) += \
+				dev/24aa025.o \
+				dev/74x595.o \
+				dev/ad7888.o \
+				dev/ad951x.o \
+				dev/ad9520.o \
+				dev/ad9910.o \
+				dev/clock_monitor.o \
+				dev/iuart.o \
+				dev/ltc6950.o \
+				dev/fine_pulse_generator.o \
+
+obj-$(CONFIG_TARGET_PXIE_FMC) += \
+				dev/24aa025.o \
 
 # Filter rules are selected according to configuration, but we may
 # have more than one. Note: the filename is reflected in symbol names,
