@@ -1,9 +1,14 @@
 # Tomasz Wlostowski for CERN, 2011,2012
 -include $(CURDIR)/.config
 
-CROSS_COMPILE-$(CONFIG_ARCH_LM32) ?= lm32-elf-
-CROSS_COMPILE-$(CONFIG_ARCH_RISCV) ?= riscv-elf-
+# use a cross compiler depending on architecture
+CROSS_COMPILE_LM32 ?= lm32-elf-
+CROSS_COMPILE_RISCV ?= riscv-elf-
 
+CROSS_COMPILE-$(CONFIG_ARCH_LM32) ?= $(CROSS_COMPILE_LM32)
+CROSS_COMPILE-$(CONFIG_ARCH_RISCV) ?= $(CROSS_COMPILE_RISCV)
+
+# use a cross compiler for all architectures
 CROSS_COMPILE ?= $(CROSS_COMPILE-y)
 
 ifeq ($(CONFIG_ARCH_LM32),y)
