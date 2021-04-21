@@ -1,4 +1,4 @@
-include ../.config
+-include ../.config
 EB    ?= no
 SDBFS ?= no
 
