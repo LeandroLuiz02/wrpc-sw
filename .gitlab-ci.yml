@@ -1,8 +1,14 @@
+# NOTE: to be able to run CI define the following env variables:
+# --DOCKER_IMAGE_PATH - the path to docker image
+
+
+image: ${DOCKER_IMAGE_PATH}
+
 variables:
   GIT_SUBMODULE_STRATEGY: normal
 
 before_script:
-  - export PATH=/opt/lm32-gcc-4.5.3/bin:$PATH
+  - export PATH=/opt/lm32-gcc/bin:$PATH
 
 stages:
 - compile
