@@ -1,5 +1,7 @@
 # NOTE: to be able to run CI define the following env variables:
 # --DOCKER_IMAGE_PATH - the path to docker image
+# --CROSS_COMPILE_LM32 - prefix for lm32 cross compiler
+# --CROSS_COMPILE_RISCV - prefix for riscv cross compiler
 
 
 image: ${DOCKER_IMAGE_PATH}
