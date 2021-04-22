@@ -56,6 +56,8 @@ obj-$(CONFIG_WR_NODE_SIM) += wrc_main_sim.o
 obj-$(CONFIG_TARGET_WR_SWITCH) += ipc/minipc-mem-server.o ipc/rt_ipc.o
 
 obj-$(CONFIG_WRPC_PPSI) += dump-info.o
+obj-$(CONFIG_WRPC_PPSI) += dump_mem_ppsi_wrpc.o
+
 # our linker script is preprocessed, so have a rule here
 %.ld: %.ld.S $(AUTOCONF) .config
 	$(CC) -include $(AUTOCONF) -E -P $*.ld.S -o $@

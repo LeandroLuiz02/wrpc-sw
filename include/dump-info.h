@@ -116,7 +116,8 @@ struct dump_info {
 	uint32_t size;
 	char name[60];
 };
-extern struct dump_info dump_info[]; /* wrpc-sw/dump-info.c -> bina -> elf */
+extern struct dump_info dump_wrpc_info[]; /* wrpc-sw/dump-info.c -> bina -> elf */
+extern struct dump_info dump_ppsi_info[]; /* wrpc-sw/ppsi/tools/dump_mem_ppsi_wrpc.c -> bina -> elf */
 
 #define DUMP_HEADER(_struct) {			\
 	.endian_flag = DUMP_ENDIAN_FLAG,	\

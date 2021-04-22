@@ -543,16 +543,38 @@ void dump_one_field(void *addr, struct dump_info *info, char *info_prefix)
 		break;
 	}
 }
+
+struct dump_info * find_s_name(char *s_name)
+{
+	struct dump_info *p;
+
+	/* scan WRPC's structures */
+	p = dump_wrpc_info;
+	for (; strcmp(p->name, "end"); p++)
+		if (!strcmp(p->name, s_name)) {
+			/* structure name found */
+			return p;
+		}
+
+	/* scan PPSI's structures */
+	p = dump_ppsi_info;
+	for (; strcmp(p->name, "end"); p++)
+		if (!strcmp(p->name, s_name)) {
+			/* structure name found */
+			return p;
+		}
+
+	/* not found */
+	return NULL;
+}
+
 void dump_many_fields(void *addr, char *name, char *prefix)
 {
-	struct dump_info *p = dump_info;
+	struct dump_info *p;
 
-	/* Look for name */
-	for (; strcmp(p->name, "end"); p++)
-		if (!strcmp(p->name, name))
-			break;
+	p = find_s_name(name);
 
-	if (!strcmp(p->name, "end")) {
+	if (!p) {
 		fprintf(stderr, "structure \"%s\" not described\n", name);
 		return;
 	}
@@ -561,16 +583,16 @@ void dump_many_fields(void *addr, char *name, char *prefix)
 	for (p++; p->endian_flag == 0; p++)
 		dump_one_field(addr, p, prefix);
 }
+
+
 unsigned long wrpc_get_pointer(void *base, char *s_name, char *f_name)
 {
-	struct dump_info *p = dump_info;
+	struct dump_info *p;
 	int offset;
 
-	for (; strcmp(p->name, "end"); p++)
-		if (!strcmp(p->name, s_name))
-			break;
+	p = find_s_name(s_name);
 
-	if (!strcmp(p->name, "end")) {
+	if (!p) {
 		fprintf(stderr, "structure \"%s\" not described\n", s_name);
 		return 0;
 	}
@@ -589,14 +611,12 @@ unsigned long wrpc_get_pointer(void *base, char *s_name, char *f_name)
 /* get an offset of a field in a structure */
 unsigned long wrpc_get_offset(char *s_name, char *f_name)
 {
-	struct dump_info *p = dump_info;
+	struct dump_info *p;
 	int offset;
 
-	for (; strcmp(p->name, "end"); p++)
-		if (!strcmp(p->name, s_name))
-			break;
+	p = find_s_name(s_name);
 
-	if (!strcmp(p->name, "end")) {
+	if (!p) {
 		fprintf(stderr, "structure \"%s\" not described\n", s_name);
 		return 0;
 	}

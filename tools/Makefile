@@ -81,14 +81,20 @@ pfilter-builder: pfilter-builder.c
 	$(CC) $(CFLAGS)  -include ../include/generated/autoconf.h \
 		$@.c $(LDFLAGS) -o $@
 
-
-dump-info-host.o: ../dump-info.o
-	$(CROSS_COMPILE)objcopy --only-section=.data.dump_info \
-		-O binary $^ dump-info-host.bin
+# combine structures back to the object file
+dump-info-host.o: ../dump-info.o ../dump_mem_ppsi_wrpc.o
+	$(CROSS_COMPILE)objcopy --only-section=.data.dump_wrpc_info \
+		-O binary ../dump-info.o dump-wrpc-info-host.bin
+	$(CROSS_COMPILE)objcopy --only-section=.data.dump_ppsi_info \
+		-O binary ../dump_mem_ppsi_wrpc.o dump-ppsi-info-host.bin
 	$(AS) makebin.S -o $@
 
 ../dump-info.o: ../dump-info.c
 	$(MAKE) -C .. dump-info.o
+
+../dump_mem_ppsi_wrpc.o: ../dump_mem_ppsi_wrpc.c
+	$(MAKE) -C .. dump_mem_ppsi_wrpc.o
+
 clean:
 	rm -f $(ALL) *.o *~ dump-info-host.bin
 
