@@ -55,6 +55,8 @@ obj-$(CONFIG_WR_NODE)   += wrc_main.o
 obj-$(CONFIG_WR_NODE_SIM) += wrc_main_sim.o
 obj-$(CONFIG_TARGET_WR_SWITCH) += ipc/minipc-mem-server.o ipc/rt_ipc.o
 
+# add search path but only for dump_mem_ppsi_wrpc.c
+vpath dump_mem_ppsi_wrpc.c ppsi/tools
 obj-$(CONFIG_WRPC_PPSI) += dump-info.o
 obj-$(CONFIG_WRPC_PPSI) += dump_mem_ppsi_wrpc.o
 
