@@ -236,7 +236,7 @@ distclean: clean
 	$(MAKE) -C $(PPSI) distclean
 
 %.o:		%.c
-	${CC} $(CFLAGS) $(PTPD_CFLAGS) $(INCLUDE_DIR) $(LIB_DIR) -c $*.c -o $@
+	${CC} $(CFLAGS) $(PTPD_CFLAGS) $(INCLUDE_DIR) $(LIB_DIR) -c $< -o $@
 
 liblinux:
 	$(MAKE) -C liblinux CC=cc
