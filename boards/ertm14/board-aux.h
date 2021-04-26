@@ -67,6 +67,10 @@ static void update_config(struct ertm14_board_state *dst,
 		update_bits(&dst->clka_enable_mask, src->clka_enable_mask, mask->clka_enable_mask);
 	if (mask->clkb_enable_mask)
 		update_bits(&dst->clkb_enable_mask, src->clkb_enable_mask, mask->clkb_enable_mask);
+	if (mask->streamers_latency_cycles)
+		dst->streamers_latency_cycles = src->streamers_latency_cycles;
+	if (mask->streamers_timeout_cycles)
+		dst->streamers_timeout_cycles = src->streamers_timeout_cycles;
 	for (i = ERTM14_CLKAB_OUT_MIN_ID; i <= ERTM14_CLKAB_OUT_MAX_ID; i++) {
 		if (mask->clka_freq_hz[i])
 			dst->clka_freq_hz[i] = src->clka_freq_hz[i];
