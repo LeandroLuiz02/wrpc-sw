@@ -11,13 +11,11 @@
 #include <sys/types.h>
 #include <sys/mman.h>
 
-#include <ppsi/ppsi.h>
 #include <softpll_ng.h>
 #include <revision.h>
 #include <arch/lm32/crt0.h>
 
 #include <dump-info.h>
-#include <wrpc.h>
 #include "time_lib.h"
 
 /* We have a problem: ppsi is built for wrpc, so it has ntoh[sl] wrong */
@@ -40,6 +38,8 @@ uint32_t endian_flag; /* from dump_info[0], lazily */
 int print_labels = 1;
 
 void dump_mem_ppsi_wrpc(void *mapaddr, unsigned long ppg_off);
+void dump_one_field_ppsi_wrpc(int type, int size, void *p, int i);
+int dump_one_field_type_ppsi_wrpc(int type, int size, void *p);
 
 void print_str(char *s)
 {
@@ -99,15 +99,9 @@ uint8_t wrpc_get_8(void *p)
 void dump_one_field(void *addr, struct dump_info *info, char *info_prefix)
 {
 	void *p = addr + wrpc_get_i32(&info->offset);
-	struct pp_time *t = p;
-	struct PortIdentity *pi = p;
-	struct ClockQuality *cq = p;
-	TimeInterval *ti=p;
-	RelativeDifference *rd=p;
 	char format[16];
 	char pname[128];
 	int i, type, size;
-	char buf[128];
 	char *char_p;
 
 	/* now, info may be in wrong-endian. so fix it */
@@ -129,47 +123,21 @@ void dump_one_field(void *addr, struct dump_info *info, char *info_prefix)
 
 //	printf("%3d|%2d|", wrpc_get_i32(&info->offset), size);
 
-	/* For some (mostly enum like types) the size may vary. Check the size
-	 * and assign a proper value to variable i */
+	/* For some (mostly enum-like types) the size may vary.
+	 * Check the size and assign a proper value to
+	 * variable i */
 	switch(type) {
 	case dump_type_yes_no:
-	case dump_type_yes_no_Boolean:
-	case dump_type_ppi_state:
-	case dump_type_ppi_state_Enumeration8:
-	case dump_type_wr_config:
-	case dump_type_wr_config_Enumeration8:
-	case dump_type_wr_role:
-	case dump_type_wr_role_Enumeration8:
-	case dump_type_pp_pdstate:
-	case dump_type_exstate:
-	case dump_type_pp_servo_flag:
-	case dump_type_pp_servo_state:
-	case dump_type_wr_state:
-	case dump_type_ppi_profile:
-	case dump_type_ppi_proto:
-	case dump_type_ppi_flag:
 		if (size == 1)
 			i = *(uint8_t *)p;
 		else if (size == 2)
 			i = wrpc_get_16(p);
 		else
 			i = wrpc_get_l32(p);
-	}
-
-	/* check the size of Boolean, which is declared as Enum */
-	if (type == dump_type_Boolean) {
-		switch(size) {
-		case 1:
-			type = dump_type_UInteger8;
-			break;
-		case 2:
-			type = dump_type_UInteger16;
-			break;
-		case 4:
-		default:
-			type = dump_type_UInteger32;
-			break;
-		}
+		break;
+	default:
+		/* check if this is ppsi type */
+		i = dump_one_field_type_ppsi_wrpc(type, size, p);
 	}
 
 	switch(type) {
@@ -182,52 +150,49 @@ void dump_one_field(void *addr, struct dump_info *info, char *info_prefix)
 			printf("%02x%c", ((unsigned char *)p)[i],
 			       i == size - 1 ? '\n' : ':');
 		break;
-	case dump_type_UInteger64:
-		printf("%lld\n", wrpc_get_64(p));
-		break;
+
 	case dump_type_long_long:
-	case dump_type_Integer64:
 		printf("%lld\n", wrpc_get_64(p));
 		break;
+
 	case dump_type_uint32_t:
 		printf("0x%08lx\n", wrpc_get_l32(p));
 		break;
-	case dump_type_Integer32:
+
 	case dump_type_int:
 		printf("%i\n", wrpc_get_i32(p));
 		break;
-	case dump_type_UInteger32:
+
 	case dump_type_unsigned_long:
 		printf("%li\n", wrpc_get_l32(p));
 		break;
+
 	case dump_type_unsigned_char:
-	case dump_type_UInteger8:
-	case dump_type_Integer8:
-	case dump_type_Enumeration8:
-	case dump_type_UInteger4:
 	case dump_type_uint8_t:
 		printf("%i\n", *(unsigned char *)p);
 		break;
-	case dump_type_UInteger16:
-	case dump_type_Integer16:
+
 	case dump_type_uint16_t:
 	case dump_type_unsigned_short:
 		printf("%i\n", wrpc_get_16(p));
 		break;
+
 	case dump_type_double:
 		printf("%lf\n", *(double *)p);
 		break;
+
 	case dump_type_float:
 		printf("%f\n", *(float *)p);
 		break;
+
 	case dump_type_pointer:
 		if (size == 4)
 			printf("%08lx\n", wrpc_get_l32(p));
 		else
 			printf("%016llx\n", wrpc_get_64(p));
 		break;
+
 	case dump_type_yes_no:
-	case dump_type_yes_no_Boolean:
 		printf("%d", i);
 		if (i == 0)
 			print_str("no");
@@ -255,293 +220,14 @@ void dump_one_field(void *addr, struct dump_info *info, char *info_prefix)
 		printf("\n");
 		break;
 
-	case dump_type_pp_time:
-	{
-		struct pp_time localt;
-		localt.secs = wrpc_get_64(&t->secs);
-		localt.scaled_nsecs = wrpc_get_64(&t->scaled_nsecs);
-
-		printf("correct %i: %25s rawps: 0x%04x\n",
-		       !is_incorrect(&localt),
-		       timeToString(&localt,buf),
-		       (int)(localt.scaled_nsecs & 0xffff)
-		      );
-		break;
-	}
-
 	case dump_type_ip_address:
 		for (i = 0; i < 4; i++)
 			printf("%02x%c", ((unsigned char *)p)[i],
 			       i == 3 ? '\n' : ':');
 		break;
 
-	case dump_type_ClockIdentity: /* Same as binary */
-		for (i = 0; i < sizeof(ClockIdentity); i++)
-			printf("%02x%c", ((unsigned char *)p)[i],
-			       i == sizeof(ClockIdentity) - 1 ? '\n' : ':');
-		break;
-
-	case dump_type_PortIdentity: /* Same as above plus port */
-		for (i = 0; i < sizeof(ClockIdentity); i++)
-			printf("%02x%c", ((unsigned char *)p)[i],
-			       i == sizeof(ClockIdentity) - 1 ? '.' : ':');
-		printf("%04x (%i)\n", wrpc_get_16(&pi->portNumber),
-				      wrpc_get_16(&pi->portNumber));
-		break;
-
-	case dump_type_ClockQuality:
-		printf("class %i, accuracy %02x (%i), logvariance %i\n",
-		       cq->clockClass, cq->clockAccuracy, cq->clockAccuracy,
-		       wrpc_get_16(&cq->offsetScaledLogVariance));
-		break;
-	case dump_type_TimeInterval:
-		printf("%15s, ", timeIntervalToString(wrpc_get_64(ti), buf));
-		printf("raw:  %15lld\n", wrpc_get_64(p));
-		break;
-	case dump_type_RelativeDifference:
-		printf("%15s, ", relativeDifferenceToString(*rd, buf));
-		printf("raw:  %15lld\n", wrpc_get_64(p));
-		break;
-	case dump_type_FixedDelta:
-		/* FixedDelta has defined order of msb and lsb,
-		 * which is different than in 64bit type (e.g. uint64_t) on host */
-		printf("%lld\n", ((unsigned long long)wrpc_get_l32(p)
-				  |((unsigned long long)wrpc_get_l32(p+4))<<32
-				 )>>16);
-		break;
-	case dump_type_delay_mechanism:
-		i = wrpc_get_i32(p);
-		switch(i) {
-		ENUM_TO_P_IN_CASE(MECH_E2E, char_p);
-		ENUM_TO_P_IN_CASE(MECH_P2P, char_p);
-		ENUM_TO_P_IN_CASE(MECH_COMMON_P2P, char_p);
-		ENUM_TO_P_IN_CASE(MECH_SPECIAL, char_p);
-		ENUM_TO_P_IN_CASE(MECH_NO_MECHANISM, char_p);
-		default:
-			char_p = "Unknown";
-		}
-		printf("%d", i);
-		print_str(char_p);
-		printf("\n");
-		break;
-
-	case dump_type_protocol_extension:
-		i = wrpc_get_i32(p);
-		switch(i) {
-		ENUM_TO_P_IN_CASE(PPSI_EXT_NONE, char_p);
-		ENUM_TO_P_IN_CASE(PPSI_EXT_WR, char_p);
-		ENUM_TO_P_IN_CASE(PPSI_EXT_L1S, char_p);
-		default:
-			char_p = "Unknown";
-		}
-		printf("%d", i);
-		print_str(char_p);
-		printf("\n");
-		break;
-
-	case dump_type_wrpc_mode_cfg:
-		i = wrpc_get_i32(p);
-		switch(i) {
-		ENUM_TO_P_IN_CASE(WRC_MODE_UNKNOWN, char_p);
-		ENUM_TO_P_IN_CASE(WRC_MODE_GM, char_p);
-		ENUM_TO_P_IN_CASE(WRC_MODE_MASTER, char_p);
-		ENUM_TO_P_IN_CASE(WRC_MODE_SLAVE, char_p);
-		ENUM_TO_P_IN_CASE(WRC_MODE_ABSCAL, char_p);
-		default:
-			char_p = "Unknown";
-		}
-		printf("%d", i);
-		print_str(char_p);
-		printf("\n");
-		break;
-
-	case dump_type_timing_mode:
-		i = wrpc_get_i32(p);
-		switch(i) {
-		ENUM_TO_P_IN_CASE(WRH_TM_GRAND_MASTER, char_p);
-		ENUM_TO_P_IN_CASE(WRH_TM_FREE_MASTER, char_p);
-		ENUM_TO_P_IN_CASE(WRH_TM_BOUNDARY_CLOCK, char_p);
-		ENUM_TO_P_IN_CASE(WRH_TM_DISABLED, char_p);
-		default:
-			char_p = "Unknown";
-		}
-		printf("%d", i);
-		print_str(char_p);
-		printf("\n");
-		break;
-
-	case dump_type_ppi_state:
-	case dump_type_ppi_state_Enumeration8:
-		switch(i) {
-		ENUM_TO_P_IN_CASE(PPS_END_OF_TABLE, char_p);
-		ENUM_TO_P_IN_CASE(PPS_INITIALIZING, char_p);
-		ENUM_TO_P_IN_CASE(PPS_FAULTY, char_p);
-		ENUM_TO_P_IN_CASE(PPS_DISABLED, char_p);
-		ENUM_TO_P_IN_CASE(PPS_LISTENING, char_p);
-		ENUM_TO_P_IN_CASE(PPS_PRE_MASTER, char_p);
-		ENUM_TO_P_IN_CASE(PPS_MASTER, char_p);
-		ENUM_TO_P_IN_CASE(PPS_PASSIVE, char_p);
-		ENUM_TO_P_IN_CASE(PPS_UNCALIBRATED, char_p);
-		ENUM_TO_P_IN_CASE(PPS_SLAVE, char_p);
-		default:
-			char_p = "Unknown";
-		}
-		printf("%d", i);
-		print_str(char_p);
-		printf("\n");
-		break;
-
-	case dump_type_wr_config:
-	case dump_type_wr_config_Enumeration8:
-		switch(i) {
-		ENUM_TO_P_IN_CASE(NON_WR, char_p);
-		ENUM_TO_P_IN_CASE(WR_M_ONLY, char_p);
-		ENUM_TO_P_IN_CASE(WR_S_ONLY, char_p);
-		ENUM_TO_P_IN_CASE(WR_M_AND_S, char_p);
-		ENUM_TO_P_IN_CASE(WR_MODE_AUTO, char_p);
-		default:
-			char_p = "Unknown";
-		}
-		printf("%d", i);
-		print_str(char_p);
-		printf("\n");
-		break;
-
-	case dump_type_wr_role:
-	case dump_type_wr_role_Enumeration8:
-		switch(i) {
-		ENUM_TO_P_IN_CASE(WR_ROLE_NONE, char_p);
-		ENUM_TO_P_IN_CASE(WR_MASTER, char_p);
-		ENUM_TO_P_IN_CASE(WR_SLAVE, char_p);
-		default:
-			char_p = "Unknown";
-		}
-		printf("%d", i);
-		print_str(char_p);
-		printf("\n");
-		break;
-
-	case dump_type_pp_pdstate:
-		switch(i) {
-		ENUM_TO_P_IN_CASE(PP_PDSTATE_NONE, char_p);
-		ENUM_TO_P_IN_CASE(PP_PDSTATE_WAIT_MSG, char_p);
-		ENUM_TO_P_IN_CASE(PP_PDSTATE_PDETECTION, char_p);
-		ENUM_TO_P_IN_CASE(PP_PDSTATE_PDETECTED, char_p);
-		ENUM_TO_P_IN_CASE(PP_PDSTATE_FAILURE, char_p);
-		default:
-			char_p = "Unknown";
-		}
-		printf("%d", i);
-		print_str(char_p);
-		printf("\n");
-		break;
-
-	case dump_type_exstate:
-		switch(i) {
-		ENUM_TO_P_IN_CASE(PP_EXSTATE_DISABLE, char_p);
-		ENUM_TO_P_IN_CASE(PP_EXSTATE_ACTIVE, char_p);
-		ENUM_TO_P_IN_CASE(PP_EXSTATE_PTP, char_p);
-		default:
-			char_p = "Unknown";
-		}
-		printf("%d", i);
-		print_str(char_p);
-		printf("\n");
-		break;
-
-	case dump_type_pp_servo_flag:
-		switch(i) {
-		ENUM_TO_P_IN_CASE(PP_SERVO_FLAG_VALID, char_p);
-		ENUM_TO_P_IN_CASE(PP_SERVO_FLAG_WAIT_HW, char_p);
-		ENUM_TO_P_IN_CASE(PP_SERVO_FLAG_VALID | PP_SERVO_FLAG_WAIT_HW, char_p);
-		default:
-			char_p = "Unknown";
-		}
-		printf("%d", i);
-		print_str(char_p);
-		printf("\n");
-		break;
-
-	case dump_type_pp_servo_state:
-		switch(i) {
-		ENUM_TO_P_IN_CASE(WRH_UNINITIALIZED, char_p);
-		ENUM_TO_P_IN_CASE(WRH_SYNC_TAI, char_p);
-		ENUM_TO_P_IN_CASE(WRH_SYNC_NSEC, char_p);
-		ENUM_TO_P_IN_CASE(WRH_SYNC_PHASE, char_p);
-		ENUM_TO_P_IN_CASE(WRH_TRACK_PHASE, char_p);
-		ENUM_TO_P_IN_CASE(WRH_WAIT_OFFSET_STABLE, char_p);
-		default:
-			char_p = "Unknown";
-		}
-		printf("%d", i);
-		print_str(char_p);
-		printf("\n");
-		break;
-
-	case dump_type_wr_state:
-		switch(i) {
-		ENUM_TO_P_IN_CASE(WRS_IDLE, char_p);
-		ENUM_TO_P_IN_CASE(WRS_PRESENT, char_p);
-		ENUM_TO_P_IN_CASE(WRS_S_LOCK, char_p);
-		ENUM_TO_P_IN_CASE(WRS_M_LOCK, char_p);
-		ENUM_TO_P_IN_CASE(WRS_LOCKED, char_p);
-		ENUM_TO_P_IN_CASE(WRS_CALIBRATION, char_p);
-		ENUM_TO_P_IN_CASE(WRS_CALIBRATED, char_p);
-		ENUM_TO_P_IN_CASE(WRS_RESP_CALIB_REQ, char_p);
-		ENUM_TO_P_IN_CASE(WRS_WR_LINK_ON, char_p);
-		ENUM_TO_P_IN_CASE(WRS_ABSCAL, char_p);
-		ENUM_TO_P_IN_CASE(WRS_MAX_STATES, char_p);
-		default:
-			char_p = "Unknown";
-		}
-		printf("%d", i);
-		print_str(char_p);
-		printf("\n");
-		break;
-
-	case dump_type_ppi_profile:
-		switch(i) {
-		ENUM_TO_P_IN_CASE(PPSI_PROFILE_PTP, char_p);
-		ENUM_TO_P_IN_CASE(PPSI_PROFILE_WR, char_p);
-		ENUM_TO_P_IN_CASE(PPSI_PROFILE_HA, char_p);
-		ENUM_TO_P_IN_CASE(PPSI_PROFILE_CUSTOM, char_p);
-		default:
-			char_p = "Unknown";
-		}
-		printf("%d", i);
-		print_str(char_p);
-		printf("\n");
-		break;
-
-	case dump_type_ppi_proto:
-		switch(i) {
-		ENUM_TO_P_IN_CASE(PPSI_PROTO_RAW, char_p);
-		ENUM_TO_P_IN_CASE(PPSI_PROTO_UDP, char_p);
-		ENUM_TO_P_IN_CASE(PPSI_PROTO_VLAN, char_p);
-		default:
-			char_p = "Unknown";
-		}
-		printf("%d", i);
-		print_str(char_p);
-		printf("\n");
-		break;
-
-	case dump_type_ppi_flag:
-		switch(i) {
-		case 0:
-			char_p = "None";
-			break;
-		ENUM_TO_P_IN_CASE(PPI_FLAG_WAITING_FOR_F_UP, char_p);
-		ENUM_TO_P_IN_CASE(PPI_FLAG_WAITING_FOR_RF_UP, char_p);
-		case PPI_FLAGS_WAITING:
-		    char_p = "PPI_FLAG_WAITING_FOR_F_UP | PPI_FLAG_WAITING_FOR_RF_UP";
-		    break;
-		default:
-			char_p = "Unknown";
-		}
-		printf("%d", i);
-		print_str(char_p);
-		printf("\n");
+	default:
+		dump_one_field_ppsi_wrpc(type, size, p, i);
 		break;
 	}
 }

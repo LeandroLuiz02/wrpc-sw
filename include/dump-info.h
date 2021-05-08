@@ -26,49 +26,11 @@ enum dump_type {
 	dump_type_double,
 	dump_type_float,
 	dump_type_pointer,
-	/* and strange ones, from IEEE */
-	dump_type_UInteger64,
-	dump_type_Integer64,
-	dump_type_UInteger32,
-	dump_type_Integer32,
-	dump_type_UInteger16,
-	dump_type_Integer16,
-	dump_type_UInteger8,
-	dump_type_Integer8,
-	dump_type_Enumeration8,
-	dump_type_UInteger4,
-	dump_type_Boolean,
-	dump_type_ClockIdentity,
-	dump_type_PortIdentity,
-	dump_type_ClockQuality,
-	dump_type_TimeInterval,
-	dump_type_RelativeDifference,
-	dump_type_FixedDelta,
 	dump_type_dummy,
 	/* and this is ours */
 	dump_type_yes_no,
-	dump_type_yes_no_Boolean,
 	dump_type_spll_mode,
-	dump_type_pp_time,
 	dump_type_ip_address,
-	dump_type_delay_mechanism,
-	dump_type_protocol_extension,
-	dump_type_wrpc_mode_cfg,
-	dump_type_timing_mode,
-	dump_type_ppi_state,
-	dump_type_ppi_state_Enumeration8,
-	dump_type_wr_config,
-	dump_type_wr_config_Enumeration8,
-	dump_type_wr_role,
-	dump_type_wr_role_Enumeration8,
-	dump_type_pp_pdstate,
-	dump_type_exstate,
-	dump_type_pp_servo_flag,
-	dump_type_pp_servo_state,
-	dump_type_wr_state,
-	dump_type_ppi_profile,
-	dump_type_ppi_proto,
-	dump_type_ppi_flag,
 };
 
 /* because of the sizeof later on, we need these typedefs */
@@ -80,27 +42,8 @@ typedef unsigned char  unsigned_char;
 typedef unsigned short unsigned_short;
 typedef uint8_t        dummy; /* use the smallest */
 typedef struct {unsigned char addr[4];} ip_address;
-typedef Boolean        yes_no_Boolean;
 typedef uint8_t        yes_no;
 typedef int            spll_mode;
-typedef int            delay_mechanism;
-typedef int            protocol_extension;
-typedef wrh_timing_mode_t timing_mode;
-typedef int            wrpc_mode_cfg;
-typedef int            ppi_state;
-typedef Enumeration8   ppi_state_Enumeration8;
-typedef int            wr_config;
-typedef Enumeration8   wr_config_Enumeration8;
-typedef int            wr_role;
-typedef Enumeration8   wr_role_Enumeration8;
-typedef pp_pdstate_t   pp_pdstate;
-typedef pp_exstate_t   exstate;
-typedef unsigned long  pp_servo_flag;
-typedef int            pp_servo_state;
-typedef wr_state_t     wr_state;
-typedef int            ppi_profile;
-typedef int            ppi_proto;
-typedef unsigned char  ppi_flag;
 
 /*
  * This is generated with the target compiler, and then linked
@@ -149,3 +92,4 @@ long wrpc_get_l32(void *p);
 int wrpc_get_i32(void *p);
 int wrpc_get_16(void *p);
 uint8_t wrpc_get_8(void *p);
+void print_str(char *s);

@@ -69,7 +69,7 @@ time_lib.o: time_lib.c
 	$^ -o $@
 
 dump_mem_ppsi_wrpc.o: ../ppsi/tools/dump_mem_ppsi_wrpc.c
-dump_mem_ppsi_wrpc.o: CFLAGS+=-include $(AUTOCONF) -I../ppsi/include -I../ppsi/arch-wrpc -I../ppsi/arch-wrpc/include
+dump_mem_ppsi_wrpc.o: CFLAGS+=-include $(AUTOCONF) -I../ppsi/include -I../ppsi/arch-wrpc -I../ppsi/arch-wrpc/include -I.
 
 wr-streamers: wr-streamers.c
 	$(CC) $(CFLAGS)  $^ $(LDFLAGS) -o $@
