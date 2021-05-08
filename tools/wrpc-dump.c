@@ -39,6 +39,8 @@ uint32_t endian_flag; /* from dump_info[0], lazily */
 
 int print_labels = 1;
 
+void dump_mem_ppsi_wrpc(void *mapaddr, unsigned long ppg_off);
+
 void print_str(char *s)
 {
     if (print_labels == 0)
@@ -49,7 +51,7 @@ void print_str(char *s)
  * This picks items from memory, converting as needed. No ntohl any more.
  * Next, we'll detect the byte order from the code itself.
  */
-static long long wrpc_get_64(void *p)
+long long wrpc_get_64(void *p)
 {
 	uint64_t *p64 = p;
 	uint64_t result;
@@ -64,7 +66,7 @@ static long long wrpc_get_64(void *p)
 }
 
 /* printf complains for i/l mismatch, so get i32 and l32 separately */
-static long wrpc_get_l32(void *p)
+long wrpc_get_l32(void *p)
 {
 	uint32_t *p32 = p;
 
@@ -73,12 +75,12 @@ static long wrpc_get_l32(void *p)
 	return __bswap_32(*p32);
 }
 
-static int wrpc_get_i32(void *p)
+int wrpc_get_i32(void *p)
 {
 	return wrpc_get_l32(p);
 }
 
-static int wrpc_get_16(void *p)
+int wrpc_get_16(void *p)
 {
 	uint16_t *p16 = p;
 
@@ -87,7 +89,7 @@ static int wrpc_get_16(void *p)
 	return __bswap_16(*p16);
 }
 
-static uint8_t wrpc_get_8(void *p)
+uint8_t wrpc_get_8(void *p)
 {
 	uint8_t *p8 = p;
 
@@ -549,7 +551,7 @@ struct dump_info * find_s_name(char *s_name)
 	struct dump_info *p;
 
 	/* scan WRPC's structures */
-	p = dump_wrpc_info;
+	p = dump_wrpc_info_target;
 	for (; strcmp(p->name, "end"); p++)
 		if (!strcmp(p->name, s_name)) {
 			/* structure name found */
@@ -557,7 +559,7 @@ struct dump_info * find_s_name(char *s_name)
 		}
 
 	/* scan PPSI's structures */
-	p = dump_ppsi_info;
+	p = dump_ppsi_info_target;
 	for (; strcmp(p->name, "end"); p++)
 		if (!strcmp(p->name, s_name)) {
 			/* structure name found */
@@ -641,9 +643,9 @@ void print_version(void)
 	fprintf(stderr, "Supported PPSI structures version %d\n",
 		WRS_PPSI_SHMEM_VERSION);
 }
+
 /* all of these are 0 by default */
-unsigned long spll_off, fifo_off, ppi_off, ppg_off, servo_off, ds_off,
-	      stats_off;
+unsigned long spll_off, fifo_off, ppg_off, stats_off;
 
 /* Use:  wrs_dump_memory <file> <hex-offset> <name> */
 int main(int argc, char **argv)
@@ -725,11 +727,6 @@ int main(int argc, char **argv)
 		fifo_off = wrpc_get_l32(mapaddr + FIFO_LOG_PADDR);
 		ppg_off = wrpc_get_l32(mapaddr + PPG_STATIC_PADDR);
 		stats_off = wrpc_get_l32(mapaddr + STATS_PADDR);
-		if (ppg_off) { /* This is 0 for wrs */
-			ppi_off = wrpc_get_pointer(mapaddr + ppg_off,
-				   "pp_globals", "pp_instances");
-			ds_off = ppg_off;
-		}
 	}
 
 	/* Check the version of wrpc and ppsi structures */
@@ -745,8 +742,6 @@ int main(int argc, char **argv)
 		       "but read %d\n", WRS_PPSI_SHMEM_VERSION, version_ppsi);
 		exit(1);
 	}
-
-	#define ARRAY_AND_SIZE(x) (x), ARRAY_SIZE(x)
 
 	/* Now check the "name" to be dumped  */
 	if (!strcmp(dumpname, "pll"))
@@ -767,127 +762,12 @@ int main(int argc, char **argv)
 					 + i * sizeof(struct spll_fifo_log),
 					 "pll_fifo", "fifo");
 	}
+
 	if (!strcmp(dumpname, "ppg"))
 		ppg_off = offset;
 	if (ppg_off) {
-		unsigned long arch_data_offset;
-
-		prefix = "ppsi.globalDS";
-		printf("%s at 0x%lx\n", prefix, ppg_off);
-		dump_many_fields(mapaddr + ppg_off, "pp_globals", prefix);
-		
-		arch_data_offset = wrpc_get_pointer(mapaddr + ppg_off,
-					     "pp_globals", "arch_data");
-		prefix = "ppsi.arch_data";
-		printf("%s at 0x%lx\n", prefix, arch_data_offset);
-		dump_many_fields(mapaddr + arch_data_offset, "wrpc_arch_data_t", prefix);
+		dump_mem_ppsi_wrpc(mapaddr, ppg_off);
 	}
-	/* This "all" gets the ppg pointer. It's not really all: no pll */
-	if (!strcmp(dumpname, "ds"))
-		ds_off = offset;
-	if (ds_off) {
-		unsigned long newoffset;
-
-		newoffset = wrpc_get_pointer(mapaddr + ds_off,
-					     "pp_globals", "defaultDS");
-		prefix = "ppsi.defaultDS";
-		printf("%s at 0x%lx\n", prefix, newoffset);
-		dump_many_fields(mapaddr + newoffset, "defaultDS_t", prefix);
-
-		newoffset = wrpc_get_pointer(mapaddr + ds_off,
-					     "pp_globals", "currentDS");
-		prefix = "ppsi.currentDS";
-		printf("%s at 0x%lx\n", prefix, newoffset);
-		dump_many_fields(mapaddr + newoffset, "currentDS_t", prefix);
-
-		newoffset = wrpc_get_pointer(mapaddr + ds_off,
-					     "pp_globals", "parentDS");
-		prefix = "ppsi.parentDS";
-		printf("%s at 0x%lx\n", prefix, newoffset);
-		dump_many_fields(mapaddr + newoffset, "parentDS_t", prefix);
-
-		newoffset = wrpc_get_pointer(mapaddr + ds_off,
-					     "pp_globals", "timePropertiesDS");
-		prefix = "ppsi.timePropertiesDS";
-		printf("%s at 0x%lx\n", prefix, newoffset);
-		dump_many_fields(mapaddr + newoffset, "timePropertiesDS_t", prefix);
-	}
-
-	/* FIXME: support multiple instances */
-	if (!strcmp(dumpname, "ppi"))
-		ppi_off = offset;
-	if (ppi_off) {
-		int protocol_extension;
-		unsigned long portds_off;
-		unsigned long frgn_m_off;
-		int frgn_rec_num;
-		int frgn_m_i;
-		char buff[50];
-		prefix = "ppsi.inst.0";
-		printf("%s at 0x%lx\n", prefix, ppi_off);
-		dump_many_fields(mapaddr + ppi_off, "pp_instance", prefix);
-
-		/* FIXME: support multiple servo */
-		servo_off = wrpc_get_pointer(mapaddr + ppi_off,
-			    "pp_instance", "servo");
-		prefix = "ppsi.inst.0.servo";
-		printf("%s at 0x%lx\n", prefix, servo_off);
-		dump_many_fields(mapaddr + servo_off, "pp_servo", prefix);
-
-		/* dump foreign masters */
-		frgn_rec_num = wrpc_get_16(mapaddr + ppi_off + wrpc_get_offset("pp_instance", "frgn_rec_num"));
-		frgn_m_off = ppi_off + wrpc_get_offset("pp_instance", "frgn_master");
-
-		prefix = "ppsi.inst.0.frgn_master";
-		printf("%s at 0x%lx\n", prefix, frgn_m_off);
-
-		for (frgn_m_i = 0; frgn_m_i < frgn_rec_num && frgn_m_i < PP_NR_FOREIGN_RECORDS; frgn_m_i++) {
-			snprintf(buff , sizeof(buff), "ppsi.inst.0.frgn_master.%i", frgn_m_i);
-			dump_many_fields(mapaddr + frgn_m_off + frgn_m_i * sizeof(struct pp_frgn_master),
-					 "pp_frgn_master", buff);
-		}
-
-		protocol_extension = wrpc_get_i32(mapaddr + ppi_off + wrpc_get_offset("pp_instance", "protocol_extension"));
-#if CONFIG_HAS_EXT_WR == 1
-		if ( protocol_extension == PPSI_EXT_WR) {
-			unsigned long ext_data_off;
-			unsigned long ext_data_servo_off;
-			unsigned long ext_data_servo_ext_off;
-
-			ext_data_off = wrpc_get_pointer(mapaddr + ppi_off,
-						"pp_instance", "ext_data");
-			ext_data_servo_off = wrpc_get_offset("wr_data", "servo"); /* should be 0, but check it anyway */
-			ext_data_servo_ext_off = wrpc_get_offset("wr_data", "servo_ext");
-			
-			printf("ppsi.inst.0.ext_date at 0x%lx\n", ext_data_off);
-			prefix = "ppsi.inst.0.servo.wr";
-			printf("%s at 0x%lx\n", prefix, ext_data_off + ext_data_servo_off);
-			dump_many_fields(mapaddr + ext_data_off + ext_data_servo_off, "wrh_servo_t", prefix);
-			prefix = "ppsi.inst.0.servo_ext.wr";
-			printf("%s at 0x%lx\n", prefix, ext_data_off + ext_data_servo_ext_off);
-			dump_many_fields(mapaddr + ext_data_off + ext_data_servo_ext_off, "wr_servo_ext_t", prefix);
-		}
-#endif
-		/* FIXME: support multiple servo */
-		portds_off = wrpc_get_pointer(mapaddr + ppi_off,
-			    "pp_instance", "portDS");
-		prefix = "ppsi.inst.0.portDS";
-		printf("%s at 0x%lx\n", prefix, portds_off);
-		dump_many_fields(mapaddr + portds_off, "portDS_t", prefix);
-#if CONFIG_HAS_EXT_WR == 1
-		if ( protocol_extension == PPSI_EXT_WR) {
-			unsigned long ext_dsport_off;
-
-			ext_dsport_off = wrpc_get_pointer(mapaddr + portds_off,
-						"portDS_t", "ext_dsport");
-			prefix = "ppsi.inst.0.wrportDS";
-			printf("%s at 0x%lx\n", prefix, ext_dsport_off);
-			dump_many_fields(mapaddr + ext_dsport_off, "wr_dsport", prefix);
-		}
-#endif
-
-	}
-
 
 	if (!strcmp(dumpname, "stats"))
 		stats_off = offset;

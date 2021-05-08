@@ -57,7 +57,8 @@ gensdbfs:
 sdb-wrpc.bin: sdbfs
 	$(SDBFS)/gensdbfs $< $@
 
-wrpc-dump: wrpc-dump.c dump-info-host.o time_lib.o
+vpath dump_mem_ppsi_wrpc.c ../ppsi/tools
+wrpc-dump: wrpc-dump.c dump-info-host.o time_lib.o dump_mem_ppsi_wrpc.o
 	$(CC) $(CFLAGS) -include $(AUTOCONF) -I../ppsi/include -I../ppsi/arch-wrpc -I../ppsi/arch-wrpc/include -I.. \
 	-I ../softpll \
 	$^ -o $@
@@ -67,6 +68,8 @@ time_lib.o: time_lib.c
 	-I ../softpll -c \
 	$^ -o $@
 
+dump_mem_ppsi_wrpc.o: ../ppsi/tools/dump_mem_ppsi_wrpc.c
+dump_mem_ppsi_wrpc.o: CFLAGS+=-include $(AUTOCONF) -I../ppsi/include -I../ppsi/arch-wrpc -I../ppsi/arch-wrpc/include
 
 wr-streamers: wr-streamers.c
 	$(CC) $(CFLAGS)  $^ $(LDFLAGS) -o $@
@@ -92,9 +95,8 @@ dump-info-host.o: ../dump-info.o ../dump_mem_ppsi_wrpc.o
 ../dump-info.o: ../dump-info.c
 	$(MAKE) -C .. dump-info.o
 
-../dump_mem_ppsi_wrpc.o: ../dump_mem_ppsi_wrpc.c
+../dump_mem_ppsi_wrpc.o: dump_mem_ppsi_wrpc.c
 	$(MAKE) -C .. dump_mem_ppsi_wrpc.o
 
 clean:
-	rm -f $(ALL) *.o *~ dump-info-host.bin
-
+	rm -f $(ALL) *.o *~ dump-info-host.bin dump_mem_ppsi_wrpc.o

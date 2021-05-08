@@ -116,8 +116,8 @@ struct dump_info {
 	uint32_t size;
 	char name[60];
 };
-extern struct dump_info dump_wrpc_info[]; /* wrpc-sw/dump-info.c -> bina -> elf */
-extern struct dump_info dump_ppsi_info[]; /* wrpc-sw/ppsi/tools/dump_mem_ppsi_wrpc.c -> bina -> elf */
+extern struct dump_info dump_wrpc_info_target[]; /* wrpc-sw/dump-info.c -> bina -> elf */
+extern struct dump_info dump_ppsi_info_target[]; /* wrpc-sw/ppsi/tools/dump_mem_ppsi_wrpc.c -> bina -> elf */
 
 #define DUMP_HEADER(_struct) {			\
 	.endian_flag = DUMP_ENDIAN_FLAG,	\
@@ -140,3 +140,12 @@ extern struct dump_info dump_ppsi_info[]; /* wrpc-sw/ppsi/tools/dump_mem_ppsi_wr
 	.name = #_fname,			\
 }
 
+
+void dump_many_fields(void *addr, char *name, char *prefix);
+unsigned long wrpc_get_pointer(void *base, char *s_name, char *f_name);
+unsigned long wrpc_get_offset(char *s_name, char *f_name);
+long long wrpc_get_64(void *p);
+long wrpc_get_l32(void *p);
+int wrpc_get_i32(void *p);
+int wrpc_get_16(void *p);
+uint8_t wrpc_get_8(void *p);
