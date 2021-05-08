@@ -99,4 +99,4 @@ dump-info-host.o: ../dump-info.o ../dump_mem_ppsi_wrpc.o
 	$(MAKE) -C .. dump_mem_ppsi_wrpc.o
 
 clean:
-	rm -f $(ALL) *.o *~ dump-info-host.bin dump_mem_ppsi_wrpc.o
+	rm -f $(ALL) *.o *~ dump-info-host.bin
