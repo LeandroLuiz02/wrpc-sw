@@ -121,9 +121,9 @@ void dump_one_field(void *addr, struct dump_info *info, char *info_prefix)
 	}
 
 	if (info_prefix!=NULL )
-		sprintf(pname, "%s.%s", info_prefix, info->name);
+		sprintf(pname, "%s.%s:", info_prefix, info->name);
 	else
-		strcpy(pname, info->name);
+		sprintf(pname, "%s:", info->name);
 
 	printf("%-60s ", pname); /* name includes trailing ':' */
 
