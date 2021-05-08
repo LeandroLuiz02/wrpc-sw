@@ -10,8 +10,6 @@ WARNING: These parameters must be in sync with the generics of the HDL instantia
 
 */
 
-#include <stdio.h>
-
 #include "board.h"
 
 /* Reference clock frequency, in [Hz] */
