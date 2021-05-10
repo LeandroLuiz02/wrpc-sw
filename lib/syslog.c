@@ -139,9 +139,9 @@ int syslog_poll(void)
 		goto send;
 	}
 
-	if (link_status == NETIF_LINK_WENT_DOWN)
+	if (*link_status == NETIF_LINK_WENT_DOWN)
 		down_tics = now;
-	if (link_status == NETIF_LINK_UP && down_tics) {
+	if (*link_status == NETIF_LINK_UP && down_tics) {
 		down_tics = now - down_tics;
 		len = syslog_header(buf, SYSLOG_DEFAULT_LEVEL, ip);
 		len += pp_sprintf(buf + len, "Link up after %i.%03i s",

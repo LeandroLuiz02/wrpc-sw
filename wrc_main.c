@@ -59,16 +59,25 @@ char wrc_hw_name[HW_NAME_LENGTH];
 
 uint32_t cal_phase_transition = 2389;
 
-int wrc_vlan_number = CONFIG_VLAN_NR;
 
 struct wr_endpoint_device wrc_endpoint_dev;
 
 int wrc_wr_diags(void); // fixme: move the header
 
+
+struct wrc_global_link wrc_global_link = {
+	.version = WRC_G_LINK_VERSION,
+	.vlan = CONFIG_VLAN_NR,
+};
+
 struct wrc_global wrc_global = {
 	.magic = WRC_G_MAGIC,
 	.version = WRC_G_VERSION,
+	.link_status = &wrc_global_link,
 };
+
+int *link_status = &wrc_global_link.link_up;
+int *wrc_vlan_number = &wrc_global_link.vlan;
 
 static void wrc_initialize(void)
 {
@@ -118,11 +127,9 @@ static void wrc_initialize(void)
 	wrc_tasks_accounting_init();
 }
 
-int link_status;
-
 static int is_link_up(void)
 {
-	return link_status == NETIF_LINK_UP;
+	return *link_status == NETIF_LINK_UP;
 }
 
 static int wrc_check_link(void)
@@ -137,19 +144,19 @@ static int wrc_check_link(void)
 		gen_gpio_out(&pin_sysc_led_link, 1);
 		sfp_match(0);
 		wrc_ptp_start();
-		link_status = NETIF_LINK_WENT_UP;
+		*link_status = NETIF_LINK_WENT_UP;
 		rv = 1;
 	} else if (prev_state && !state) {
 		wrc_verbose("Link down.\n");
 		wrc_events_ptp_link_down();
 		event_post( WRC_EVENT_LINK_DOWN );
 		gen_gpio_out(&pin_sysc_led_link, 0);
-		link_status = NETIF_LINK_WENT_DOWN;
+		*link_status = NETIF_LINK_WENT_DOWN;
 		wrc_ptp_stop();
 		wrc_ptp_link_down();
 		rv = 1;
 	} else
-		link_status = (state ? NETIF_LINK_UP : NETIF_LINK_DOWN);
+		*link_status = (state ? NETIF_LINK_UP : NETIF_LINK_DOWN);
 
 	prev_state = state;
 

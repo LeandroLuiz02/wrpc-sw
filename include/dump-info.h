@@ -28,6 +28,7 @@ enum dump_type {
 	dump_type_pointer,
 	dump_type_dummy,
 	/* and this is ours */
+	dump_type_link_up_status,
 	dump_type_yes_no,
 	dump_type_spll_mode,
 	dump_type_ip_address,
@@ -44,6 +45,7 @@ typedef uint8_t        dummy; /* use the smallest */
 typedef struct {unsigned char addr[4];} ip_address;
 typedef uint8_t        yes_no;
 typedef int            spll_mode;
+typedef int            link_up_status;
 
 /*
  * This is generated with the target compiler, and then linked

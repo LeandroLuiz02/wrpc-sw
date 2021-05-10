@@ -14,6 +14,7 @@
 #include <softpll_ng.h>
 #include <revision.h>
 #include <arch/lm32/crt0.h>
+#include <dev/netif.h>
 
 #include <dump-info.h>
 #include "time_lib.h"
@@ -226,6 +227,22 @@ void dump_one_field(void *addr, struct dump_info *info, char *info_prefix)
 			       i == 3 ? '\n' : ':');
 		break;
 
+	case dump_type_link_up_status:
+		i = wrpc_get_l32(p);
+
+		switch(i) {
+		ENUM_TO_P_IN_CASE(NETIF_LINK_DOWN, char_p);
+		ENUM_TO_P_IN_CASE(NETIF_LINK_WENT_UP, char_p);
+		ENUM_TO_P_IN_CASE(NETIF_LINK_WENT_DOWN, char_p);
+		ENUM_TO_P_IN_CASE(NETIF_LINK_UP, char_p);
+		default:
+			char_p = "Unknown";
+		}
+		printf("%d", i);
+		print_str(char_p);
+		printf("\n");
+		break;
+
 	default:
 		dump_one_field_ppsi_wrpc(type, size, p, i);
 		break;
@@ -333,9 +350,19 @@ void print_version(void)
 void dump_mem_wrpc_global(void *mapaddr, unsigned long wrc_global_off)
 {
 	unsigned long tmp_off;
+	char *prefix;
 
 	printf("wrc_global at 0x%lx\n", wrc_global_off);
 	dump_many_fields(mapaddr + wrc_global_off, "wrc_global", "wrc_global");
+	
+	tmp_off = wrpc_get_pointer(mapaddr + wrc_global_off, "wrc_global",
+				   "link_status");
+	if (tmp_off) {
+		prefix = "wrc_global.link_status";
+		printf("%s at 0x%lx\n", prefix, tmp_off);
+		dump_many_fields(mapaddr + tmp_off, "wrc_global_link",
+				 prefix);
+	}
 }
 
 /* all of these are 0 by default */

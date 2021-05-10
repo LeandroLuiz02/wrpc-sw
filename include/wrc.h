@@ -85,7 +85,7 @@
 #define HAS_VLANS 0
 #endif
 
-extern int wrc_vlan_number;
+extern int *wrc_vlan_number;
 
 int wrc_mon_gui(void);
 void redraw_gui(void);

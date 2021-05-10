@@ -13,6 +13,14 @@ struct dump_info  dump_wrpc_info[] = {
 	DUMP_HEADER("wrc_global"),
 	DUMP_FIELD(uint32_t, magic),
 	DUMP_FIELD(uint32_t, version),
+	DUMP_FIELD(pointer, link_status),
+
+#undef DUMP_STRUCT
+#define DUMP_STRUCT struct wrc_global_link
+	DUMP_HEADER("wrc_global_link"),
+	DUMP_FIELD(uint32_t, version),
+	DUMP_FIELD(link_up_status, link_up),
+	DUMP_FIELD(int, vlan),
 
 #undef DUMP_STRUCT
 #define DUMP_STRUCT struct softpll_state

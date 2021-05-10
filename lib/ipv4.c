@@ -173,7 +173,7 @@ int ipv4_poll(void)
 {
 	int ret = 0;
 
-	if (link_status == NETIF_LINK_WENT_UP && ip_status == IP_OK_BOOTP)
+	if (*link_status == NETIF_LINK_WENT_UP && ip_status == IP_OK_BOOTP)
 		ip_status = IP_TRAINING;
 	ret = bootp_poll();
 

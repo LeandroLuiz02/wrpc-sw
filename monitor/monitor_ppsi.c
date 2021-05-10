@@ -431,7 +431,7 @@ void print_main_data(void)
 			minic_get_stats(&tx, &rx);
 			pcprintf(9, 55, C_MAGENTA, "%7d", rx);
 			pprintf(9, 65, "%7d", tx);
-			pprintf(9, 75, "%4d", wrc_vlan_number);
+			pprintf(9, 75, "%4d", *wrc_vlan_number);
 		}
 
 	}

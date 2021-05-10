@@ -67,7 +67,7 @@ void ep_pfilter_init_default(struct wr_endpoint_device *dev)
 	uint32_t latency_ethtype = CONFIG_LATENCY_ETHTYPE;
 
 	/* If vlan, use rule-set 1, else rule-set 0 */
-	s = rule_sets + (wrc_vlan_number != 0);
+	s = rule_sets + (*wrc_vlan_number != 0);
 	if (!s->ini) {
 		mac_dbg("no pfilter rule-set!\n");
 		return;
@@ -140,10 +140,10 @@ void ep_pfilter_init_default(struct wr_endpoint_device *dev)
 		if (((*v >> 13) & 0xffff) == 0x0aaa
 		    && ((*v >> 7) & 0x1f) == 7) {
 			mac_dbg("fixing VLAN number in rule: use %i\n",
-					wrc_vlan_number);
+					*wrc_vlan_number);
 			v_vlan = v;
 			*v &= ~(0xffff << 13);
-			*v |= wrc_vlan_number << 13;
+			*v |= *wrc_vlan_number << 13;
 		}
 	}
 
