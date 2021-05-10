@@ -39,6 +39,7 @@
 #include <wrc_ptp.h>
 #include <system_checks.h>
 #include <ppsi/ppsi.h>
+#include "wrc_global.h"
 
 #include "board.h"
 
@@ -63,6 +64,11 @@ int wrc_vlan_number = CONFIG_VLAN_NR;
 struct wr_endpoint_device wrc_endpoint_dev;
 
 int wrc_wr_diags(void); // fixme: move the header
+
+struct wrc_global wrc_global = {
+	.magic = WRC_G_MAGIC,
+	.version = WRC_G_VERSION,
+};
 
 static void wrc_initialize(void)
 {

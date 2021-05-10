@@ -141,6 +141,9 @@ version_wrpc:
 version_ppsi:
 	.byte WRS_PPSI_SHMEM_VERSION
 
+.org WRC_STATIC_PADDR
+	.word wrc_global
+
 /* Pointer to a structure used by testbenches, use only when
  * CONFIG_WR_NODE_SIM is set */
 .org HDL_TESTBENCH_PADDR

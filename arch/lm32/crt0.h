@@ -18,6 +18,7 @@
 #define UPTIME_SEC_ADDR		0xa0
 #define VERSION_WRPC_ADDR	0xa4
 #define VERSION_PPSI_ADDR	0xa5
+#define WRC_STATIC_PADDR	0xa8
 #define HDL_TESTBENCH_PADDR	0xbc
 
 #endif /* __CRT0_H__ */

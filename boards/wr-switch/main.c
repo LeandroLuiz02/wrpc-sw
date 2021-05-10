@@ -20,6 +20,9 @@ int scb_ljd_present = 0; /* LJD presence */
 
 extern struct spll_stats stats;
 
+/* dump of structures is not supported for switch */
+int wrc_global = 0xDEADADA5;
+
 /* initialize functions to be called after reset in check_reset function */
 void init_hw_after_reset(void)
 {

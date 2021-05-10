@@ -330,8 +330,16 @@ void print_version(void)
 		WRS_PPSI_SHMEM_VERSION);
 }
 
+void dump_mem_wrpc_global(void *mapaddr, unsigned long wrc_global_off)
+{
+	unsigned long tmp_off;
+
+	printf("wrc_global at 0x%lx\n", wrc_global_off);
+	dump_many_fields(mapaddr + wrc_global_off, "wrc_global", "wrc_global");
+}
+
 /* all of these are 0 by default */
-unsigned long spll_off, fifo_off, ppg_off, stats_off;
+unsigned long spll_off, fifo_off, ppg_off, stats_off, wrc_global_off;
 
 /* Use:  wrs_dump_memory <file> <hex-offset> <name> */
 int main(int argc, char **argv)
@@ -413,6 +421,7 @@ int main(int argc, char **argv)
 		fifo_off = wrpc_get_l32(mapaddr + FIFO_LOG_PADDR);
 		ppg_off = wrpc_get_l32(mapaddr + PPG_STATIC_PADDR);
 		stats_off = wrpc_get_l32(mapaddr + STATS_PADDR);
+		wrc_global_off = wrpc_get_l32(mapaddr + WRC_STATIC_PADDR);
 	}
 
 	/* Check the version of wrpc and ppsi structures */
@@ -460,6 +469,12 @@ int main(int argc, char **argv)
 	if (stats_off) {
 		printf("stats at 0x%lx\n", stats_off);
 		dump_many_fields(mapaddr + stats_off, "stats", "stats");
+	}
+
+	if (!strcmp(dumpname, "wrc_global"))
+		wrc_global_off = offset;
+	if (wrc_global_off) {
+		dump_mem_wrpc_global(mapaddr, wrc_global_off);
 	}
 
 	exit(0);

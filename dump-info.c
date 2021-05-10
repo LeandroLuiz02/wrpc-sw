@@ -1,12 +1,18 @@
 #include <sys/types.h>
 #include <ppsi/ppsi.h>
 #include <softpll_ng.h>
+#include <wrc_global.h>
 
 #include <wrpc.h>
 
 #include "dump-info.h"
 
 struct dump_info  dump_wrpc_info[] = {
+#undef DUMP_STRUCT
+#define DUMP_STRUCT struct wrc_global
+	DUMP_HEADER("wrc_global"),
+	DUMP_FIELD(uint32_t, magic),
+	DUMP_FIELD(uint32_t, version),
 
 #undef DUMP_STRUCT
 #define DUMP_STRUCT struct softpll_state
