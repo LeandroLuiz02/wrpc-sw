@@ -423,7 +423,7 @@ int main(int argc, char **argv)
 			argv[0], argv[1], strerror(errno));
 		exit(1);
 	}
-	printf("map at 0x%p size 0x%zx\n", mapaddr, st.st_size);
+	printf("map at %p size 0x%zx\n", mapaddr, st.st_size);
 	/* In case we have a "new" binary file, use such information */
 	if (!strncmp(mapaddr + WRPC_MARK, "CPRW", 4))
 		setenv("WRPC_SPEC", "yes", 1);
