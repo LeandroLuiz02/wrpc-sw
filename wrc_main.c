@@ -55,7 +55,6 @@
 #include "lib/lldp.h"
 #endif
 
-char wrc_hw_name[HW_NAME_LENGTH];
 
 uint32_t cal_phase_transition = 2389;
 
@@ -78,6 +77,7 @@ struct wrc_global wrc_global = {
 
 int *link_status = &wrc_global_link.link_up;
 int *wrc_vlan_number = &wrc_global_link.vlan;
+char *wrc_hw_name = wrc_global.wrc_hw_name;
 
 static void wrc_initialize(void)
 {

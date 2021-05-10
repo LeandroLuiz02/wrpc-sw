@@ -15,6 +15,7 @@ struct wrc_global_link {
 struct wrc_global {
 	uint32_t magic;
 	uint32_t version;
+	char wrc_hw_name[HW_NAME_LENGTH];
 	struct wrc_global_link *link_status;
 };
 
