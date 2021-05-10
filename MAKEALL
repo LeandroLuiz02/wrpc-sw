@@ -89,6 +89,7 @@ if [ -n "$FAILED_LIST" ]; then
     for c in $FAILED_LIST; do
 	echo -- $c
     done
+    exit 1
 else
     echo "Builds for all defconfigs were successful!"
 fi
