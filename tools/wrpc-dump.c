@@ -435,6 +435,15 @@ void dump_mem_wrpc_global(void *mapaddr, unsigned long wrc_global_off)
 
 	/* dump task list */
 	dump_mem_wrpc_task_list(mapaddr, wrc_global_off);
+
+	/* dump config */
+	tmp_off = wrpc_get_pointer(mapaddr + wrc_global_off, "wrc_global",
+				   "config");
+	if (tmp_off) {
+		printf("wrc_global.config at 0x%lx:\n", tmp_off);
+		printf("%s", (char*)(mapaddr + tmp_off));
+	}
+
 }
 
 /* all of these are 0 by default */

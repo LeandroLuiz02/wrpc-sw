@@ -17,6 +17,7 @@ struct dump_info  dump_wrpc_info[] = {
 	DUMP_FIELD(pointer, link_status),
 	DUMP_FIELD(int, task_list_max),
 	DUMP_FIELD(pointer, task_list),
+	DUMP_FIELD(pointer, config),
 
 #undef DUMP_STRUCT
 #define DUMP_STRUCT struct wrc_global_link

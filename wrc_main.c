@@ -63,6 +63,7 @@ struct wr_endpoint_device wrc_endpoint_dev;
 
 int wrc_wr_diags(void); // fixme: move the header
 
+extern char _binary__config_bin_start[];
 
 struct wrc_global_link wrc_global_link = {
 	.version = WRC_G_LINK_VERSION,
@@ -75,6 +76,9 @@ struct wrc_global wrc_global = {
 	.link_status = &wrc_global_link,
 	.task_list_max = WRC_MAX_TASKS,
 	.task_list = tasks,
+#ifdef CONFIG_CMD_CONFIG
+	.config = _binary__config_bin_start,
+#endif
 };
 
 int *link_status = &wrc_global_link.link_up;
