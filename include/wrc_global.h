@@ -20,6 +20,7 @@ struct wrc_global {
 	int task_list_max;
 	struct wrc_task *task_list;
 	volatile struct softpll_state *softpll;
+	struct spll_fifo_log *pll_fifo;
 	void * config;
 };
 

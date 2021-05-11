@@ -418,7 +418,7 @@ void dump_mem_wrpc_task_list(void *mapaddr, unsigned long wrc_global_off)
 
 void dump_mem_wrpc_global(void *mapaddr, unsigned long wrc_global_off)
 {
-	unsigned long tmp_off, spll_off;
+	unsigned long tmp_off, spll_off, fifo_off;
 	char *prefix;
 
 	printf("wrc_global at 0x%lx\n", wrc_global_off);
@@ -442,6 +442,20 @@ void dump_mem_wrpc_global(void *mapaddr, unsigned long wrc_global_off)
 		prefix = "wrc_global.spll";
 		printf("%s at 0x%lx\n", prefix, spll_off);
 		dump_many_fields(mapaddr + spll_off, "struct_softpll", prefix);
+	}
+
+	fifo_off = wrpc_get_pointer(mapaddr + wrc_global_off, "wrc_global",
+				   "pll_fifo");
+	if (fifo_off) {
+		int i;
+		int pll_log_struct_size;
+
+		printf("fifo log at 0x%lx\n", fifo_off);
+		pll_log_struct_size = wrpc_get_struct_size("struct_pll_fifo");
+		for (i = 0; i < FIFO_LOG_LEN; i++)
+			dump_many_fields(mapaddr + fifo_off
+					 + i * pll_log_struct_size,
+					 "struct_pll_fifo", "wrc_global.spll_fifo");
 	}
 
 	/* dump config */
@@ -531,7 +545,6 @@ int main(int argc, char **argv)
 	/* If we have a new binary file, pick the pointers
 	 * Magic numbers are taken from crt0.S or disassembly of wrc.bin */
 	if (!strncmp(mapaddr + WRPC_MARK, "WRPC----", 8)) {
-		fifo_off = wrpc_get_l32(mapaddr + FIFO_LOG_PADDR);
 		ppg_off = wrpc_get_l32(mapaddr + PPG_STATIC_PADDR);
 		stats_off = wrpc_get_l32(mapaddr + STATS_PADDR);
 		wrc_global_off = wrpc_get_l32(mapaddr + WRC_STATIC_PADDR);
@@ -549,18 +562,6 @@ int main(int argc, char **argv)
 		printf("Unsupported version of PPSI structures! Expected %d, "
 		       "but read %d\n", WRS_PPSI_SHMEM_VERSION, version_ppsi);
 		exit(1);
-	}
-
-	if (!strcmp(dumpname, "fifo"))
-		fifo_off = offset;
-	if (fifo_off) {
-		int i;
-
-		printf("fifo log at 0x%lx\n", fifo_off);
-		for (i = 0; i < FIFO_LOG_LEN; i++)
-			dump_many_fields(mapaddr + fifo_off
-					 + i * sizeof(struct spll_fifo_log),
-					 "pll_fifo", "fifo");
 	}
 
 	if (!strcmp(dumpname, "ppg"))

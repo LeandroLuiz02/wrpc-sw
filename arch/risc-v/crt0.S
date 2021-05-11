@@ -24,8 +24,6 @@ _exception_entry:
 /* Pointer to structures, for the dumping tool */
 .org WRC_STATIC_PADDR
     .word  wrc_global
-.org FIFO_LOG_PADDR
-    .word  fifo_log
 #ifdef CONFIG_WRPC_PPSI
 .org PPG_STATIC_PADDR
     .word  ppg_static

@@ -12,7 +12,7 @@
 /* offsets for crt0.s */
 #define WRPC_MARK		0x80
 #define WRC_STATIC_PADDR	0x90
-#define FIFO_LOG_PADDR		0x94
+
 #define PPG_STATIC_PADDR	0x98
 #define STATS_PADDR		0x9c
 #define UPTIME_SEC_ADDR		0xa0

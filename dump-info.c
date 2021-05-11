@@ -19,6 +19,7 @@ struct dump_info  dump_wrpc_info[] = {
 	DUMP_FIELD(pointer, task_list),
 	DUMP_FIELD(pointer, config),
 	DUMP_FIELD(pointer, softpll),
+	DUMP_FIELD(pointer, pll_fifo),
 
 #undef DUMP_STRUCT
 #define DUMP_STRUCT struct wrc_global_link
@@ -83,7 +84,7 @@ struct dump_info  dump_wrpc_info[] = {
 #undef DUMP_STRUCT
 #define DUMP_STRUCT struct spll_fifo_log
 
-	DUMP_HEADER("pll_fifo"),
+	DUMP_HEADER_SIZE("struct_pll_fifo", sizeof(struct spll_fifo_log)),
 	DUMP_FIELD(uint32_t, trr),
 	DUMP_FIELD(uint32_t, tstamp),
 	DUMP_FIELD(uint32_t, duration),
