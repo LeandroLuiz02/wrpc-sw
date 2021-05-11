@@ -178,5 +178,7 @@ struct spll_fifo_log {
 
 extern int spll_ljd_present;
 
+extern volatile struct softpll_state softpll;
+
 #endif // __SOFTPLL_NG_H
 

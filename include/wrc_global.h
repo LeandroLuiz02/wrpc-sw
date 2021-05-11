@@ -19,6 +19,7 @@ struct wrc_global {
 	struct wrc_global_link *link_status;
 	int task_list_max;
 	struct wrc_task *task_list;
+	volatile struct softpll_state *softpll;
 	void * config;
 };
 

@@ -11,7 +11,7 @@
 
 /* Please increment WRPC_SHMEM_VERSION if you change any exported data
  * structure */
-#define WRPC_SHMEM_VERSION 2 /* removed some unused fields */
+#define WRPC_SHMEM_VERSION 3 /* add wrc_global in the place where spll was */
 
 #ifndef __ASSEMBLY__
 extern const char *build_revision;

@@ -18,6 +18,7 @@ struct dump_info  dump_wrpc_info[] = {
 	DUMP_FIELD(int, task_list_max),
 	DUMP_FIELD(pointer, task_list),
 	DUMP_FIELD(pointer, config),
+	DUMP_FIELD(pointer, softpll),
 
 #undef DUMP_STRUCT
 #define DUMP_STRUCT struct wrc_global_link
@@ -44,7 +45,7 @@ struct dump_info  dump_wrpc_info[] = {
 #undef DUMP_STRUCT
 #define DUMP_STRUCT struct softpll_state
 
-	DUMP_HEADER("softpll"),
+	DUMP_HEADER("struct_softpll"),
 	DUMP_FIELD(spll_mode, mode),
 	DUMP_FIELD(int, seq_state),
 	DUMP_FIELD(int, dac_timeout),

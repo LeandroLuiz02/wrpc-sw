@@ -115,8 +115,8 @@ _true_reset:
 .int	0x01234567
 .short	0x89ab, 0xcdef
 /* Pointer to structures, for the dumping tool */
-.org SOFTPLL_PADDR
-	.word softpll
+.org WRC_STATIC_PADDR
+	.word wrc_global
 .org FIFO_LOG_PADDR
 	.word fifo_log
 #ifdef CONFIG_WRPC_PPSI
@@ -141,8 +141,6 @@ version_wrpc:
 version_ppsi:
 	.byte WRS_PPSI_SHMEM_VERSION
 
-.org WRC_STATIC_PADDR
-	.word wrc_global
 
 /* Pointer to a structure used by testbenches, use only when
  * CONFIG_WR_NODE_SIM is set */

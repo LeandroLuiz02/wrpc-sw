@@ -418,7 +418,7 @@ void dump_mem_wrpc_task_list(void *mapaddr, unsigned long wrc_global_off)
 
 void dump_mem_wrpc_global(void *mapaddr, unsigned long wrc_global_off)
 {
-	unsigned long tmp_off;
+	unsigned long tmp_off, spll_off;
 	char *prefix;
 
 	printf("wrc_global at 0x%lx\n", wrc_global_off);
@@ -436,6 +436,14 @@ void dump_mem_wrpc_global(void *mapaddr, unsigned long wrc_global_off)
 	/* dump task list */
 	dump_mem_wrpc_task_list(mapaddr, wrc_global_off);
 
+	spll_off = wrpc_get_pointer(mapaddr + wrc_global_off, "wrc_global",
+				   "softpll");
+	if (spll_off) {
+		prefix = "wrc_global.spll";
+		printf("%s at 0x%lx\n", prefix, spll_off);
+		dump_many_fields(mapaddr + spll_off, "struct_softpll", prefix);
+	}
+
 	/* dump config */
 	tmp_off = wrpc_get_pointer(mapaddr + wrc_global_off, "wrc_global",
 				   "config");
@@ -447,7 +455,7 @@ void dump_mem_wrpc_global(void *mapaddr, unsigned long wrc_global_off)
 }
 
 /* all of these are 0 by default */
-unsigned long spll_off, fifo_off, ppg_off, stats_off, wrc_global_off;
+unsigned long fifo_off, ppg_off, stats_off, wrc_global_off;
 
 /* Use:  wrs_dump_memory <file> <hex-offset> <name> */
 int main(int argc, char **argv)
@@ -457,7 +465,6 @@ int main(int argc, char **argv)
 	unsigned long offset;
 	struct stat st;
 	char *dumpname = "";
-	char *prefix;
 	char c;
 	uint8_t version_wrpc, version_ppsi;
 
@@ -524,8 +531,6 @@ int main(int argc, char **argv)
 	/* If we have a new binary file, pick the pointers
 	 * Magic numbers are taken from crt0.S or disassembly of wrc.bin */
 	if (!strncmp(mapaddr + WRPC_MARK, "WRPC----", 8)) {
-
-		spll_off = wrpc_get_l32(mapaddr + SOFTPLL_PADDR);
 		fifo_off = wrpc_get_l32(mapaddr + FIFO_LOG_PADDR);
 		ppg_off = wrpc_get_l32(mapaddr + PPG_STATIC_PADDR);
 		stats_off = wrpc_get_l32(mapaddr + STATS_PADDR);
@@ -546,14 +551,6 @@ int main(int argc, char **argv)
 		exit(1);
 	}
 
-	/* Now check the "name" to be dumped  */
-	if (!strcmp(dumpname, "pll"))
-		spll_off = offset;
-	if (spll_off) {
-		prefix = "spll";
-		printf("%s at 0x%lx\n", prefix, spll_off);
-		dump_many_fields(mapaddr + spll_off, "softpll", prefix);
-	}
 	if (!strcmp(dumpname, "fifo"))
 		fifo_off = offset;
 	if (fifo_off) {

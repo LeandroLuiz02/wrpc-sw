@@ -76,6 +76,7 @@ struct wrc_global wrc_global = {
 	.link_status = &wrc_global_link,
 	.task_list_max = WRC_MAX_TASKS,
 	.task_list = tasks,
+	.softpll = &softpll,
 #ifdef CONFIG_CMD_CONFIG
 	.config = _binary__config_bin_start,
 #endif
