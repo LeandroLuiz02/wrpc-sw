@@ -10,6 +10,7 @@ struct wrc_global_link {
 	uint32_t version;
 	int link_up;
 	int vlan;
+	uint8_t ip_addr[4];
 };
 
 struct wrc_global {
@@ -24,5 +25,7 @@ struct wrc_global {
 	void * config;
 };
 
+extern struct wrc_global_link wrc_global_link;
+extern struct wrc_global wrc_global;
 
 #endif

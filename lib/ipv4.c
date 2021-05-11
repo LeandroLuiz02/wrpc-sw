@@ -16,9 +16,10 @@
 #include "dev/netif.h"
 #include "hw/etherbone-config.h"
 #include "wrc_ptp.h"
+#include "wrc_global.h"
 
 enum ip_status ip_status = IP_TRAINING;
-static uint8_t myIP[4];
+static uint8_t *myIP = wrc_global_link.ip_addr;
 
 /* bootp: bigger buffer, UDP based */
 static uint8_t __bootp_queue[512];
