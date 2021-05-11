@@ -233,6 +233,21 @@ static void set_dds_sync_source( struct ertm14_board_state *cfg, struct ertm14_b
 
 }
 
+static void set_pps_mode( char *mode )
+{
+    if(!mode)
+    {
+        pp_printf("PPS mode expected\n");
+        return;
+    }
+
+    int m = atoi(mode);
+
+    pp_printf("Setting PPS output mode to: %d\n", m);
+
+    ertm14_set_pps_out_mode( m );
+}
+
 /* FIXME: this should be in a .h file */
 extern void phy_calibration_disable(void);
 extern void streamers_reset_rx_stats(void);
@@ -313,6 +328,8 @@ static int cmd_ertm(const char *args[])
         set_streamers_timeout( &nstate, &mask, strtol(args[1], NULL, 0) );
     } else if (!strcasecmp(args[0], "reset-stats")) {
         streamers_reset_rx_stats();
+    } else if (!strcasecmp(args[0], "pps-mode")) {
+        set_pps_mode( args[1] );
     }
  
  
