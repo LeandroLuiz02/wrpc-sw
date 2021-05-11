@@ -8,18 +8,18 @@
 #include <errno.h>
 #include <libgen.h>
 
-static char ertm_big_lock[] = "/run/libertm/big-ertm-lock";
-static int lock = -1;
-static char tmp[PATH_MAX];
+#include "private.h"
 
-int open_lock_file(char *filename)
+static char ertm_big_lock[] = "/run/libertm/big-ertm-lock";
+static char ertm_big_lock_dir[] = "/run/libertm";
+
+int ertm_open_lock_file(struct ertm_status *st)
 {
-	char *dir;
+	char *dir = ertm_big_lock_dir;
+	char *filename = ertm_big_lock;
 	int fd;
 
 	/* create dir if not exists */
-	strcpy(tmp, filename);
-	dir = dirname(tmp);
 	if ((access(dir, F_OK) != 0) && (mkdir(dir, 0755) < 0))
 		return -1;
 	/* dir created, create lock file */
@@ -30,26 +30,29 @@ int open_lock_file(char *filename)
 			close(fd);
 	}
 	/* open lock file */
-	if ((lock = open(filename, O_RDONLY)) < 0)
-		return lock;
-	return lock;
+	if ((fd = open(filename, O_RDONLY)) < 0)
+		return -1;
+	st->lock = fd;
+
+	return 0;
 }
 
-int ertm_mutex_acquire(void)
+int ertm_mutex_acquire(struct ertm_status *st)
 {
-	return flock(lock, LOCK_EX);
+	return flock(st->lock, LOCK_EX);
 }
 
-int ertm_mutex_release(void)
+int ertm_mutex_release(struct ertm_status *st)
 {
-	return flock(lock, LOCK_UN);
+	return flock(st->lock, LOCK_UN);
 }
 
-int main(int argc, char *argv[])
+static int flock_main(int argc, char *argv[])
 {
 	int c;
+	struct ertm_status st, *h = &st;
 
-	if (open_lock_file(ertm_big_lock) < 0) {
+	if (ertm_open_lock_file(h) < 0) {
 		perror("open_lock_file");
 		return -1;
 	}
@@ -57,7 +60,7 @@ int main(int argc, char *argv[])
 	    switch (c) {
 	    case 'l':
 		    printf("lock: ");
-		    if (ertm_mutex_acquire() < 0) {
+		    if (ertm_mutex_acquire(h) < 0) {
 			    perror("failed, acq");
 			    continue;
 		    }
@@ -65,7 +68,7 @@ int main(int argc, char *argv[])
 		    break;
 	    case 'u':
 		    printf("unlock: ");
-		    if (ertm_mutex_release() < 0) {
+		    if (ertm_mutex_release(h) < 0) {
 			    perror("failed, release");
 			    continue;
 		    }

@@ -42,7 +42,8 @@ struct ertm_status {
 	struct ertm_connection connection;
 	struct ertm_state *state;
 	struct uart_link link;
-	uint32_t reserved[64];
+	int lock;
+	uint32_t reserved[63];
 };
 
 static int ertm_voltage_ids[] = {

@@ -234,6 +234,11 @@ struct ertm_status *ertm_init(const char *address)
 		errno = ENODEV;
 		return NULL;
 	}
+	if (ertm_open_lock_file(st) < 0) {
+		errno = ENODEV;
+		return NULL;
+	}
+
 	/* we init with fake values, then override with
 	 * actual default hardware configs */
 	ertm_status_init(st->state);
