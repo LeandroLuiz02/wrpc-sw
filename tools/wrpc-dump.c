@@ -223,8 +223,8 @@ void dump_one_field(void *addr, struct dump_info *info, char *info_prefix)
 
 	case dump_type_ip_address:
 		for (i = 0; i < 4; i++)
-			printf("%02x%c", ((unsigned char *)p)[i],
-			       i == 3 ? '\n' : ':');
+			printf("%d%c", ((unsigned char *)p)[i],
+			       i == 3 ? '\n' : '.');
 		break;
 
 	case dump_type_link_up_status:
