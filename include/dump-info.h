@@ -32,6 +32,7 @@ enum dump_type {
 	dump_type_yes_no,
 	dump_type_spll_mode,
 	dump_type_ip_address,
+	dump_type_ip_addr_status,
 };
 
 /* because of the sizeof later on, we need these typedefs */
@@ -46,6 +47,7 @@ typedef struct {unsigned char addr[4];} ip_address;
 typedef uint8_t        yes_no;
 typedef int            spll_mode;
 typedef int            link_up_status;
+typedef int            ip_addr_status;
 
 /*
  * This is generated with the target compiler, and then linked

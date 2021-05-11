@@ -91,7 +91,7 @@ int arp_poll(void)
 	struct wr_sockaddr addr;
 	int len;
 
-	if (ip_status == IP_TRAINING)
+	if (*ip_status == IP_TRAINING)
 		return 0;		/* can't do ARP w/o an address... */
 
 	if ((len = ptpd_netif_recvfrom(arp_socket,

@@ -69,6 +69,7 @@ extern struct spll_fifo_log fifo_log[];
 struct wrc_global_link wrc_global_link = {
 	.version = WRC_G_LINK_VERSION,
 	.vlan = CONFIG_VLAN_NR,
+	.ip_status = IP_TRAINING,
 };
 
 struct wrc_global wrc_global = {

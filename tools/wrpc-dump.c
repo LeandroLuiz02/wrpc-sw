@@ -6,7 +6,6 @@
 #include <unistd.h>
 #include <fcntl.h>
 #include <signal.h>
-#include <arpa/inet.h> /* ntohl */
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <sys/mman.h>
@@ -15,6 +14,7 @@
 #include <revision.h>
 #include <arch/lm32/crt0.h>
 #include <dev/netif.h>
+#include <lib/ipv4.h>
 
 #include <dump-info.h>
 #include "time_lib.h"
@@ -222,9 +222,24 @@ void dump_one_field(void *addr, struct dump_info *info, char *info_prefix)
 		break;
 
 	case dump_type_ip_address:
-		for (i = 0; i < 4; i++)
+		for (i = 0; i < INET_ALEN; i++)
 			printf("%d%c", ((unsigned char *)p)[i],
 			       i == 3 ? '\n' : '.');
+		break;
+
+	case dump_type_ip_addr_status:
+		i = wrpc_get_l32(p);
+
+		switch(i) {
+		ENUM_TO_P_IN_CASE(IP_TRAINING, char_p);
+		ENUM_TO_P_IN_CASE(IP_OK_BOOTP, char_p);
+		ENUM_TO_P_IN_CASE(IP_OK_STATIC, char_p);
+		default:
+			char_p = "Unknown";
+		}
+		printf("%d", i);
+		print_str(char_p);
+		printf("\n");
 		break;
 
 	case dump_type_link_up_status:

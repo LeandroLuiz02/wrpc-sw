@@ -414,7 +414,7 @@ void print_main_data(void)
 
 				getIP(ip);
 				format_ip(buf, ip);
-				switch (ip_status) {
+				switch (*ip_status) {
 				case IP_TRAINING:
 					pcprintf(9, 29, C_RED,   "BOOTP running          ");
 					break;

@@ -1,5 +1,6 @@
 #ifndef __WRC_GLOBAL_H
 #define __WRC_GLOBAL_H
+#include <lib/ipv4.h>
 
 #define WRC_G_MAGIC 0xADA5301E
 #define WRC_G_VERSION 1
@@ -10,7 +11,8 @@ struct wrc_global_link {
 	uint32_t version;
 	int link_up;
 	int vlan;
-	uint8_t ip_addr[4];
+	int ip_status;
+	uint8_t ip_addr[INET_ALEN];
 };
 
 struct wrc_global {

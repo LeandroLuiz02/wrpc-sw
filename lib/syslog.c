@@ -121,7 +121,7 @@ int syslog_poll(void)
 	else
 		s = &((struct wr_data *)ppi->ext_data)->servo_state;
 
-	if (ip_status == IP_TRAINING)
+	if (*ip_status == IP_TRAINING)
 		return 0;
 	if (!syslog_addr.daddr)
 		return 0;
@@ -263,7 +263,7 @@ void syslog_report(const char *msg)
 	unsigned char ip[4];
 	int len;
 
-	if (ip_status == IP_TRAINING)
+	if (*ip_status == IP_TRAINING)
 		return;
 	if (!syslog_addr.daddr)
 		return;

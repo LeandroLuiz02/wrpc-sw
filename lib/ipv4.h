@@ -46,7 +46,7 @@ enum ip_status {
 	IP_OK_BOOTP,
 	IP_OK_STATIC,
 };
-extern enum ip_status ip_status;
+extern enum ip_status *ip_status;
 void setIP(unsigned char *IP);
 void getIP(unsigned char *IP);
 

@@ -114,7 +114,7 @@ int netconsole_poll(void)
 {
 	int len;
 
-	if (ip_status == IP_TRAINING
+	if (*ip_status == IP_TRAINING
 	    || netconsole_status == NETCONSOLE_DISABLED) {
 		/* can't do netconsole w/o an address...
 		 * or netconsole disabled */

@@ -44,7 +44,7 @@ static int cmd_ip(const char *args[])
 	if (!args[0] || !strcasecmp(args[0], "get")) {
 		getIP(ip);
 	} else if (!strcasecmp(args[0], "set") && args[1]) {
-		ip_status = IP_OK_STATIC;
+		*ip_status = IP_OK_STATIC;
 		decode_ip(args[1], ip);
 		setIP(ip);
 #if HAS_EB
@@ -55,7 +55,7 @@ static int cmd_ip(const char *args[])
 	}
 
 	format_ip(buf, ip);
-	switch (ip_status) {
+	switch (*ip_status) {
 	case IP_TRAINING:
 		pp_printf("IP-address: in training\n");
 		break;
