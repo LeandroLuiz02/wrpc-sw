@@ -17,6 +17,8 @@ struct wrc_global {
 	uint32_t version;
 	char wrc_hw_name[HW_NAME_LENGTH];
 	struct wrc_global_link *link_status;
+	int task_list_max;
+	struct wrc_task *task_list;
 };
 
 

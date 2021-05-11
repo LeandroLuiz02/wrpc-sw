@@ -69,6 +69,14 @@ extern struct dump_info dump_ppsi_info_target[]; /* wrpc-sw/ppsi/tools/dump_mem_
 	.name = _struct,			\
 }
 
+/* Keep the value with the structure name. Intendeed to keep the size of
+ * structure, but can be used to keep any value. */
+#define DUMP_HEADER_SIZE(_struct, _size) {	\
+	.endian_flag = DUMP_ENDIAN_FLAG,	\
+	.name = _struct,			\
+	.size = _size,		\
+}
+
 /* The macros below rely on DUMP_STRUCT that must be externally defined */
 #define DUMP_FIELD(_type, _fname) {		\
 	.endian_flag = 0,			\
@@ -89,6 +97,7 @@ extern struct dump_info dump_ppsi_info_target[]; /* wrpc-sw/ppsi/tools/dump_mem_
 void dump_many_fields(void *addr, char *name, char *prefix);
 unsigned long wrpc_get_pointer(void *base, char *s_name, char *f_name);
 unsigned long wrpc_get_offset(char *s_name, char *f_name);
+unsigned long wrpc_get_struct_size(char *s_name);
 long long wrpc_get_64(void *p);
 long wrpc_get_l32(void *p);
 int wrpc_get_i32(void *p);

@@ -337,6 +337,21 @@ unsigned long wrpc_get_offset(char *s_name, char *f_name)
 	return 0;
 }
 
+unsigned long wrpc_get_struct_size(char *s_name)
+{
+	struct dump_info *p;
+
+	p = find_s_name(s_name);
+
+	if (!p) {
+		fprintf(stderr, "structure \"%s\" not described\n", s_name);
+		return 0;
+	}
+
+	return wrpc_get_i32(&p->size);
+}
+
+
 void print_version(void)
 {
 	fprintf(stderr, "Built in wrpc-sw repo ver:%s, by %s on %s %s\n",
@@ -345,6 +360,60 @@ void print_version(void)
 		WRPC_SHMEM_VERSION);
 	fprintf(stderr, "Supported PPSI structures version %d\n",
 		WRS_PPSI_SHMEM_VERSION);
+}
+
+void dump_mem_wrpc_task_list(void *mapaddr, unsigned long wrc_global_off)
+{
+	int task_i;
+	int max_task;
+	char *prefix;
+	char pname[128];
+	long unsigned name_off, iterations_off, sec_off, nsec_off,
+			max_run_ticks_off, used_off;
+	void *task_addr;
+	long unsigned task_struct_size;
+	unsigned long task_list_off;
+
+	task_list_off = wrpc_get_pointer(mapaddr + wrc_global_off, "wrc_global",
+				   "task_list");
+	if (!task_list_off) {
+		return;
+	}
+
+	prefix = "wrc_global.task_list";
+	printf("%s at 0x%lx\n", prefix, task_list_off);
+
+	max_task = wrpc_get_i32(mapaddr + wrc_global_off +
+			wrpc_get_offset("wrc_global", "task_list_max"));
+
+	/* limit task_i in case max_task is not correct */
+	if (max_task < 0)
+		max_task = 0;
+	if (max_task > 64)
+		max_task = 64;
+
+	used_off = wrpc_get_offset("wrc_task", "used");
+	name_off = wrpc_get_offset("wrc_task", "name");
+	iterations_off = wrpc_get_offset("wrc_task", "nrun");
+	sec_off = wrpc_get_offset("wrc_task", "seconds");
+	nsec_off = wrpc_get_offset("wrc_task", "nanos");
+	max_run_ticks_off = wrpc_get_offset("wrc_task", "max_run_ticks");
+	task_struct_size = wrpc_get_struct_size("wrc_task");
+
+	for (task_i = 0; task_i < max_task && task_i < 32; task_i++) {
+		task_addr = mapaddr + task_list_off + task_i*task_struct_size;
+		if (!wrpc_get_l32(task_addr + used_off)) {
+			/* skip not used tasks */
+			continue;
+		}
+		sprintf(pname, "%s[%02d]:", prefix, task_i);
+		printf("%-60s ", pname);
+		printf("name: %16s ", (char *)(task_addr + name_off));
+		printf("iterations: %10ld ", wrpc_get_l32(task_addr + iterations_off));
+		printf("secs: %10ld.%06ld ", wrpc_get_l32(task_addr + sec_off),
+					    (wrpc_get_l32(task_addr + nsec_off))/1000);
+		printf("max_ms: %8ld\n", wrpc_get_l32(task_addr + max_run_ticks_off));
+	}
 }
 
 void dump_mem_wrpc_global(void *mapaddr, unsigned long wrc_global_off)
@@ -363,6 +432,9 @@ void dump_mem_wrpc_global(void *mapaddr, unsigned long wrc_global_off)
 		dump_many_fields(mapaddr + tmp_off, "wrc_global_link",
 				 prefix);
 	}
+
+	/* dump task list */
+	dump_mem_wrpc_task_list(mapaddr, wrc_global_off);
 }
 
 /* all of these are 0 by default */

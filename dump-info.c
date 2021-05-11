@@ -15,6 +15,8 @@ struct dump_info  dump_wrpc_info[] = {
 	DUMP_FIELD(uint32_t, version),
 	DUMP_FIELD_SIZE(char, wrc_hw_name, HW_NAME_LENGTH),
 	DUMP_FIELD(pointer, link_status),
+	DUMP_FIELD(int, task_list_max),
+	DUMP_FIELD(pointer, task_list),
 
 #undef DUMP_STRUCT
 #define DUMP_STRUCT struct wrc_global_link
@@ -22,6 +24,21 @@ struct dump_info  dump_wrpc_info[] = {
 	DUMP_FIELD(uint32_t, version),
 	DUMP_FIELD(link_up_status, link_up),
 	DUMP_FIELD(int, vlan),
+
+#undef DUMP_STRUCT
+#define DUMP_STRUCT struct wrc_task
+	/* Save the size of the structure, there is no other way to pass
+	 * the size of wrc_task structure */
+	DUMP_HEADER_SIZE("wrc_task", sizeof(struct wrc_task)),
+	DUMP_FIELD(int, used),
+	DUMP_FIELD_SIZE(char, name, 16),
+	DUMP_FIELD(pointer, enabled), /* pointer to a function */
+	DUMP_FIELD(pointer, init), /* pointer to a function */
+	DUMP_FIELD(pointer, job), /* pointer to a function */
+	DUMP_FIELD(unsigned_long, nrun),
+	DUMP_FIELD(unsigned_long, seconds),
+	DUMP_FIELD(unsigned_long, nanos),
+	DUMP_FIELD(unsigned_long, max_run_ticks), /* in ticks */
 
 #undef DUMP_STRUCT
 #define DUMP_STRUCT struct softpll_state

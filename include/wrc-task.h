@@ -27,6 +27,8 @@ struct wrc_task {
 	unsigned long max_run_ticks; /* in ticks */
 };
 
+extern struct wrc_task tasks[WRC_MAX_TASKS];
+
 void wrc_tasks_preinit(void);
 struct wrc_task* wrc_task_create( const char *name, void (*init)(void), int (*job)(void) );
 void wrc_task_set_enable( struct wrc_task* task, int (*enabled)(void) );

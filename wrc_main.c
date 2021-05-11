@@ -73,6 +73,8 @@ struct wrc_global wrc_global = {
 	.magic = WRC_G_MAGIC,
 	.version = WRC_G_VERSION,
 	.link_status = &wrc_global_link,
+	.task_list_max = WRC_MAX_TASKS,
+	.task_list = tasks,
 };
 
 int *link_status = &wrc_global_link.link_up;
