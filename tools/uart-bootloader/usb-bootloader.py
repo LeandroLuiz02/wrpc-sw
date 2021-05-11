@@ -156,6 +156,7 @@ class DSIBootloader:
     CMD_GO = 5
     CMD_BOOT_INIT = 1
     CMD_ENTER_BOOT_MODE = 8
+    CMD_RESET_PAYLOAD = 9
 
     RSP_OK = 1
     RSP_CRC_ERROR = 2
@@ -180,6 +181,9 @@ class DSIBootloader:
 
     def cmd_reset_to_boot_mode(self):
         return self.sock.tx_frame(self.CMD_ENTER_BOOT_MODE, [])
+
+    def cmd_reset_mmc_payload(self):
+        return self.sock.tx_frame(self.CMD_RESET_PAYLOAD, [])
 
     def cmd_read_flash_id(self):
         data = [(addr >> 24) & 0xff, (addr >> 16) & 0xff, (addr >> 8) & 0xff,
@@ -272,10 +276,14 @@ class DSIBootloader:
             image = fw
         else:
             raise Exception("Unknown flash target: %s" % target)
-        self.do_program_flash(image, offset)
-        self.cmd_jump( 0x4 ); # boot WRCore back!
+        return self.do_program_flash(image, offset)
 
-        
+
+    def reset_payload(self, target):
+        if self.target_board == "ertm14m0":
+            print("Resetting eRTM14 payload")
+            return self.cmd_reset_mmc_payload()
+
     def program_flash(self, fw, target):
         #print("PGM", target)
         if self.target_board == "ertm14m0" or self.target_board == "ertm14m1":
@@ -395,11 +403,12 @@ def main(argv):
     our_port = "/dev/ttyUSB0"
     do_flash = False
     run_term = False
+    do_reset = False
     flash_target = None
     board_target = None
     ser_speed=115200
     try:
-        opts, args = getopt.getopt(argv[1:], "hb:f:s:p:t", ["uart"])
+        opts, args = getopt.getopt(argv[1:], "hrb:f:s:p:t", ["uart"])
     except getopt.GetoptError:
         print('Usage: %s [-f] [-p serial_port_device] file.bin' % argv[0])
         sys.exit(2)
@@ -409,6 +418,9 @@ def main(argv):
             print('Options:')
             print(
                 '-f / --flash [fpga|autoexec|wrc|sdbfs] - flashes the FPGA bitstream/autoexec file/WRC image instead of loading the CPU image (can brick your board!)'
+            )
+            print(
+                '-r / --reset - asks the MMC to reset the payload FPGA (eRTM14)'
             )
             print(
                 '-p / --port:  - specifies the serial port device (default: %s)'
@@ -427,10 +439,12 @@ def main(argv):
             ser_speed = int(arg)
         elif opt in ("-t", "--term"):
             run_term = True
+        elif opt in ("-r", "--reset"):
+            do_reset = True
         else:
             print("Unrecognized option '%s'" % opt)
 
-    if len(args) == 0:
+    if len(args) == 0 and not do_reset:
         print("No filename specified.")
         sys.exit(2)
 
@@ -445,12 +459,16 @@ def main(argv):
             board_target, ser_speed), file=sys.stderr)
         exit(1)
 
-    fw = bytearray(open(args[0], "rb").read())
+    if not do_reset:
+        fw = bytearray(open(args[0], "rb").read())
 
 
+    if not do_reset:
+        boot.boot_enter()
 
-    boot.boot_enter()
-    if do_flash:
+    if do_reset:
+        boot.reset_payload(flash_target)
+    elif do_flash:
         boot.program_flash(fw, flash_target)
     else:
         boot.load_ram(fw, 0x0)
