@@ -14,16 +14,20 @@
 #include "board.h"
 #include "dev/syscon.h"
 #include <dev/endpoint.h>
+#include <dev/minic.h>
 #include "storage.h"
 
 #include <hw/endpoint_regs.h>
 #include <hw/endpoint_mdio.h>
 
+#include <wrc_global.h>
+
 /* Length of a single bit on the gigabit serial link in picoseconds. Used for calculating deltaRx/deltaTx
    from the serdes bitslip value */
 #define PICOS_PER_SERIAL_BIT 800
 
-
+/* keep the MAC addr for wrpc-dump */
+uint8_t *mac_addr_shadow = wrc_global_link.mac_addr;
 
 /* functions for accessing PCS (MDIO) registers */
 uint16_t ep_pcs_read(struct wr_endpoint_device *dev, int location)
@@ -53,6 +57,9 @@ void ep_get_mac_addr(struct wr_endpoint_device *dev, uint8_t *dev_addr)
 	dev_addr[2] = (macl & 0xff000000) >> 24;
 	dev_addr[1] = (mach & 0x000000ff);
 	dev_addr[0] = (mach & 0x0000ff00) >> 8;
+
+	/* save the MAC addr for wrpc-dump */
+	memcpy(mac_addr_shadow, dev_addr, ETH_ALEN);
 }
 
 
@@ -70,6 +77,9 @@ void ep_set_mac_addr(struct wr_endpoint_device* dev, uint8_t *addr)
 	    | ((uint32_t) dev->mac_addr[1]) );
 
 	dev->flags |= EP_DEV_MAC_ADDR_SET;
+
+	/* save the MAC addr for wrpc-dump */
+	memcpy(mac_addr_shadow, addr, ETH_ALEN);
 }
 
 int ep_is_mac_addr_set(struct wr_endpoint_device* dev)

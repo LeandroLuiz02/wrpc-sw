@@ -29,6 +29,7 @@ struct dump_info  dump_wrpc_info[] = {
 	DUMP_FIELD(int, vlan),
 	DUMP_FIELD(ip_addr_status, ip_status),
 	DUMP_FIELD(ip_address, ip_addr),
+	DUMP_FIELD_SIZE(bina, mac_addr, ETH_ALEN),
 
 #undef DUMP_STRUCT
 #define DUMP_STRUCT struct wrc_task
