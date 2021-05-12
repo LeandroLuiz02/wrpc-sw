@@ -15,6 +15,7 @@
 #include <arch/lm32/crt0.h>
 #include <dev/netif.h>
 #include <lib/ipv4.h>
+#include <wrc_global.h>
 
 #include <dump-info.h>
 #include "time_lib.h"
@@ -434,9 +435,31 @@ void dump_mem_wrpc_task_list(void *mapaddr, unsigned long wrc_global_off)
 void dump_mem_wrpc_global(void *mapaddr, unsigned long wrc_global_off)
 {
 	unsigned long tmp_off, spll_off, fifo_off;
+	uint32_t expected_magic;
+	uint32_t expected_version;
 	char *prefix;
 
 	printf("wrc_global at 0x%lx\n", wrc_global_off);
+
+	/* verify magic */
+	expected_magic = wrpc_get_l32(mapaddr + wrc_global_off +
+				      wrpc_get_offset("wrc_global", "magic"));
+	if (expected_magic != WRC_G_MAGIC) {
+		printf("Wrong magic in wrc_global! Found %d, expected %d\n",
+		       expected_magic, WRC_G_MAGIC);
+		return;
+	}
+
+	/* verify version */
+	expected_version = wrpc_get_l32(mapaddr + wrc_global_off +
+				    wrpc_get_offset("wrc_global", "version"));
+	if (expected_version != WRC_G_VERSION) {
+		printf("Not supported version of wrc_global! "
+		       "Found %d, expected %d\n", expected_version,
+		       WRC_G_VERSION);
+		return;
+	}
+
 	dump_many_fields(mapaddr + wrc_global_off, "wrc_global", "wrc_global");
 	
 	tmp_off = wrpc_get_pointer(mapaddr + wrc_global_off, "wrc_global",
@@ -444,6 +467,17 @@ void dump_mem_wrpc_global(void *mapaddr, unsigned long wrc_global_off)
 	if (tmp_off) {
 		prefix = "wrc_global.link_status";
 		printf("%s at 0x%lx\n", prefix, tmp_off);
+		/* verify version */
+		expected_version = wrpc_get_l32(mapaddr + tmp_off +
+					    wrpc_get_offset("wrc_global_link",
+							    "version"));
+		if (expected_version != WRC_G_LINK_VERSION) {
+			printf("Not supported version of wrc_global_link! "
+			       "Found %d, expected %d\n", expected_version,
+			       WRC_G_LINK_VERSION);
+			return;
+		}
+
 		dump_many_fields(mapaddr + tmp_off, "wrc_global_link",
 				 prefix);
 	}
