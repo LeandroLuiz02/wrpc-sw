@@ -16,6 +16,8 @@
 #include <softpll_ng.h>
 #include <ptpd_netif.h>
 
+#include <sfp.h>
+
 #include <board.h>
 
 void *ppsi_head;
@@ -41,9 +43,11 @@ extern uint32_t cal_phase_transition;
 
 int wrpc_get_port_state(struct wrc_port_state *port, const char *port_name)
 {
-	/* all deltas are added anyway */
-	ep_get_deltas(&wrc_endpoint_dev, &port->calib.delta_tx_ps,
-		      &port->calib.delta_rx_ps);
+	/* fill deltas */
+	port->calib.delta_tx_ps = sfp_info.sfp_params.dTx;
+	port->calib.delta_rx_ps = sfp_info.sfp_params.dRx;
+	/* fill alpha */
+	port->calib.alpha = sfp_info.sfp_params.alpha;
 	/* get the bitslide */
 	port->calib.bitslide_ps = ep_get_bitslide(&wrc_endpoint_dev);
 	read_phase_val(port);

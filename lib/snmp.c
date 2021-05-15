@@ -496,8 +496,8 @@ static struct snmp_oid oid_array_wrpcPtpConfigGroup[] = {
 /* wrpcPortGroup */
 static struct snmp_oid oid_array_wrpcPortGroup[] = {
 	OID_FIELD_VAR(   oid_wrpcPortLinkStatus,     get_port,     NO_SET,   ASN_INTEGER,   PORT_LINK_STATUS),
-	OID_FIELD_VAR(   oid_wrpcPortSfpPn,          get_p,        NO_SET,   ASN_OCTET_STR, &sfp_pn),
-	OID_FIELD_VAR(   oid_wrpcPortSfpInDB,        get_p,        NO_SET,   ASN_INTEGER,   &sfp_in_db),
+	OID_FIELD_VAR(   oid_wrpcPortSfpPn,          get_p,        NO_SET,   ASN_OCTET_STR, &sfp_info.sfp_params.pn),
+	OID_FIELD_VAR(   oid_wrpcPortSfpInDB,        get_p,        NO_SET,   ASN_INTEGER,   &sfp_info.sfp_in_db),
 	OID_FIELD_VAR(   oid_wrpcPortInternalTX,     get_p,        NO_SET,   ASN_COUNTER,   &minic.tx_count),
 	OID_FIELD_VAR(   oid_wrpcPortInternalRX,     get_p,        NO_SET,   ASN_COUNTER,   &minic.rx_count),
 
@@ -1430,9 +1430,9 @@ static int set_ptp_config(uint8_t *buf, struct snmp_oid *obj)
 		return ret;
 	switch (*apply_mode) {
 	case writeToMemoryCurrentSfp:
-		sfp_deltaTx = snmp_ptp_config.dTx;
-		sfp_deltaRx = snmp_ptp_config.dRx;
-		sfp_alpha = snmp_ptp_config.alpha;
+		sfp_info.sfp_params.dTx = snmp_ptp_config.dTx;
+		sfp_info.sfp_params.dRx = snmp_ptp_config.dRx;
+		sfp_info.sfp_params.alpha = snmp_ptp_config.alpha;
 
 		/* Since ppsi does not support update of deltas in runtime,
 		 * we need to restart the ppsi */

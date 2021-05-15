@@ -16,6 +16,8 @@
 #include <dev/netif.h>
 #include <lib/ipv4.h>
 #include <wrc_global.h>
+#include <libwr/sfp_lib.h>
+#include <sfp.h>
 
 #include <dump-info.h>
 #include "time_lib.h"
@@ -105,6 +107,7 @@ void dump_one_field(void *addr, struct dump_info *info, char *info_prefix)
 	char pname[128];
 	int i, type, size;
 	char *char_p;
+	float tmp_f;
 
 	/* now, info may be in wrong-endian. so fix it */
 	type = wrpc_get_i32(&info->type);
@@ -251,6 +254,109 @@ void dump_one_field(void *addr, struct dump_info *info, char *info_prefix)
 		ENUM_TO_P_IN_CASE(NETIF_LINK_WENT_UP, char_p);
 		ENUM_TO_P_IN_CASE(NETIF_LINK_WENT_DOWN, char_p);
 		ENUM_TO_P_IN_CASE(NETIF_LINK_UP, char_p);
+		default:
+			char_p = "Unknown";
+		}
+		printf("%d", i);
+		print_str(char_p);
+		printf("\n");
+		break;
+
+	case dump_type_sfp_temp:
+		printf("%.3f C\n", *(int8_t*)p + *((uint8_t*)p+1)/(float)256);
+		break;
+
+	case dump_type_sfp_vcc:
+		printf("%.3f V\n", (*(uint8_t*)p*256 + *((uint8_t*)p+1))/(float)10000);
+		break;
+
+	case dump_type_sfp_tx_bias:
+		printf("%.3f mA\n", (*(uint8_t*)p*256 + *((uint8_t*)p+1))/(float)500);
+		break;
+
+	case dump_type_sfp_tx_pow:
+		printf("%.3f mW\n", (*(uint8_t*)p*256 + *((uint8_t*)p+1))/(float)10000);
+		break;
+
+	case dump_type_sfp_rx_pow:
+		printf("%.3f mW\n", (*(uint8_t*)p*256 + *((uint8_t*)p+1))/(float)10000);
+		break;
+
+	case dump_type_sfp_br_nom:
+		printf("Nominal Bit Rate: %d Megabits/s\n", *(uint8_t*)p * 100);
+		break;
+
+	case dump_type_sfp_length1:
+		printf("Length (9m): %dkm\n", *(uint8_t*)p);
+		break;
+	case dump_type_sfp_length2:
+		printf("Length (9m): %dm\n", *(uint8_t*)p * 100);
+		break;
+
+	case dump_type_sfp_length3:
+		printf("Length (50m): %dm\n", *(uint8_t*)p * 10);
+		break;
+
+	case dump_type_sfp_length4:
+		printf("Length (62.5m): %dm\n", *(uint8_t*)p * 10);
+		break;
+
+	case dump_type_sfp_length5:
+		printf("Length (copper): %dm\n", *(uint8_t*)p);
+		break;
+
+	case dump_type_sfp_length6:
+		/* calculation based on Table 6-1, SFF-8472 Rev 12.4 */
+		i = *(uint8_t*)p;
+		tmp_f = i & 0x3F;
+		i = i >> 6;
+		if (i == 0)
+			tmp_f *= 0.1;
+		else if (i == 2)
+			tmp_f *= 10;
+		else if (i == 3)
+			tmp_f *= 100;
+		printf("Length (copper): %0.1fm\n", tmp_f);
+		break;
+
+	case dump_type_sfp_diag_mon_type:
+		i = *(uint8_t*)p;
+		pname[0] = 0;
+
+		if (i & SFP_DIAG_IMPLEMENTED)
+			strcat(pname, "DIAG, ");
+		if (i & SFP_DIAG_INT_CAL)
+			strcat(pname, "DIAG_INT_CAL, ");
+		if (i & SFP_DIAG_EXT_CAL)
+			strcat(pname, "DIAG_EXT_CAL, ");
+		if (i & SFP_DIAG_RCV_POW_MES)
+			strcat(pname, "AVG_POW_MES, ");
+		if (i & SFP_DIAG_ADDR_CHANGE_REQ)
+			strcat(pname, "ADDR_CHANGE_REQ(Unsupported), ");
+
+		if (pname[0]) {
+			/* remove last two chars */
+			memset(&pname[strlen(pname) - 2], 0, 2);
+			printf("%02x (%s)\n", i, pname);
+		} else
+			printf("%02x\n", i);
+
+		break;
+
+	case dump_type_sfp_dump_alpha:
+		printf("%lld ns\n", wrpc_get_64(p));
+		break;
+
+	case dump_type_sfp_dump_delta:
+		printf("%i ns\n", wrpc_get_i32(p));
+		break;
+
+	case dump_type_sfp_in_db:
+		i = wrpc_get_l32(p);
+
+		switch(i) {
+		ENUM_TO_P_IN_CASE(SFP_MATCHED, char_p);
+		ENUM_TO_P_IN_CASE(SFP_NOT_MATCHED, char_p);
 		default:
 			char_p = "Unknown";
 		}
@@ -432,6 +538,70 @@ void dump_mem_wrpc_task_list(void *mapaddr, unsigned long wrc_global_off)
 	}
 }
 
+
+void dump_mem_wrpc_sfp(void *mapaddr, unsigned long wrc_global_off)
+{
+	unsigned long diag_mon_off;
+	unsigned long sfp_off;
+	unsigned long sfp_header_off, sfp_dom_off;
+	int diag_supported;
+	char *prefix;
+	uint32_t expected_version;
+
+	sfp_off = wrpc_get_pointer(mapaddr + wrc_global_off, "wrc_global",
+				   "sfp_info");
+	if (!sfp_off) {
+		/* sfp_info not found */
+		return;
+	}
+
+	prefix = "wrc_global.sfp_info";
+	printf("%s at 0x%lx\n", prefix, sfp_off);
+	expected_version = wrpc_get_l32(mapaddr + sfp_off +
+				    wrpc_get_offset("struct_sfp_info",
+						    "version"));
+	if (expected_version != WRC_G_SFP_VERSION) {
+		printf("Not supported version of sfp_info! "
+			"Found %d, expected %d\n", expected_version,
+			WRC_G_SFP_VERSION);
+		return;
+	}
+
+	dump_many_fields(mapaddr + sfp_off, "struct_sfp_info", prefix);
+	sfp_header_off = wrpc_get_pointer(mapaddr + sfp_off, "struct_sfp_info",
+					  "sfp_header");
+	if (!sfp_header_off) {
+		/* sfp_header not found */
+		return;
+	}
+
+	prefix = "wrc_global.sfp_info.sfp_header";
+	printf("%s at 0x%lx\n", prefix, sfp_header_off);
+	dump_many_fields(mapaddr + sfp_header_off, "shw_sfp_header", prefix);
+
+	sfp_dom_off = wrpc_get_pointer(mapaddr + sfp_off, "struct_sfp_info",
+				       "sfp_dom");
+	if (!sfp_dom_off) {
+		/* sfp_dom not found */
+		return;
+	}
+	
+	diag_mon_off = wrpc_get_offset("shw_sfp_header",
+					"diagnostic_monitoring_type");
+	diag_supported = wrpc_get_l32(mapaddr + sfp_header_off + diag_mon_off)
+				      & SFP_DIAG_IMPLEMENTED;
+
+	if (!diag_supported) {
+		/* Diagnostics not supported */
+		return;
+	}
+
+	prefix = "wrc_global.sfp_info.sfp_dom";
+	printf("%s at 0x%lx\n", prefix, sfp_dom_off);
+	dump_many_fields(mapaddr + sfp_dom_off, "shw_sfp_dom", prefix);
+
+}
+
 void dump_mem_wrpc_global(void *mapaddr, unsigned long wrc_global_off)
 {
 	unsigned long tmp_off, spll_off, fifo_off;
@@ -475,7 +645,7 @@ void dump_mem_wrpc_global(void *mapaddr, unsigned long wrc_global_off)
 			printf("Not supported version of wrc_global_link! "
 			       "Found %d, expected %d\n", expected_version,
 			       WRC_G_LINK_VERSION);
-			return;
+			return; /* wrong! only exit if */
 		}
 
 		dump_many_fields(mapaddr + tmp_off, "wrc_global_link",
@@ -493,6 +663,9 @@ void dump_mem_wrpc_global(void *mapaddr, unsigned long wrc_global_off)
 		dump_many_fields(mapaddr + spll_off, "struct_softpll", prefix);
 	}
 
+	/* dump SFP info */
+	dump_mem_wrpc_sfp(mapaddr, wrc_global_off);
+
 	fifo_off = wrpc_get_pointer(mapaddr + wrc_global_off, "wrc_global",
 				   "pll_fifo");
 	if (fifo_off) {
@@ -504,7 +677,8 @@ void dump_mem_wrpc_global(void *mapaddr, unsigned long wrc_global_off)
 		for (i = 0; i < FIFO_LOG_LEN; i++)
 			dump_many_fields(mapaddr + fifo_off
 					 + i * pll_log_struct_size,
-					 "struct_pll_fifo", "wrc_global.spll_fifo");
+					 "struct_pll_fifo",
+					 "wrc_global.spll_fifo");
 	}
 
 	/* dump config */
@@ -514,7 +688,6 @@ void dump_mem_wrpc_global(void *mapaddr, unsigned long wrc_global_off)
 		printf("wrc_global.config at 0x%lx:\n", tmp_off);
 		printf("%s", (char*)(mapaddr + tmp_off));
 	}
-
 }
 
 /* all of these are 0 by default */

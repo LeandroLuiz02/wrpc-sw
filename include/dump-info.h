@@ -33,6 +33,22 @@ enum dump_type {
 	dump_type_spll_mode,
 	dump_type_ip_address,
 	dump_type_ip_addr_status,
+	dump_type_sfp_temp,
+	dump_type_sfp_vcc,
+	dump_type_sfp_tx_bias,
+	dump_type_sfp_tx_pow,
+	dump_type_sfp_rx_pow,
+	dump_type_sfp_br_nom,
+	dump_type_sfp_length1,
+	dump_type_sfp_length2,
+	dump_type_sfp_length3,
+	dump_type_sfp_length4,
+	dump_type_sfp_length5,
+	dump_type_sfp_length6,
+	dump_type_sfp_diag_mon_type,
+	dump_type_sfp_dump_alpha,
+	dump_type_sfp_dump_delta,
+	dump_type_sfp_in_db,
 };
 
 /* because of the sizeof later on, we need these typedefs */
@@ -48,6 +64,22 @@ typedef uint8_t        yes_no;
 typedef int            spll_mode;
 typedef int            link_up_status;
 typedef int            ip_addr_status;
+typedef uint8_t        sfp_temp;
+typedef uint8_t        sfp_vcc;
+typedef uint8_t        sfp_tx_bias;
+typedef uint8_t        sfp_tx_pow;
+typedef uint8_t        sfp_rx_pow;
+typedef uint8_t        sfp_br_nom;
+typedef uint8_t        sfp_length1;
+typedef uint8_t        sfp_length2;
+typedef uint8_t        sfp_length3;
+typedef uint8_t        sfp_length4;
+typedef uint8_t        sfp_length5;
+typedef uint8_t        sfp_length6;
+typedef uint8_t        sfp_diag_mon_type;
+typedef uint8_t        sfp_dump_alpha;
+typedef uint8_t        sfp_dump_delta;
+typedef uint8_t        sfp_in_db;
 
 /*
  * This is generated with the target compiler, and then linked

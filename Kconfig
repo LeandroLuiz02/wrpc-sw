@@ -368,6 +368,26 @@ config CMD_PPS
 	  This enables pps command, which can be used to force PPS output
 	  all the time for all clock classes.
 
+config CMD_SFP_INFO
+	depends on WR_NODE
+	boolean "Add command to print info about SFP"
+	default n
+	help
+	  Adds an "info" parameter to the sfp command to print information about
+	  the inserted SFP like Nominal Bit Rate, Vendor Name, Vendor PN,
+	  Vendor serial, TX Wavelength. Even if this option is not selected
+	  it is possible to read the mentioned values via wrpc-dump.
+
+config SFP_DOM
+	depends on WR_NODE
+	boolean "Extend sfp info command with SFP monitoring info"
+	default n
+	help
+	  This enables extensions to sfp command, which allows read of
+	  monitoring information from SFP like: TX/RX power, voltage,
+	  bias current, temperature. If CMD_SFP_INFO is not selected, it is
+	  possible to read monitoring data via wrpc-dump.
+
 config CMD_LEAPSEC
 	depends on WR_NODE
 	boolean "Include command to control leapsecond value"

@@ -83,6 +83,7 @@ struct wrc_global wrc_global = {
 #ifdef CONFIG_CMD_CONFIG
 	.config = _binary__config_bin_start,
 #endif
+	.sfp_info = &sfp_info,
 };
 
 int *link_status = &wrc_global_link.link_up;
@@ -275,6 +276,12 @@ static void create_tasks(void)
 #ifdef CONFIG_NETCONSOLE
 	t = wrc_task_create( "netconsole", netconsole_init, netconsole_poll );
 	wrc_task_set_enable( t, is_link_up );
+#endif
+
+#ifdef CONFIG_SFP_DOM
+	/* Read DOM data from SFP even if the link is down or/and SFP
+	 * unplugged */
+	wrc_task_create("sfp_dom", NULL, sfp_dom_update);
 #endif
 }
 

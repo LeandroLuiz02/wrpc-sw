@@ -8,6 +8,8 @@
 
 #include <stdint.h>
 
+#define BB_I2C_WRITE 1
+
 struct i2c_bus
 {
     const struct gpio_pin *pin_scl;

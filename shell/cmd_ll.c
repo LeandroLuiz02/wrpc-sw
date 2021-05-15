@@ -51,13 +51,14 @@ static int cmd_delays(const char *args[])
 	if (args[1]) {
 		tx = atoi(args[0]);
 		rx = atoi(args[1]);
-		sfp_deltaTx = tx;
-		sfp_deltaRx = rx;
+		sfp_info.sfp_params.dTx = tx;
+		sfp_info.sfp_params.dRx = rx;
 		/* Change the active value too (add bislide here) */
 		s->delta_tx_m = tx;
 		s->delta_rx_m = rx + ep_get_bitslide(&wrc_endpoint_dev);
 	} else {
-		pp_printf("tx: %i   rx: %i\n", sfp_deltaTx, sfp_deltaRx);
+		pp_printf("tx: %i   rx: %i\n", sfp_info.sfp_params.dTx,
+			  sfp_info.sfp_params.dRx);
 	}
 	return 0;
 }

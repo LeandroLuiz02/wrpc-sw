@@ -32,6 +32,48 @@
 
 #include "sfp.h"
 
+// extern struct shw_sfp_header sfp_header;
+extern struct shw_sfp_dom sfp_dom;
+
+void print_info(void)
+{
+	uint16_t tmp;
+	struct shw_sfp_header *sfp_header;
+	
+	if (!HAS_CMD_SFP_INFO) {
+		return;
+	}
+	sfp_header = sfp_info.sfp_header;
+	/* to save the code, print only the most important parameters */
+	pp_printf("Nominal Bit Rate: %d Mbits/s\n", sfp_header->br_nom * 100);
+	pp_printf("Vendor Name: %.16s\n", sfp_header->vendor_name);
+	pp_printf("Vendor PN: %.16s\n", sfp_header->vendor_pn);
+	pp_printf("Vendor serial: %.16s\n", sfp_header->vendor_serial);
+	pp_printf("TX Wavelength: %d\n", (sfp_header->tx_wavelength[0] << 8)
+					 + sfp_header->tx_wavelength[1]);
+
+	if (HAS_SFP_DOM) {
+		struct shw_sfp_dom *sfp_dom;
+		if (!(sfp_header->diagnostic_monitoring_type & SFP_DIAG_IMPLEMENTED)){
+			/* no DOM supported */
+			pp_printf("No DOM support\n");
+			return;
+		}
+
+		sfp_dom = sfp_info.sfp_dom;
+		tmp = (sfp_dom->temp[0] << 8) + sfp_dom->temp[1];
+		pp_printf("Temperature: %d.%02d C\n", tmp/256, ((tmp*100)/256)%100);
+		tmp = (sfp_dom->vcc[0] << 8) + sfp_dom->vcc[1];
+		pp_printf("Voltage: %d.%04d V\n", tmp/10000, tmp%10000);
+		tmp = ((sfp_dom->tx_bias[0] << 8) + sfp_dom->tx_bias[1])/5;
+		pp_printf("Bias Current: %d.%02d mA\n", tmp / 100, tmp % 100);
+		tmp = ((sfp_dom->tx_pow[0] << 8) + sfp_dom->tx_pow[1]);
+		pp_printf("TX power: %d.%04d mW\n", tmp / 10000, tmp % 10000);
+		tmp = ((sfp_dom->rx_pow[0] << 8) + sfp_dom->rx_pow[1]);
+		pp_printf("RX power: %d.%04d mW\n", tmp / 10000, tmp % 10000);
+	}
+}
+
 static int cmd_sfp(const char *args[])
 {
 	int8_t sfpcount = 1, i, temp, ret;
@@ -106,9 +148,7 @@ static int cmd_sfp(const char *args[])
 		}
 
 		/* SFP read correctly */
-		for (temp = 0; temp < SFP_PN_LEN; ++temp)
-			pp_printf("%c", sfp_pn[temp]);
-		pp_printf("\n");
+		pp_printf("%.16s\n", sfp_info.sfp_params.pn);
 
 		if (ret == -ENXIO) {
 			pp_printf("Could not match to DB\n");
@@ -116,11 +156,15 @@ static int cmd_sfp(const char *args[])
 		}
 		/* match successful */
 		pp_printf("SFP matched, dTx=%d dRx=%d alpha=%Ld\n",
-			sfp_deltaTx, sfp_deltaRx, sfp_alpha);
+			sfp_info.sfp_params.dTx, sfp_info.sfp_params.dRx,
+			sfp_info.sfp_params.alpha);
 		return ret;
 	} else if (args[1] && !strcasecmp(args[0], "ena")) {
 		ep_sfp_enable(&wrc_endpoint_dev, atoi(args[1]));
 		return 0;
+	} else if (!strcasecmp(args[0], "info")) {
+		/* DOM data is updated periodically by a task */
+		print_info();
 	} else {
 		pp_printf("Wrong parameter\n");
 		return -EINVAL;

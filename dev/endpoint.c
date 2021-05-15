@@ -15,7 +15,6 @@
 #include "dev/syscon.h"
 #include <dev/endpoint.h>
 #include <dev/minic.h>
-#include "storage.h"
 
 #include <hw/endpoint_regs.h>
 #include <hw/endpoint_mdio.h>
@@ -188,10 +187,8 @@ int ep_get_bitslide(struct wr_endpoint_device* dev)
 /* Returns the TX/RX latencies. They are valid only when the link is up. */
 int ep_get_deltas(struct wr_endpoint_device* dev, int *delta_tx, int *delta_rx)
 {
-	/* fixme: these values should be stored in calibration block in the EEPROM on the FMC. Also, the TX/RX delays of a particular SFP
-	   should be added here */
-	*delta_tx = sfp_deltaTx;
-	*delta_rx = sfp_deltaRx;
+	/* fixme: RX/TX delays related to HW (except SFP) should be stored in
+	 * calibration block in the EEPROM on the FMC. */
 	return 0;
 }
 

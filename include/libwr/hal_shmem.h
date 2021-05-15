@@ -9,6 +9,8 @@
 
 /* Port delay calibration parameters */
 typedef struct hal_port_calibration {
+	/* alpha as relativeDifference */
+	int64_t alpha;
 
 	/* bit slide expressed in picos */
 	uint32_t bitslide_ps;

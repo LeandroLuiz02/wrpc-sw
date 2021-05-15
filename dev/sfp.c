@@ -1,8 +1,9 @@
 /*
  * This work is part of the White Rabbit project
  *
- * Copyright (C) 2012 CERN (www.cern.ch)
+ * Copyright (C) 2012-2021 CERN (www.cern.ch)
  * Author: Tomasz Wlostowski <tomasz.wlostowski@cern.ch>
+ * Author: Adam Wujek
  *
  * Released according to the GNU GPL, version 2 or any later version.
  */
@@ -19,73 +20,123 @@
 #include "sfp.h"
 #include "storage.h"
 
-/* Calibration data (from EEPROM if available) */
-int64_t sfp_alpha = 1235332333756144; /* def values if could not read EEPROM */
-int32_t sfp_deltaTx = 0;
-int32_t sfp_deltaRx = 0;
-int32_t sfp_in_db = 0;
+static struct shw_sfp_header sfp_header;
+/* sfp_dom is static, so it is not included if CONFIG_SFP_DOM is not selected */
+static struct shw_sfp_dom sfp_dom;
 
-char sfp_pn[SFP_PN_LEN];
+struct sfp_info sfp_info = {
+	.sfp_header = &sfp_header,
+#ifdef CONFIG_SFP_DOM
+	.sfp_dom = &sfp_dom,
+#endif
+	.version = WRC_G_SFP_VERSION,
+	.sfp_params = {
+		.alpha = 1235332333756144, /* default value for alpha */
+	},
+};
 
 static int sfp_present(void)
 {
 	return !gen_gpio_in(&pin_sysc_sfp_det);
 }
 
-static int sfp_read_part_id(char *part_id)
+static void sfp_read_i2c(int addr, uint8_t *mem, int start,  int size)
 {
-	int i;
+	int i = start;
 	uint8_t data, sum;
 
 	bb_i2c_init( &dev_i2c_sfp );
 
 	bb_i2c_start( &dev_i2c_sfp );
-	bb_i2c_put_byte(&dev_i2c_sfp, 0xA0);
-	bb_i2c_put_byte(&dev_i2c_sfp, 0x00);
+	bb_i2c_put_byte(&dev_i2c_sfp, addr << 1);
+	bb_i2c_put_byte(&dev_i2c_sfp, start);
 	bb_i2c_repeat_start(&dev_i2c_sfp);
-	bb_i2c_put_byte(&dev_i2c_sfp, 0xA1);
+	bb_i2c_put_byte(&dev_i2c_sfp, addr << 1 | BB_I2C_WRITE);
 	bb_i2c_get_byte(&dev_i2c_sfp, &data, 1);
 	bb_i2c_stop(&dev_i2c_sfp);
-
+	*(mem + i) = data;
 	sum = data;
 
 	bb_i2c_start( &dev_i2c_sfp );
-	bb_i2c_put_byte(&dev_i2c_sfp, 0xA1);
-	for (i = 1; i < 63; ++i) {
+	bb_i2c_put_byte(&dev_i2c_sfp, addr << 1 | BB_I2C_WRITE);
+	for (i++; i < start + size - 1; ++i) {
 		bb_i2c_get_byte(&dev_i2c_sfp, &data, 0);
-		sum = (uint8_t) ((uint16_t) sum + data) & 0xff;
-		if (i >= 40 && i <= 55)	//Part Number
-			part_id[i - 40] = data;
+		*(mem + i) = data;
 	}
 	bb_i2c_get_byte(&dev_i2c_sfp, &data, 1);	//final word, checksum
+	*(mem + i) = data;
 	bb_i2c_stop(&dev_i2c_sfp);
+}
 
-	if (sum == data)
+int verify_checksum(uint8_t *mem, int from, int to)
+{
+	int i;
+	uint16_t sum = 0;
+
+	for (i = from; i < to; i++) {
+		sum += *(mem + i);
+	}
+	sum = sum & 0xff;
+
+	if (sum == *(mem + to))
 		return 0;
+	return 1;
+}
 
-	return -1;
+int sfp_dom_update(void)
+{
+	extern uint32_t uptime_sec;
+	static uint32_t last_update;
+
+	if (last_update == uptime_sec)
+		return 0;
+		
+	last_update = uptime_sec;
+
+	if (!(sfp_header.diagnostic_monitoring_type & SFP_DIAG_IMPLEMENTED)) {
+		return 0;
+	}
+
+	/* Read Real Time Diagnostics (DOM) data, bytes 96-111 */
+	sfp_read_i2c(I2C_SFP_DOM_ADDRESS, (uint8_t *)&sfp_dom, 96, 10);
+
+	return 1;
 }
 
 int sfp_match(int force)
 {
-	struct s_sfpinfo sfp;
-
-	sfp_pn[0] = '\0';
 	if (!force && !sfp_present()) {
 		return -ENODEV;
 	}
-	if (sfp_read_part_id(sfp_pn)) {
+
+	/* Read sfp header info from SFP */
+	sfp_read_i2c(I2C_SFP_ADDRESS, (uint8_t *)&sfp_header, 0,
+		     sizeof(struct shw_sfp_header));
+
+	if (verify_checksum((uint8_t *)&sfp_header, 0, 63)
+	    || verify_checksum((uint8_t *)&sfp_header, 64, 95)) {
+		/* Print error */
+		pp_printf("Wrong SFP checksum %s\n", "");
 		return -EIO;
 	}
 
-	strncpy(sfp.pn, sfp_pn, SFP_PN_LEN);
-	if (storage_match_sfp(&sfp) == 0) {
-		sfp_in_db = SFP_NOT_MATCHED;
+	if (HAS_SFP_DOM
+	    && sfp_header.diagnostic_monitoring_type & SFP_DIAG_IMPLEMENTED) {
+		/* Read sfp DOM info from SFP only if DOM supported */
+		sfp_read_i2c(I2C_SFP_DOM_ADDRESS, (uint8_t *)&sfp_dom, 0,
+			     sizeof(struct shw_sfp_dom));
+		if (verify_checksum((uint8_t *)&sfp_dom, 0, 95)) {
+			pp_printf("Wrong SFP checksum %s\n", "DOM");
+		}
+	}
+
+	memcpy(sfp_info.sfp_params.pn, sfp_info.sfp_header->vendor_pn,
+	       SFP_PN_LEN);
+	if (storage_match_sfp(&sfp_info.sfp_params) == 0) {
+		sfp_info.sfp_in_db = SFP_NOT_MATCHED;
 		return -ENXIO;
 	}
-	sfp_deltaTx = sfp.dTx;
-	sfp_deltaRx = sfp.dRx;
-	sfp_alpha = sfp.alpha;
-	sfp_in_db = SFP_MATCHED;
+
+	sfp_info.sfp_in_db = SFP_MATCHED;
 	return 0;
 }

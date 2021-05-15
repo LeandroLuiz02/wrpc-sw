@@ -46,14 +46,6 @@
 
 struct storage_device;
 
-struct s_sfpinfo {
-	char pn[SFP_PN_LEN];
-	int64_t alpha;
-	int32_t dTx;
-	int32_t dRx;
-	uint8_t chksum;
-} __attribute__ ((__packed__));
-
 typedef struct
 {
 	uint32_t magic;

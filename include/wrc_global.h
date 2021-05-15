@@ -26,6 +26,7 @@ struct wrc_global {
 	struct wrc_task *task_list;
 	volatile struct softpll_state *softpll;
 	struct spll_fifo_log *pll_fifo;
+	struct sfp_info *sfp_info;
 	void * config;
 	/* Pointer to the board specific data. Use wrc_hw_name to identify
 	 * a board */

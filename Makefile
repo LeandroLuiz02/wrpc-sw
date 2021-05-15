@@ -60,6 +60,8 @@ vpath dump_mem_ppsi_wrpc.c ppsi/tools
 obj-$(CONFIG_WRPC_PPSI) += dump-info.o
 obj-$(CONFIG_WRPC_PPSI) += dump_mem_ppsi_wrpc.o
 dump_mem_ppsi_wrpc.o: CFLAGS+=-Itools
+# for include dump-info_ppsi.h
+dump-info.o: CFLAGS+=-Ippsi/tools
 
 # our linker script is preprocessed, so have a rule here
 %.ld: %.ld.S $(AUTOCONF) .config

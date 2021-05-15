@@ -1,11 +1,13 @@
 #include <sys/types.h>
 #include <ppsi/ppsi.h>
 #include <softpll_ng.h>
+#include <sfp.h>
 #include <wrc_global.h>
 
 #include <wrpc.h>
 
 #include "dump-info.h"
+#include "dump-info_ppsi.h"
 
 struct dump_info  dump_wrpc_info[] = {
 #undef DUMP_STRUCT
@@ -20,6 +22,7 @@ struct dump_info  dump_wrpc_info[] = {
 	DUMP_FIELD(pointer, config),
 	DUMP_FIELD(pointer, softpll),
 	DUMP_FIELD(pointer, pll_fifo),
+	DUMP_FIELD(pointer, sfp_info),
 
 #undef DUMP_STRUCT
 #define DUMP_STRUCT struct wrc_global_link
@@ -116,6 +119,122 @@ struct dump_info  dump_wrpc_info[] = {
 	DUMP_FIELD_SIZE(char, build_date, 16),
 	DUMP_FIELD_SIZE(char, build_time, 16),
 	DUMP_FIELD_SIZE(char, build_by, 32),
+
+
+#undef DUMP_STRUCT
+#define DUMP_STRUCT struct sfp_info
+
+	DUMP_HEADER("struct_sfp_info"),
+	DUMP_FIELD(uint32_t, version),
+	DUMP_FIELD_SIZE(char, sfp_params.pn, SFP_PN_LEN),
+	DUMP_FIELD(RelativeDifference, sfp_params.alpha),
+	DUMP_FIELD(sfp_dump_delta, sfp_params.dTx),
+	DUMP_FIELD(sfp_dump_delta, sfp_params.dRx),
+	DUMP_FIELD(sfp_in_db, sfp_in_db),
+	DUMP_FIELD(pointer, sfp_header),
+	DUMP_FIELD(pointer, sfp_dom),
+
+
+#undef DUMP_STRUCT
+#define DUMP_STRUCT struct shw_sfp_header
+
+	DUMP_HEADER("shw_sfp_header"),
+	DUMP_FIELD_SIZE(bina, id, 1),
+	DUMP_FIELD_SIZE(bina, ext_id, 1),
+	DUMP_FIELD_SIZE(bina, connector, 1),
+	DUMP_FIELD_SIZE(bina, transciever, 8),
+	DUMP_FIELD_SIZE(bina, encoding, 1),
+	DUMP_FIELD(sfp_br_nom, br_nom),
+	// uint8_t reserved1;
+	DUMP_FIELD(sfp_length1, length1),	/* Link length supported for 9/125 mm fiber (km) */
+	DUMP_FIELD(sfp_length2, length2),	/* Link length supported for 9/125 mm fiber (100m) */
+	DUMP_FIELD(sfp_length3, length3),	/* Link length supported for 50/125 mm fiber (10m) */
+	DUMP_FIELD(sfp_length4, length4),	/* Link length supported for 62.5/125 mm fiber (10m) */
+	DUMP_FIELD(sfp_length5, length5),	/* Link length supported for copper (1m) */
+	DUMP_FIELD(sfp_length6, length6),	/* Link length supported on OM3 (1m) */
+	DUMP_FIELD_SIZE(char, vendor_name, 16),
+	DUMP_FIELD_SIZE(bina, transceiver, 1),	/* This is now a field named transceiver */
+	DUMP_FIELD_SIZE(bina, vendor_oui, 3),
+	DUMP_FIELD_SIZE(char, vendor_pn, 16),
+	DUMP_FIELD_SIZE(char, vendor_rev, 4),
+	DUMP_FIELD(uint16_t, tx_wavelength),
+	// 	uint8_t reserved4;
+	// 	uint8_t cc_base; /* checksum addr 0-62 */
+
+	/* extended ID fields start here */
+	DUMP_FIELD_SIZE(bina, options, 2),
+	DUMP_FIELD_SIZE(bina, br_max, 1),
+	DUMP_FIELD_SIZE(bina, br_min, 1),
+	DUMP_FIELD_SIZE(char, vendor_serial, 16),
+	DUMP_FIELD_SIZE(char, date_code, 8),
+	DUMP_FIELD(sfp_diag_mon_type, diagnostic_monitoring_type),
+	DUMP_FIELD_SIZE(bina, enhanced_options, 1),
+	DUMP_FIELD_SIZE(bina, sff_8472_compliance, 1),
+	// 	uint8_t cc_ext;/* checksum addr 64-94 */
+
+
+#undef DUMP_STRUCT
+#define DUMP_STRUCT struct shw_sfp_dom
+
+	DUMP_HEADER("shw_sfp_dom"),
+	/* Treshold values, 0 - 55 */
+// 	DUMP_FIELD_SIZE(sfp_temp, temp_high_alarm, 2),
+// 	DUMP_FIELD_SIZE(sfp_temp, temp_low_alarm, 2),
+// 	DUMP_FIELD_SIZE(sfp_temp, temp_high_warn, 2),
+// 	DUMP_FIELD_SIZE(sfp_temp, temp_low_warn, 2),
+// 	DUMP_FIELD_SIZE(sfp_vcc, volt_high_alarm, 2),
+// 	DUMP_FIELD_SIZE(sfp_vcc, volt_low_alarm, 2),
+// 	DUMP_FIELD_SIZE(sfp_vcc, volt_high_warn, 2),
+// 	DUMP_FIELD_SIZE(sfp_vcc, volt_low_warn, 2),
+// 	DUMP_FIELD_SIZE(sfp_tx_bias, bias_high_alarm, 2),
+// 	DUMP_FIELD_SIZE(sfp_tx_bias, bias_low_alarm, 2),
+// 	DUMP_FIELD_SIZE(sfp_tx_bias, bias_high_warn, 2),
+// 	DUMP_FIELD_SIZE(sfp_tx_bias, bias_low_warn, 2),
+// 	DUMP_FIELD_SIZE(sfp_tx_pow, tx_pow_high_alarm, 2),
+// 	DUMP_FIELD_SIZE(sfp_tx_pow, tx_pow_low_alarm, 2),
+// 	DUMP_FIELD_SIZE(sfp_tx_pow, tx_pow_high_warn, 2),
+// 	DUMP_FIELD_SIZE(sfp_tx_pow, tx_pow_low_warn, 2),
+// 	DUMP_FIELD_SIZE(sfp_rx_pow, rx_pow_high_alarm, 2),
+// 	DUMP_FIELD_SIZE(sfp_rx_pow, rx_pow_log_alarm, 2),
+// 	DUMP_FIELD_SIZE(sfp_rx_pow, rx_pow_high_warn, 2),
+// 	DUMP_FIELD_SIZE(sfp_rx_pow, rx_pow_low_warn, 2),
+// 	DUMP_FIELD_SIZE(bina, unalloc0, 16),
+// 	// /* Calibration data, 56-91 */
+// 	DUMP_FIELD_SIZE(bina, cal_rx_pwr4, 4),
+// 	DUMP_FIELD_SIZE(bina, cal_rx_pwr3, 4),
+// 	DUMP_FIELD_SIZE(bina, cal_rx_pwr2, 4),
+// 	DUMP_FIELD_SIZE(bina, cal_rx_pwr1, 4),
+// 	DUMP_FIELD_SIZE(bina, cal_rx_pwr0, 4),
+// 	DUMP_FIELD_SIZE(bina, cal_tx_i_slope, 2),
+// 	DUMP_FIELD_SIZE(bina, cal_tx_i_offset, 2),
+// 	DUMP_FIELD_SIZE(bina, cal_tx_pow_slope, 2),
+// 	DUMP_FIELD_SIZE(bina, cal_tx_pow_offset, 2),
+// 	DUMP_FIELD_SIZE(bina, cal_T_slope, 2),
+// 	DUMP_FIELD_SIZE(bina, cal_T_offset, 2),
+// 	DUMP_FIELD_SIZE(bina, cal_V_slope, 2),
+// 	DUMP_FIELD_SIZE(bina, cal_V_offset, 2),
+// 	// /* Unallocated and checksum, 92-95 */
+// 	DUMP_FIELD_SIZE(bina, cal_unalloc, 3),
+// 	DUMP_FIELD_SIZE(bina, CC_DMI, 1),
+	// /* Real Time Diagnostics, 96-111 */
+	DUMP_FIELD_SIZE(sfp_temp, temp, 2),
+	DUMP_FIELD_SIZE(sfp_vcc, vcc, 2),
+	DUMP_FIELD_SIZE(sfp_tx_bias, tx_bias, 2),
+	DUMP_FIELD_SIZE(sfp_tx_pow, tx_pow, 2),
+	DUMP_FIELD_SIZE(sfp_rx_pow, rx_pow, 2),
+// 	DUMP_FIELD_SIZE(bina, rtd_unalloc0, 4),
+// 	DUMP_FIELD_SIZE(bina, OSCB, 1),
+// 	DUMP_FIELD_SIZE(bina, rtd_unalloc1, 1),
+// 	// /* Alarms and Warnings, 112 - 117 */
+// 	DUMP_FIELD_SIZE(bina, alw, 6),
+// 	// /* Extended Module Control/Status bytes 118 - 119 */
+// 	DUMP_FIELD_SIZE(bina, emcsb, 2),
+// 	// /* Vendor locations 120 - 127 */
+// 	DUMP_FIELD_SIZE(bina, vendor_locations, 8),
+// 	// /* User data 128 - 247 */
+// 	DUMP_FIELD_SIZE(bina, dom_user, 120),
+// 	// /* Vendor specific control function locations 248 - 255 */
+// 	DUMP_FIELD_SIZE(bina, vendor_functions, 8),
 
 	DUMP_HEADER("end"),
 
