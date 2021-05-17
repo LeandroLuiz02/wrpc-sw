@@ -48,7 +48,7 @@
 #endif
 
 #ifdef CONFIG_LATENCY_PROBE
-//#include "lib/latency.h"
+#include "lib/latency.h"
 #endif
 
 #ifdef CONFIG_LLDP
@@ -248,11 +248,7 @@ static void create_tasks(void)
 #endif
 
 #ifdef CONFIG_LATENCY_PROBE
-#if 0
-	extern void latency_init(void);
-	extern void latency_poll(void);
 	wrc_task_create( "latency-probe", latency_init, latency_poll );
-#endif
 #endif
 
 #ifdef CONFIG_LLDP
