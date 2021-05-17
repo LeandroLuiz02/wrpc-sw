@@ -786,10 +786,11 @@ int main(int argc, char **argv)
 		exit(1);
 	}
 
-	if (!strcmp(dumpname, "ppg"))
-		ppg_off = offset;
-	if (ppg_off) {
-		dump_mem_ppsi_wrpc(mapaddr, ppg_off);
+
+	if (!strcmp(dumpname, "wrc_global"))
+		wrc_global_off = offset;
+	if (wrc_global_off) {
+		dump_mem_wrpc_global(mapaddr, wrc_global_off);
 	}
 
 	if (!strcmp(dumpname, "stats"))
@@ -798,11 +799,10 @@ int main(int argc, char **argv)
 		printf("stats at 0x%lx\n", stats_off);
 		dump_many_fields(mapaddr + stats_off, "stats", "stats");
 	}
-
-	if (!strcmp(dumpname, "wrc_global"))
-		wrc_global_off = offset;
-	if (wrc_global_off) {
-		dump_mem_wrpc_global(mapaddr, wrc_global_off);
+	if (!strcmp(dumpname, "ppg"))
+		ppg_off = offset;
+	if (ppg_off) {
+		dump_mem_ppsi_wrpc(mapaddr, ppg_off);
 	}
 
 	exit(0);
