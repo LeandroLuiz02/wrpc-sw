@@ -33,8 +33,10 @@ make_all:
 #  tags:
 #    - wrs_sw
   script:
+    # to make compare_size.sh work
+    - touch size_db.txt
     - echo "Using `grep -c ^processor /proc/cpuinfo` parallel jobs".
-    - MAKEFLAGS="-j `grep -c ^processor /proc/cpuinfo`" ./MAKEALL -c
+    - GIT_HASH_START="HEAD~1" MAKEFLAGS="-j `grep -c ^processor /proc/cpuinfo`" ./MAKEALL -c
   artifacts:
     name: wrpc_sw_ci_${CI_JOB_NAME}_${CI_JOB_ID}
     paths:
