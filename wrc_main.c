@@ -40,6 +40,9 @@
 #include <system_checks.h>
 #include <ppsi/ppsi.h>
 #include "wrc_global.h"
+#include "dev/w1.h"
+#include "dev/temp-fake.h"
+#include "dev/temp-w1.h"
 
 #include "board.h"
 
@@ -119,6 +122,20 @@ static void wrc_initialize(void)
 
 	minic_init();
 	shw_pps_gen_init();
+
+	if (HAS_W1) {
+		/* initialize w1 bus */
+		wrpc_w1_init();
+		wrpc_w1_bus.detail = ONEWIRE_PORT;
+		w1_scan_bus(&wrpc_w1_bus);
+
+		/* initialize w1 temp sensor */
+		if (HAS_TEMP_SENSORS && HAS_W1_TEMP)
+			temp_w1_init();
+	}
+
+	if (HAS_TEMP_SENSORS && HAS_TEMP_FAKE)
+		temp_faketemp_init();
 
 	wrc_board_init();
 
@@ -231,7 +248,8 @@ static void create_tasks(void)
 	wrc_task_create( "shell+gui", shell_boot_script, ui_update );
 	wrc_task_create( "spll-bh", NULL, spll_update );
 
-	//wrc_task_create( "temperature", wrc_temp_init, wrc_temp_refresh );
+	if (HAS_TEMP_SENSORS)
+		wrc_task_create("temperature", NULL, wrc_temp_refresh);
 
 	t = wrc_task_create( "net-bh", NULL, net_bh_poll );
 	wrc_task_set_enable( t, is_link_up );

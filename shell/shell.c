@@ -14,8 +14,12 @@
 #include <errno.h>
 
 #include <wrc.h>
+#include "temperature.h"
 #include "dev/console.h"
 #include "dev/syscon.h"
+#include "dev/temp-fake.h"
+#include "dev/temp-w1.h"
+#include "dev/w1.h"
 
 #include "shell.h"
 #include "storage.h"
@@ -399,6 +403,8 @@ void shell_register_commands(void)
 	if (HAS_CMD_CONFIG)
 		REGISTER_WRC_COMMAND(config);
 	REGISTER_WRC_COMMAND(diag);
+	if (HAS_TEMP_FAKE)
+		REGISTER_WRC_COMMAND(faketemp);
 	REGISTER_WRC_COMMAND(gui);
 	REGISTER_WRC_COMMAND(help);
 	REGISTER_WRC_COMMAND(init);
@@ -421,9 +427,17 @@ void shell_register_commands(void)
 	REGISTER_WRC_COMMAND(sdb);
 	REGISTER_WRC_COMMAND(sfp);
 	REGISTER_WRC_COMMAND(stat);
+	if (HAS_TEMP_SENSORS)
+		REGISTER_WRC_COMMAND(temp);
 	REGISTER_WRC_COMMAND(time);
 	REGISTER_WRC_COMMAND(ver);
 	REGISTER_WRC_COMMAND(verbose);
 	if (HAS_VLANS)
 		REGISTER_WRC_COMMAND(vlan);
+	if (HAS_W1_TEMP)
+		REGISTER_WRC_COMMAND(w1);
+	if (HAS_W1_EEPROM) {
+		REGISTER_WRC_COMMAND(w1r);
+		REGISTER_WRC_COMMAND(w1w);
+	}
 }

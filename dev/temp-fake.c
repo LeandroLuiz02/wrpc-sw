@@ -9,26 +9,21 @@
 #include <wrc.h>
 #include <temperature.h>
 #include <shell.h>
+#include "dev/temp-fake.h"
 
-static struct wrc_onetemp temp_fake_data[] = {
+
+static struct wrc_temp_sensor temp_fake_data[] = {
 	{"roof", TEMP_INVALID},
 	{"core", TEMP_INVALID},
 	{"case", TEMP_INVALID},
 	{NULL,}
 };
 
-static int temp_fake_refresh(struct wrc_temp *t)
+static int temp_fake_refresh(struct wrc_temp_group *t)
 {
 	/* nothing to do */
 	return 0;
 }
-#if 0
-/* not static at this point, because it's the only one */
-DEFINE_TEMPERATURE(w1) = {
-	.read = temp_fake_refresh,
-	.t = temp_fake_data,
-};
-#endif
 
 static int cmd_faketemp(const char *args[])
 {
@@ -54,6 +49,15 @@ static int cmd_faketemp(const char *args[])
 	return 0;
 }
 
+void temp_faketemp_init(void)
+{
+	struct wrc_temp_group tbr;
+
+	tbr.used = 1;
+	tbr.read = temp_fake_refresh;
+	tbr.t = temp_fake_data;
+	wrc_temp_register(&tbr);
+}
 
 DEFINE_WRC_COMMAND(faketemp) = {
 	.name = "faketemp",

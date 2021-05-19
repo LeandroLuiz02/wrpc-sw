@@ -13,14 +13,15 @@
 #include <shell.h>
 
 
+struct wrc_temp_group temp_sensors[WRC_MAX_TEMPERATURES];
 /*
  * Library functions
  */
 uint32_t wrc_temp_get(char *name)
 {
 #if 0
-	struct wrc_temp *ta;
-	struct wrc_onetemp *wt;
+	struct wrc_temp_group *ta;
+	struct wrc_temp_sensor *wt;
 
 	for (ta = __temp_begin; ta < __temp_end; ta++)
 		for (wt = ta->t; wt->name; wt++) {
@@ -31,37 +32,38 @@ uint32_t wrc_temp_get(char *name)
 	return TEMP_INVALID;
 }
 
-struct wrc_onetemp *wrc_temp_getnext(struct wrc_onetemp *pt)
+struct wrc_temp_sensor *wrc_temp_getnext(struct wrc_temp_sensor *pt)
 {
-#if 0
-	struct wrc_temp *ta;
-	struct wrc_onetemp *wt;
+	struct wrc_temp_sensor *wt;
+	struct wrc_temp_group *tmp;
+	int i;
 
 	if (!pt) { /* first one */
-		if (__temp_begin != __temp_end)
-			return __temp_begin->t;
+		for (i = 0; i < WRC_MAX_TEMPERATURES; i++) {
+			return temp_sensors[i].t;
+		}
 	}
 	if (pt[1].name)
 		return pt + 1;
 	/* get next array, if any */
-	for (ta = __temp_begin; ta < __temp_end; ta++) {
-		for (wt = ta->t; wt->name; wt++) {
+	for (i = 0; i < WRC_MAX_TEMPERATURES; i++) {
+		tmp = &temp_sensors[i];
+
+		for (wt = tmp->t; wt->name; wt++) {
 			if (wt == pt) {
-				ta++;
-				if (ta >= __temp_end)
+				tmp++;
+				if (!tmp->t->name)
 					return NULL;
-				return ta->t;
+				return tmp->t;
 			}
 		}
 	}
-#endif
-
 	return NULL;
 }
 
 extern int wrc_temp_format(char *buffer, int len)
 {
-	struct wrc_onetemp *p;
+	struct wrc_temp_sensor *p;
 	int l = 0, i = 0;
 	int32_t t;
 
@@ -86,30 +88,43 @@ extern int wrc_temp_format(char *buffer, int len)
 	return l;
 }
 
+int wrc_temp_register(struct wrc_temp_group *new_temp_sensor)
+{
+	struct wrc_temp_group *tmp;
+	int i;
+
+	for (i = 0; i < WRC_MAX_TEMPERATURES; i++) {
+		tmp = &temp_sensors[i];
+		if (tmp->used) {
+			/* slot used in the list */
+			continue;
+		}
+		pp_printf("register temp sensor at %d\n", i);
+		*tmp = *new_temp_sensor;
+
+		return 1;
+	}
+
+	return 0;
+}
+
 /*
  * The task
  */
-void wrc_temp_init(void)
-{
-#if 0
-	struct wrc_temp *ta;
-
-	/* Call all actors, so they can init themselves (using ->data) */
-	for (ta = __temp_begin; ta < __temp_end; ta++)
-		ta->read(ta);
-#endif
-}
-
 int wrc_temp_refresh(void)
 {
-#if 0
-	struct wrc_temp *ta;
+	struct wrc_temp_group *tmp;
+	int i;
 	int ret = 0;
 
-	for (ta = __temp_begin; ta < __temp_end; ta++)
-		ret += ta->read(ta);
+	for (i = 0; i < WRC_MAX_TEMPERATURES; i++) {
+		tmp = &temp_sensors[i];
+		if (tmp->used) {
+			ret += tmp->read(tmp);
+		}
+	}
+
 	return (ret > 0);
-#endif
 }
 
 /*
@@ -130,4 +145,3 @@ DEFINE_WRC_COMMAND(temp) = {
 	.name = "temp",
 	.exec = cmd_temp,
 };
-

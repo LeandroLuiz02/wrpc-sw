@@ -11,27 +11,32 @@
 
 #include <stdint.h>
 
+#ifdef CONFIG_TEMP_SENSORS
+#define HAS_TEMP_SENSORS 1
+#else
+#define HAS_TEMP_SENSORS 0
+#endif
+
 #define WRC_MAX_TEMPERATURES 4
 
-struct wrc_onetemp {
+struct wrc_temp_sensor {
 	char *name;
 	int32_t t;  /* fixed point, 16.16 (signed!) */
 };
 
 #define TEMP_INVALID (0x8000 << 16)
 
-struct wrc_temp {
+struct wrc_temp_group {
 	int used;
-	int (*read)(struct wrc_temp *);
-	void *data;
-	struct wrc_onetemp *t; /* zero-terminated */
+	int (*read)(struct wrc_temp_group *);
+	struct wrc_temp_sensor *t; /* zero-terminated */
 };
 
 /* lib functions  */
 extern uint32_t wrc_temp_get(char *name);
-struct wrc_onetemp *wrc_temp_getnext(struct wrc_onetemp *);
+struct wrc_temp_sensor *wrc_temp_getnext(struct wrc_temp_sensor *);
 extern int wrc_temp_format(char *buffer, int len);
-void wrc_temp_init(void);
 int wrc_temp_refresh(void);
+int wrc_temp_register(struct wrc_temp_group *new_temp_sensor);
 
 #endif /* __TEMPERATURE_H__ */

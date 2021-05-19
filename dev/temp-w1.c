@@ -11,7 +11,7 @@
 #include <dev/w1.h>
 #include <temperature.h>
 
-static struct wrc_onetemp temp_w1_data[] = {
+static struct wrc_temp_sensor temp_w1_data[] = {
 	{"pcb", TEMP_INVALID},
 	{NULL,}
 };
@@ -20,9 +20,8 @@ static unsigned long nextt;
 static int niterations;
 
 /* Returns 1 if it did something */
-static int temp_w1_refresh(struct wrc_temp *t)
+static int temp_w1_refresh(struct wrc_temp_group *t)
 {
-
 	static int done;
 
 	if (!done) {
@@ -37,6 +36,7 @@ static int temp_w1_refresh(struct wrc_temp *t)
 
 	if (time_before(timer_get_tics(), nextt))
 		return 0;
+
 	nextt += intervals[phase];
 	niterations++;
 
@@ -52,11 +52,12 @@ static int temp_w1_refresh(struct wrc_temp *t)
 	return 1;
 }
 
-#if 0
-/* not static at this point, because it's the only one */
-DEFINE_TEMPERATURE(w1) = {
-	.read = temp_w1_refresh,
-	.t = temp_w1_data,
-};
+void temp_w1_init(void) 
+{
+	struct wrc_temp_group tbr;
 
-#endif
+	tbr.used = 1;
+	tbr.read = temp_w1_refresh;
+	tbr.t = temp_w1_data;
+	wrc_temp_register(&tbr);
+}

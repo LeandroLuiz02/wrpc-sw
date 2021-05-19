@@ -143,11 +143,6 @@ config WRPC_PPSI
 	boolean
 	default y
 
-config W1
-	depends on EMBEDDED_NODE
-	boolean
-	default y
-
 config LATENCY_ETHTYPE
 	int
 	default 291
@@ -427,6 +422,36 @@ config CMD_NETCONSOLE
 	help
 	  Include command to configure netconsole
 
+config TEMP_SENSORS
+	depends on WR_NODE
+	boolean "Add suport for temperature sensors"
+	default n
+	help
+	  Adds temp command and periodic task to read temperatures.
+	  Temperatures are can be reported by SNMP, syslog or wrpc-dump.
+	  Please note that temperature sensor type has to be selected as well
+	  (like w1)
+
+config W1
+	depends on EMBEDDED_NODE
+	boolean "Add support for W1 bus"
+	default n
+	help
+	  Add support for W1 bus
+
+config W1_TEMP
+	depends on W1 && TEMP_SENSORS
+	boolean "Add support for W1 temperature sensor"
+	default n
+	help
+	  Add support for temperature sensors on W1 bus. Adds w1 command.
+
+config W1_EEPROM
+	depends on W1
+	boolean "Add support for W1 eeprom"
+	default n
+	help
+	  Add support for eeprom on W1 bus. Adds w1r and w1w commands.
 #
 # This is a set of configuration options that should not be changed by
 # normal users. If the "developer" menu is used, the binary is tainted.
@@ -688,7 +713,7 @@ config SNMP_VERBOSE
 	  This enables some more diagnostic messages. Normally off.
 
 config TEMP_FAKE
-	depends on DEVELOPER
+	depends on DEVELOPER && TEMP_SENSORS
 	boolean "Offer an array of 3 fake temperatures, for testing"
 	help
 	  The option adds also a "faketemp" command, used to set

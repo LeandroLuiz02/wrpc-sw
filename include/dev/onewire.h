@@ -3,8 +3,10 @@
  *
  * Released according to the GNU GPL, version 2 or any later version.
  */
-#ifndef PERSISTENT_MAC_H
-#define PERSISTENT_MAC_H
+#ifndef __ONEWIRE_H
+#define __ONEWIRE_H
+
+#define ONEWIRE_PORT 0
 
 #define MAX_DEV1WIRE 8
 
@@ -16,4 +18,4 @@ int16_t own_readtemp(uint8_t portnum, int16_t * temp, int16_t * t_frac);
 int get_persistent_mac(uint8_t portnum, uint8_t * mac);
 int set_persistent_mac(uint8_t portnum, uint8_t * mac);
 
-#endif
+#endif /* __ONEWIRE_H */

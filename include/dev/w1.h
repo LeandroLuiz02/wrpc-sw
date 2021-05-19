@@ -7,7 +7,20 @@
 
 #include <stdint.h>
 
+#ifdef CONFIG_W1
+#define HAS_W1 1
+#else
+#define HAS_W1 0
+#endif
+
+#ifdef CONFIG_W1_EEPROM
+#define HAS_W1_EEPROM 1
+#else
+#define HAS_W1_EEPROM 0
+#endif
+
 #define W1_MAX_DEVICES 8 /* we have no alloc */
+#define ONEWIRE_PORT 0
 
 struct w1_dev {
 	struct w1_bus *bus;
