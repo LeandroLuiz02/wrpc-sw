@@ -10,12 +10,9 @@
 #include <string.h>
 #include <errno.h>
 #include <wrc.h>
-#include <lib/ipv4.h>
 
-#include "softpll_ng.h"
 #include "shell.h"
 #include "storage.h"
-#include "dev/onewire.h"
 #include "dev/endpoint.h"
 
 
