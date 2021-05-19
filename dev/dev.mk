@@ -33,7 +33,7 @@ obj-$(CONFIG_W1) +=		dev/w1.o	dev/w1-hw.o	dev/w1-shell.o
 obj-$(CONFIG_W1) +=		dev/w1-temp.o
 obj-$(CONFIG_W1) +=		dev/temp-w1.o
 
-obj-$(CONFIG_FAKE_TEMPERATURES) += dev/fake-temp.o
+obj-$(CONFIG_TEMP_FAKE) += dev/temp-fake.o
 
 obj-$(CONFIG_ETHERBONE) += dev/etherbone.o
 

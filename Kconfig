@@ -687,7 +687,7 @@ config SNMP_VERBOSE
 	help
 	  This enables some more diagnostic messages. Normally off.
 
-config FAKE_TEMPERATURES
+config TEMP_FAKE
 	depends on DEVELOPER
 	boolean "Offer an array of 3 fake temperatures, for testing"
 	help
