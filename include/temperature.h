@@ -13,11 +13,13 @@
 
 #ifdef CONFIG_TEMP_SENSORS
 #define HAS_TEMP_SENSORS 1
+#define WRC_MAX_TEMPERATURES 4
 #else
 #define HAS_TEMP_SENSORS 0
+#define WRC_MAX_TEMPERATURES 0
 #endif
 
-#define WRC_MAX_TEMPERATURES 4
+
 
 struct wrc_temp_sensor {
 	char *name;
@@ -31,6 +33,8 @@ struct wrc_temp_group {
 	int (*read)(struct wrc_temp_group *);
 	struct wrc_temp_sensor *t; /* zero-terminated */
 };
+
+extern struct wrc_temp_group temp_sensors[WRC_MAX_TEMPERATURES];
 
 /* lib functions  */
 extern uint32_t wrc_temp_get(char *name);

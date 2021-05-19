@@ -16,6 +16,7 @@
 #include <dev/netif.h>
 #include <lib/ipv4.h>
 #include <wrc_global.h>
+#include <temperature.h>
 #include <libwr/sfp_lib.h>
 #include <sfp.h>
 
@@ -522,7 +523,7 @@ void dump_mem_wrpc_task_list(void *mapaddr, unsigned long wrc_global_off)
 	max_run_ticks_off = wrpc_get_offset("wrc_task", "max_run_ticks");
 	task_struct_size = wrpc_get_struct_size("wrc_task");
 
-	for (task_i = 0; task_i < max_task && task_i < 32; task_i++) {
+	for (task_i = 0; task_i < max_task; task_i++) {
 		task_addr = mapaddr + task_list_off + task_i*task_struct_size;
 		if (!wrpc_get_l32(task_addr + used_off)) {
 			/* skip not used tasks */
@@ -538,6 +539,81 @@ void dump_mem_wrpc_task_list(void *mapaddr, unsigned long wrc_global_off)
 	}
 }
 
+void dump_mem_wrpc_temperatures_list(void *mapaddr, unsigned long wrc_global_off)
+{
+	int temp_group_i, sensor_i;
+	int max_temp;
+	char *prefix;
+	char pname[128];
+	long unsigned sensor_name_off, sensor_val_off, temp_group_used_off,
+		      temp_group_t_off, sensor_array_off, sensor_struct_size;
+	void *temp_group_addr, *sensor_addr, *sensor_name_addr;
+	long unsigned temp_group_struct_size;
+	unsigned long temp_group_list_off;
+
+	temp_group_list_off = wrpc_get_pointer(mapaddr + wrc_global_off, "wrc_global",
+				   "temp_group_list");
+	if (!temp_group_list_off) {
+		return;
+	}
+
+	prefix = "wrc_global.temp_group_list";
+	printf("%s at 0x%lx\n", prefix, temp_group_list_off);
+
+	max_temp = wrpc_get_i32(mapaddr + wrc_global_off +
+			wrpc_get_offset("wrc_global", "temp_group_list_max"));
+
+	/* limit temp_i in case max_temp is not correct */
+	if (max_temp < 0)
+		max_temp = 0;
+	if (max_temp > 64)
+		max_temp = 64;
+
+	temp_group_used_off = wrpc_get_offset("wrc_temp_group", "used");
+	temp_group_t_off = wrpc_get_offset("wrc_temp_group", "t");
+	temp_group_struct_size = wrpc_get_struct_size("wrc_temp_group");
+
+	sensor_name_off = wrpc_get_offset("wrc_temp_sensor", "name");
+	sensor_val_off = wrpc_get_offset("wrc_temp_sensor", "t");
+	sensor_struct_size = wrpc_get_struct_size("wrc_temp_sensor");
+
+	for (temp_group_i = 0; temp_group_i < max_temp; temp_group_i++) {
+		int32_t temperature_val;
+		temp_group_addr = mapaddr + temp_group_list_off + temp_group_i*temp_group_struct_size;
+		if (!wrpc_get_l32(temp_group_addr + temp_group_used_off)) {
+			/* skip not used temperatures */
+			continue;
+		}
+
+		sensor_array_off = wrpc_get_l32(temp_group_addr + temp_group_t_off);
+		printf("%s[%d] at 0x%lx\n", prefix, temp_group_i, sensor_array_off);
+
+		/* hardcode 16 to avoid runaway */
+		for (sensor_i = 0; sensor_i < 16; sensor_i++) {
+			sensor_addr = mapaddr + sensor_array_off + sensor_i*sensor_struct_size;
+
+			/* check if the pointer in the name field is empty */
+			if (!wrpc_get_l32(sensor_addr + sensor_name_off)) {
+				break;
+			}
+			/* address of sensor's name */
+			sensor_name_addr = mapaddr + wrpc_get_l32(sensor_addr + sensor_name_off);
+
+			sprintf(pname, "%s[%d].t[%d]:", prefix, temp_group_i, sensor_i);
+			printf("%-60s ", pname);
+			printf("name: %16s ", (char *)(sensor_name_addr));
+
+			/* read the temperature value
+			 * fixed point, 16.16 (signed!) */
+			temperature_val = wrpc_get_l32(sensor_addr + sensor_val_off);
+			if (temperature_val == TEMP_INVALID)
+				printf("val: INVALID\n");
+			else
+				printf("val: %d.%04d C\n", temperature_val >> 16,
+					((temperature_val & 0xffff) * 10 * 1000 >> 16));
+		}
+	}
+}
 
 void dump_mem_wrpc_sfp(void *mapaddr, unsigned long wrc_global_off)
 {
@@ -654,6 +730,9 @@ void dump_mem_wrpc_global(void *mapaddr, unsigned long wrc_global_off)
 
 	/* dump task list */
 	dump_mem_wrpc_task_list(mapaddr, wrc_global_off);
+
+	/* dump temperatures list */
+	dump_mem_wrpc_temperatures_list(mapaddr, wrc_global_off);
 
 	spll_off = wrpc_get_pointer(mapaddr + wrc_global_off, "wrc_global",
 				   "softpll");

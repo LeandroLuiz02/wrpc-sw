@@ -81,6 +81,10 @@ struct wrc_global wrc_global = {
 	.link_status = &wrc_global_link,
 	.task_list_max = WRC_MAX_TASKS,
 	.task_list = tasks,
+	.temp_group_list_max = WRC_MAX_TEMPERATURES,
+#ifdef CONFIG_TEMP_SENSORS
+	.temp_group_list = temp_sensors,
+#endif
 	.softpll = &softpll,
 	.pll_fifo = fifo_log,
 #ifdef CONFIG_CMD_CONFIG
