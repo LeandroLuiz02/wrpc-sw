@@ -31,8 +31,9 @@ repl() { printf -- "$1"'%.s' $(seq 1 $2); }
 declare -A curr_size_array;
 declare -A size_db_array;
 declare -a commits_since_master;
+GIT_HASH_START=${GIT_HASH_START:-origin/master}
 GIT_HASH_CUR=`git rev-parse HEAD`
-GIT_HASH_MASTER=`git rev-parse origin/master`
+GIT_HASH_MASTER=`git rev-parse "${GIT_HASH_START}"`
 
 if ! [ -n "$GIT_HASH_CUR" ]; then
     echo "Unable to get hash of a current commit"
@@ -119,7 +120,7 @@ echo $git_current_commit
 # print info abous previous commits
 # pick ! as the separator
 # tformat to get the newline after the last entry
-git log --format=tformat:"!%H!%s" origin/master~1...HEAD --graph \
+git log --format=tformat:"!%H!%s" "${GIT_HASH_START}"~1...HEAD --graph \
 | tail -n +2 \
 | while IFS="!" read -r git_graph git_hash git_title
 do
