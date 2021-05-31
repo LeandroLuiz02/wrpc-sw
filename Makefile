@@ -170,14 +170,6 @@ all: tools $(OUTPUT).elf $(arch-files-y)
 .PRECIOUS: %.elf %.bin
 .PHONY: all tools clean gitmodules $(PPSI)/ppsi.a extest liblinux
 
-# we need to remove "ptpdump" support for ppsi if RAM size is small and
-# we include etherbone
-ifneq ($(CONFIG_RAMSIZE),196608)
-  ifdef CONFIG_IP
-    PPSI_USER_CFLAGS = -DCONFIG_NO_PTPDUMP
-  endif
-endif
-
 PPSI-FLAGS-$(CONFIG_ARCH_LM32) = CONFIG_NO_PRINTF=y
 PPSI-FLAGS-$(CONFIG_ARCH_RISCV) = CONFIG_NO_PRINTF=y
 PPSI-FLAGS-$(CONFIG_TARGET_GENERIC_PHY_8BIT) = CONFIG_TARGET_GENERIC_PHY_8BIT=y
