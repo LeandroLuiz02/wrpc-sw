@@ -391,6 +391,19 @@ config CMD_LEAPSEC
 	  This enables leapsec command, which can be used to adjust leap seconds
 	  value.
 
+config CMD_PTP_ADV
+	depends on WRPC_PPSI
+	boolean "Extend ptp command with extra subcommands"
+	default n
+	help
+	  Extend ptp command with extra subcommands:
+	  --param1
+	  --param2
+	  --domain (domain number)
+	  --class (clock class)
+	  --accuracy (clock accuracy)
+	  --allan (clock allan variance)
+
 config NETCONSOLE
 	depends on WR_NODE && IP && !NET_VERBOSE
 	boolean "Include netconsole via UDP"

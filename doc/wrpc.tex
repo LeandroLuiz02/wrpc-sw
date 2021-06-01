@@ -2014,6 +2014,9 @@ tools used to build and run it, you can write at our forums
 \section{WRPC Shell Commands}
 \label{WRPC Shell commands}
 
+Please note that some commands are available only when enabled in Kconfig during
+the build of WRPC.
+
 \footnotesize
 \renewcommand\arraystretch{1.5}
 \begin{longtable}{  p{7.5cm}  p{7cm} }
@@ -2158,6 +2161,21 @@ tools used to build and run it, you can write at our forums
   \code{ptp gm|master|slave} & sets WRPC to operate as Grandmaster clock
     (requires external 10MHz and 1-PPS reference), Master or Slave. After
     setting the mode, \texttt{ptp start} must be re-issued \\
+
+  \code{ptp <prio1|prio2|domain|class}\\\code{|accuracy|allan|tsource> <val>}
+                & sets various parametes of PTP. For details see below.
+                Use these subcommands with caution. Setting the mode with
+                \texttt{ptp} command may affect the already set parameters using
+                \texttt{ptp} subcommands listed below.
+                Consider using \texttt{ptp master} and \texttt{ptp start} 
+                before using mentioned subcommands.\\
+  \code{ptp prio1 <0-255>}    & sets \textit{priority 1} used by PTP \\
+  \code{ptp prio2 <0-255>}    & sets \textit{priority 2} used by PTP \\
+  \code{ptp domain <0-255>}   & sets \textit{domain numbner} used by PTP \\
+  \code{ptp class <1-255>}    & sets \textit{clock class} used by PTP \\
+  \code{ptp accuracy <1-255>} & sets \textit{clock accuracy} used by PTP \\
+  \code{ptp allan <0-65535>}  & sets \textit{clock allan variance} used by PTP \\
+  \code{ptp tsource <0-255>}  & sets \textit{time source} used by PTP \\
 
   \code{ptp start} & starts WR PTP daemon \\
 
