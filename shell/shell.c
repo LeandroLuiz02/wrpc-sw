@@ -55,6 +55,12 @@
 #define HAS_CMD_LEAPSEC 0
 #endif
 
+#ifdef CONFIG_CMD_LL
+#define HAS_CMD_LL 1
+#else
+#define HAS_CMD_LL 0
+#endif
+
 #ifdef CONFIG_CMD_NETCONSOLE
 #define HAS_CMD_NETCONSOLE 1
 #else
@@ -402,6 +408,8 @@ void shell_register_commands(void)
 	REGISTER_WRC_COMMAND(calibration);
 	if (HAS_CMD_CONFIG)
 		REGISTER_WRC_COMMAND(config);
+	if (HAS_CMD_LL)
+		REGISTER_WRC_COMMAND(devmem);
 	REGISTER_WRC_COMMAND(diag);
 	if (HAS_TEMP_FAKE)
 		REGISTER_WRC_COMMAND(faketemp);
