@@ -86,11 +86,11 @@ static void lldp_add_tlv(int tlv_type) {
 		lldp_header_tlv(tlv_type, tlv_len);
 
 		/* TLV Time to Live */
-		/* use LLDP_TX_TICK_INTERVAL in seconds times 4 */
+		/* use LLDP_TX_TICK_INTERVAL in seconds times 8 */
 		lldpdu[lldpdu_len + TTL_BYTE_MSB] =
-			(((LLDP_TX_TICK_INTERVAL / 1000) * 4) >> 8) & 0xff;
+			(((LLDP_TX_TICK_INTERVAL / 1000) * 8) >> 8) & 0xff;
 		lldpdu[lldpdu_len + TTL_BYTE_LSB] =
-			((LLDP_TX_TICK_INTERVAL / 1000) * 4) & 0xff;
+			((LLDP_TX_TICK_INTERVAL / 1000) * 8) & 0xff;
 		break;
 	case PORT:
 		tlv_len = strlen(PORT_NAME) + 1;
@@ -259,7 +259,7 @@ void lldp_init(void)
 
 int lldp_poll(void)
 {
-	static int ticks;
+	static int start_tics_lldp;
 	uint8_t new_ipWR[4];
 	static uint8_t old_ipWR[4];
 	uint8_t new_mac[ETH_ALEN];
@@ -271,33 +271,32 @@ int lldp_poll(void)
 		return 0;
 
 	/* periodic tasks */
-	if (ticks > LLDP_TX_TICK_INTERVAL) {
-		ep_get_mac_addr(&wrc_endpoint_dev, new_mac);
-		if (HAS_IP) {
-			getIP(new_ipWR);
-		}
-
-		/* Update only when IP or MAC changed */
-		/* TODO: or VLAN changed */
-		if (memcmp(new_mac, old_mac, ETH_ALEN)
-		    || (old_vlan != *wrc_vlan_number)
-		    || (HAS_IP && (*ip_status != IP_TRAINING)
-			&& memcmp(new_ipWR, old_ipWR, IPLEN))
-		   ) {
-			/* update LLDP info */
-			lldp_update();
-			/* copy new MAC nad IP */
-			memcpy(old_mac, new_mac, ETH_ALEN);
-			memcpy(old_ipWR, new_ipWR, IPLEN);
-			old_vlan = *wrc_vlan_number;
-		}
-
-		ptpd_netif_sendto(lldp_socket, &addr, lldpdu, lldpdu_len, 0);
-
-		ticks = 0;
-		return 1;
-	} else {
-		ticks += 1;
+	if (timer_get_tics() - start_tics_lldp < LLDP_TX_TICK_INTERVAL) {
 		return 0;
 	}
+
+	start_tics_lldp = timer_get_tics();
+
+	ep_get_mac_addr(&wrc_endpoint_dev, new_mac);
+	if (HAS_IP) {
+		getIP(new_ipWR);
+	}
+
+	/* Update only when IP or MAC changed */
+	if (memcmp(new_mac, old_mac, ETH_ALEN)
+	    || (old_vlan != *wrc_vlan_number)
+	    || (HAS_IP && (*ip_status != IP_TRAINING)
+		&& memcmp(new_ipWR, old_ipWR, IPLEN))
+	    ) {
+		/* update LLDP info */
+		lldp_update();
+		/* copy new MAC nad IP */
+		memcpy(old_mac, new_mac, ETH_ALEN);
+		memcpy(old_ipWR, new_ipWR, IPLEN);
+		old_vlan = *wrc_vlan_number;
+	}
+
+	ptpd_netif_sendto(lldp_socket, &addr, lldpdu, lldpdu_len, 0);
+
+	return 1;
 }
