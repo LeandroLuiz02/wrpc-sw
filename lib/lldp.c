@@ -34,7 +34,7 @@ static struct wrpc_socket __static_lldp_socket = {
 static struct wrpc_socket *lldp_socket;
 static struct wr_sockaddr addr;
 
-extern char wrc_hw_name[HW_NAME_LENGTH];
+extern char *wrc_hw_name;
 
 static void lldp_header_tlv(int tlv_type, int tlv_len)
 {

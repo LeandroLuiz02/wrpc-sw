@@ -258,7 +258,7 @@ static uint32_t aux_diag_reg_rw_num;
 extern struct pp_instance ppi_static;
 static struct wr_servo_state *wr_s_state;
 
-extern char wrc_hw_name[HW_NAME_LENGTH];
+extern char *wrc_hw_name;
 /* __DATE__ and __TIME__ is already stored in struct spll_stats stats, but
  * redefining it here makes code smaller than concatenate existing one */
 static char *snmp_build_date = __DATE__ " " __TIME__;

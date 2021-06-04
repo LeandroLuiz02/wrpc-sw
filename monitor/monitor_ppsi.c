@@ -50,7 +50,7 @@ uint32_t wrc_stats_last;
 extern struct pp_instance ppi_static;
 extern struct pp_globals ppg_static;
 extern struct pp_globals *ppg;
-extern char wrc_hw_name[HW_NAME_LENGTH];
+extern char *wrc_hw_name;
 static int prev_gui_description = 0;
 static int gui_description = 1;
 static uint32_t next_update_ticks;
