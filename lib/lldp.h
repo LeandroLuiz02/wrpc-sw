@@ -19,7 +19,6 @@
 #define LLDP_ETH_TYP	0x88CC	/* 802.1AB-2005, Table 8-2 */
 
 #define LLDP_MAX_PKT_LEN	0x9E /* 158 bytes */
-#define TLV_MAX			0xA
 #define LLDP_HEADER		0x2
 #define LLDP_SUBTYPE		0x1
 #define MNT_IF_SUBTYPE		0x6
@@ -43,6 +42,16 @@
 #define MNG_ADDR_SUBTYPE_MAC	6	/* ianaAddressFamilyNumbers MIB */
 #define MNG_IF_NUM_SUBTYPE_IFINDEX	2 /* 802.1AB-2005, 9.5.9.5 */
 
+/* D.2.1 IEEE802.1Q-2014 or F.2 IEEE802.1AB-2005 */
+#define TLV_ORG_SPECIFIC	127
+#define OUI8021			0x0080C2
+#define TLV_VLANID_SUBTYPE	0x1
+
+/* OS=Organization Specific */
+#define TLV_OS_OUI8021_OFF	0
+#define TLV_OS_SUBTYPE_OFF	3
+#define TLV_OS_VLAN_OFF		4
+
 enum TLV_TYPE {
 		END_LLDP = 0,	/* mandatory TLVs */
 		CHASSIS_ID,
@@ -53,6 +62,8 @@ enum TLV_TYPE {
 		SYS_DESCR,
 		SYS_CAPLTY,
 		MNG_ADD,
+		VLAN_ID,	/* uses different TLV value, can be moved */
+		TLV_MAX_TYPE,
 		USER_DEF
 		};
 
