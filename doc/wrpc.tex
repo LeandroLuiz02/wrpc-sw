@@ -2033,7 +2033,17 @@ the build of WRPC.
   \code{delays}& \\
   \code{delays <tx> <rx>} & gets or sets the constant delays in frame
     transmission, only available if \texttt{CONFIG\_CMD\_LL}. Delays are
-    expressed in picoseconds. \\
+    expressed in picoseconds. This command changes rx and tx deltas for
+    the currently matched SFP and both, \code{delta\_rxm} and \code{delta\_txm}.
+    For master mode, command has to be executed before the peer enters
+    CALIBRATED state. Otherwise it makes no effect on slave side. For slave mode,
+    if the command is executed before CALIBRATED is reached, then both slave
+    deltas are changed \code{delta\_rxs} (with added bitslide) and
+    \code{delta\_txs}. After the state CALIBRATED is reached, at every
+    executrion of \code{delays} command both master deltas (\code{delta\_rxm}
+    and \code{delta\_txm}) are be updated in realtime.
+    If the SFP match is performed (e.g. link restart) the \code{delays} command
+    has to be executed once more. \\
 
   \code{devmem <addr>} &  \\
   \code{devmem <addr> <value>} & reads or writes a 32-bit word from memory

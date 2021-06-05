@@ -409,6 +409,8 @@ void shell_register_commands(void)
 	if (HAS_CMD_CONFIG)
 		REGISTER_WRC_COMMAND(config);
 	if (HAS_CMD_LL)
+		REGISTER_WRC_COMMAND(delays);
+	if (HAS_CMD_LL)
 		REGISTER_WRC_COMMAND(devmem);
 	REGISTER_WRC_COMMAND(diag);
 	if (HAS_TEMP_FAKE)

@@ -12,6 +12,9 @@
 #include <dev/endpoint.h>
 #include <ppsi/ppsi.h>
 #include "wr-api.h"
+#include <ppsi/ppsi.h>
+
+extern struct pp_globals *ppg;
 
 static int cmd_devmem(const char *args[])
 {
@@ -35,14 +38,23 @@ DEFINE_WRC_COMMAND(devmem) = {
 	.name = "devmem",
 	.exec = cmd_devmem,
 };
-#if 0
-extern struct pp_instance ppi_static;
 
 static int cmd_delays(const char *args[])
 {
+	wrh_servo_t * wr_servo;
+	wr_servo_ext_t * wr_servo_ext = NULL;
+
 	int tx, rx;
-	struct wr_data *wrp = (void *)(ppi_static.ext_data);
-	struct wr_servo_state *s = &wrp->servo_state;
+	
+	if (!ppg || !ppg->pp_instances)
+		return -1;
+	wr_servo = (ppg->pp_instances->protocol_extension == PPSI_EXT_WR
+		    && ppg->pp_instances->extState == PP_EXSTATE_ACTIVE) ?
+			(wrh_servo_t*) ppg->pp_instances->ext_data : NULL;
+	if (!wr_servo) {
+		return -2;
+	}
+	wr_servo_ext = &((struct wr_data *)wr_servo)->servo_ext;
 
 	if (args[0] && !args[1]) {
 		pp_printf("delays: use: \"delays [<txdelay> <rxdelay>]\"\n");
@@ -51,11 +63,12 @@ static int cmd_delays(const char *args[])
 	if (args[1]) {
 		tx = atoi(args[0]);
 		rx = atoi(args[1]);
+		/* Overwrite SFP parameters, in case PPSI is restarted */
 		sfp_info.sfp_params.dTx = tx;
 		sfp_info.sfp_params.dRx = rx;
 		/* Change the active value too (add bislide here) */
-		s->delta_tx_m = tx;
-		s->delta_rx_m = rx + ep_get_bitslide(&wrc_endpoint_dev);
+		picos_to_pp_time(rx, &wr_servo_ext->delta_rxm);
+		picos_to_pp_time(tx, &wr_servo_ext->delta_txm);
 	} else {
 		pp_printf("tx: %i   rx: %i\n", sfp_info.sfp_params.dTx,
 			  sfp_info.sfp_params.dRx);
@@ -67,4 +80,3 @@ DEFINE_WRC_COMMAND(delays) = {
 	.name = "delays",
 	.exec = cmd_delays,
 };
-#endif
