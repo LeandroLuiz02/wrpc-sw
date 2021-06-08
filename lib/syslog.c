@@ -9,7 +9,6 @@
 #include "dev/netif.h"
 
 #include "ipv4.h"
-#if 0
 /* syslog: a tx-only socket: no queue is there */
 static struct wrpc_socket __static_syslog_socket = {
 	.queue.buff = NULL,
@@ -110,8 +109,10 @@ int syslog_poll(void)
 	static uint32_t next_temp_report, next_temp_check;
 
 	/* for servo-state (accesses ppsi  internal variables */
-	extern struct pp_instance *ppi;
-	struct wr_servo_state *s;
+	extern struct pp_globals *ppg;
+	struct pp_instance *ppi = ppg->pp_instances;
+	struct pp_servo *s;
+	wrh_servo_t * wr_servo;
 	static uint32_t prev_tics;
 	static int last_setp, worst_delta, bad_track_lost;
 	static int track_ok_count, prev_servo_state = -1;
@@ -119,7 +120,7 @@ int syslog_poll(void)
 	if (IS_HOST_PROCESS)
 		s = NULL;
 	else
-		s = &((struct wr_data *)ppi->ext_data)->servo_state;
+		s = SRV(ppi);
 
 	if (*ip_status == IP_TRAINING)
 		return 0;
@@ -156,11 +157,16 @@ int syslog_poll(void)
 	if (!prev_tics)
 		prev_tics = now;
 
-	if (s && s->state == WR_TRACK_PHASE) /* monitor setpoint while ok */
-		last_setp = s->cur_setpoint;
+	wr_servo = (ppi->protocol_extension == PPSI_EXT_WR
+		    && ppi->extState == PP_EXSTATE_ACTIVE) ?
+			(wrh_servo_t*) ppi->ext_data : NULL;
+			
+	/* monitor setpoint while ok */
+	if (s && s->state == WRH_TRACK_PHASE && wr_servo)
+		last_setp = wr_servo->cur_setpoint_ps;
 
-	if (s && s->state == WR_TRACK_PHASE &&
-	    prev_servo_state != WR_TRACK_PHASE) {
+	if (s && s->state == WRH_TRACK_PHASE &&
+	    prev_servo_state != WRH_TRACK_PHASE) {
 		/* we reached sync: log it */
 		track_ok_count++;
 
@@ -187,16 +193,17 @@ int syslog_poll(void)
 		goto send;
 	}
 
-	if (s && s->state == WR_SYNC_PHASE && (s->flags & WR_FLAG_WAIT_HW)) {
+	if (s && s->state == WRH_SYNC_PHASE
+	    && (s->flags & PP_SERVO_FLAG_WAIT_HW)) {
 		/* 
 		 * Passing through SYNC_NSEC is a glimpse, and we won't notice.
-		 * Check, rather if we are waiting beofre sync_phase.
+		 * Check, rather if we are waiting before sync_phase.
 		 */
 		bad_track_lost = 1;
 	}
 
-	if (s && s->state != WR_TRACK_PHASE) {
-		int delta = s->cur_setpoint - last_setp;
+	if (s && s->state != WRH_TRACK_PHASE && wr_servo) {
+		int delta = wr_servo->cur_setpoint_ps - last_setp;
 
 		/* "abs(x - y)" is not working, unexpectedly) */
 		if (delta < 0)
@@ -205,8 +212,8 @@ int syslog_poll(void)
 			worst_delta = delta;
 	}
 
-	if (s && s->state != WR_TRACK_PHASE &&
-	    prev_servo_state == WR_TRACK_PHASE) {
+	if (s && s->state != WRH_TRACK_PHASE &&
+	    prev_servo_state == WRH_TRACK_PHASE) {
 		prev_servo_state = s->state;
 		prev_tics = now;
 		len = syslog_header(buf, SYSLOG_DEFAULT_LEVEL, ip);
@@ -218,47 +225,48 @@ int syslog_poll(void)
 	 * A section about temperature monitoring
 	 */
 
-	if (!next_temp_check) {
-		next_temp_check = now + 1000;
-		next_temp_report = 0;
-	}
-
-	if (time_after_eq(now, next_temp_check)) {
-		struct wrc_onetemp *t = NULL;
-		int over_t = 0;
-
-		next_temp_check += 1000;
-		while ( (t = wrc_temp_getnext(t)) )
-			over_t += (t->t > (CONFIG_TEMP_HIGH_THRESHOLD << 16));
-		/* report if over temp, and first report or rappel time */
-		if (over_t && (!next_temp_report
-			       || time_after_eq(now, next_temp_report))) {
-			next_temp_report = now + 1000 * CONFIG_TEMP_HIGH_RAPPEL;
-			len = syslog_header(buf, SYSLOG_DEFAULT_LEVEL, ip);
-			len += pp_sprintf(buf + len, "Temperature high: ");
-			len += wrc_temp_format(buf + len, sizeof(buf) - len);
-			goto send;
-		}
-		if (!over_t && next_temp_report) {
+	if (HAS_TEMP_SENSORS) {
+		if (!next_temp_check) {
+			next_temp_check = now + 1000;
 			next_temp_report = 0;
-			len = syslog_header(buf, SYSLOG_DEFAULT_LEVEL, ip);
-			len += pp_sprintf(buf + len, "Temperature ok: ");
-			len += wrc_temp_format(buf + len, sizeof(buf) - len);
-			goto send;
+		}
+
+		if (time_after_eq(now, next_temp_check)) {
+			struct wrc_temp_sensor *t = NULL;
+			int over_t = 0;
+
+			next_temp_check += 1000;
+			while ( (t = wrc_temp_getnext(t)) )
+				over_t += (t->t > (CONFIG_TEMP_HIGH_THRESHOLD << 16));
+			/* report if over temp, and first report or rappel time */
+			if (over_t && (!next_temp_report
+				    || time_after_eq(now, next_temp_report))) {
+				next_temp_report = now + 1000 * CONFIG_TEMP_HIGH_RAPPEL;
+				len = syslog_header(buf, SYSLOG_DEFAULT_LEVEL, ip);
+				len += pp_sprintf(buf + len, "Temperature high: ");
+				len += wrc_temp_format(buf + len, sizeof(buf) - len);
+				goto send;
+			}
+			if (!over_t && next_temp_report) {
+				next_temp_report = 0;
+				len = syslog_header(buf, SYSLOG_DEFAULT_LEVEL, ip);
+				len += pp_sprintf(buf + len, "Temperature ok: ");
+				len += wrc_temp_format(buf + len, sizeof(buf) - len);
+				goto send;
+			}
 		}
 	}
+	
 	return 0;
 
 send:
 	syslog_send(buf, ip, len);
 	return 1;
 }
-#endif
 
 /* A report tool for others to call (used by ltest at least) */
 void syslog_report(const char *msg)
 {
-#if 0
 	char buf[256];
 	unsigned char ip[4];
 	int len;
@@ -272,5 +280,4 @@ void syslog_report(const char *msg)
 	strcpy(buf + len, msg);
 	len += strlen(msg);
 	syslog_send(buf, ip, len);
-#endif
 }

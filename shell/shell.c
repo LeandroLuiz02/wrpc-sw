@@ -79,6 +79,12 @@
 #define HAS_LATENCY_PROBE 0
 #endif
 
+#ifdef CONFIG_SYSLOG
+#define HAS_SYSLOG 1
+#else
+#define HAS_SYSLOG 0
+#endif
+
 
 static char cmd_buf[SH_MAX_LINE_LEN + 1];
 static int cmd_pos = 0, cmd_len = 0;
@@ -437,6 +443,8 @@ void shell_register_commands(void)
 	REGISTER_WRC_COMMAND(sdb);
 	REGISTER_WRC_COMMAND(sfp);
 	REGISTER_WRC_COMMAND(stat);
+	if (HAS_SYSLOG)
+		REGISTER_WRC_COMMAND(syslog);
 	if (HAS_TEMP_SENSORS)
 		REGISTER_WRC_COMMAND(temp);
 	REGISTER_WRC_COMMAND(time);
