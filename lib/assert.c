@@ -2,13 +2,8 @@
 #include <stdarg.h>
 #include <assert.h>
 #include <wrc.h>
-#include "ipv4.h"
+#include "syslog.h"
 
-#ifdef CONFIG_SYSLOG
-#  define HAS_SYSLOG 1
-#else
-#  define HAS_SYSLOG 0
-#endif
 
 
 void panic(const char *fmt, ...)

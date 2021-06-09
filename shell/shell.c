@@ -23,6 +23,7 @@
 
 #include "shell.h"
 #include "storage.h"
+#include "lib/syslog.h"
 
 /* interactive shell state definitions */
 
@@ -78,13 +79,6 @@
 #else
 #define HAS_LATENCY_PROBE 0
 #endif
-
-#ifdef CONFIG_SYSLOG
-#define HAS_SYSLOG 1
-#else
-#define HAS_SYSLOG 0
-#endif
-
 
 static char cmd_buf[SH_MAX_LINE_LEN + 1];
 static int cmd_pos = 0, cmd_len = 0;

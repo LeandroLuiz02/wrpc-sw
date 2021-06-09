@@ -23,7 +23,7 @@
 #include "dev/iuart.h"
 #include "rf_frame_transceiver.h"
 
-#define BOARD_MAX_CONSOLE_DEVICES 2
+#define BOARD_MAX_CONSOLE_DEVICES (2 + HAS_NETCONSOLE + HAS_PUTS_SYSLOG)
 
 #define BOARD_USE_EVENTS 1
 

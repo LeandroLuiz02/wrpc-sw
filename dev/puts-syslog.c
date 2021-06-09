@@ -1,16 +1,15 @@
 #include <wrc.h>
 #include <string.h>
-#include <uart.h>
 #include <shell.h>
-#include <lib/ipv4.h>
+#include <lib/syslog.h>
 
-int puts(const char *s)
+int syslog_puts(const char *s)
 {
 	char new_s[CONFIG_PRINT_BUFSIZE + 4];
 	int l, ret;
 
-	ret = uart_write_string(s);
 	l = strlen(s);
+	ret = l;
 
 	/* avoid shell-interation stuff */
 	if (shell_is_interacting)

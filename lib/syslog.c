@@ -9,6 +9,7 @@
 #include "dev/netif.h"
 
 #include "ipv4.h"
+#include "syslog.h"
 /* syslog: a tx-only socket: no queue is there */
 static struct wrpc_socket __static_syslog_socket = {
 	.queue.buff = NULL,

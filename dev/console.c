@@ -13,6 +13,7 @@
 #include "board.h"
 #include "dev/simple_uart.h"
 #include "dev/console.h"
+#include "lib/syslog.h"
 #include <netconsole.h>
 
 static int puts_direct = 0;
@@ -32,6 +33,7 @@ static struct console_uart_priv_data console_uart_priv;
 struct console_device console_uart_dev;
 struct console_device* console_devs[BOARD_MAX_CONSOLE_DEVICES];
 static struct console_device console_netconsole_dev;
+static struct console_device console_syslog_dev;
 
 #define CON_ESCAPE_CODE 0x1b
 #define CON_SWITCH_BINARY_CODE 'B'
@@ -290,6 +292,19 @@ static void console_netconsole_init(void)
 	console_register_device( &console_netconsole_dev );
 }
 
+static int con_syslog_put_string(struct console_device* dev, const char *s)
+{
+	return syslog_puts(s);
+}
+
+
+static void console_syslog_init(void)
+{
+	/* no get_char for syslog! */
+	console_syslog_dev.put_string = con_syslog_put_string;
+	console_register_device(&console_syslog_dev);
+}
+
 int puts(const char *s)
 {
     if( puts_direct)
@@ -319,6 +334,9 @@ int console_getc()
     {
         struct console_device *con = console_devs[i];
         if(!con)
+            continue;
+        /* continue if no get_char function implemented */
+        if (!con->get_char)
             continue;
         int b = con->get_char( con );
 
@@ -355,6 +373,9 @@ void console_init()
 
     if (HAS_NETCONSOLE)
 	console_netconsole_init();
+
+    if (HAS_PUTS_SYSLOG)
+	console_syslog_init();
 
     pp_printf("Console UART FIFO:: %d\n", suart_is_fifo_supported( &console_uart_priv.uart_dev ) );
 }
