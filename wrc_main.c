@@ -31,6 +31,7 @@
 #include <dev/pps_gen.h>
 #include <shell.h>
 #include <lib/ipv4.h>
+#include <lib/events-ptp.h>
 #include <dev/rxts_calibrator.h>
 #include <dev/flash.h>
 #include <dev/gpio.h>
