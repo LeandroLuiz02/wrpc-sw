@@ -266,8 +266,10 @@ static void create_tasks(void)
 #ifdef CONFIG_IP
 	t = wrc_task_create( "arp", arp_init, arp_poll );
 	wrc_task_set_enable( t, is_link_up );
-	t = wrc_task_create( "ipv4", ipv4_init, ipv4_poll );
-	wrc_task_set_enable( t, is_link_up );
+	/* Run ipv4 even if link is down. ipv4_poll has to be executed even
+	 * on link down to trigger the bootp request when the link is up.
+	 * Needed by syslog to track link up */
+	wrc_task_create( "ipv4", ipv4_init, ipv4_poll );
 #endif
 
 #ifdef CONFIG_LATENCY_PROBE
