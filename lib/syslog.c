@@ -143,6 +143,10 @@ int syslog_poll(void)
 
 	if (*link_status == NETIF_LINK_WENT_DOWN)
 		down_tics = now;
+	/* Should not happen, but just in case the condition above was not met
+	 * during link down */
+	if (*link_status == NETIF_LINK_DOWN && !down_tics)
+		down_tics = now;
 	if (*link_status == NETIF_LINK_UP && down_tics) {
 		down_tics = now - down_tics;
 		len = syslog_header(buf, SYSLOG_DEFAULT_LEVEL, ip);
