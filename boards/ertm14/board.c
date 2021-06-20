@@ -228,6 +228,7 @@ spll_gain_schedule_t spll_main_ocxo_gain_sched;
 #define ERTM14_BIST_FLASH_FS_MOUNT 11
 #define ERTM14_BIST_MMC_14 12
 #define ERTM14_BIST_MMC_15 13
+#define ERTM14_BIST_ERTM15_PRESENCE 14
 
 #define BIST_STATUS_DONE (1<<0)
 #define BIST_STATUS_ERROR (1<<1)
@@ -241,6 +242,7 @@ struct bist_stage
 };
 
 static struct bist_stage ertm_bist[] = {
+    {ERTM14_BIST_ERTM15_PRESENCE, "Check eRTM15 presence", 1},
     {ERTM14_BIST_FLASH_PRESENCE, "Check flash presence", 1},
     {ERTM14_BIST_FLASH_FS_MOUNT, "Mount flash FS", 1},
     {ERTM14_BIST_LTC6950, "LTC6950", 1},
@@ -363,11 +365,32 @@ static struct wrc_sensor ertm_sensors[] = {
     }
 };
 
+
+#define MMC_POLL_STATE_IDLE 0
+#define MMC_POLL_STATE_WAIT_RESPONSE 1
+
+#define ERTM14_MMC_POLL_PERIOD_MS 1000 /* milliseconds */
+#define ERTM14_MMC_RX_TIMEOUT_MS 1000 /* milliseconds */
+
+struct ertm14_mmc_link
+{
+    struct uart_link ulink;
+    int poll_state;
+    timeout_t poll_timeout, rx_timeout;
+};
+
+static struct ertm14_mmc_link mmc14_link;
+static struct ertm14_mmc_link mmc15_link;
+
+
 static void mmc_show_version_info( const char *brdname, struct ertm14_mmc_state *st );
 static void streamers_init(void);
 static void streamers_set_rx_latency( uint32_t lat );
 static void streamers_set_rx_timeout( uint32_t tmo );
 void streamers_reset_rx_stats(void);
+
+int mmc_link_request_state(struct ertm14_mmc_link *link);
+int mmc_link_poll_state(struct ertm14_mmc_link *link, struct ertm14_mmc_state *state, int blocking);
 
 uint32_t bswap32(uint32_t v)
 {
@@ -466,22 +489,47 @@ static void mmc_comm_init(void);
 
 #define LTC6950_ID_VALUE 0x65
 
-// fixme: use PRESENCE_A/B pins instead of LTC6950 PLL chip
-static int check_ertm15_presence(void)
+static int wait_ertm15_presence(void)
 {
-    ltc695x_init(&board.ltc6950_pll, &board.spi_ltc6950);
-    int id;
-    //for(;;)
-    {
-         id = ltc695x_read( &board.ltc6950_pll, 0x16 );
+    board_dbg("Waiting for the eRTM15 to power up...\n");
 
-        board_dbg("detect LTC6950: ID %x should be %x\n", id, LTC6950_ID_VALUE );
+    led_action( &board.leds.sync, LED_COLOR_1 | LED_COLOR_2, LED_BLINK );
+    
+    timeout_t e15_powerup_timeout;
+    timeout_t e15_rx_timeout;
+
+    tmo_init( &e15_powerup_timeout, 60000 );
+
+    while( !tmo_expired( &e15_powerup_timeout ) )
+    {
+        struct ertm14_mmc_state state;
+    
+        tmo_init( &e15_rx_timeout, 1000 );
+
+        mmc_link_request_state( &mmc15_link );
+
+        int ret = -1;
+        while( !tmo_expired( &e15_rx_timeout ) )
+        {
+            leds_update();
+            ret = mmc_link_poll_state( &mmc15_link, &state, 0 );
+            if( ret != 0 )
+                break;
+        }
+
+        if( ret > 0 )
+        {
+            uint32_t flags = bswap32( state.flags );
+            board_dbg("Got eRTM15 rsp, flags = %x\n", flags );
+
+            if( flags & ERTM_FLAGS_POWERED_ON )
+            {
+                return 1;
+            }
+        }
     }
 
-    if( id != LTC6950_ID_VALUE )
-        return 0;
-
-    return 1;
+    return -1;
 }
 
 /* CLKA inverted outputs: 0, 1, 4, 5, 6 (LTC6953 ordering) */
@@ -1410,6 +1458,7 @@ static int rf_nco_sync_fsm( int is_ref, struct ertm14_dds_state *state, uint32_t
 
             if( trigd )
             {
+                led_action( is_ref ? &board.leds.ref : &board.leds.lo, LED_COLOR_1, LED_BLINK_SINGLE_NEGATIVE );
                 board_dbg("nco_sync[%s]: triggered!\n", name);
                 rf_nco_sync_arm_channel( state, ioupdate_channel );
                 state->sync_state = ERTM14_CLK_SYNC_STATE_READY;
@@ -1426,6 +1475,8 @@ static int rf_nco_sync_fsm( int is_ref, struct ertm14_dds_state *state, uint32_t
 
             if( trigd )
             {
+                led_action( is_ref ? &board.leds.ref : &board.leds.lo, LED_COLOR_1, LED_BLINK_SINGLE_NEGATIVE );
+
                 rf_nco_sync_arm_channel( state, ioupdate_channel );
                 state->sync_state = ERTM14_CLK_SYNC_STATE_READY;
             }
@@ -1512,6 +1563,8 @@ static int ertm14_clkab_sync_task(void)
                     if( stateA[i] == ERTM14_CLK_SYNC_STATE_RESTART )
                     {
                         board_dbg("[clkab_sync] CLKA%d pending\n", i);
+                        led_action( &board.leds.clka, LED_COLOR_1, LED_ON );
+                        led_action( &board.leds.clka, LED_COLOR_2, LED_ON );
                         clkab_enable_sync( ertm14_current_state, ERTM14_OUT_CLKA, i, 1 );
                         stateA[i] = ERTM14_CLK_SYNC_STATE_WAIT_TRIGGER;
                         any_output_pending = 1;
@@ -1520,6 +1573,8 @@ static int ertm14_clkab_sync_task(void)
                     if( stateB[i] == ERTM14_CLK_SYNC_STATE_RESTART )
                     {
                         board_dbg("[clkab_sync] CLKB%d pending\n", i);
+                        led_action( &board.leds.clkb, LED_COLOR_1, LED_ON );
+                        led_action( &board.leds.clkb, LED_COLOR_2, LED_ON );
                         clkab_enable_sync( ertm14_current_state, ERTM14_OUT_CLKB, i, 1 );
                         stateB[i] = ERTM14_CLK_SYNC_STATE_WAIT_TRIGGER;
                         any_output_pending = 1;
@@ -1553,6 +1608,8 @@ static int ertm14_clkab_sync_task(void)
                         board_dbg("[clkab_sync] CLKA%d synced!\n", i);
                         clkab_enable_sync( ertm14_current_state, ERTM14_OUT_CLKA, i, 0 );
                         stateA[i] = ERTM14_CLK_SYNC_STATE_READY;
+                        led_action( &board.leds.clka, LED_COLOR_1, LED_ON );
+                        led_action( &board.leds.clka, LED_COLOR_2, LED_OFF );
                     }
 
                     if( stateB[i] == ERTM14_CLK_SYNC_STATE_WAIT_TRIGGER )
@@ -1560,6 +1617,8 @@ static int ertm14_clkab_sync_task(void)
                         board_dbg("[clkab_sync] CLKB%d synced!\n", i);
                         clkab_enable_sync( ertm14_current_state, ERTM14_OUT_CLKB, i, 0 );
                         stateB[i] = ERTM14_CLK_SYNC_STATE_READY;
+                        led_action( &board.leds.clkb, LED_COLOR_1, LED_ON );
+                        led_action( &board.leds.clkb, LED_COLOR_2, LED_OFF );
                     }
                 }
             }
@@ -1664,6 +1723,15 @@ static void ertm14_init_leds(void)
 {
     blink_led(&pin_led_sync_green);
     blink_led(&pin_led_sync_red);
+
+    led_create( &board.leds.sync, &pin_led_sync_green, &pin_led_sync_red, LED_TYPE_DUAL_COLOR, LED_OFF );
+    led_set_blink_timing( &board.leds.sync, 1000, 500 );
+    led_action( &board.leds.sync, LED_COLOR_1, LED_BLINK );
+}
+
+
+static void ertm15_init_leds(void)
+{
     blink_led(&pin_ertm15_led_ref_green);
     blink_led(&pin_ertm15_led_lo_green);
     blink_led(&pin_ertm15_led_clkb_green);
@@ -1673,16 +1741,11 @@ static void ertm14_init_leds(void)
     blink_led(&pin_ertm15_led_clkb_red);
     blink_led(&pin_ertm15_led_clka_red);
 
-    leds_init();
 
     led_create( &board.leds.clka, &pin_ertm15_led_clka_green, &pin_ertm15_led_clka_red, LED_TYPE_DUAL_COLOR, LED_OFF );
     led_create( &board.leds.clkb, &pin_ertm15_led_clkb_green, &pin_ertm15_led_clkb_red, LED_TYPE_DUAL_COLOR, LED_OFF );
     led_create( &board.leds.lo, &pin_ertm15_led_lo_green, &pin_ertm15_led_lo_red, LED_TYPE_DUAL_COLOR, LED_OFF );
     led_create( &board.leds.ref, &pin_ertm15_led_ref_green, &pin_ertm15_led_ref_red, LED_TYPE_DUAL_COLOR, LED_OFF );
-    led_create( &board.leds.sync, &pin_led_sync_green, &pin_led_sync_red, LED_TYPE_DUAL_COLOR, LED_OFF );
-
-    led_set_blink_timing( &board.leds.sync, 1000, 500 );
-    led_action( &board.leds.sync, LED_COLOR_1, LED_BLINK );
 }
 
 static void set_main_dac( int value )
@@ -2004,17 +2067,35 @@ int ertm14_low_level_init(void)
         &pin_ad9910_lo_sclk,
         100 );
 
+    mmc_comm_init();
+
+    ertm14_init_leds();
+
     /* detect if the eRTM15 is present and decide how to configure the board */
-    int ertm15_present = check_ertm15_presence();
+    int ertm15_present = wait_ertm15_presence();
 
     if( !ertm15_present )
         board.mode |= ERTM14_MODE_WITHOUT_ERTM15;
 
     if ( board.mode & ERTM14_MODE_WITHOUT_ERTM15 )
-        board_dbg( "Configuring board *WITHOUT* eRTM15 support (eRTM15 not found or disabled in software).\n");
+        board_dbg( "Configuring board *WITHOUT* eRTM15 support (eRTM15 not found, not powered on or disabled in software). The WRC will not be functional!\n");
     else
         board_dbg( "Configuring board WITH eRTM15 support.\n");
-    
+
+    bist_checkpoint( ertm_bist, ERTM14_BIST_ERTM15_PRESENCE, 0, ertm15_present );
+
+    if( !ertm15_present )
+    {
+        led_action( &board.leds.sync, LED_COLOR_1, LED_OFF );
+        led_action( &board.leds.sync, LED_COLOR_2, LED_BLINK );
+        return 0;
+    }
+    else
+    {
+        led_action( &board.leds.sync, LED_COLOR_1, LED_OFF );
+        led_action( &board.leds.sync, LED_COLOR_2, LED_OFF );
+    }
+
 
     /* Initialize the clock monitor core - it monitors the frequencies of all clocks coming to the FPGA.
        We use it to self-diagnose if the board's oscillators are working correctly. */
@@ -2030,7 +2111,7 @@ int ertm14_low_level_init(void)
     /* Set up the eRTM14's PLLs (AD9516s) */
     ertm14_init_ref_clock_distribution();
 
-    ertm14_init_leds();
+    ertm15_init_leds();
 
     // fixme: detect fail
     //ertm15_check_oscillators();
@@ -2119,8 +2200,6 @@ int ertm14_low_level_init(void)
     board_dbg("Init Control UART Link\n");
     uart_link_create_wrpc_console( &board.control_uart_link );
 
-    mmc_comm_init();
-
     board_dbg("Init RF transceiver & streamers\n");
 
     streamers_init();
@@ -2128,6 +2207,9 @@ int ertm14_low_level_init(void)
     wr_rf_frame_transceiver_create( &board.rf_xcvr, BASE_ERTM14_RF_FRAME_TRANSCEIVER );
 
     ertm14_set_pps_out_mode( ERTM14_PPS_OUT_MODE_PPS );
+
+    led_action( &board.leds.ref, LED_COLOR_1 | LED_COLOR_2, LED_ON );
+    led_action( &board.leds.lo, LED_COLOR_1 | LED_COLOR_2, LED_ON );
 
     board_dbg("eRTM14/15 early init done\n");
 
@@ -2355,22 +2437,6 @@ int wrc_board_early_init()
 
     return ll;
 }
-
-#define MMC_POLL_STATE_IDLE 0
-#define MMC_POLL_STATE_WAIT_RESPONSE 1
-
-#define ERTM14_MMC_POLL_PERIOD_MS 1000 /* milliseconds */
-#define ERTM14_MMC_RX_TIMEOUT_MS 1000 /* milliseconds */
-
-struct ertm14_mmc_link
-{
-    struct uart_link ulink;
-    int poll_state;
-    timeout_t poll_timeout, rx_timeout;
-};
-
-static struct ertm14_mmc_link mmc14_link;
-static struct ertm14_mmc_link mmc15_link;
 
 /* FIXME: these should be in a .h file */
 extern int phy_calibration_poll(void);
@@ -2602,8 +2668,63 @@ int ertm15_update_rf_monitor( void )
     return 0;
 }
 
+static int prev_ptp_servo_state = -1;
+static int prev_ptp_state = -1;
+
 int ertm14_update_leds( void )
 {
+
+    /* White Rabbit Servo */
+    enum {
+        WR_UNINITIALIZED = 0,
+        WR_SYNC_NSEC,
+        WR_SYNC_TAI,
+        WR_SYNC_PHASE,
+        WR_TRACK_PHASE,
+        WR_WAIT_OFFSET_STABLE,
+    };
+
+
+    /* Enumeration States (table 8, page 73) */
+    enum {
+        PPS_END_OF_TABLE	= 0,
+        PPS_INITIALIZING,
+        PPS_FAULTY,
+        PPS_DISABLED,
+        PPS_LISTENING,
+        PPS_PRE_MASTER,
+        PPS_MASTER,
+        PPS_PASSIVE,
+        PPS_UNCALIBRATED,
+        PPS_SLAVE,
+    };
+
+    int ptp_servo_state = wrc_ptp_get_servo_state();
+    int ptp_state = wrc_ptp_get_state();
+
+    if( ptp_servo_state != prev_ptp_servo_state || ptp_state != prev_ptp_state )
+    {
+        if( ptp_servo_state == WR_TRACK_PHASE && ptp_state == PPS_SLAVE )
+        {
+            led_action( &board.leds.sync, LED_COLOR_1, LED_ON );
+            led_action( &board.leds.sync, LED_COLOR_2, LED_OFF );
+        }
+        else if ( ptp_state == PPS_LISTENING || ptp_state == PPS_INITIALIZING )
+        {
+            led_action( &board.leds.sync, LED_COLOR_1, LED_OFF );
+            led_action( &board.leds.sync, LED_COLOR_2, LED_OFF );
+        }
+        else if ( ptp_state == PPS_SLAVE )
+        {
+            led_action( &board.leds.sync, LED_COLOR_1, LED_BLINK );
+            led_action( &board.leds.sync, LED_COLOR_2, LED_OFF );
+        }
+
+        prev_ptp_servo_state = ptp_servo_state;
+        prev_ptp_state = ptp_state;
+    }
+
+
     leds_update();
     return 0;
 }
@@ -2618,13 +2739,17 @@ int wrc_board_init()
     console_set_mode_switch_hook( &console_uart_dev, control_uart_mode_callback );
 
     wrc_task_create( "control-uart", NULL, control_uart_poll );
-    wrc_task_create( "rf-nco-sync", ertm14_dds_nco_sync_init, ertm14_dds_nco_sync_task );
-    wrc_task_create( "clkab-sync", ertm14_clkab_sync_init, ertm14_clkab_sync_task );
-    wrc_task_create( "phy-cal", phy_calibration_init, phy_calibration_poll );
     wrc_task_create( "mmc14", mmc14_link_init, mmc14_link_poll );
-    wrc_task_create( "mmc15", mmc15_link_init, mmc15_link_poll );
-    wrc_task_create( "rf-monitor", ertm15_init_rf_monitor, ertm15_update_rf_monitor );
     wrc_task_create( "leds", NULL, ertm14_update_leds );
+    wrc_task_create( "phy-cal", phy_calibration_init, phy_calibration_poll );
+
+    if( ! ( board.mode & ERTM14_MODE_WITHOUT_ERTM15 ) )
+    {
+        wrc_task_create( "rf-nco-sync", ertm14_dds_nco_sync_init, ertm14_dds_nco_sync_task );
+        wrc_task_create( "clkab-sync", ertm14_clkab_sync_init, ertm14_clkab_sync_task );
+        wrc_task_create( "mmc15", mmc15_link_init, mmc15_link_poll );
+        wrc_task_create( "rf-monitor", ertm15_init_rf_monitor, ertm15_update_rf_monitor );
+    }
 
     struct ertm14_board_state mask;
     memset(&mask, 0xff, sizeof( struct ertm14_board_state )); // make sure we commit everything to HW
