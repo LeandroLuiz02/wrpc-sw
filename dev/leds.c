@@ -96,6 +96,7 @@ static void led_update_single(struct led_device *led)
             break;
 
         case LED_BLINK_SINGLE:
+        case LED_BLINK_SINGLE_NEGATIVE:
         case LED_BLINK:
         {
             int32_t t = (timer_get_tics() - led->start_tics);
@@ -104,6 +105,11 @@ static void led_update_single(struct led_device *led)
             if (t > led->blink_period && led->state[i] == LED_BLINK_SINGLE)
             {
                 led->state[i] = LED_OFF;
+                gen_gpio_out(led->pins[i], led->type & LED_TYPE_INVERT ? 1 : 0);
+            }
+            else if (t > led->blink_period && led->state[i] == LED_BLINK_SINGLE_NEGATIVE)
+            {
+                led->state[i] = LED_ON;
                 gen_gpio_out(led->pins[i], led->type & LED_TYPE_INVERT ? 1 : 0);
             }
             else
