@@ -434,6 +434,20 @@ uint32_t wrc_temp_get(char *name)
 	return s->value;
 }
 
+int wrc_ptp_get_servo_state( void )
+{
+	struct wr_servo_state *ss =
+		&((struct wr_data *)ppi->ext_data)->servo_state;
+		int32_t asym   = (int32_t)(ss->picos_mu-2LL * ss->delta_ms);
+		int wr_mode    = (ss->flags & WR_FLAG_VALID) ? 1 : 0;
+	return  ss->state;
+}
+
+int wrc_ptp_get_state( void )
+{
+	return ppi->state;
+}
+
 int wrc_wr_diags(void)
 {
 	struct hal_port_state ps;
