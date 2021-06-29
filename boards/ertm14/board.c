@@ -1458,7 +1458,7 @@ static int rf_nco_sync_fsm( int is_ref, struct ertm14_dds_state *state, uint32_t
 
             if( trigd )
             {
-                led_action( is_ref ? &board.leds.ref : &board.leds.lo, LED_COLOR_1, LED_BLINK_SINGLE_NEGATIVE );
+//                led_action( is_ref ? &board.leds.ref : &board.leds.lo, LED_COLOR_1, LED_BLINK_SINGLE_NEGATIVE );
                 board_dbg("nco_sync[%s]: triggered!\n", name);
                 rf_nco_sync_arm_channel( state, ioupdate_channel );
                 state->sync_state = ERTM14_CLK_SYNC_STATE_READY;
@@ -1475,7 +1475,7 @@ static int rf_nco_sync_fsm( int is_ref, struct ertm14_dds_state *state, uint32_t
 
             if( trigd )
             {
-                led_action( is_ref ? &board.leds.ref : &board.leds.lo, LED_COLOR_1, LED_BLINK_SINGLE_NEGATIVE );
+//                led_action( is_ref ? &board.leds.ref : &board.leds.lo, LED_COLOR_1, LED_BLINK_SINGLE_NEGATIVE );
 
                 rf_nco_sync_arm_channel( state, ioupdate_channel );
                 state->sync_state = ERTM14_CLK_SYNC_STATE_READY;
