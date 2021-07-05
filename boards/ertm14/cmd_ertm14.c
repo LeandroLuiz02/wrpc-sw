@@ -330,6 +330,8 @@ static int cmd_ertm(const char *args[])
         streamers_reset_rx_stats();
     } else if (!strcasecmp(args[0], "pps-mode")) {
         set_pps_mode( args[1] );
+    } else if (!strcasecmp(args[0], "ccal")) {
+        ertm14_sync_pulse_cal(  );
     }
  
  
