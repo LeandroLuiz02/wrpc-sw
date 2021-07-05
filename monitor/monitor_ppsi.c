@@ -355,12 +355,19 @@ void print_main_description(void)
 >>>>>>> minic: improve error reporting
 	}
 
+<<<<<<< HEAD
 	pp_printf("\n----- HAL ---|---------------- PPSI -------------------------------------------------\n");
 	pp_printf(  " Iface| Freq |    Config    | MAC of peer port  |    PTP/EXT/PDETECT States    | Pro \n");
 	pp_printf(  "------+------+--------------+-------------------+------------------------------+-----\n");
 	for (i = 0 ; i < ndevs; i++) {
 		/* reuse the string above, strings between "|" will be overwritten anyway */
 		pp_printf(" Iface| Freq |    Config    | MAC of peer port  |    PTP/EXT/PDETECT States    | Pro \n");
+=======
+	spll_get_num_channels(NULL, &n_out);
+
+	if (!state.state) {
+		return 1;
+>>>>>>> monitor: fix off-by-one error in counting aux clocks
 	}
 
 	cprintf(C_BLUE, "Pro - Protocol mapping: V-Ethernet over "
@@ -421,6 +428,7 @@ void print_main_data(void)
 			pcprintf(9, 1, C_RED, "*%s: ", ndev->name);
 		}
 
+<<<<<<< HEAD
 		if (i == 0) /* FIXME: should be independent for each interface */
 		{
 			ep_get_mac_addr(&wrc_endpoint_dev, mac);
@@ -603,6 +611,11 @@ void print_aux_data(void)
 
 	for (i = 0; i < n_out - 1; i++) {
 		cprintf(C_MAGENTA, "\n\nAux clock %d status:        ", i);
+=======
+
+	for(i = 0; i <= n_out - 1; i++) {
+		cprintf(C_GREY, "Aux clock %d status:        ", i);
+>>>>>>> monitor: fix off-by-one error in counting aux clocks
 
 		aux_stat = spll_get_aux_status(i);
 
@@ -950,13 +963,8 @@ int wrc_wr_diags(void)
 	wdiag_set_valid(0);
 
 	/* frame statistics */
-<<<<<<< HEAD
-	minic_get_stats(&tx, &rx);
-	wdiags_write_cnts(tx, rx);
-=======
 	minic_get_stats(&tx, &rx, NULL);
 	wdiags_write_cnts(tx,rx);
->>>>>>> minic: improve error reporting
 
 	/* local time */
 	shw_pps_gen_get_time(&sec, &nsec);
