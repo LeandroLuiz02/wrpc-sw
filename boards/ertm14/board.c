@@ -180,6 +180,8 @@ struct gpio_pin pin_ertm15_leds_ser = { &board.gpio_aux, 66 };
 struct gpio_pin pin_ertm15_leds_updtclk = { &board.gpio_aux, 67 };
 struct gpio_pin pin_ertm15_leds_shftclk = { &board.gpio_aux, 68 };
 
+struct gpio_pin pin_tm_clk_aux0_lock_en = {  &board.gpio_aux, 71 };
+struct gpio_pin pin_fpg_fast_pps_sel = {  &board.gpio_aux, 72 };
 
 // a/b/lo/ref, red->green
 struct gpio_pin pin_ertm15_led_clka_red = { &board.gpio_ertm15_leds, 0 };
@@ -229,6 +231,7 @@ spll_gain_schedule_t spll_main_ocxo_gain_sched;
 #define ERTM14_BIST_MMC_14 12
 #define ERTM14_BIST_MMC_15 13
 #define ERTM14_BIST_ERTM15_PRESENCE 14
+#define ERTM14_BIST_PLL_LOCK 15
 
 #define BIST_STATUS_DONE (1<<0)
 #define BIST_STATUS_ERROR (1<<1)
@@ -255,6 +258,7 @@ static struct bist_stage ertm_bist[] = {
     {ERTM14_BIST_DDS_REF, "DDS comm (REF)", 1},
     {ERTM14_BIST_MMC_14, "MMC Link (eRTM14)", 1},
     {ERTM14_BIST_MMC_15, "MMC Link (eRTM15)", 1},
+    {ERTM14_BIST_PLL_LOCK, "PLL Lock", 1},
 
     {0, NULL}};
 
@@ -643,6 +647,9 @@ static void ertm14_spll_setup(void)
 #endif
 
 	spll_set_gain_schedule( gs );
+
+    // Aux clock 0 is used for 'factory' calibration of CLKAB/LO/REF outputs.
+    spll_set_aux_mode( 0, SPLL_AUX_MODE_PHASE_MONITOR );
 }
 
 
@@ -1458,7 +1465,7 @@ static int rf_nco_sync_fsm( int is_ref, struct ertm14_dds_state *state, uint32_t
 
             if( trigd )
             {
-//                led_action( is_ref ? &board.leds.ref : &board.leds.lo, LED_COLOR_1, LED_BLINK_SINGLE_NEGATIVE );
+                //led_action( is_ref ? &board.leds.ref : &board.leds.lo, LED_COLOR_1, LED_BLINK_SINGLE_NEGATIVE );
                 board_dbg("nco_sync[%s]: triggered!\n", name);
                 rf_nco_sync_arm_channel( state, ioupdate_channel );
                 state->sync_state = ERTM14_CLK_SYNC_STATE_READY;
@@ -1475,7 +1482,7 @@ static int rf_nco_sync_fsm( int is_ref, struct ertm14_dds_state *state, uint32_t
 
             if( trigd )
             {
-//                led_action( is_ref ? &board.leds.ref : &board.leds.lo, LED_COLOR_1, LED_BLINK_SINGLE_NEGATIVE );
+                //led_action( is_ref ? &board.leds.ref : &board.leds.lo, LED_COLOR_1, LED_BLINK_SINGLE_NEGATIVE );
 
                 rf_nco_sync_arm_channel( state, ioupdate_channel );
                 state->sync_state = ERTM14_CLK_SYNC_STATE_READY;
@@ -1786,11 +1793,40 @@ int ertm15_pll_init(void)
     ltc695x_configure(&board.ltc6950_pll, &pll_ertm15_bootstrap_config);
 
     board_dbg("Using 100 MHz OCXO\n");
-    //ltc6950_write( &board.ltc6950_pll, 0x15, 4 ); // RDIVOUT = 0, output div = 50
     ltc695x_write(&board.ltc6950_pll, 0x8, 0x1); // reference divider = 1
-
     ltc695x_write(&board.ltc6950_pll, 0x15, 50); // RDIVOUT = 0, output div = 50
-    ltc695x_write(&board.ltc6950_pll, 0x0a, 10); // N divider = 10 (VCO @ 1GHz, PFD @ 10 MHz)
+    ltc695x_write(&board.ltc6950_pll, 0x0a, 10); // N divider = 10 (VCO @ 1GHz, PFD @ 100 MHz)
+
+    int locked = 0;
+
+    timeout_t lock_timeout;
+    tmo_init( &lock_timeout, 1000 );
+
+    // wait for the PLL to lock
+    do {
+        if( tmo_expired( &lock_timeout) )
+            break;
+
+        locked = ltc695x_read(&board.ltc6950_pll, 0) & LTC695x_R0_LOCK;
+
+        timer_delay_ms(10);
+    } while( !locked );
+
+    bist_checkpoint( ertm_bist, ERTM14_BIST_PLL_LOCK, 0, locked );
+
+    if( !locked )
+        return -1;
+
+    // now that we are locked, we can sync the outputs so that all coutners start at the same time
+    gen_gpio_out( &pin_ltc6950_sync, 0 );
+    ltc6950_set_syncen( &board.ltc6950_pll, 0x1f );
+
+    gen_gpio_out( &pin_ltc6950_sync, 1 );
+    timer_delay_ms(10);
+    gen_gpio_out( &pin_ltc6950_sync, 0 );
+
+    ltc6950_set_syncen( &board.ltc6950_pll, 0x0 );
+
     board.mode |= ERTM14_MODE_OCXO_100MHZ;
     return 0;
 }
@@ -2318,12 +2354,10 @@ static struct {
     int freq;
     int divider;
 } clkab_freqs [] = {
-    { 1000000000, 1 },
-    { 500000000, 2},
-    { 250000000, 4},
-    { 200000000, 5},
-    { 125000000, 8},
-    { 62500000, 16},
+    { 500000000, 1},
+    { 250000000, 2},
+    { 125000000, 4},
+    { 62500000, 8},
     {-1,-1}
 };
 
@@ -2762,6 +2796,99 @@ int wrc_board_init()
 
 int wrc_board_create_tasks()
 {
+
+    return 0;
+}
+
+void ertm14_sync_pulse_cal()
+{
+    pp_printf("Sync Pulse calibration [press X to continue]:\n");
+
+    int dly_clka =  board.dds_sync_delays[ERTM14_PLL_SYNC_CLKA];
+    int dly_clkb =  board.dds_sync_delays[ERTM14_PLL_SYNC_CLKB];
+    int dly_ioupd_ref =  board.dds_sync_delays[ERTM14_DDS_IOUPDATE_REF];
+    int dly_ioupd_lo =  board.dds_sync_delays[ERTM14_DDS_IOUPDATE_LO];
+
+
+    pp_printf("Current offsets:\n CLKA = %d ps\n CLKB = %d ps\n DDS REF = %d ps\n DDS LO = %d ps\n", dly_clka, dly_clkb,  dly_ioupd_ref, dly_ioupd_lo);
+
+    uint32_t channel_mask = ( 1 << ERTM14_PLL_SYNC_CLKA ) | ( 1<< ERTM14_PLL_SYNC_CLKB )
+                            | ( 1<< ERTM14_DDS_IOUPDATE_LO) | ( 1<< ERTM14_DDS_IOUPDATE_REF);
+
+    shw_pps_gen_init();
+    shw_pps_gen_enable_output(1);
+    shw_pps_gen_unmask_output(1);
+
+    ertm14_set_pps_out_mode(0);
+
+  
+
+    int offset;
+
+    // CLKA @ 400 ps
+    // CLKB @ 400 ps
+
+    offset = 400;
+    ertm14_set_pps_out_mode(0);
+
+    int div = ertm14_get_clkab_divider( 62500000 );
+
+
+
+    clkab_set_output_divider( ertm14_current_state, 0, ERTM14_CLKAB_OUT_FRONT_PANEL, div );
+    clkab_set_output_divider( ertm14_current_state, 1, ERTM14_CLKAB_OUT_FRONT_PANEL, div );
+
+    int i;
+    for( i = ERTM14_CLKAB_OUT_MIN_ID; i <= ERTM14_CLKAB_OUT_MAX_ID; i++ )
+    {
+        clkab_enable_sync( ertm14_current_state, ERTM14_OUT_CLKA, i, 1 );
+        clkab_enable_sync( ertm14_current_state, ERTM14_OUT_CLKB, i, 1 );
+    }
+
+    gen_gpio_out( &pin_tm_clk_aux0_lock_en, 1 );
+
+    spll_init( SPLL_MODE_FREE_RUNNING_MASTER, 0, 0 );
+
+    int quit = 0;
+    do
+    {
+        pp_printf("Offset is %d ps, a = increase, z = decrease, x = quit\n", offset);
+
+        fine_pulse_gen_setup_channel ( &board.dds_sync_dev, ERTM14_PLL_SYNC_CLKA, 1, offset, 1000, 0 );
+        fine_pulse_gen_setup_channel ( &board.dds_sync_dev, ERTM14_PLL_SYNC_CLKB, 1, offset, 1000, 0 );
+        fine_pulse_gen_setup_channel ( &board.dds_sync_dev, ERTM14_DDS_IOUPDATE_LO, 1, offset, 0, 0 );
+        fine_pulse_gen_setup_channel ( &board.dds_sync_dev, ERTM14_DDS_IOUPDATE_REF, 1, offset, 0, 0 );
+
+        fine_pulse_gen_trigger( &board.dds_sync_dev, channel_mask, 0 );
+
+#if 0
+        struct spll_aux_clock_status st = spll_get_aux_status( 0 );
+
+        pp_printf("Aux0: en:%d rdy:%d ph:%s\n", 
+        st.flags & SPLL_AUX_MONITOR_ENABLED ? 1 : 0,
+        st.flags & SPLL_AUX_MONITOR_READY ? 1 : 0,
+        st.phase
+        );
+#endif
+        while ( !fine_pulse_gen_is_triggered (&board.dds_sync_dev, channel_mask ) );
+
+        int c = console_getc();
+        switch(c)
+        {
+            case 'a': if( offset < 16000 ) offset += 100; break;
+            case 'z': if( offset > 100 ) offset -= 100; break;
+            case 'x': quit = 1; break;
+            default: break;
+        }
+    } while(!quit);
+
+    gen_gpio_out( &pin_tm_clk_aux0_lock_en, 0 );
+
+    for( i = ERTM14_CLKAB_OUT_MIN_ID; i <= ERTM14_CLKAB_OUT_MAX_ID; i++ )
+    {
+        clkab_enable_sync( ertm14_current_state, ERTM14_OUT_CLKA, i, 0 );
+        clkab_enable_sync( ertm14_current_state, ERTM14_OUT_CLKB, i, 0 );
+    }
 
     return 0;
 }
