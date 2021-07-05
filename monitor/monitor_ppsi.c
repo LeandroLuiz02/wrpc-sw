@@ -153,7 +153,8 @@ int wrc_mon_gui(void)
 		}
 	}
 
-	
+	spll_get_num_channels(NULL, &n_out);
+
 	if (!state.state) {
 		return 1;
 	}
@@ -221,11 +222,8 @@ int wrc_mon_gui(void)
 	/*cprintf(C_GREY, "Synchronization source:    ");
 	cprintf(C_WHITE, "%s\n", cur_servo_state.sync_source);*/
 
-	spll_get_num_channels(NULL, &n_out);
 
-
-
-	for(i = 0; i < n_out - 1; i++) {
+	for(i = 0; i <= n_out - 1; i++) {
 		cprintf(C_GREY, "Aux clock %d status:        ", i);
 
 		aux_stat = spll_get_aux_status(i);
