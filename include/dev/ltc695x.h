@@ -27,6 +27,27 @@
 #include "dev/gpio.h"
 #include "dev/bb_spi.h"
 
+
+#define LTC6953_PD_NORMAL (0)
+#define LTC6953_PD_MUTE   (1)
+#define LTC6953_PD_OUTPUT (2)
+#define LTC6953_PD_OUTPUT_AND_DIVIDER (3)
+
+#define LTC6953_OR0_MP_DIV_MASK (0xf8)
+#define LTC6953_OR0_MP_DIV_SHIFT (3)
+
+#define LTC6953_OR0_MD_DIV_MASK (0x7)
+#define LTC6953_OR0_MD_DIV_SHIFT (0)
+
+#define LTC6953_OR1_SRQEN (1<<7)
+#define LTC6953_OR1_OINV (1<<4)
+
+#define LTC6953_OR1_MODE_MASK (0x60)
+#define LTC6953_OR1_MODE_SHIFT (5)
+
+#define LTC695x_R0_LOCK (1<<2)
+
+
 struct ltc695x_device {
     struct spi_bus *bus;
 };
@@ -50,5 +71,6 @@ int ltc695x_configure(struct ltc695x_device *dev, struct ltc695x_config* cfg);
 int ltc6953_enable_output( struct ltc695x_device *dev, int output, int enabled );
 int ltc6953_configure_output( struct ltc695x_device *dev, int output, int divider, int invert );
 int ltc6953_set_srqen( struct ltc695x_device *dev, int output, int en );
+int ltc6950_set_syncen( struct ltc695x_device *dev, uint32_t out_mask );
 
 #endif
