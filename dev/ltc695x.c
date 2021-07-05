@@ -48,7 +48,6 @@ void ltc695x_write(struct ltc695x_device *dev, uint32_t reg, uint8_t value) {
     bb_spi_cs(dev->bus, 0);
 };
 
-#define LTC695x_R0_LOCK (1<<2)
 
 int ltc695x_configure(struct ltc695x_device *dev, struct ltc695x_config* cfg)
 {
@@ -60,23 +59,6 @@ int ltc695x_configure(struct ltc695x_device *dev, struct ltc695x_config* cfg)
 
     return 0;
 }
-
-#define LTC6953_PD_NORMAL (0)
-#define LTC6953_PD_MUTE   (1)
-#define LTC6953_PD_OUTPUT (2)
-#define LTC6953_PD_OUTPUT_AND_DIVIDER (3)
-
-#define LTC6953_OR0_MP_DIV_MASK (0xf8)
-#define LTC6953_OR0_MP_DIV_SHIFT (3)
-
-#define LTC6953_OR0_MD_DIV_MASK (0x7)
-#define LTC6953_OR0_MD_DIV_SHIFT (0)
-
-#define LTC6953_OR1_SRQEN (1<<7)
-#define LTC6953_OR1_OINV (1<<4)
-
-#define LTC6953_OR1_MODE_MASK (0x60)
-#define LTC6953_OR1_MODE_SHIFT (5)
 
 int ltc6953_set_pdown( struct ltc695x_device *dev, int out, int pd )
 {
@@ -148,6 +130,26 @@ int ltc6953_set_srqen( struct ltc695x_device *dev, int output, int en )
         or1 &= ~LTC6953_OR1_SRQEN; // enable sync feature
 
     ltc695x_write( dev, base + 1, or1 );
+
+    return 0;
+}
+
+int ltc6950_set_syncen( struct ltc695x_device *dev, uint32_t out_mask )
+{
+
+    int i;
+
+    for(i=0;i<5;i++)
+    {
+        uint8_t r = ltc695x_read( dev, 0xc + 2 * i );
+
+        if(  out_mask & ( 1<<i ) )
+            r |= 0x80; // set the SYNC_EN bit
+        else
+            r &= ~0x80;
+
+        ltc695x_write( dev, 0xc + 2 * i, r );
+    }
 
     return 0;
 }
