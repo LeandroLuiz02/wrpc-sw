@@ -1527,6 +1527,14 @@ static int ertm14_clkab_sync_task(void)
     uint8_t *stateA = ertm14_current_state->clka_sync_state;
     uint8_t *stateB = ertm14_current_state->clkb_sync_state;
 
+// OK, I'm commenting this one out at the request of the RF guys - we have reduced the choice of
+// CLKAB frequencies to the integer multiplies of 62.5 MHz, so that no matter how many times the WR link
+// is established, once synced during startup, CLKA/B edges will be always synchronous to the WR PPS.
+
+// This prevents the 2ms-long squelch of the CLKA/B outputs (imposed by the LTC6953 chip), which causes
+// the SIS83k boards clocked using the eRTM to reset due to loss of clock.
+
+/*
     if( evt == WRC_EVENT_TIMING_UP )
     {
         int i;
@@ -1538,7 +1546,7 @@ static int ertm14_clkab_sync_task(void)
             stateB[i] = ERTM14_CLK_SYNC_STATE_RESTART;
         }
     }
-
+*/
     uint64_t secs;
     uint32_t nsecs;
 
