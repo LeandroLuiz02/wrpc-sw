@@ -1465,7 +1465,8 @@ static int rf_nco_sync_fsm( int is_ref, struct ertm14_dds_state *state, uint32_t
 
             if( trigd )
             {
-                //led_action( is_ref ? &board.leds.ref : &board.leds.lo, LED_COLOR_1, LED_BLINK_SINGLE_NEGATIVE );
+                led_action( is_ref ? &board.leds.ref : &board.leds.lo, LED_COLOR_1, LED_BLINK_SINGLE_NEGATIVE );
+                led_action( is_ref ? &board.leds.ref : &board.leds.lo, LED_COLOR_2, LED_OFF );
                 board_dbg("nco_sync[%s]: triggered!\n", name);
                 rf_nco_sync_arm_channel( state, ioupdate_channel );
                 state->sync_state = ERTM14_CLK_SYNC_STATE_READY;
@@ -1482,8 +1483,8 @@ static int rf_nco_sync_fsm( int is_ref, struct ertm14_dds_state *state, uint32_t
 
             if( trigd )
             {
-                //led_action( is_ref ? &board.leds.ref : &board.leds.lo, LED_COLOR_1, LED_BLINK_SINGLE_NEGATIVE );
-
+                led_action( is_ref ? &board.leds.ref : &board.leds.lo, LED_COLOR_1, LED_BLINK_SINGLE_NEGATIVE );
+                led_action( is_ref ? &board.leds.ref : &board.leds.lo, LED_COLOR_2, LED_OFF );
                 rf_nco_sync_arm_channel( state, ioupdate_channel );
                 state->sync_state = ERTM14_CLK_SYNC_STATE_READY;
             }
@@ -1741,6 +1742,9 @@ static void ertm14_init_leds(void)
 
     led_create( &board.leds.sync, &pin_led_sync_green, &pin_led_sync_red, LED_TYPE_DUAL_COLOR, LED_OFF );
     led_set_blink_timing( &board.leds.sync, 1000, 500 );
+    led_set_blink_timing( &board.leds.lo, 50, 50 );
+    led_set_blink_timing( &board.leds.ref, 50, 50 );
+
     led_action( &board.leds.sync, LED_COLOR_1, LED_BLINK );
 }
 
@@ -2053,9 +2057,6 @@ int ertm14_low_level_init(void)
     board.mode |= ERTM14_MODE_WITHOUT_ERTM15;
 #endif
 
-
-    leds_init();
-
     /* apply a default, sane configuration (initialize the config struct) */
     ertm14_config_init();
 
@@ -2068,6 +2069,7 @@ int ertm14_low_level_init(void)
     gen_gpio_out(&pin_main_xo_en_n, 0);
 
     x595_gpio_create ( &board.gpio_ertm15_leds, 1, &pin_ertm15_leds_updtclk, &pin_ertm15_leds_shftclk, NULL, &pin_ertm15_leds_ser);
+    leds_init();
 
     /* initialize the SPI bus for the main PLL (IC?) */
     bb_spi_create ( &board.spi_pll_main,
