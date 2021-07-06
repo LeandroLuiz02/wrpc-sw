@@ -27,6 +27,7 @@
 #include "dev/gpio.h"
 #include "dev/leds.h"
 #ifndef BOARD_MAX_LEDS
+#warning Please define BOARD_MAX_LEDS!
 #define BOARD_MAX_LEDS 1
 #endif
 
@@ -86,6 +87,8 @@ static void led_update_single(struct led_device *led)
 
     for (i = 0; i < n; i++)
     {
+        int32_t t = (timer_get_tics() - led->start_tics);
+
         switch (led->state[i])
         {
         case LED_ON:
@@ -96,24 +99,25 @@ static void led_update_single(struct led_device *led)
             break;
 
         case LED_BLINK_SINGLE:
+        {
+            gen_gpio_out(led->pins[i], led->type & LED_TYPE_INVERT ? 0 : 1 );
+            if( t > led->blink_period )
+                led->state[i] = LED_OFF;
+            break;
+        }
         case LED_BLINK_SINGLE_NEGATIVE:
+        {
+            gen_gpio_out(led->pins[i], led->type & LED_TYPE_INVERT ? 1 : 0 );
+            if( t > led->blink_period )
+                led->state[i] = LED_ON;
+            break;
+        }
         case LED_BLINK:
         {
-            int32_t t = (timer_get_tics() - led->start_tics);
-            int v = 1;
+            int v;
 
-            if (t > led->blink_period && led->state[i] == LED_BLINK_SINGLE)
-            {
-                led->state[i] = LED_OFF;
-                gen_gpio_out(led->pins[i], led->type & LED_TYPE_INVERT ? 1 : 0);
-            }
-            else if (t > led->blink_period && led->state[i] == LED_BLINK_SINGLE_NEGATIVE)
-            {
-                led->state[i] = LED_ON;
-                gen_gpio_out(led->pins[i], led->type & LED_TYPE_INVERT ? 1 : 0);
-            }
-            else
-            {
+            if( led->blink_period == 0 )
+                break;
 
                 t %= led->blink_period;
                 v = t < led->blink_period_on ? 1 : 0;
@@ -121,7 +125,7 @@ static void led_update_single(struct led_device *led)
                     v = 1 - v;
 
                 gen_gpio_out(led->pins[i], v);
-            }
+
             break;
         }
 
