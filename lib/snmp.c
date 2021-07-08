@@ -1077,7 +1077,7 @@ static int get_value(uint8_t *buf, uint8_t asn, void *p)
 	    snmp_verbose("%s: %s len %d\n", __func__, (char *)p, *len);
 	    break;
 	case ASN_IPADDRESS:
-	    *len = IP_ADDR_LEN;
+	    *len = INET_ALEN;
 	    memcpy(oid_data, p, *len);
 	    format_ip(str_buf, p);
 	    snmp_verbose("%s: %s len %d\n", __func__, str_buf, len);
@@ -1371,7 +1371,7 @@ static int set_value(uint8_t *set_buff, struct snmp_oid *obj, void *p)
 	    snmp_verbose("%s: %s len %d\n", __func__, (char *)p, len);
 	    break;
 	case ASN_IPADDRESS:
-	    if (len != IP_ADDR_LEN)
+	    if (len != INET_ALEN)
 		return -SNMP_ERR_BADVALUE;
 	    memcpy(p, oid_data, len);
 	    format_ip(str_buf, p);
