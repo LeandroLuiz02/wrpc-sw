@@ -23,6 +23,8 @@
 #define HAS_SFP_DOM 0
 #endif
 
+#define SFP_DOM_UPDATE_TICK_INTERVAL 1000
+
 #define WRC_G_SFP_VERSION 1
 
 #define SFP_NOT_MATCHED 1

@@ -85,13 +85,12 @@ int verify_checksum(uint8_t *mem, int from, int to)
 
 int sfp_dom_update(void)
 {
-	extern uint32_t uptime_sec;
-	static uint32_t last_update;
+	static uint32_t sfp_dom_last_update_tick;
 
-	if (last_update == uptime_sec)
+	if (wrc_task_not_yet(&sfp_dom_last_update_tick,
+			     SFP_DOM_UPDATE_TICK_INTERVAL)) {
 		return 0;
-		
-	last_update = uptime_sec;
+	}
 
 	if (!(sfp_header.diagnostic_monitoring_type & SFP_DIAG_IMPLEMENTED)) {
 		return 0;
