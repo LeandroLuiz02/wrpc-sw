@@ -54,10 +54,10 @@ load snmp_test_helpers
   helper_snmpget wrpcPtpConfigSfpPn.0 "TEST sfp1"
 }
 
-@test "set wrpcPtpConfigSfpPn with too long value (erorr from target)" {
+@test "set wrpcPtpConfigSfpPn with too long value (error from target)" {
   # set known value first
   helper_snmpset wrpcPtpConfigSfpPn.0 "TEST sfp2"
-  # set too long, bad length (erorr from target)
+  # set too long, bad length (error from target)
   run snmpset $SNMP_OPTIONS_NO_M $TARGET_IP .1.3.6.1.4.1.96.101.1.6.3.0 s "0123456789012345678"
   echo $status
   [ "$status" -eq 2 ]
@@ -68,7 +68,7 @@ load snmp_test_helpers
 @test "set wrong type of wrpcPtpConfigSfpPn" {
   # set known value first
   helper_snmpset wrpcPtpConfigSfpPn.0 "TEST sfp3"
-  # set too long, bad length (erorr from target)
+  # set too long, bad length (error from target)
   run snmpset $SNMP_OPTIONS_NO_M $TARGET_IP .1.3.6.1.4.1.96.101.1.6.3.0 i "012345678"
   echo $status
   [ "$status" -eq 2 ]
@@ -118,14 +118,12 @@ load snmp_test_helpers
 }
 
 
-@test "add 4 sfps to the database" {
+@test "add 3 sfps to the database" {
   # following entries should be written to the database
-  # unfortunately it is not possible to verify these entries now via snmp
   # sfp show
   # 1: PN:test PN1         dTx:    11112 dRx:    11113 alpha:    11114
   # 2: PN:test PN2         dTx:    22223 dRx:    22224 alpha:    22225
   # 3: PN:test PN3         dTx:    33334 dRx:    33335 alpha:    33336
-  # 4: PN:test PN4         dTx:    44445 dRx:    44446 alpha:    44447
 
   # erase database first
   helper_erase_sfp_database
@@ -166,28 +164,28 @@ load snmp_test_helpers
   result="$(snmpset $SNMP_OPTIONS $TARGET_IP wrpcPtpConfigApply.0 = writeToFlashGivenSfp | grep -e "applySuccessful" -e "applySuccessfulMatchFailed" | wc -l)"
   [ "$result" -eq 1 ]
 
-  #set delta TX for SFP
-  helper_snmpset wrpcPtpConfigDeltaTx.0 "44445"
-  #set delta RX for SFP
-  helper_snmpset wrpcPtpConfigDeltaRx.0 "44446"
-  #set delta Alpha for SFP
-  helper_snmpset wrpcPtpConfigAlpha.0 "44447"
-  #set PN of SFP
-  helper_snmpset wrpcPtpConfigSfpPn.0 "test PN4"
-  # add sfp to the database, we don't care if match was successful
-  result="$(snmpset $SNMP_OPTIONS $TARGET_IP wrpcPtpConfigApply.0 = writeToFlashGivenSfp | grep -e "applySuccessful" -e "applySuccessfulMatchFailed" | wc -l)"
-  [ "$result" -eq 1 ]
+  # check the sfp database content
+  helper_snmpget wrpcSfpPn.1 "test PN1"
+  helper_snmpget wrpcSfpDeltaTx.1 "11112"
+  helper_snmpget wrpcSfpDeltaRx.1 "11113"
+  helper_snmpget wrpcSfpAlpha.1 "11114"
+  helper_snmpget wrpcSfpPn.2 "test PN2"
+  helper_snmpget wrpcSfpDeltaTx.2 "22223"
+  helper_snmpget wrpcSfpDeltaRx.2 "22224"
+  helper_snmpget wrpcSfpAlpha.2 "22225"
+  helper_snmpget wrpcSfpPn.3 "test PN3"
+  helper_snmpget wrpcSfpDeltaTx.3 "33334"
+  helper_snmpget wrpcSfpDeltaRx.3 "33335"
+  helper_snmpget wrpcSfpAlpha.3 "33336"
 }
 
 
-@test "add 5 sfps to the database" {
-  # following entries should be written to the database, 5th should generate error
-  # unfortunately it is not possible to verify these entries now via snmp
+@test "add 4 sfps to the database (one to much)" {
+  # following entries should be written to the database, 4th should generate error
   # sfp show
   # 1: PN:test PN1         dTx:    11112 dRx:    11113 alpha:    11114
   # 2: PN:test PN2         dTx:    22223 dRx:    22224 alpha:    22225
   # 3: PN:test PN3         dTx:    33334 dRx:    33335 alpha:    33336
-  # 4: PN:test PN4         dTx:    44445 dRx:    44446 alpha:    44447
 
   # erase database first
   helper_erase_sfp_database
@@ -235,32 +233,34 @@ load snmp_test_helpers
   helper_snmpset wrpcPtpConfigAlpha.0 "44447"
   #set PN of SFP
   helper_snmpset wrpcPtpConfigSfpPn.0 "test PN4"
-  # add sfp to the database, we don't care if match was successful
-  result="$(snmpset $SNMP_OPTIONS $TARGET_IP wrpcPtpConfigApply.0 = writeToFlashGivenSfp | grep -e "applySuccessful" -e "applySuccessfulMatchFailed" | wc -l)"
+  # add sfp to the database, it is full now. "applyFailedI2CError" is returned when SFPS_MAX is more than SDBFS can actually keep
+  result="$(snmpset $SNMP_OPTIONS $TARGET_IP wrpcPtpConfigApply.0 = writeToFlashGivenSfp | grep -e "applyFailedDBFull" -e "applyFailedI2CError" | wc -l)"
+  snmpset $SNMP_OPTIONS $TARGET_IP wrpcPtpConfigApply.0 = writeToFlashGivenSfp > aaa.txt
+
   [ "$result" -eq 1 ]
 
-  #set delta TX for SFP
-  helper_snmpset wrpcPtpConfigDeltaTx.0 "55556"
-  #set delta RX for SFP
-  helper_snmpset wrpcPtpConfigDeltaRx.0 "55557"
-  #set delta Alpha for SFP
-  helper_snmpset wrpcPtpConfigAlpha.0 "55558"
-  #set PN of SFP
-  helper_snmpset wrpcPtpConfigSfpPn.0 "test PN5"
-  # add sfp to the database, it is full now
-  result="$(snmpset $SNMP_OPTIONS $TARGET_IP wrpcPtpConfigApply.0 = writeToFlashGivenSfp | grep "applyFailedDBFull" | wc -l)"
-  [ "$result" -eq 1 ]
+  helper_snmpget wrpcSfpPn.1 "test PN1"
+  helper_snmpget wrpcSfpDeltaTx.1 "11112"
+  helper_snmpget wrpcSfpDeltaRx.1 "11113"
+  helper_snmpget wrpcSfpAlpha.1 "11114"
+  helper_snmpget wrpcSfpPn.2 "test PN2"
+  helper_snmpget wrpcSfpDeltaTx.2 "22223"
+  helper_snmpget wrpcSfpDeltaRx.2 "22224"
+  helper_snmpget wrpcSfpAlpha.2 "22225"
+  helper_snmpget wrpcSfpPn.3 "test PN3"
+  helper_snmpget wrpcSfpDeltaTx.3 "33334"
+  helper_snmpget wrpcSfpDeltaRx.3 "33335"
+  helper_snmpget wrpcSfpAlpha.3 "33336"
 }
 
 
-@test "add 4 sfps to the database, test replacement" {
-  # following entries should be written to the database, 5th should replace second entry
-  # unfortunately it is not possible to verify these entries now via snmp
+@test "add 3 sfps to the database, test replacement" {
+  # following entries should be written to the database, 4th should replace second entry
+  # unfortunately it is not possible to verify these entries now via snmp (edit: it is possible)
   # sfp show
   # 1: PN:test PN1         dTx:    11112 dRx:    11113 alpha:    11114
-  # 2: PN:test PN2         dTx:    22223 dRx:    22224 alpha:    22225
+  # 2: PN:test PN2         dTx:    99991 dRx:    99992 alpha:    99993
   # 3: PN:test PN3         dTx:    33334 dRx:    33335 alpha:    33336
-  # 4: PN:test PN4         dTx:    44445 dRx:    44446 alpha:    44447
 
   # erase database first
   helper_erase_sfp_database
@@ -301,27 +301,28 @@ load snmp_test_helpers
   [ "$result" -eq 1 ]
 
   #set delta TX for SFP
-  helper_snmpset wrpcPtpConfigDeltaTx.0 "44445"
+  helper_snmpset wrpcPtpConfigDeltaTx.0 "99991"
   #set delta RX for SFP
-  helper_snmpset wrpcPtpConfigDeltaRx.0 "44446"
+  helper_snmpset wrpcPtpConfigDeltaRx.0 "99992"
   #set delta Alpha for SFP
-  helper_snmpset wrpcPtpConfigAlpha.0 "44447"
-  #set PN of SFP
-  helper_snmpset wrpcPtpConfigSfpPn.0 "test PN4"
-  # add sfp to the database, we don't care if match was successful
-  result="$(snmpset $SNMP_OPTIONS $TARGET_IP wrpcPtpConfigApply.0 = writeToFlashGivenSfp | grep -e "applySuccessful" -e "applySuccessfulMatchFailed" | wc -l)"
-  [ "$result" -eq 1 ]
-
-  #set delta TX for SFP
-  helper_snmpset wrpcPtpConfigDeltaTx.0 "99999"
-  #set delta RX for SFP
-  helper_snmpset wrpcPtpConfigDeltaRx.0 "99999"
-  #set delta Alpha for SFP
-  helper_snmpset wrpcPtpConfigAlpha.0 "99999"
+  helper_snmpset wrpcPtpConfigAlpha.0 "99993"
   #set PN of SFP
   helper_snmpset wrpcPtpConfigSfpPn.0 "test PN2"
   # add sfp to the database, it is full now
   result="$(snmpset $SNMP_OPTIONS $TARGET_IP wrpcPtpConfigApply.0 = writeToFlashGivenSfp | grep -e "applySuccessful" -e "applySuccessfulMatchFailed" | wc -l)"
   [ "$result" -eq 1 ]
+
+  helper_snmpget wrpcSfpPn.1 "test PN1"
+  helper_snmpget wrpcSfpDeltaTx.1 "11112"
+  helper_snmpget wrpcSfpDeltaRx.1 "11113"
+  helper_snmpget wrpcSfpAlpha.1 "11114"
+  helper_snmpget wrpcSfpPn.2 "test PN2"
+  helper_snmpget wrpcSfpDeltaTx.2 "99991"
+  helper_snmpget wrpcSfpDeltaRx.2 "99992"
+  helper_snmpget wrpcSfpAlpha.2 "99993"
+  helper_snmpget wrpcSfpPn.3 "test PN3"
+  helper_snmpget wrpcSfpDeltaTx.3 "33334"
+  helper_snmpget wrpcSfpDeltaRx.3 "33335"
+  helper_snmpget wrpcSfpAlpha.3 "33336"
 }
 
