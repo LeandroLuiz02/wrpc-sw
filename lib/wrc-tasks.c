@@ -92,8 +92,10 @@ struct wrc_task* wrc_task_create( const char *name, void (*init)(void), int (*jo
 			t = &tasks[i];
 			break;
 		}
-	if(!t)
+	if(!t) {
+		pp_printf("Task %s not created!\n", name);
 		return NULL;
+	}
 
 	t->used = 1;
 	t->init = init;
