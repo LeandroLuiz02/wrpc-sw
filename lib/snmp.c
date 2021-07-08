@@ -1445,7 +1445,7 @@ static int set_ptp_config(uint8_t *buf, struct snmp_oid *obj)
 		*apply_mode = applySuccessful;
 		break;
 	case writeToFlashCurrentSfp:
-		memcpy(snmp_ptp_config.pn, sfp_pn, SFP_PN_LEN);
+		memcpy(snmp_ptp_config.pn, sfp_info.sfp_params.pn, SFP_PN_LEN);
 		/* continue with writeToFlashGivenSfp */
 	case writeToFlashGivenSfp:
 		if (snmp_ptp_config.pn[0] == '\0') { /* empty PN */
