@@ -259,7 +259,7 @@ void lldp_init(void)
 
 int lldp_poll(void)
 {
-	static int start_tics_lldp;
+	static uint32_t lldp_next_run_ticks;
 	uint8_t new_ipWR[4];
 	static uint8_t old_ipWR[4];
 	uint8_t new_mac[ETH_ALEN];
@@ -271,11 +271,9 @@ int lldp_poll(void)
 		return 0;
 
 	/* periodic tasks */
-	if (timer_get_tics() - start_tics_lldp < LLDP_TX_TICK_INTERVAL) {
+	if (wrc_task_not_yet(&lldp_next_run_ticks, LLDP_TX_TICK_INTERVAL)) {
 		return 0;
 	}
-
-	start_tics_lldp = timer_get_tics();
 
 	ep_get_mac_addr(&wrc_endpoint_dev, new_mac);
 	if (HAS_IP) {
