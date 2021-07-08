@@ -273,7 +273,9 @@ void redraw_gui(void)
 int wrc_mon_gui(void)
 {
 	static uint32_t last_servo_count;
+	uint32_t now;
 	struct pp_servo *s = SRV(ppg->pp_instances);
+
 	/* print new values only if time elapsed or servo's update_count
 	 * increased */
 	if (prev_gui_description != gui_description) {
@@ -291,11 +293,12 @@ int wrc_mon_gui(void)
 	}
 
 	/* update on timeout or servo update */
-	if (time_before(timer_get_tics(), next_update_ticks)
+	now = timer_get_tics();
+	if (time_before(now, next_update_ticks)
 	    && last_servo_count == s->update_count)
 		return 0;
 
-	next_update_ticks = timer_get_tics() + WRC_MONITOR_REFRESH_PERIOD;
+	next_update_ticks = now + WRC_MONITOR_REFRESH_PERIOD;
 	last_servo_count = s->update_count;
 	prev_gui_description = gui_description;
 	gui_description = DESCRIPTION_MAIN;
