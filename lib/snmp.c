@@ -568,7 +568,9 @@ static struct snmp_oid oid_array_wrpcAuxRwTable[] = {
 static struct snmp_oid_limb oid_limb_array[] = {
 	OID_LIMB_FIELD(oid_wrpcVersionGroup,     func_group, oid_array_wrpcVersionGroup),
 	OID_LIMB_FIELD(oid_wrpcTimeGroup,        func_group, oid_array_wrpcTimeGroup),
+#ifdef CONFIG_TEMP_SENSORS
 	OID_LIMB_FIELD(oid_wrpcTemperatureTable, func_table, oid_array_wrpcTemperatureTable),
+#endif
 	OID_LIMB_FIELD(oid_wrpcSpllStatusGroup,  func_group, oid_array_wrpcSpllStatusGroup),
 	OID_LIMB_FIELD(oid_wrpcPtpGroup,         func_group, oid_array_wrpcPtpGroup),
 	OID_LIMB_FIELD(oid_wrpcPtpConfigGroup,   func_group, oid_array_wrpcPtpConfigGroup),
@@ -1136,7 +1138,7 @@ static int get_i32sat_pp(uint8_t *buf, struct snmp_oid *obj)
 
 static int get_temp(uint8_t *buf, struct snmp_oid *obj)
 {
-	struct wrc_onetemp *p;
+	struct wrc_temp_sensor *p;
 	int l = 0, i = TABLE_FIRST_ROW;
 	int32_t t;
 	int row;
@@ -1852,6 +1854,8 @@ static int snmp_respond(uint8_t *buf)
 		(void) oid_wrpcInitScriptConfigGroup;
 		oid_array_wrpcSdbGroup[0].oid_len = 0;
 		(void) oid_wrpcSdbGroup;
+		oid_array_wrpcTemperatureTable[0].oid_len = 0;
+		(void) oid_wrpcTemperatureTable;
 		oid_array_wrpcNetconsoleGetGroup[0].oid_len = 0;
 		(void) oid_wrpcNetconsoleGetGroup;
 		oid_array_wrpcNetconsoleSetGroup[0].oid_len = 0;
