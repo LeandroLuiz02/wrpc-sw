@@ -100,9 +100,23 @@
 #define TAI_NUM (void *) (TAI_MASK | TIME_NUM)
 #define UPTIME_NUM (void *) (UPTIME_MASK | TIME_NUM)
 
+#define PTP_SERVO_STATE_N_STANDARD_PTP 99
+
 /* defines used by get_servo function */
-#define SERVO_UPDATE_TIME (void *) 1
-#define SERVO_ASYMMETRY (void *) 2
+#define SERVO_STATEN          (void *) 1
+#define SERVO_CLOCKOFFSET     (void *) 2
+#define SERVO_SKEW            (void *) 3
+#define SERVO_RTT             (void *) 4
+#define SERVO_UPDATE_TIME     (void *) 5
+#define SERVO_DELTA_TX_M      (void *) 6
+#define SERVO_DELTA_RX_M      (void *) 7
+#define SERVO_DELTA_TX_S      (void *) 8
+#define SERVO_DELTA_RX_S      (void *) 9
+#define SERVO_N_ERR_STATE     (void *) 10
+#define SERVO_N_ERR_OFFSET    (void *) 11
+#define SERVO_N_ERR_DELTA_RTT (void *) 12
+#define SERVO_ASYMMETRY       (void *) 13
+
 
 /* defines used by get_port function */
 #define PORT_LINK_STATUS (void *) 1
@@ -256,7 +270,6 @@ static uint32_t aux_diag_reg_rw_num;
 
 
 extern struct pp_instance ppi_static;
-static struct wr_servo_state *wr_s_state;
 
 extern char *wrc_hw_name;
 /* __DATE__ and __TIME__ is already stored in struct spll_stats stats, but
@@ -372,7 +385,7 @@ static uint8_t oid_wrpcPtpRTTErrCnt[] =          {20,0};
 static uint8_t oid_wrpcPtpAsymmetry[] =          {22,0};
 static uint8_t oid_wrpcPtpTX[] =                 {23,0};
 static uint8_t oid_wrpcPtpRX[] =                 {24,0};
-static uint8_t oid_wrpcPtpAlpha[] =              {26,0};
+static uint8_t oid_wrpcPtpAlpha64[] =            {27,0};
 
 /* wrpcPtpConfigGroup */
 static uint8_t oid_wrpcPtpConfigRestart[] =      {1,0};
@@ -462,23 +475,23 @@ static struct snmp_oid oid_array_wrpcSpllStatusGroup[] = {
 
 /* wrpcPtpGroup */
 static struct snmp_oid oid_array_wrpcPtpGroup[] = {
-	OID_FIELD_STRUCT(oid_wrpcPtpServoStateN,     get_pp,       NO_SET,   ASN_INTEGER,   struct wr_servo_state, &wr_s_state, state),
-	OID_FIELD_STRUCT(oid_wrpcPtpClockOffsetPsHR, get_i32sat_pp,NO_SET,   ASN_INTEGER,   struct wr_servo_state, &wr_s_state, offset),
-	OID_FIELD_STRUCT(oid_wrpcPtpSkew,            get_i32sat_pp,NO_SET,   ASN_INTEGER,   struct wr_servo_state, &wr_s_state, skew),
-	OID_FIELD_STRUCT(oid_wrpcPtpRTT,             get_pp,       NO_SET,   ASN_COUNTER64, struct wr_servo_state, &wr_s_state, picos_mu),
-	OID_FIELD_STRUCT(oid_wrpcPtpServoUpdates,    get_pp,       NO_SET,   ASN_COUNTER,   struct wr_servo_state, &wr_s_state, update_count),
+	OID_FIELD_VAR(   oid_wrpcPtpServoStateN,     get_servo,    NO_SET,   ASN_INTEGER,   SERVO_STATEN), /* add standardPTP(99)? */
+	OID_FIELD_VAR(   oid_wrpcPtpClockOffsetPsHR, get_servo,    NO_SET,   ASN_INTEGER,   SERVO_CLOCKOFFSET),
+	OID_FIELD_VAR(   oid_wrpcPtpSkew,            get_servo,    NO_SET,   ASN_INTEGER,   SERVO_SKEW),
+	OID_FIELD_VAR(   oid_wrpcPtpRTT,             get_servo,    NO_SET,   ASN_COUNTER64, SERVO_RTT),
+	OID_FIELD_STRUCT(oid_wrpcPtpServoUpdates,    get_pp,       NO_SET,   ASN_COUNTER,   struct pp_servo, &ppi_static.servo, update_count),
 	OID_FIELD_VAR(   oid_wrpcPtpServoUpdateTime, get_servo,    NO_SET,   ASN_COUNTER64, SERVO_UPDATE_TIME),
-	OID_FIELD_STRUCT(oid_wrpcPtpDeltaTxM,        get_pp,       NO_SET,   ASN_INTEGER,   struct wr_servo_state, &wr_s_state, delta_tx_m),
-	OID_FIELD_STRUCT(oid_wrpcPtpDeltaRxM,        get_pp,       NO_SET,   ASN_INTEGER,   struct wr_servo_state, &wr_s_state, delta_rx_m),
-	OID_FIELD_STRUCT(oid_wrpcPtpDeltaTxS,        get_pp,       NO_SET,   ASN_INTEGER,   struct wr_servo_state, &wr_s_state, delta_tx_s),
-	OID_FIELD_STRUCT(oid_wrpcPtpDeltaRxS,        get_pp,       NO_SET,   ASN_INTEGER,   struct wr_servo_state, &wr_s_state, delta_rx_s),
-	OID_FIELD_STRUCT(oid_wrpcPtpServoStateErrCnt,get_pp,       NO_SET,   ASN_COUNTER,   struct wr_servo_state, &wr_s_state, n_err_state),
-	OID_FIELD_STRUCT(oid_wrpcPtpClockOffsetErrCnt,get_pp,      NO_SET,   ASN_COUNTER,   struct wr_servo_state, &wr_s_state, n_err_offset),
-	OID_FIELD_STRUCT(oid_wrpcPtpRTTErrCnt,       get_pp,       NO_SET,   ASN_COUNTER,   struct wr_servo_state, &wr_s_state, n_err_delta_rtt),
+	OID_FIELD_VAR(   oid_wrpcPtpDeltaTxM,        get_servo,    NO_SET,   ASN_INTEGER,   SERVO_DELTA_TX_M),
+	OID_FIELD_VAR(   oid_wrpcPtpDeltaRxM,        get_servo,    NO_SET,   ASN_INTEGER,   SERVO_DELTA_RX_M),
+	OID_FIELD_VAR(   oid_wrpcPtpDeltaTxS,        get_servo,    NO_SET,   ASN_INTEGER,   SERVO_DELTA_TX_S),
+	OID_FIELD_VAR(   oid_wrpcPtpDeltaRxS,        get_servo,    NO_SET,   ASN_INTEGER,   SERVO_DELTA_RX_S),
+	OID_FIELD_VAR(   oid_wrpcPtpServoStateErrCnt,get_servo,    NO_SET,   ASN_COUNTER,   SERVO_N_ERR_STATE),
+	OID_FIELD_VAR(   oid_wrpcPtpClockOffsetErrCnt,get_servo,   NO_SET,   ASN_COUNTER,   SERVO_N_ERR_OFFSET),
+	OID_FIELD_VAR(   oid_wrpcPtpRTTErrCnt,       get_servo,    NO_SET,   ASN_COUNTER,   SERVO_N_ERR_DELTA_RTT),
 	OID_FIELD_VAR(   oid_wrpcPtpAsymmetry,       get_servo,    NO_SET,   ASN_COUNTER64, SERVO_ASYMMETRY),
 	OID_FIELD_VAR(   oid_wrpcPtpTX,              get_p,        NO_SET,   ASN_COUNTER,   &ppi_static.ptp_tx_count),
 	OID_FIELD_VAR(   oid_wrpcPtpRX,              get_p,        NO_SET,   ASN_COUNTER,   &ppi_static.ptp_rx_count),
-	OID_FIELD_STRUCT(oid_wrpcPtpAlpha,           get_pp,       NO_SET,   ASN_INTEGER,   struct wr_servo_state, &wr_s_state, fiber_fix_alpha),
+	OID_FIELD_STRUCT(oid_wrpcPtpAlpha64,         get_p,        NO_SET,   ASN_COUNTER64, asymmetryCorrectionPortDS_t, &ppi_static.asymmetryCorrectionPortDS, scaledDelayCoefficient),
 	{ 0, }
 };
 
@@ -602,12 +615,10 @@ void snmp_init(void)
 {
 	uint32_t aux_diag_id;
 	uint32_t aux_diag_ver;
+
 	/* Use UDP engine activated by function arguments  */
 	snmp_socket = ptpd_netif_create_socket(&__static_snmp_socket, NULL,
 						PTPD_SOCK_UDP, 161 /* snmp */);
-	/* TODO: check if pointer(s) is initialized already */
-	wr_s_state =
-		&((struct wr_data *)ppi_static.ext_data)->servo_state;
 	if (SNMP_AUX_DIAG_ENABLED) {
 		/* Fix ID and version of aux diag registers by values read from FPGA */
 		diag_read_info(&aux_diag_id, &aux_diag_ver, &aux_diag_reg_rw_num,
@@ -987,15 +998,74 @@ static int func_aux_diag(uint8_t *buf, uint8_t in_oid_limb_matched_len,
 static int get_servo(uint8_t *buf, struct snmp_oid *obj)
 {
 	uint64_t tmp_uint64;
+	uint32_t tmp_uint32;
+	
+	struct pp_servo *ppsi_servo;
+	struct wr_servo_ext *wr_servo;
+	struct wrh_servo_t *wrh_servo = NULL;
+	struct wr_data *wr_d;
+
+	ppsi_servo = ppi_static.servo;
 
 	switch ((int) obj->p) {
-	case (int)SERVO_ASYMMETRY:
-		tmp_uint64 = wr_s_state->picos_mu - 2LL * wr_s_state->delta_ms;
-		return get_value(buf, obj->asn, &tmp_uint64);
+	case (int)SERVO_CLOCKOFFSET:
+		tmp_uint64 = pp_time_to_picos(&ppsi_servo->offsetFromMaster);
+		return get_i32sat(buf, obj->asn, &tmp_uint64);
 	case (int)SERVO_UPDATE_TIME:
-		tmp_uint64 = ((uint64_t) wr_s_state->update_time.secs) *
+		tmp_uint64 = ((uint64_t) ppsi_servo->update_time.secs) *
 					1000000000LL
-				+ (wr_s_state->update_time.scaled_nsecs >> 16);
+				+ (ppsi_servo->update_time.scaled_nsecs >> 16);
+		return get_value(buf, obj->asn, &tmp_uint64);
+	default:
+		break;
+	}
+	if (ppi_static.protocol_extension == PPSI_EXT_WR && ppi_static.extState == PP_EXSTATE_ACTIVE) {
+		wr_d       = (struct wr_data *) ppi_static.ext_data;
+		wr_servo   = &wr_d->servo_ext;
+		wrh_servo  = &wr_d->servo;
+	} else if ((int) obj->p == (int)SERVO_STATEN) {
+		wr_servo = NULL;
+	} else 	{
+		/* non WR return 0's */
+		tmp_uint64 = 0;
+		return get_value(buf, obj->asn, &tmp_uint64);
+	}
+	
+	switch ((int) obj->p) {
+	case (int)SERVO_STATEN:
+		if (!wr_servo)
+			tmp_uint32 = PTP_SERVO_STATE_N_STANDARD_PTP;
+		else
+			tmp_uint32 = ppi_static.servo->state;
+		return get_value(buf, obj->asn, &tmp_uint32);
+	case (int)SERVO_SKEW:
+		return get_i32sat(buf, obj->asn, &wrh_servo->skew_ps);
+	case (int)SERVO_RTT:
+		tmp_uint64 = pp_time_to_picos(&wr_servo->rawDelayMM);
+		return get_value(buf, obj->asn, &tmp_uint64);
+	case (int)SERVO_DELTA_TX_M:
+		tmp_uint32 = pp_time_to_picos(&wr_servo->delta_txm);
+		return get_value(buf, obj->asn, &tmp_uint32);
+	case (int)SERVO_DELTA_RX_M:
+		tmp_uint32 = pp_time_to_picos(&wr_servo->delta_rxm);
+		return get_value(buf, obj->asn, &tmp_uint32);
+	case (int)SERVO_DELTA_TX_S:
+		tmp_uint32 = pp_time_to_picos(&wr_servo->delta_txs);
+		return get_value(buf, obj->asn, &tmp_uint32);
+	case (int)SERVO_DELTA_RX_S:
+		tmp_uint32 = pp_time_to_picos(&wr_servo->delta_rxs);
+		return get_value(buf, obj->asn, &tmp_uint32);
+	case (int)SERVO_N_ERR_STATE:
+		tmp_uint32 = wrh_servo->n_err_state;
+		return get_value(buf, obj->asn, &tmp_uint32);
+	case (int)SERVO_N_ERR_OFFSET:
+		tmp_uint32 = wrh_servo->n_err_offset;
+		return get_value(buf, obj->asn, &tmp_uint32);
+	case (int)SERVO_N_ERR_DELTA_RTT:
+		tmp_uint32 = wrh_servo->n_err_delta_rtt;
+		return get_value(buf, obj->asn, &tmp_uint32);
+	case (int)SERVO_ASYMMETRY:
+		tmp_uint64 = interval_to_picos(ppi_static.portDS->delayAsymmetry);
 		return get_value(buf, obj->asn, &tmp_uint64);
 	default:
 		break;
@@ -1848,6 +1918,7 @@ static int snmp_respond(uint8_t *buf)
 		(void) set_ptp_restart;
 		(void) set_aux_diag;
 		(void) func_aux_diag(NULL, 0, NULL, 0);
+		(void) get_i32sat_pp;
 		oid_array_wrpcAuxRwTable[0].oid_len = 0;
 		oid_array_wrpcAuxRoTable[0].oid_len = 0;
 		oid_array_wrpcInitScriptConfigGroup[0].oid_len = 0;

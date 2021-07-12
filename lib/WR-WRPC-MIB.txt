@@ -18,6 +18,10 @@ wrWrpcMIB MODULE-IDENTITY
     DESCRIPTION  "White Rabbit WRPC internal details
                  "
 
+    REVISION     "202107101700Z"
+    DESCRIPTION
+        "Add wrpcPtpAlpha64 to wrpcPtpGroup. Make wrpcPtpAlpha obsolete."
+
     REVISION     "201607061700Z"
     DESCRIPTION
         "Clean up MIB."
@@ -360,7 +364,8 @@ wrpcPtpServoStateN             OBJECT-TYPE
                                    syncSec(2),
                                    syncPhase(3),
                                    trackPhase(4),
-                                   waitOffsetStable(5)
+                                   waitOffsetStable(5),
+                                   standardPTP(99)
                                }
     MAX-ACCESS                 read-only
     STATUS                     current
@@ -536,6 +541,14 @@ wrpcPtpRx                      OBJECT-TYPE
 
 wrpcPtpAlpha                   OBJECT-TYPE
     SYNTAX                     Integer32
+    MAX-ACCESS                 read-only
+    STATUS                     obsolete
+    DESCRIPTION
+            "Alpha used by PTP"
+    ::= { wrpcPtpGroup 26 }
+
+wrpcPtpAlpha64                 OBJECT-TYPE
+    SYNTAX                     Counter64
     MAX-ACCESS                 read-only
     STATUS                     current
     DESCRIPTION
