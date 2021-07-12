@@ -6,7 +6,7 @@
 #ifndef __WRC_TASK_H__
 #define __WRC_TASK_H__
 
-#define WRC_MAX_TASKS 16
+#define WRC_MAX_TASKS 20
 
 /*
  * A task is a data structure, but currently suboptimal.
