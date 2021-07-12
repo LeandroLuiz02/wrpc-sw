@@ -12,7 +12,6 @@
  * Each OID is divided into the limb and twig part.
  * The twig part can be handled as a group or a table
  */
-#if 0
 
 #include <wrc.h>
 #include <wrpc.h>
@@ -33,6 +32,10 @@
 #include "netconsole.h"
 #include "shell.h"
 #include "storage.h"
+
+/* To be removed when RISCV is supported, for sure such macro/function will be
+ * defined somewhere */
+#define ntohl(x) (x)
 
 #define ASN_BOOLEAN	((u_char)0x01)
 #define ASN_INTEGER	((u_char)0x02)
@@ -2103,4 +2106,3 @@ int snmp_poll(void)
 	ptpd_netif_sendto(snmp_socket, &addr, buf, len, 0);
 	return 1;
 }
-#endif

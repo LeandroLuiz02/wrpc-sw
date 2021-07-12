@@ -281,11 +281,9 @@ static void create_tasks(void)
 	wrc_task_set_enable( t, is_link_up );
 #endif
 
-#if 0
 #ifdef CONFIG_SNMP
 	t = wrc_task_create( "snmp", snmp_init, snmp_poll );
 	wrc_task_set_enable( t, is_link_up );
-#endif
 #endif
 
 	wrc_task_create( "stats", NULL, wrc_log_stats );
