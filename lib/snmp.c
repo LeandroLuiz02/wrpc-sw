@@ -1920,21 +1920,21 @@ static int snmp_respond(uint8_t *buf)
 		(void) set_ptp_config;
 		(void) set_ptp_restart;
 		(void) set_aux_diag;
-		(void) func_aux_diag(NULL, 0, NULL, 0);
+		(void) func_aux_diag;
 		(void) get_i32sat_pp;
-		oid_array_wrpcAuxRwTable[0].oid_len = 0;
-		oid_array_wrpcAuxRoTable[0].oid_len = 0;
-		oid_array_wrpcInitScriptConfigGroup[0].oid_len = 0;
+		(void) oid_array_wrpcAuxRwTable;
+		(void) oid_array_wrpcAuxRoTable;
+		(void) oid_array_wrpcInitScriptConfigGroup;
 		(void) oid_wrpcInitScriptConfigGroup;
-		oid_array_wrpcSdbGroup[0].oid_len = 0;
+		(void) oid_array_wrpcSdbGroup;
 		(void) oid_wrpcSdbGroup;
-		oid_array_wrpcTemperatureTable[0].oid_len = 0;
+		(void) oid_array_wrpcTemperatureTable;
 		(void) oid_wrpcTemperatureTable;
-		oid_array_wrpcNetconsoleGetGroup[0].oid_len = 0;
+		(void) oid_array_wrpcNetconsoleGetGroup;
 		(void) oid_wrpcNetconsoleGetGroup;
-		oid_array_wrpcNetconsoleSetGroup[0].oid_len = 0;
+		(void) oid_array_wrpcNetconsoleSetGroup;
 		(void) oid_wrpcNetconsoleSetGroup;
-		oid_array_wrpcShellCmdGroup[0].oid_len = 0;
+		(void) oid_array_wrpcShellCmdGroup;
 		(void) oid_wrpcShellCmdGroup;
 	}
 
