@@ -258,6 +258,9 @@ int pp_vsprintf(char *buf, const char *fmt, va_list args)
 				/* 'z' changed to 'Z' --davidm 1/25/99 */
 				/* 't' added for ptrdiff_t */
 
+	/* avoid error that pointer is not used */
+	(void) pointer;
+
 	str = buf;
 
 	for (; *fmt ; ++fmt) {
