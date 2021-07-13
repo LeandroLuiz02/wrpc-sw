@@ -96,7 +96,7 @@ static int con_uart_put_string(struct console_device* dev, const char *s)
     if( dev->flags & CONSOLE_FLAGS_MODE_BINARY )
         return 0;
 
-    while ( c = *s++ )
+    while ( (c = *s++) )
     {
 	    if( (dev->flags & CONSOLE_FLAGS_INSERT_CRLF) &&  c == '\n')
     		suart_write_byte(&priv->uart_dev, '\r');
