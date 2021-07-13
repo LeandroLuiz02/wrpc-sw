@@ -12,7 +12,7 @@ struct wrc_global_link {
 	uint32_t version;
 	int link_up;
 	int vlan;
-	int ip_status;
+	enum ip_status ip_status;
 	uint8_t ip_addr[INET_ALEN];
 	uint8_t mac_addr[ETH_ALEN];
 };
