@@ -19,16 +19,26 @@ struct wrc_temp_group temp_sensors[WRC_MAX_TEMPERATURES];
  */
 uint32_t wrc_temp_get(char *name)
 {
-#if 0
-	struct wrc_temp_group *ta;
-	struct wrc_temp_sensor *wt;
+	struct wrc_temp_sensor *temp_sensor;
+	struct wrc_temp_group *temp_group;
+	int i;
 
-	for (ta = __temp_begin; ta < __temp_end; ta++)
-		for (wt = ta->t; wt->name; wt++) {
-		if (!strcmp(wt->name, name))
-			return wt->t;
+	if (!name)
+	    return TEMP_INVALID;
+
+	/* get search all temperature groups */
+	for (i = 0; i < WRC_MAX_TEMPERATURES; i++) {
+		temp_group = &temp_sensors[i];
+
+		/* search all sensors within group */
+		for (temp_sensor = temp_group->t; temp_sensor->name;
+		     temp_sensor++) {
+			if (!strcmp(name, temp_sensor->name)) {
+				return temp_sensor->t;
+			}
+		}
 	}
-#endif
+
 	return TEMP_INVALID;
 }
 
