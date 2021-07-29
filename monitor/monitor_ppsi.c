@@ -343,33 +343,18 @@ void print_main_description(void)
 	pp_printf(      "Iface |        MAC        |       IP (source)       |    RX   |    TX   | VLAN\n");
 	pp_printf(      "------+-------------------+-------------------------+---------+---------+-----\n");
 
-<<<<<<< HEAD
-	for (i = 0 ; i < ndevs; i++) {
-		/* reuse the string above, strings between "|" will be overwritten anyway */
-		pp_printf("Iface |        MAC        |       IP (source)       |    RX   |    TX   | VLAN\n");
-=======
 		if( i == 0 ) // fixme: independent rx/tx stats for each interface
 		{
 			int rx_er;
 			minic_get_stats(&tx, &rx, &rx_er);
 			cprintf(C_GREY, "(RX: %d, TX: %d, RX errors: %d)", rx, tx, rx_er);
 		}
->>>>>>> minic: improve error reporting
 	}
 
-<<<<<<< HEAD
-	pp_printf("\n----- HAL ---|---------------- PPSI -------------------------------------------------\n");
-	pp_printf(  " Iface| Freq |    Config    | MAC of peer port  |    PTP/EXT/PDETECT States    | Pro \n");
-	pp_printf(  "------+------+--------------+-------------------+------------------------------+-----\n");
-	for (i = 0 ; i < ndevs; i++) {
-		/* reuse the string above, strings between "|" will be overwritten anyway */
-		pp_printf(" Iface| Freq |    Config    | MAC of peer port  |    PTP/EXT/PDETECT States    | Pro \n");
-=======
 	spll_get_num_channels(NULL, &n_out);
 
 	if (!state.state) {
 		return 1;
->>>>>>> monitor: fix off-by-one error in counting aux clocks
 	}
 
 	cprintf(C_BLUE, "Pro - Protocol mapping: V-Ethernet over "
@@ -430,216 +415,22 @@ void print_main_data(void)
 			pcprintf(9, 1, C_RED, "*%s: ", ndev->name);
 		}
 
-<<<<<<< HEAD
-		if (i == 0) /* FIXME: should be independent for each interface */
-		{
-			ep_get_mac_addr(&wrc_endpoint_dev, mac);
-			format_mac(buf, mac);
-			pcprintf(9, 9, C_MAGENTA, "%s", buf);
-			if (HAS_IP && port_up) {
-				uint8_t ip[INET_ALEN];
-
-				getIP(ip);
-				format_ip(buf, ip);
-				switch (*ip_status) {
-				case IP_TRAINING:
-					pcprintf(9, 29, C_RED,   "BOOTP running          ");
-					break;
-				case IP_OK_BOOTP:
-					pcprintf(9, 29, C_GREEN, "%16s(BOOTP)", buf);
-					break;
-				case IP_OK_STATIC:
-					pcprintf(9, 29, C_GREEN, "%15s(static)", buf);
-					break;
-				}
-			} else
-				pcprintf(9, 29, C_GREEN, "                       ");
-
-			minic_get_stats(&tx, &rx);
-			pcprintf(9, 55, C_MAGENTA, "%7d", rx);
-			pprintf(9, 65, "%7d", tx);
-			pprintf(9, 75, "%4d", *wrc_vlan_number);
-		}
-
-	}
-	/*
-	----- HAL ---|---------------- PPSI -------------------------------------------------
-	 Iface| Freq |    Config    | MAC of peer port  |    PTP/EXT/PDETECT States    | Pro
-	------+------+--------------+-------------------+------------------------------+----- */
-
-	for (i = 0 ; i < ndevs; i++) {
-		struct wrc_netif_device *ndev = netif_get_device(i);
-		int port_up = ndev->link_state == NETIF_LINK_UP;
-		int color;
-
-		if (port_up) {
-			pcprintf(14, 1, C_GREEN, " %s: ", ndev->name);
-		} else {
-			pcprintf(14, 1, C_RED,   "*%s: ", ndev->name);
-		}
-
-		/* FIXME: should be independent for each interface */
-		wrpc_get_port_state(&state, NULL);
-
-		if (state.locked)
-			pcprintf(14, 9, C_GREEN, "Lock");
-		else
-			pcprintf(14, 9, C_RED,   "    ");
-
-
-/* ----------------------------------------------------------------------------------------------------------------------- */
-		/*
-		 * Actually, what is interesting is the PTP state.
-		 * For this lookup, the port in ppsi shmem
-		 */
-		/* Assume one instance per port */
-		/* FIXME: add support of more ports */
-//		for (j = 0; j < ppg->nlinks; j++) {
-			{
-			char str_config[15];
-			/* so far support only for one instance */
-			struct pp_instance *ppi_pt = ppg->pp_instances;
-			int proto_extension = ppi_pt->protocol_extension;
-			struct proto_ext_info_t *pe_info = IS_PROTO_EXT_INFO_AVAILABLE(proto_extension) ? &proto_ext_info[proto_extension] :  &proto_ext_info[0] ;
-			unsigned char *p = ppi_pt->activePeer;
-			char * extension_state_name = EMPTY_EXTENSION_STATE_NAME;
-			char proto;
-			char mac_buf[20];
-
-#if 0 /* FIXME: only one instance so far */
-			if (strcmp(if_name,
-					ppi->cfg.iface_name)) {
-				/* Instance not for this interface
-				    * skip */
-				continue;
-			}
-#endif
-			// Evaluate the instance configuration
-			strcpy(str_config,"unknown");
-			if (is_slaveOnly(ppg->defaultDS)) {
-				strncpy(str_config, "slaveOnly", sizeof(str_config) - 1);
-			} else {
-				if (is_externalPortConfigurationEnabled(ppg->defaultDS)) {
-					int s = 0;
-					for (s = 0; s < sizeof(desired_states) / sizeof(struct desired_state_t); s++) {
-						if (desired_states[s].state == ppi_pt->externalPortConfigurationPortDS.desiredState) {
-							strncpy(str_config, desired_states[s].str_state, sizeof(str_config) - 1);
-							break;
-						}
-					}
-
-				} else {
-					if (is_masterOnly(ppi_pt->portDS)) {
-						strncpy(str_config, "masterOnly", sizeof(str_config) - 1);
-					} else {
-						strncpy(str_config, "auto", sizeof(str_config) - 1);
-					}
-				}
-			}
-			str_config[sizeof(str_config) - 1] = 0; // Force the string to be well terminated
-			pcprintf(14, 16, C_WHITE, "%-12s", str_config);
-
-			/* peer not implemented */
-			pprintf(14, 31, format_mac(mac_buf, p));
-
-			pcprintf(14, 51, C_GREEN, "%s/", getStateAsString(pp_instance_state_to_name, ppi_pt->state));
-			/* print extension state */
-			switch (ppi_pt->protocol_extension) {
-#if CONFIG_HAS_EXT_WR
-			case PPSI_EXT_WR :
-			{
-				portDS_t *portDS = ppi_pt->portDS;
-				struct wr_dsport *extPortDS;
-
-				extension_state_name = getStateAsString(wr_instance_extension_state, - 1); // Default value
-
-				if (portDS) {
-					if ((extPortDS = portDS->ext_dsport))
-						extension_state_name = getStateAsString(wr_instance_extension_state, extPortDS->state);
-				}
-				break;
-			}
-#endif
-#if CONFIG_HAS_EXT_L1SYNC
-			case PPSI_EXT_L1S :
-			{
-				portDS_t *portDS;
-
-				extension_state_name = getStateAsString(l1e_instance_extension_state, - 1); // Default value
-				if ((portDS = wrs_shm_follow(ppsi_head, ppi->portDS))) {
-					l1e_ext_portDS_t *extPortDS;
-
-					if ((extPortDS = wrs_shm_follow(ppsi_head, portDS->ext_dsport))) {
-							extension_state_name = getStateAsString(l1e_instance_extension_state, extPortDS->basic.L1SyncState);
-					}
-				}
-				break;
-			}
-#endif
-			}
-			pp_printf("%s/%s", extension_state_name, getStateAsString(prot_detection_state_name, ppi_pt->pdstate));
-
-			/* proto */
-			switch (ppi_pt->proto) {
-			case PPSI_PROTO_RAW:
-				proto = 'R';
-				break;
-			case PPSI_PROTO_UDP:
-				proto = 'U';
-				break;
-			case PPSI_PROTO_VLAN:
-				proto = 'V';
-				break;
-			default:
-				proto = '?';
-			}
-
-			pcprintf(14, 82, C_WHITE, "%c", proto);
-			color = extensionStateColor(ppi_pt);
-			cprintf(color, "-%c", pe_info->short_ext_name);
-		}
-/* ----------------------------------------------------------------------------------------------------------------------- */
-	}
-
-	return;
-}
-
-void print_aux_data(void)
-{
-	int n_out, i;
-	struct spll_aux_clock_status aux_stat;
-
-	spll_get_num_channels(NULL, &n_out);
-
-	for (i = 0; i < n_out - 1; i++) {
-		cprintf(C_MAGENTA, "\n\nAux clock %d status:        ", i);
-=======
 
 	for(i = 0; i <= n_out - 1; i++) {
 		cprintf(C_GREY, "Aux clock %d status:        ", i);
->>>>>>> monitor: fix off-by-one error in counting aux clocks
 
 		aux_stat = spll_get_aux_status(i);
 
 		if (aux_stat.flags & SPLL_AUX_SLAVE_ENABLED)
 			cprintf(C_GREEN, "enabled");
 
-<<<<<<< HEAD
-		if (aux_stat.flags & SPLL_AUX_TRACKING_ENABLED)
-			cprintf(C_GREEN, "tracking source");
-=======
 		if (aux_stat.flags & SPLL_AUX_MONITOR_ENABLED )
 			cprintf(C_GREEN, "monitor");
->>>>>>> softpll: rename the 'source tracking' mode to 'phase monitor', as it simply monitors the phases of the external (aux clocks) to the local WR clock
 
 		if (aux_stat.flags & SPLL_AUX_SLAVE_LOCKED)
 			cprintf(C_GREEN, ", locked");
 
-<<<<<<< HEAD
 		if (aux_stat.flags & SPLL_AUX_TRACKING_READY)
-=======
-		if( aux_stat.flags & SPLL_AUX_MONITOR_READY )
->>>>>>> softpll: rename the 'source tracking' mode to 'phase monitor', as it simply monitors the phases of the external (aux clocks) to the local WR clock
 		{
 			cprintf(C_GREEN, ", ready");
 			cprintf(C_WHITE, " (AUX-to-WR offset: %d ps)", aux_stat.phase);
@@ -814,13 +605,8 @@ void print_servo_data(struct pp_instance *ppi)
 
 int wrc_log_stats(void)
 {
-<<<<<<< HEAD
-	struct wrc_port_state state;
-	int tx, rx;
-=======
 	struct hal_port_state state;
 	int tx, rx, rx_errors;
->>>>>>> monitor: implement V2 WDIAGS fields:
 	struct spll_aux_clock_status aux_stat;
 	uint64_t sec;
 	uint32_t nsec;
@@ -952,15 +738,9 @@ int wrc_ptp_get_state( void )
 
 int wrc_wr_diags(void)
 {
-<<<<<<< HEAD
-	struct wrc_port_state ps;
-	static uint32_t last_update_tick;
-	int tx, rx;
-=======
 	struct hal_port_state ps;
 	static uint32_t last_jiffies;
 	int tx, rx, rx_errors;
->>>>>>> monitor: implement V2 WDIAGS fields:
 	uint64_t sec;
 	uint32_t nsec;
 	int n_out;
@@ -1030,6 +810,8 @@ int wrc_wr_diags(void)
 		wdiags_write_servo_state(wr_mode, servostate, ss->picos_mu,
 					 ss->delta_ms, asym, ss->offset,
 					 ss->cur_setpoint,ss->update_count, 0, 0); // fixme: add wdiags v2
+
+		wdiags_write_ptp_deltas( ss->delta_tx_m, ss->delta_rx_m, ss->delta_tx_s, ss->delta_rx_s );
 	}
 
 	/* auxiliar channels (if any) */
