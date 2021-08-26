@@ -90,11 +90,6 @@ int uart_link_send( struct uart_link* link, struct uart_packet* pkt )
     return 0;
 }
 
-#define RX_FSM_PACKET_ERROR -2
-#define RX_FSM_NO_DATA -1
-#define RX_FSM_NEED_DATA 0
-#define RX_FSM_GOT_PACKET 1
-
 static int recv_fsm( struct uart_link* link, struct uart_packet **pkt )
 {
     int rx_byte = link->recv_byte( link );
@@ -103,6 +98,15 @@ static int recv_fsm( struct uart_link* link, struct uart_packet **pkt )
         return RX_FSM_NEED_DATA;
 
     ulink_dbg( "Rx %x state %d\n", rx_byte, link->state );
+#ifndef __linux__
+if(link->state != LINK_STATE_IDLE && link->extra_verbose)
+{
+            int d = timer_get_tics() - link->ts;
+            if( d>=1 )
+                pp_printf("Choke @ %d %d\n", d, link->rx_count );
+            link->ts = timer_get_tics();
+}
+#endif
 
     switch( link->state )
     {
@@ -111,6 +115,12 @@ static int recv_fsm( struct uart_link* link, struct uart_packet **pkt )
             {
                 link->state = LINK_STATE_SYNC;
                 link->check_crc = crc_xmodem_update( 0, 0x55 );
+                #ifndef __linux__
+                if( link->extra_verbose )
+                    pp_printf("RxS %d\n", timer_get_tics() );
+
+                link->ts = timer_get_tics();
+                #endif
             }
             break;
 
@@ -148,7 +158,12 @@ static int recv_fsm( struct uart_link* link, struct uart_packet **pkt )
             else
                 link->state = LINK_STATE_PAYLOAD;
 
-            
+            #ifndef __linux__
+                if( link->extra_verbose )
+                    pp_printf("RxPL %d\n", timer_get_tics() );
+
+            //    link->ts = timer_get_tics();
+                #endif
             break;
 
         case LINK_STATE_PAYLOAD:
@@ -156,6 +171,8 @@ static int recv_fsm( struct uart_link* link, struct uart_packet **pkt )
             {
                 link->state = LINK_STATE_CRC0;
             }
+
+
 
             link->check_crc = crc_xmodem_update( link->check_crc, rx_byte);
 
@@ -184,7 +201,12 @@ static int recv_fsm( struct uart_link* link, struct uart_packet **pkt )
             else
             {
                 *pkt = &link->rx_packet;
+                #ifndef __linux__
+                if( link->extra_verbose )
+                    pp_printf("RxF %d [%d] size %d\n", timer_get_tics(), timer_get_tics()-link->ts, link->rx_count );
+                #endif
                 return RX_FSM_GOT_PACKET;
+
             }
             break;
         }
@@ -200,13 +222,23 @@ int uart_link_recv( struct uart_link* link, struct uart_packet **pkt, int timeou
     for(;;)
     {
         int ret = recv_fsm( link, pkt );
+        int delta = link->get_ms_tics( link ) - start_tics;
+
+        /* If we're waiting for more data (which is likely to come in the few next milliseconds),
+           don't preempt the loop as the global task scheduler in WRPC may return here with a lag of several milliseconds
+           causing a noticeable slowdown in commiunication (few ms accumulated per each byte received).
+           It's not the best solution (proper one would be to have polling for the exact number of bytes in the RX FIFO of the UART),
+           but works just fine for the control UART API. */
+
+        if( ret == RX_FSM_NEED_DATA && delta < link->rx_next_timeout_ms )
+            continue;
 
         if ( timeout_ms == 0 )
             return ret;
         else if( ret == RX_FSM_PACKET_ERROR || ret == RX_FSM_GOT_PACKET )
             return ret;
         else { // check timeout
-            if( link->get_ms_tics( link ) - start_tics >= timeout_ms )
+            if( delta >= timeout_ms )
             {
                 ulink_dbg( "Rx timeout expired\n");
                 uart_link_reset( link );
