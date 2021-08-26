@@ -418,6 +418,8 @@ uint16_t bswap16(uint16_t v)
     return rv;
 }
 
+//#define PROFILE_ULINK
+
 void bist_checkpoint( struct bist_stage *bist, int id, int channel, int pass )
 {
     int i;
@@ -867,6 +869,10 @@ static int control_uart_poll(void)
     {
         struct uart_packet t, *tx_pkt = &t;
 
+        #ifdef PROFILE_ULINK
+        board_dbg("UL RXReq %d ms\n", timer_get_tics() );
+        #endif
+
         /*... dispatch */
         if( pkt->ptype == ERTM14_UART_PTYPE_PING )
         {
@@ -885,7 +891,15 @@ static int control_uart_poll(void)
 	    ertm_process_psnmp(pkt, tx_pkt);
 
 	    /* we presume this is binary, snmp or not */
+        #ifdef PROFILE_ULINK
+        board_dbg("UL TXResp %d ms\n", timer_get_tics() );
+        #endif
+
             uart_link_send(&board.control_uart_link, tx_pkt);
+        #ifdef PROFILE_ULINK
+        board_dbg("UL TXDone %d ms\n", timer_get_tics() );
+        #endif
+
 	}
     }
 
@@ -2245,6 +2259,9 @@ int ertm14_low_level_init(void)
 
     board_dbg("Init Control UART Link\n");
     uart_link_create_wrpc_console( &board.control_uart_link );
+
+    board.control_uart_link.rx_next_timeout_ms = 5; // to avoid 'choking' effect
+    board.control_uart_link.extra_verbose = 0;
 
     board_dbg("Init RF transceiver & streamers\n");
 
