@@ -70,7 +70,15 @@ struct uart_link
     uint16_t rx_crc, check_crc;
     uint32_t rx_last_tics;
     struct uart_packet rx_packet;
+    int ts;
+    int extra_verbose;
+    int rx_next_timeout_ms;
 };
+
+#define RX_FSM_PACKET_ERROR -2
+#define RX_FSM_NO_DATA -1
+#define RX_FSM_NEED_DATA 0
+#define RX_FSM_GOT_PACKET 1
 
 #ifdef __linux__
 #include <unistd.h>
