@@ -386,9 +386,8 @@ def run_terminal(ser):
         a = ser.recv_nonblock()
         if (a != None):
             sys.stderr.write(chr(a))
-            # sys.stderr.write(a).decode('utf-8'))
-	    # flush is needed FIXME:
-	    # sys.stderr.flush()
+            if(chr(a) == '\n'):
+                sys.stderr.write('\r')
 
         a = os.read(sys.stdin.fileno(), 1)
         if a and (ord(a) == 1 or ord(a) == 4):
