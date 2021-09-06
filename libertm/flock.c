@@ -47,7 +47,8 @@ int ertm_mutex_release(struct ertm_status *st)
 	return flock(st->lock, LOCK_UN);
 }
 
-static int flock_main(int argc, char *argv[])
+static int __attribute__((__unused__))
+flock_main(int argc, char *argv[])
 {
 	int c;
 	struct ertm_status st, *h = &st;
