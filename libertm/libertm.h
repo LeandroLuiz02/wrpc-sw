@@ -267,6 +267,8 @@ int ertm_set_freq(struct ertm_status *handle,
 /* the following refer only to REF/LO connectors */
 int ertm_channel_enable(struct ertm_status *handle,
 		enum ertm_connector connector, int channel, int enable);		/* default disabled */
+int ertm_get_enable_state(struct ertm_status *handle,
+		enum ertm_connector connector, int channel, uint8_t *enable_state);	/* usually on/off, thence boolean */
 int ertm_get_power(struct ertm_status *handle,
 		enum ertm_connector connector, double *power);				/* power level in dBm */
 int ertm_get_channel_power(struct ertm_status *handle,
