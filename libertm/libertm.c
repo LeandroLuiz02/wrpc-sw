@@ -653,13 +653,13 @@ static int ertm_get_freq_sync_out_state(struct ertm_status *handle,
 	case ERTM_CLKA:
 		freg  = &bs->clka_freq_hz[channel];
 		ssreg = &bs->clka_sync_state[channel];
-		enable = bs->clka_enable_mask & (1<<channel);
+		enable = !!(bs->clka_enable_mask & (1<<channel));
 		// clkab_set_output_divider(ERTM14_OUT_CLKA, channel, freq);
 		break;
 	case ERTM_CLKB:
 		freg  = &bs->clkb_freq_hz[channel];
 		ssreg = &bs->clkb_sync_state[channel];
-		enable = bs->clkb_enable_mask & (1<<channel);
+		enable = !!(bs->clkb_enable_mask & (1<<channel));
 		break;
 	case ERTM_LO:
 		freg  = &bs->lo.ftw;
