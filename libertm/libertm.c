@@ -647,10 +647,6 @@ static int ertm_get_freq_sync_out_state(struct ertm_status *handle,
 	uint8_t *ssreg;
 	int enable;
 
-	/* channel param is irrelevant for lo/ref */
-	if (connector == ERTM_LO || connector == ERTM_REF) {
-		channel = ERTM_LOREF_MIN_CH;
-	}
 	if ((err = bad_inputs(handle, connector, channel)) != 0)
 		return err;
 
@@ -694,6 +690,11 @@ int ertm_get_freq(struct ertm_status *handle,
 {
 	uint32_t u;
 	void *unused1 = &u, *unused2 = &u;
+
+	/* channel param is irrelevant for lo/ref freq */
+	if (connector == ERTM_LO || connector == ERTM_REF) {
+		channel = ERTM_LOREF_MIN_CH;
+	}
 	return ertm_get_freq_sync_out_state(handle, connector, channel,
 					freq, unused1, unused2);
 }
@@ -703,6 +704,11 @@ int ertm_get_sync_state(struct ertm_status *handle,
 {
 	uint32_t u;
 	void *unused1 = &u, *unused2 = &u;
+
+	/* channel param is irrelevant for lo/ref sync state */
+	if (connector == ERTM_LO || connector == ERTM_REF) {
+		channel = ERTM_LOREF_MIN_CH;
+	}
 	return  ertm_get_freq_sync_out_state(handle, connector, channel,
 					unused1, sync_state, unused2);
 	return 0;
