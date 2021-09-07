@@ -637,14 +637,15 @@ static void update_board_config(struct ertm_status *st,
 	ertm_get_board_config(st, bs);
 }
 
-static int ertm_get_freq_sync_state(struct ertm_status *handle,
+static int ertm_get_freq_sync_out_state(struct ertm_status *handle,
 		enum ertm_connector connector, int channel,
-		uint32_t *freq, int *sync_state)
+		uint32_t *freq, int *sync_state, uint8_t *out_state)
 {
 	int err = 0;
 	struct ertm14_board_state *bs;
 	uint32_t *freg;
 	uint8_t *ssreg;
+	int enable;
 
 	/* channel param is irrelevant for lo/ref */
 	if (connector == ERTM_LO || connector == ERTM_REF) {
@@ -658,19 +659,23 @@ static int ertm_get_freq_sync_state(struct ertm_status *handle,
 	case ERTM_CLKA:
 		freg  = &bs->clka_freq_hz[channel];
 		ssreg = &bs->clka_sync_state[channel];
+		enable = bs->clka_enable_mask & (1<<channel);
 		// clkab_set_output_divider(ERTM14_OUT_CLKA, channel, freq);
 		break;
 	case ERTM_CLKB:
 		freg  = &bs->clkb_freq_hz[channel];
 		ssreg = &bs->clkb_sync_state[channel];
+		enable = bs->clkb_enable_mask & (1<<channel);
 		break;
 	case ERTM_LO:
 		freg  = &bs->lo.ftw;
 		ssreg = &bs->lo.sync_state;
+		enable = bs->lo.out_state[channel];
 		break;
 	case ERTM_REF:
 		freg  = &bs->ref.ftw;
 		ssreg = &bs->ref.sync_state;
+		enable = bs->ref.out_state[channel];
 		break;
 	default:
 		errno = EINVAL;
@@ -679,6 +684,7 @@ static int ertm_get_freq_sync_state(struct ertm_status *handle,
 	update_board_config(handle, &handle->state->board_state);
 	*freq = *freg;
 	*sync_state = *ssreg;
+	*out_state = enable;
 
 	return 0;
 }
@@ -686,15 +692,29 @@ static int ertm_get_freq_sync_state(struct ertm_status *handle,
 int ertm_get_freq(struct ertm_status *handle,
 		enum ertm_connector connector, int channel, uint32_t *freq)
 {
-	int unused;
-	return ertm_get_freq_sync_state(handle, connector, channel, freq, &unused);
+	uint32_t u;
+	void *unused1 = &u, *unused2 = &u;
+	return ertm_get_freq_sync_out_state(handle, connector, channel,
+					freq, unused1, unused2);
 }
 
 int ertm_get_sync_state(struct ertm_status *handle,
 		enum ertm_connector connector, int channel, int *sync_state)
 {
-	uint32_t unused;
-	return ertm_get_freq_sync_state(handle, connector, channel, &unused, sync_state);
+	uint32_t u;
+	void *unused1 = &u, *unused2 = &u;
+	return  ertm_get_freq_sync_out_state(handle, connector, channel,
+					unused1, sync_state, unused2);
+	return 0;
+}
+
+int ertm_get_enable_state(struct ertm_status *handle,
+		enum ertm_connector connector, int channel, uint8_t *enable_state)
+{
+	uint32_t u;
+	void *unused1 = &u, *unused2 = &u;
+	return ertm_get_freq_sync_out_state(handle, connector, channel,
+					unused1, unused2, enable_state);
 	return 0;
 }
 
