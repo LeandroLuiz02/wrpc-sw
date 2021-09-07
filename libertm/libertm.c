@@ -23,9 +23,9 @@
 
 static struct ertm_lib_version ertm_lib_versions = {
 	.lib_version =	VERSION,
-	.git_commit = GIT_VER,		
-	.git_user = GIT_USR,		
-	.git_url = GIT_URL,		
+	.git_commit = GIT_VER,
+	.git_user = GIT_USR,
+	.git_url = GIT_URL,
 };
 static char __attribute__((__unused__)) *lib_internal_version =
 	"internal_version=" GIT_VER ";" GIT_URL ";" VERSION;
@@ -116,7 +116,7 @@ static struct ertm_temperatures temperatures_defaults = {
 	50, 50, 50, 50, 50, 50, 50, 50, 50, 50, 50, 50,
 	{0, 0, 0, 0},
 };
-	
+
 static struct ertm_voltages voltages_defaults = {
 	11.9, 3.2, 1.0, 8.3, 8.3, 5.0, 11.95, 3.1,
 	{ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, },
@@ -227,7 +227,7 @@ struct ertm_status *ertm_init(const char *address)
 		errno = ENODEV;
 		return NULL;
 	}
-		
+
 	strcpy(st->connection.serial_connection, address);
 	err = uart_link_create_linux(&st->link, address, serial_speed);
 	if (err != 0) {
@@ -769,7 +769,7 @@ static int valid_clkab_freq(uint32_t freq)
 			return 1;
 	return 0;
 }
-	
+
 int ertm_set_freq(struct ertm_status *handle,
 		enum ertm_connector connector,int channel, uint32_t freq)
 {
@@ -1115,7 +1115,7 @@ int ertm_nco_reset_subscribe(struct ertm_status *handle,
 	}
 	if ((res = get_dds(bs, connector, &dds)) != 0)
 		return res;
-		
+
 	if (!((mode == ERTM14_SYNC_SOURCE_NONE) ||
 		(mode == ERTM14_SYNC_SOURCE_RF_TRIGGER) ||
 		(mode == ERTM14_SYNC_SOURCE_PPS))) {
