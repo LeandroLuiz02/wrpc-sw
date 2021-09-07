@@ -339,6 +339,25 @@ class ErtmTest(cmd.Cmd):
             print('error {} in disable_channel: {}'.format(err, msg))
             return
 
+    def do_get_channel_enable(self, args):
+        "display channel enable/disable status"
+        try:
+            conn, channel = args.split()
+            connector = self.connector_idx[conn.lower()]
+            channel = int(channel)
+        except (ValueError, KeyError) as e:
+            print('usage: get_channel_enable/gce {clka|clkb|lo|ref} channel')
+            return
+        state = c_uint(0)
+        err = self.lib.ertm_get_enable_state(self.handle, connector, channel, byref(state))
+        if err:
+            msg = self.errmsg(err)
+            print('error {} in get_channel_enable: {}'.format(err, msg))
+            return
+        st = state.value
+        print("{:s}{:02d}: {:s} ({:d})".format(
+                 conn.upper(), channel, "on" if st else "off", st))
+
     def do_get_level_adjust(self, args):
         "display amplification level of connector."
         try:
