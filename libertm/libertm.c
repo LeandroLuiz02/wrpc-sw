@@ -63,6 +63,16 @@ struct ertm_sync_states ertm_sync_states[] = {
 	[ERTM_SYNC_STATE_READY] = { ERTM_SYNC_STATE_READY,
 		"rdy", "Resync done, output clock is ready", },
 };
+const int ertm_n_sync_states = sizeof(ertm_sync_states)/sizeof(ertm_sync_states[0]);
+
+int ertm_sync_state_translate(int sync_state, char **label, char **meaning)
+{
+	if (sync_state >= ertm_n_sync_states || sync_state < 0)
+		return -EINVAL;
+	*label   = ertm_sync_states[sync_state].label;
+	*meaning = ertm_sync_states[sync_state].description;
+	return 0;
+}
 
 /* translate enum to kHz if needed */
 static uint32_t clkab_freq_table[] = {
