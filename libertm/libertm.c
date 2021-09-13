@@ -676,12 +676,12 @@ static int ertm_get_freq_sync_out_state(struct ertm_status *handle,
 	case ERTM_LO:
 		freg  = &bs->lo.ftw;
 		ssreg = &bs->lo.sync_state;
-		enable = bs->lo.out_state[channel];
+		enable = bs->lo.out_state[channel] != ERTM15_RF_OUT_OFF;
 		break;
 	case ERTM_REF:
 		freg  = &bs->ref.ftw;
 		ssreg = &bs->ref.sync_state;
-		enable = bs->ref.out_state[channel];
+		enable = bs->ref.out_state[channel] != ERTM15_RF_OUT_OFF;
 		break;
 	default:
 		errno = EINVAL;
