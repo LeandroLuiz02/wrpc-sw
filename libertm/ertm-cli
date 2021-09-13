@@ -588,6 +588,7 @@ class ErtmTest(cmd.Cmd):
     do_gp = do_get_power
     do_gcp = do_get_channel_power
     do_gcpa = do_get_channel_power_all
+    do_gce = do_get_channel_enable
 
 if __name__ == '__main__':
     tst = ErtmTest(completekey='tab')
