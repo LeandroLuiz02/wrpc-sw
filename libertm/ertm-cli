@@ -101,6 +101,14 @@ class ertm_lib_version(Structure):
         ("git_user", c_char_p),
         ("git_url", c_char_p),
     ]
+
+class ertm_sync_states(Structure):
+    _fields_ = [
+        ("sync_state", c_int),
+        ("label", c_char_p),
+        ("description", c_char_p),
+    ]
+
 class ertm_status(Structure):
     _fields_ = [
         ("connection", ertm_connection),
@@ -358,6 +366,29 @@ class ErtmTest(cmd.Cmd):
         print("{:s}{:02d}: {:s} ({:d})".format(
                  conn.upper(), channel, "on" if st else "off", st))
 
+    def do_get_sync_state(self, args):
+        "display channel sync state"
+        try:
+            conn, channel = args.split()
+            connector = self.connector_idx[conn.lower()]
+            channel = int(channel)
+        except (ValueError, KeyError) as e:
+            print('usage: get_sync_state/gss  {clka|clkb|lo|ref} channel')
+            return
+        sync_state = c_uint(0)
+        err = self.lib.ertm_get_sync_state(self.handle, connector, channel, byref(sync_state))
+        if err:
+            msg = self.errmsg(err)
+            print('error {} in get_sync_state: {}'.format(err, msg))
+            return
+        st = sync_state.value
+        label = c_char_p(0); description = c_char_p(0);
+        self.lib.ertm_sync_state_translate(st, byref(label), byref(description))
+        print("{:s}{:02d}: {:d}: {:s}\t\t({:s})".format(
+                 conn.upper(), channel, st,
+                 str(label.value, encoding='utf8'),
+                 str(description.value, encoding='utf8')))
+
     def do_get_level_adjust(self, args):
         "display amplification level of connector."
         try:
@@ -546,6 +577,7 @@ class ErtmTest(cmd.Cmd):
     do_gla = do_get_level_adjust
     do_ec = do_enable_channel
     do_dc = do_disable_channel
+    do_gss = do_get_sync_state
     do_wrd = do_wrc_diags
     do_temp = do_temperatures
     do_volt = do_voltages
