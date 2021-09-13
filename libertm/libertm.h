@@ -282,6 +282,8 @@ int ertm_dds_set_level_adjust(struct ertm_status *handle,
 		enum ertm_connector connector, double level);			/* level in [0,1] */
 int ertm_dds_get_level_adjust(struct ertm_status *handle,
 		enum ertm_connector connector, double *level);			/* level in [0,1] */
+int ertm_get_sync_state(struct ertm_status *handle,
+		enum ertm_connector connector, int channel, int *sync_state);
 
 /* monitoring */
 int ertm_get_ocxo_current(struct ertm_status *handle, double *current);			/* amperes */
