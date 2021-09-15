@@ -1004,7 +1004,7 @@ static int get_servo(uint8_t *buf, struct snmp_oid *obj)
 	uint32_t tmp_uint32;
 	
 	struct pp_servo *ppsi_servo;
-	struct wr_servo_ext *wr_servo;
+	struct wr_servo_ext *wr_servo_ext;
 	struct wrh_servo_t *wrh_servo = NULL;
 	struct wr_data *wr_d;
 
@@ -1023,11 +1023,11 @@ static int get_servo(uint8_t *buf, struct snmp_oid *obj)
 		break;
 	}
 	if (ppi_static.protocol_extension == PPSI_EXT_WR && ppi_static.extState == PP_EXSTATE_ACTIVE) {
-		wr_d       = (struct wr_data *) ppi_static.ext_data;
-		wr_servo   = &wr_d->servo_ext;
-		wrh_servo  = &wr_d->servo;
+		wr_d         = (struct wr_data *) ppi_static.ext_data;
+		wr_servo_ext = &wr_d->servo_ext;
+		wrh_servo    = &wr_d->servo;
 	} else if ((int) obj->p == (int)SERVO_STATEN) {
-		wr_servo = NULL;
+		wr_servo_ext = NULL;
 	} else 	{
 		/* non WR return 0's */
 		tmp_uint64 = 0;
@@ -1036,7 +1036,7 @@ static int get_servo(uint8_t *buf, struct snmp_oid *obj)
 	
 	switch ((int) obj->p) {
 	case (int)SERVO_STATEN:
-		if (!wr_servo)
+		if (!wr_servo_ext)
 			tmp_uint32 = PTP_SERVO_STATE_N_STANDARD_PTP;
 		else
 			tmp_uint32 = ppi_static.servo->state;
@@ -1044,19 +1044,19 @@ static int get_servo(uint8_t *buf, struct snmp_oid *obj)
 	case (int)SERVO_SKEW:
 		return get_i32sat(buf, obj->asn, &wrh_servo->skew_ps);
 	case (int)SERVO_RTT:
-		tmp_uint64 = pp_time_to_picos(&wr_servo->rawDelayMM);
+		tmp_uint64 = pp_time_to_picos(&wr_servo_ext->rawDelayMM);
 		return get_value(buf, obj->asn, &tmp_uint64);
 	case (int)SERVO_DELTA_TX_M:
-		tmp_uint32 = pp_time_to_picos(&wr_servo->delta_txm);
+		tmp_uint32 = pp_time_to_picos(&wr_servo_ext->delta_txm);
 		return get_value(buf, obj->asn, &tmp_uint32);
 	case (int)SERVO_DELTA_RX_M:
-		tmp_uint32 = pp_time_to_picos(&wr_servo->delta_rxm);
+		tmp_uint32 = pp_time_to_picos(&wr_servo_ext->delta_rxm);
 		return get_value(buf, obj->asn, &tmp_uint32);
 	case (int)SERVO_DELTA_TX_S:
-		tmp_uint32 = pp_time_to_picos(&wr_servo->delta_txs);
+		tmp_uint32 = pp_time_to_picos(&wr_servo_ext->delta_txs);
 		return get_value(buf, obj->asn, &tmp_uint32);
 	case (int)SERVO_DELTA_RX_S:
-		tmp_uint32 = pp_time_to_picos(&wr_servo->delta_rxs);
+		tmp_uint32 = pp_time_to_picos(&wr_servo_ext->delta_rxs);
 		return get_value(buf, obj->asn, &tmp_uint32);
 	case (int)SERVO_N_ERR_STATE:
 		tmp_uint32 = wrh_servo->n_err_state;
