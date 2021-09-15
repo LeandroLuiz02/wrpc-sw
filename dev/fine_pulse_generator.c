@@ -106,6 +106,8 @@ void fine_pulse_gen_force_pulse( struct fine_pulse_gen_device* dev, int channel 
     
 
     writel( trig_mask, dev->base + FPG_REG_CSR ); // configure
+    ch->flags |= FINE_PULSE_GEN_CH_ARMED;
+
 }
 
 void fine_pulse_gen_trigger( struct fine_pulse_gen_device* dev, uint32_t mask, int force_now )
