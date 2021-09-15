@@ -675,6 +675,14 @@ static void ertm14_dds_trigger_ioupdate( struct ad9910_device *dev )
     fine_pulse_gen_force_pulse( &board.dds_sync_dev, channel );
 }
 
+
+static int ertm14_is_ioupdate_triggered( struct ad9910_device *dev )
+{
+    int channel = (dev == &board.dds_ad9910_ref ? ERTM14_DDS_IOUPDATE_REF : ERTM14_DDS_IOUPDATE_LO);
+    return fine_pulse_gen_is_triggered( &board.dds_sync_dev, 1 << channel );
+}
+
+
 static int ertm14_switch_sys_clock( int use_sys_from_pll )
 {
     gen_gpio_out( &pin_sys_clk_sel_next, use_sys_from_pll );
@@ -967,6 +975,10 @@ static int apply_dds_config( struct ad9910_device *dev, struct ertm14_dds_state*
     uint32_t new_ftw = old_state->ftw;
     uint32_t new_ampl_factor = old_state->ampl_factor;
 
+    board_dbg("apply dds cfg: af %d mask %d\n", new_state->ampl_factor, mask->ampl_factor );
+
+    board_dbg("apply dds cfg: ftw %d mask %d\n", new_state->ftw, mask->ftw );
+
     int config_changed = 0;
 
 	if( mask->ampl_factor && ( new_state->ampl_factor != old_state->ampl_factor) )
@@ -991,7 +1003,24 @@ static int apply_dds_config( struct ad9910_device *dev, struct ertm14_dds_state*
     if( config_changed )
     {
         board_dbg("DDS[%p]: changing FTW=0x%08x, ampl=%d\n", dev, new_ftw, new_ampl_factor );
+
+        //        shw_pps_gen_enable_output(1);
+        // shw_pps_gen_unmask_output(1);
+
+        //fine_pulse_gen_setup_channel ( &board.dds_sync_dev, ERTM14_DDS_IOUPDATE_LO, 1, board.dds_sync_delays[ERTM14_DDS_IOUPDATE_LO], 0, 0 );
+        //fine_pulse_gen_setup_channel ( &board.dds_sync_dev, ERTM14_DDS_IOUPDATE_REF, 1, board.dds_sync_delays[ERTM14_DDS_IOUPDATE_REF], 0, 0 );
+
         ad9910_program( dev, new_ftw, 0, new_ampl_factor );
+
+        // ugly hack below: when the NCO reset is subscribed to, we must wait until the IOUPDATE pulse has been forcefully generated.
+        // otherwise, the NCO SYNC FSM will take over too early and the sync pulse will never be produced (or produced when the next cycle/NCO reset arrives)
+
+        // we need some sort of builtin PPM here, but for the SPS operation this is enough
+        do
+        {
+            timer_delay_ms(100);
+        } while( !ertm14_is_ioupdate_triggered ( dev ) );
+
         return 1;
     }
 
@@ -1085,7 +1114,6 @@ void ertm14_apply_config(struct ertm14_board_state *cfg,
 	for (i = ERTM14_RF_OUT_MIN_ID; i <= ERTM14_RF_OUT_MAX_ID; i++) {
 		int st_lo = cfg->lo.out_state[i] == ERTM15_RF_OUT_ON ? 1 : 0;
 		int st_ref = cfg->ref.out_state[i] == ERTM15_RF_OUT_ON ? 1 : 0;
-	//	board_dbg("i %d lo %x ref %x\n", i, st_lo, st_ref );
 
         if( force_all )
         {
