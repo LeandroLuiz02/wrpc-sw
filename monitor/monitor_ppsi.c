@@ -645,7 +645,7 @@ void print_servo_description()
 
 void print_servo_data(struct pp_instance *ppi)
 {
-	wrh_servo_t * wr_servo;
+	wrh_servo_t * wrh_servo;
 	wr_servo_ext_t * wr_servo_ext = NULL;
 	char buf[128];
 	int row_offset;
@@ -659,19 +659,19 @@ void print_servo_data(struct pp_instance *ppi)
 		return;
 	}
 
-	wr_servo = (ppi->protocol_extension == PPSI_EXT_WR && ppi->extState == PP_EXSTATE_ACTIVE) ?
+	wrh_servo = (ppi->protocol_extension == PPSI_EXT_WR && ppi->extState == PP_EXSTATE_ACTIVE) ?
 			(wrh_servo_t*) ppi->ext_data : NULL;
 
 	/* should print servio description */
 	gui_description |= DESCRIPTION_SERVO;
 
 
-	if (wr_servo) {
-		wr_servo_ext = &((struct wr_data *)wr_servo)->servo_ext;
+	if (wrh_servo) {
+		wr_servo_ext = &((struct wr_data *)wrh_servo)->servo_ext;
 	}
 
 	/* should print WR servio description */
-	gui_description |= wr_servo ? DESCRIPTION_WR_SERVO : 0;
+	gui_description |= wrh_servo ? DESCRIPTION_WR_SERVO : 0;
 	
 	/* Avoid printing new data if change in description is expected.
 	 * This avoids extra redraw of data values */
@@ -696,7 +696,7 @@ void print_servo_data(struct pp_instance *ppi)
 	}
 
 	/* "tracking disabled" is just a testing tool */
-	if (wr_servo  && !wr_servo->tracking_enabled)
+	if (wrh_servo && !wrh_servo->tracking_enabled)
 		cprintf(C_RED, "Tracking forcibly disabled\n");
 	else
 		pp_printf("\e[K"); /* clear till the end of a line */
@@ -750,13 +750,13 @@ void print_servo_data(struct pp_instance *ppi)
 	/* offsetFromMaster */
 	pcprintf(29, 20, C_WHITE, "%19s nsec", interval_to_string (ppg->currentDS->offsetFromMaster));
 	row_offset = 30;
-	if (wr_servo) {
+	if (wrh_servo) {
 		/* Phase setpoint */
-		pcprintf(30, 20, C_WHITE, "%19s nsec", convert_ps_to_str_ns(buf, (int64_t) wr_servo->cur_setpoint_ps));
+		pcprintf(30, 20, C_WHITE, "%19s nsec", convert_ps_to_str_ns(buf, (int64_t) wrh_servo->cur_setpoint_ps));
 
 
 		/* Skew */
-		pcprintf(31, 20, C_WHITE, "%19s nsec", convert_ps_to_str_ns(buf, wr_servo->skew_ps));
+		pcprintf(31, 20, C_WHITE, "%19s nsec", convert_ps_to_str_ns(buf, wrh_servo->skew_ps));
 		row_offset += 2;
 	}
 
@@ -767,7 +767,7 @@ void print_servo_data(struct pp_instance *ppi)
 		pe_info->last_count = ppi->servo->update_count;
 	}
 
-	if (wr_servo) {
+	if (wrh_servo) {
 		/* Master PHY delays TX */
 		pcprintf(33, 26, C_WHITE,"%22s", optimized_pp_time_toString_ps_as_ns(&wr_servo_ext->delta_txm, buf));
 		cprintf(C_BLUE, "  RX:");
