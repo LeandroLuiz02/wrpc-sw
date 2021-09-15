@@ -31,7 +31,7 @@ static struct ad9910_config_reg ad9910_default_config[] = {
     {0, 0x02000002 | (1<<13), 32},              // CFR1, unidir mode for SDIO, autoclear phase accumulator on IOUPDATE
     {1, 0x00000800, 32},              // CFR2, TW - enabled sync pulse timing validation
     {2, 0x1f3fc000, 32},              // CFR3: no PLL
-    {3, 0x00007f64, 32},              // Aux DAC control: DAC Full scale current
+    {3, 0x00000064, 32},              // Aux DAC control: DAC Full scale current
     {4, 0xffffffff, 32},              // IO update rate
     {7, 0x00000000, 32},              // default FTW
     {8, 0x0000, 16},                  // default phase offset
@@ -111,8 +111,8 @@ int ad9910_program( struct ad9910_device *dev, uint64_t ftw_n, int phase, int fs
 
         if(r.addr == 3)
         {
-            r.value &= 0xffffff00;
-            r.value |= fs_current;     // Aux DAC control: DAC Full scale current
+            r.value &= 0xffffff00ULL;
+            r.value |= (uint64_t) fs_current;     // Aux DAC control: DAC Full scale current
         } else
         if( r.addr == 0xe ) // profile 0
             r.value = prof0_cr;
