@@ -26,6 +26,7 @@
 #include "lib/ipv4.h"
 #include "shell.h"
 #include "revision.h"
+#include "wrc_global.h"
 
 #ifndef CONFIG_PRINTF_FULL
 #error ("WRPC monitor requires full version of pp_printf implementation")
@@ -785,31 +786,34 @@ void print_servo_data(struct pp_instance *ppi)
 
 int wrc_log_stats(void)
 {
-#if 0
 	struct wrc_port_state state;
 	int tx, rx;
 	struct spll_aux_clock_status aux_stat;
 	uint64_t sec;
 	uint32_t nsec;
-	struct wr_servo_state *s =
-			&((struct wr_data *)ppi->ext_data)->servo_state;
-	static uint32_t last_jiffies;
+	static uint32_t last_update_tick;
 	int n_out;
 	int i;
+	struct pp_servo *s = SRV(ppg->pp_instances);
+	wrh_servo_t * wrh_servo;
+	wr_servo_ext_t * wr_servo_ext = NULL;
 
-	if (!wrc_stat_running)
-		return 0;
 
-	if (!last_jiffies)
-		last_jiffies = timer_get_tics() - 1 -  WRC_MONITOR_REFRESH_PERIOD;
 	/* stats update condition for Slave mode */
-	if (wrc_stats_last == s->update_count && ptp_mode == WRC_MODE_SLAVE)
+	if (wrc_stats_last == s->update_count && ptp_mode == WRC_MODE_SLAVE) {
+		last_update_tick = 0;
 		return 0;
+	}
+
+	if (!wrc_stat_running) {
+		last_update_tick = 0;
+		return 0;
+	}
+
 	/* stats update condition for Master mode */
-	if (time_before(timer_get_tics(), last_jiffies + WRC_MONITOR_REFRESH_PERIOD) &&
-			ptp_mode != WRC_MODE_SLAVE)
+	if (wrc_task_not_yet(&last_update_tick, WRC_DIAG_REFRESH_PERIOD))
 		return 0;
-	last_jiffies = timer_get_tics();
+
 
 	/* Print only one time */
 	if (wrc_stat_running == -1)
@@ -820,57 +824,76 @@ int wrc_log_stats(void)
 	shw_pps_gen_get_time(&sec, &nsec);
 	wrpc_get_port_state(&state, NULL);
 	minic_get_stats(&tx, &rx);
-	pp_printf("lnk:%d rx:%d tx:%d ", state.state, rx, tx);
+
+	pp_printf("lnk:%d rx:%d tx:%d ", (wrc_global_link.link_up == NETIF_LINK_UP), rx, tx);
 	pp_printf("lock:%d ", state.locked ? 1 : 0);
-	pp_printf("ptp:%s ", wrc_ptp_state());
+	pp_printf("ptp:%s ", get_state_as_string(&ppi_static, ppi_static.state));
+
 	if (ptp_mode == WRC_MODE_SLAVE) {
-		pp_printf("sv:%d ", (s->flags & WR_FLAG_VALID) ? 1 : 0);
+		pp_printf("sv:%d ", (s->flags & PP_SERVO_FLAG_VALID) ? 1 : 0);
 		pp_printf("ss:'%s' ", s->servo_state_name);
 	}
 
 	spll_get_num_channels(NULL, &n_out);
 
-	for (i = 0; i < n_out; i++) {
+	for (i = 0; i < n_out - 1; i++) {
 		aux_stat = spll_get_aux_status(i);
 		pp_printf("aux%d:%08x%08x ", i, aux_stat.flags, aux_stat.phase);
 	}
-	
+
 	/* fixme: clock is not always 125 MHz */
-	pp_printf("sec:%d nsec:%d ", (uint32_t) sec, nsec);
+	pp_printf("sec:%d nsec:%09d ", (uint32_t) sec, nsec);
+	wrh_servo = (ppi_static.protocol_extension == PPSI_EXT_WR && ppi_static.extState == PP_EXSTATE_ACTIVE) ?
+			(wrh_servo_t*) ppi_static.ext_data : NULL;
+
+	if (wrh_servo) {
+		wr_servo_ext = &((struct wr_data *)wrh_servo)->servo_ext;
+	}
+
 	if (ptp_mode == WRC_MODE_SLAVE) {
-		pp_printf("mu:%s ", print64(s->picos_mu, 0));
-		pp_printf("dms:%s ", print64(s->delta_ms, 0));
-		pp_printf("dtxm:%d drxm:%d ", (int32_t) s->delta_tx_m,
-			(int32_t) s->delta_rx_m);
-		pp_printf("dtxs:%d drxs:%d ", (int32_t) s->delta_tx_s,
-			(int32_t) s->delta_rx_s);
-		int64_t total_asymmetry = s->picos_mu -
-				  2LL * s->delta_ms;
-		pp_printf("asym:%d ", (int32_t) (total_asymmetry));
-		pp_printf("crtt:%s ", print64(s->picos_mu -
-					s->delta_tx_m -
-					s->delta_rx_m -
-					s->delta_tx_s -
-					s->delta_rx_s, 0));
-		pp_printf("cko:%d ", (int32_t) (s->offset));
-		pp_printf("setp:%d ", (int32_t) (s->cur_setpoint));
+		struct pp_time crtt;
+
+		/* RTT */
+		pp_printf("mu:%Ld ", pp_time_to_picos(&wr_servo_ext->rawDelayMM));
+
+		pp_printf("dms:%Ld ", pp_time_to_picos(&s->delayMS));
+
+		pp_printf("dtxm:%d drxm:%d ",
+			  (int32_t) pp_time_to_picos(&wr_servo_ext->delta_txm),
+			  (int32_t) pp_time_to_picos(&wr_servo_ext->delta_rxm));
+		pp_printf("dtxs:%d drxs:%d ",
+			  (int32_t) pp_time_to_picos(&wr_servo_ext->delta_txs),
+			  (int32_t) pp_time_to_picos(&wr_servo_ext->delta_rxs));
+		pp_printf("asym:%Ld ", interval_to_picos(ppi_static.portDS->delayAsymmetry));
+
+		crtt = wr_servo_ext->rawDelayMM;
+		pp_time_sub(&crtt, &wr_servo_ext->delta_txm);
+		pp_time_sub(&crtt, &wr_servo_ext->delta_rxm);
+		pp_time_sub(&crtt, &wr_servo_ext->delta_txs);
+		pp_time_sub(&crtt, &wr_servo_ext->delta_rxs);
+
+		/* Cable RTT */
+		pp_printf("crtt:%Ld ", pp_time_to_picos(&crtt));
+		/* Clock offset */
+		pp_printf("cko:%d ", (int32_t) pp_time_to_picos(&s->offsetFromMaster));
+		pp_printf("setp:%d ", wrh_servo->cur_setpoint_ps);
 		pp_printf("ucnt:%d ", (int32_t) s->update_count);
 		pp_printf("bslide:%d ", ep_get_bitslide(&wrc_endpoint_dev));
 	}
-	
+
 	pp_printf("hd:%d md:%d ad:%d ", spll_get_dac(-1), spll_get_dac(0),
 		spll_get_dac(1));
 
-	if (1) {
+	if (HAS_TEMP_SENSORS) {
 		int32_t temp;
 
 		temp = wrc_temp_get("pcb");
-		pp_printf("temp: %d.%04d C", temp >> 16,
+		pp_printf("temp:%d.%04d C", temp >> 16,
 			  (int)((temp & 0xffff) * 10 * 1000 >> 16));
 	}
 
 	pp_printf("\n");
-#endif
+
 	return 1;
 }
 
