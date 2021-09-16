@@ -1174,6 +1174,13 @@ void get_version_info(struct ertm14_version_info *bi)
 				    sizeof(bi->ertm14_firmware_version));
 	strncpy(bi->ertm15_firmware_version, ertm15_board_info.git_tag,
 				    sizeof(bi->ertm15_firmware_version));
+
+
+    uint32_t cd;
+    if( storage_get_calibration_parameter( CAL_PARAM_CALIBRATION_DATE, &cd ) < 0 )
+        cd = 0;
+
+    bi->calibration_date = cd;
 }
 
 void get_fpga_info(uint8_t *bi)
@@ -2506,6 +2513,16 @@ int wrc_board_early_init()
     bist_checkpoint( ertm_bist, ERTM14_BIST_FLASH_FS_MOUNT, 0, rv == 0 );
 
     storage_load_calibration();
+
+    uint32_t cd;
+
+    if( storage_get_calibration_parameter( CAL_PARAM_CALIBRATION_DATE, &cd ) < 0 )
+        cd = 0;
+
+    if( !cd )
+        board_dbg("WARNING! Board calibration info has no calibration date!\n");
+    else
+        board_dbg("Calibration data: %d UTC timestamp\n", cd );
 
    	net_rst();
 

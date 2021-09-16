@@ -230,6 +230,7 @@ struct ertm14_version_info {
 	/* MMC firmware versions */
 	char		ertm14_firmware_version[32];
 	char		ertm15_firmware_version[32];
+	uint32_t        calibration_date;
 	/* unused */
 	struct ertm14_device_metadata
 			firmware_metadata;

@@ -293,6 +293,19 @@ void mac_to_str(uint64_t mac, char *dst)
 void display_version_info(struct ertm_board_info *bi)
 {
 	char mac[20];
+	char buf[1024];
+
+	time_t cal_time = bi->calibration_date;
+
+	if( cal_time != 0 )
+	{
+		struct tm ts;
+		ts = *localtime(&cal_time);
+		strftime(buf, sizeof(buf), "%a %Y-%m-%d %H:%M:%S %Z", &ts);
+		printf("Calibration date:       %s\n", buf);
+	}
+	else
+		printf("WARNING! UNCALIBRATED BOARD\n");
 
 	mac_to_str(bi->ertm14_mac1, mac);
 	printf(
@@ -301,9 +314,9 @@ void display_version_info(struct ertm_board_info *bi)
 	"ERTM15: Serial No:      %s\n"
 	"ERTM15: MMC FW Version: %s\n"
 	"ERTM14: MAC:            %s\n"
-	"WRPCSW: commit:     %s\n"
-	"WRPCSW: build date: %s %s\n"
-	"WRPCSW: build by    %s\n",
+	"WRPCSW: commit:         %s\n"
+	"WRPCSW: build date:     %s %s\n"
+	"WRPCSW: build by        %s\n",
 		bi->ertm14_serial, bi->ertm14_firmware_version,
 		bi->ertm15_serial, bi->ertm15_firmware_version,
 		mac,
