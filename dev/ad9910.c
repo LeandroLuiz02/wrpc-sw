@@ -140,3 +140,17 @@ void ad9910_configure_sync( struct ad9910_device *dev, int enable, int fine_dela
     ad9910_write( dev, 0xa, r10 , 32 );
     ad9910_trigger_update( dev );
 }
+
+void ad9910_enable_external_ioupdate( struct ad9910_device *dev, int enable )
+{
+    uint64_t cfr2 = ad9910_read(dev, 1, 32 );
+
+    pp_printf("CFR2 = 0x%08x\n", (uint32_t) cfr2 );
+
+    if( enable )
+        cfr2 &= ~ (1<<23);
+    else
+        cfr2 |= (1<<23);
+
+    ad9910_write( dev, 1, cfr2, 32 );
+}

@@ -799,6 +799,11 @@ static void ertm14_dds_sync_calibrate(void)
         {
             if (windows[j].smp_err)
             {
+                if( windows[j].length >= MIN_SAMPLE_WINDOW_LENGTH && windows[j].best_length < 0 )
+                {
+                    windows[j].best_start = windows[j].start;
+                    windows[j].best_length = windows[j].length;
+                }
 
                 windows[j].start = -1;
                 windows[j].length = 0;
@@ -809,17 +814,10 @@ static void ertm14_dds_sync_calibrate(void)
                     windows[j].start = fine;
 
                 windows[j].length++;
-
-                if( windows[j].length >= MIN_SAMPLE_WINDOW_LENGTH && windows[j].best_length < 0)
-                {
-                    windows[j].best_start = windows[j].start;
-                    windows[j].best_length = windows[j].length;
-
-                }
             }
         }
 
-//        pp_printf("SmpERR LO %d REF %d\n", windows[0].smp_err, windows[1].smp_err);
+        //pp_printf("Fine %d SmpERR LO %d REF %d\n", fine, windows[0].smp_err, windows[1].smp_err);
 
         fine += AD9910_FINE_DELAY_STEP_PS;
     }
@@ -840,6 +838,9 @@ static void ertm14_dds_sync_calibrate(void)
 
     fine_pulse_gen_setup_channel ( &board.dds_sync_dev, ERTM14_DDS_SYNC_LO, 1, 100000 + windows[0].setpoint, 0, FINE_PULSE_GEN_CONTINUOUS );
     fine_pulse_gen_setup_channel ( &board.dds_sync_dev, ERTM14_DDS_SYNC_REF, 1, 100000 + windows[1].setpoint, 0, FINE_PULSE_GEN_CONTINUOUS );
+
+    fine_pulse_gen_trigger( &board.dds_sync_dev, channel_mask, 1 );
+        while ( !fine_pulse_gen_is_triggered( &board.dds_sync_dev, channel_mask ) );
 }
 
 
@@ -974,9 +975,8 @@ static int apply_dds_config( struct ad9910_device *dev, struct ertm14_dds_state*
     uint32_t new_ftw = old_state->ftw;
     uint32_t new_ampl_factor = old_state->ampl_factor;
 
-    board_dbg("apply dds cfg: af %d mask %d\n", new_state->ampl_factor, mask->ampl_factor );
-
-    board_dbg("apply dds cfg: ftw %d mask %d\n", new_state->ftw, mask->ftw );
+//    board_dbg("apply dds cfg: af %d mask %d\n", new_state->ampl_factor, mask->ampl_factor );
+//    board_dbg("apply dds cfg: ftw %d mask %d\n", new_state->ftw, mask->ftw );
 
     int config_changed = 0;
 
@@ -2257,6 +2257,7 @@ int ertm14_low_level_init(void)
         ertm15_init_dds();
 
         /* Program the DDSes to some meaninfgul settings, say, 205 MHz */
+
         ad9910_program(&board.dds_ad9910_ref, ERTM14_DDS_DEFAULT_FTW, 0, ERTM14_DDS_DEFAULT_AMPLITUDE );
         ad9910_program(&board.dds_ad9910_lo, ERTM14_DDS_DEFAULT_FTW, 0, ERTM14_DDS_DEFAULT_AMPLITUDE );
 
