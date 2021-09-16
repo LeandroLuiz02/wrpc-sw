@@ -900,9 +900,8 @@ int wrc_log_stats(void)
 
 int wrc_wr_diags(void)
 {
-#if 0
 	struct wrc_port_state ps;
-	static uint32_t last_jiffies;
+	static uint32_t last_update_tick;
 	int tx, rx;
 	uint64_t sec;
 	uint32_t nsec;
@@ -920,12 +919,9 @@ int wrc_wr_diags(void)
 	      return 0;
 
 	/* ***************** lock data from reading by user **************** */
-	if (!last_jiffies)
-		last_jiffies = timer_get_tics() - 1 -  WRC_DIAG_REFRESH_PERIOD;
 	/* stats update condition */
-	if (time_before(timer_get_tics(), last_jiffies + WRC_DIAG_REFRESH_PERIOD))
+	if (wrc_task_not_yet(&last_update_tick, WRC_DIAG_REFRESH_PERIOD))
 		return 0;
-	last_jiffies = timer_get_tics();
 
 	/* ***************** lock data from reading by user **************** */
 	wdiag_set_valid(0);
@@ -937,15 +933,13 @@ int wrc_wr_diags(void)
 	/* local time */
 	shw_pps_gen_get_time(&sec, &nsec);
 	wdiags_write_time(sec, nsec);
-	
-	/* port state (from hal) */
+
+	/* port state */
 	wrpc_get_port_state(&ps, NULL);
-	wdiags_write_port_state((ps.state  ? 1 : 0), (ps.locked ? 1 : 0));
+	wdiags_write_port_state((wrc_global_link.link_up == NETIF_LINK_UP), (ps.locked ? 1 : 0));
 
 	/* port PTP State (from ppsi)
-	* see:
-		ppsi/proto-ext-whiterabbit/wr-constants.h
-		ppsi/include/ppsi/ieee1588_types.h
+	* see: ppsi/include/ppsi/ieee1588_types.h
 	0  : none
 	1  : PPS_INITIALIZING
 	2  : PPS_FAULTY
@@ -956,52 +950,65 @@ int wrc_wr_diags(void)
 	7  : PPS_PASSIVE
 	8  : PPS_UNCALIBRATED
 	9  : PPS_SLAVE
-	100: WRS_PRESENT
-	101: WRS_S_LOCK
-	102: WRS_M_LOCK
-	103: WRS_LOCKED
-	104, 108-116:WRS_CALIBRATION
-	105: WRS_CALIBRATED
-	106: WRS_RESP_CALIB_REQ
-	107: WRS_WR_LINK_ON
 	*/
 	wdiags_write_ptp_state((uint8_t)ppi->state);
 
-	/* servo state (if slave)s */
-	if (ptp_mode == WRC_MODE_SLAVE){
-		struct pp_servo *ss = ppi->servo;
-// 			&((struct wr_data *)ppi->ext_data)->servo_state;
-		int32_t asym   = (int32_t)(ss->picos_mu-2LL * ss->delta_ms);
-		int wr_mode    = (ss->flags & WR_FLAG_VALID) ? 1 : 0;
-		int servostate = ss->state;
-		/* see ppsi/proto-ext-whiterabbit/wr-constants.c:
-		0: WR_UNINITIALIZED = 0,
-		1: WR_SYNC_NSEC,
-		2: WR_SYNC_TAI,
-		3: WR_SYNC_PHASE,
-		4: WR_TRACK_PHASE,
-		5: WR_WAIT_OFFSET_STABLE */
-		
-		wdiags_write_servo_state(wr_mode, servostate, ss->picos_mu,
-					 ss->delta_ms, asym, ss->offset,
-					 ss->cur_setpoint, ss->update_count);
-	}
 	
-	/* auxiliar channels (if any) */
+	/* servo state (if slave)s */
+	if (ptp_mode == WRC_MODE_SLAVE) {
+		struct pp_servo *s = SRV(ppg->pp_instances);
+		struct wr_servo_ext *wr_servo_ext = NULL;
+		struct wrh_servo_t *wrh_servo = NULL;
+		int32_t asym;
+		int wr_mode;
+		int32_t cur_setpoint_ps = 0;
+		uint64_t mu = 0;
+
+		asym = interval_to_picos(ppi_static.portDS->delayAsymmetry);
+		wr_mode = (s->flags & PP_SERVO_FLAG_VALID) ? 1 : 0;
+
+		wrh_servo = (ppi_static.protocol_extension == PPSI_EXT_WR && ppi_static.extState == PP_EXSTATE_ACTIVE) ?
+			    (wrh_servo_t*) ppi_static.ext_data : NULL;
+
+		if (wrh_servo) {
+			wr_servo_ext = &((struct wr_data *)wrh_servo)->servo_ext;
+			mu = pp_time_to_picos(&wr_servo_ext->rawDelayMM),
+			cur_setpoint_ps = wrh_servo->cur_setpoint_ps;
+		}
+
+		/* see ppsi/include/hw-specific/wrh.h:
+		0: WRH_UNINITIALIZED = 0,
+		1: WRH_SYNC_TAI,
+		2: WRH_SYNC_NSEC,
+		3: WRH_SYNC_PHASE,
+		4: WRH_TRACK_PHASE,
+		5: WRH_WAIT_OFFSET_STABLE */
+		wdiags_write_servo_state(wr_mode,
+					 s->state,
+					 mu,
+					 pp_time_to_picos(&s->delayMS),
+					 asym,
+					 (int32_t) pp_time_to_picos(&s->offsetFromMaster),
+					 cur_setpoint_ps,
+					 ppi_static.servo->update_count);
+	}
+
+	/* Auxiliar channels (if any) */
 	spll_get_num_channels(NULL, &n_out);
 	if (n_out > 8) n_out = 8; /* hardware limit. */
 	for (i = 0; i < n_out; i++) {
 		aux_stat |= ((SPLL_AUX_SLAVE_LOCKED | SPLL_AUX_TRACKING_READY) & spll_get_aux_status(i).flags) << i;
 	}
 	wdiags_write_aux_state(aux_stat);
-	
+
 	/* temperature */
-	temp = wrc_temp_get("pcb");
-	wdiags_write_temp(temp);
+	if (HAS_TEMP_SENSORS) {
+		temp = wrc_temp_get("pcb");
+		wdiags_write_temp(temp);
+	}
 
 	/* **************** unlock data from reading by user  ************** */
 	wdiag_set_valid(1);
-#endif
 	return 1;
 }
 
