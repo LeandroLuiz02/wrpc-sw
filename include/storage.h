@@ -26,6 +26,7 @@
 #define CAL_PARAM_DDS_REF_IOUPDATE_DELAY_PS ASCII_TO_U32('e', '1', '4', '1')
 #define CAL_PARAM_CLKA_SYNC_DELAY_PS ASCII_TO_U32('e', '1', '4', '2')
 #define CAL_PARAM_CLKB_SYNC_DELAY_PS ASCII_TO_U32('e', '1', '4', '3')
+#define CAL_PARAM_CALIBRATION_DATE ASCII_TO_U32('d','a','t','e')
 
 #define SFP_SECTION_PATTERN 0xdeadbeef
 
