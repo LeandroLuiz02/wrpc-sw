@@ -118,6 +118,9 @@
 #define ERTM14_NCO_RESET_DEFAULT_LATENCY (16000/16)
 #define ERTM14_NCO_RESET_DEFAULT_TIMEOUT (160000/16)
 
+/* power on flag */
+#define ERTM_FLAGS_POWERED_ON (1<<0)
+
 struct ertm14_dds_state
 {
     uint32_t ftw;
@@ -164,6 +167,7 @@ PACKED struct ertm14_mmc_state
 {
     struct ertm14_mmc_version_info info;
     struct ertm14_mmc_sensor_state sensors[ERTM14_MAX_SENSORS_COUNT];
+    uint32_t flags;
 };
 
 struct proto_wrc_sensor
@@ -226,6 +230,7 @@ struct ertm14_version_info {
 	/* MMC firmware versions */
 	char		ertm14_firmware_version[32];
 	char		ertm15_firmware_version[32];
+	uint32_t        calibration_date;
 	/* unused */
 	struct ertm14_device_metadata
 			firmware_metadata;

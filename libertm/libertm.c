@@ -520,6 +520,8 @@ static int get_version_info(struct ertm_status *st,
 	 */
 	bytes_to_64_mac(&bi->ertm14_mac1, bi->ertm14_mac1_bytes);
 	bytes_to_64_mac(&bi->ertm14_mac2, bi->ertm14_mac2_bytes);
+	bi->calibration_date = ntohl( bi->calibration_date );
+
 	if (res < 0)
 		return res;
 	res = ertm_proto_cycle(link, ertm14_get_fpga_info, NULL, fpga);

@@ -153,7 +153,8 @@ int wrc_mon_gui(void)
 		}
 	}
 
-	
+	spll_get_num_channels(NULL, &n_out);
+
 	if (!state.state) {
 		return 1;
 	}
@@ -221,11 +222,8 @@ int wrc_mon_gui(void)
 	/*cprintf(C_GREY, "Synchronization source:    ");
 	cprintf(C_WHITE, "%s\n", cur_servo_state.sync_source);*/
 
-	spll_get_num_channels(NULL, &n_out);
 
-
-
-	for(i = 0; i < n_out - 1; i++) {
+	for(i = 0; i <= n_out - 1; i++) {
 		cprintf(C_GREY, "Aux clock %d status:        ", i);
 
 		aux_stat = spll_get_aux_status(i);
@@ -233,13 +231,13 @@ int wrc_mon_gui(void)
 		if (aux_stat.flags & SPLL_AUX_SLAVE_ENABLED)
 			cprintf(C_GREEN, "enabled");
 
-		if (aux_stat.flags & SPLL_AUX_TRACKING_ENABLED )
-			cprintf(C_GREEN, "tracking source");
+		if (aux_stat.flags & SPLL_AUX_MONITOR_ENABLED )
+			cprintf(C_GREEN, "monitor");
 
 		if (aux_stat.flags & SPLL_AUX_SLAVE_LOCKED)
 			cprintf(C_GREEN, ", locked");
 
-		if( aux_stat.flags & SPLL_AUX_TRACKING_READY )
+		if( aux_stat.flags & SPLL_AUX_MONITOR_READY )
 		{
 			cprintf(C_GREEN, ", ready");
 			cprintf(C_WHITE, " (AUX-to-WR offset: %d ps)", aux_stat.phase );
@@ -434,6 +432,20 @@ uint32_t wrc_temp_get(char *name)
 	return s->value;
 }
 
+int wrc_ptp_get_servo_state( void )
+{
+	struct wr_servo_state *ss =
+		&((struct wr_data *)ppi->ext_data)->servo_state;
+		int32_t asym   = (int32_t)(ss->picos_mu-2LL * ss->delta_ms);
+		int wr_mode    = (ss->flags & WR_FLAG_VALID) ? 1 : 0;
+	return  ss->state;
+}
+
+int wrc_ptp_get_state( void )
+{
+	return ppi->state;
+}
+
 int wrc_wr_diags(void)
 {
 	struct hal_port_state ps;
@@ -525,7 +537,7 @@ int wrc_wr_diags(void)
 	spll_get_num_channels(NULL, &n_out);
 	if (n_out > 8) n_out = 8; /* hardware limit. */
 	for(i = 0; i < n_out; i++) {
-		aux_stat |= (( SPLL_AUX_SLAVE_LOCKED | SPLL_AUX_TRACKING_READY ) & spll_get_aux_status(i).flags) << i;
+		aux_stat |= (( SPLL_AUX_SLAVE_LOCKED | SPLL_AUX_MONITOR_READY ) & spll_get_aux_status(i).flags) << i;
 	}
 	wdiags_write_aux_state(aux_stat);
 	
@@ -606,7 +618,7 @@ int wrc_diags_dump(struct WRC_DIAGS_WB *buf)
 	if (n_out > 8) n_out = 8; /* hardware limit. */
 	aux_stat = 0;
 	for(i = 0; i < n_out; i++) {
-		aux_stat |= (( SPLL_AUX_SLAVE_LOCKED | SPLL_AUX_TRACKING_READY ) & spll_get_aux_status(i).flags) << i;
+		aux_stat |= (( SPLL_AUX_SLAVE_LOCKED | SPLL_AUX_MONITOR_READY ) & spll_get_aux_status(i).flags) << i;
 	}
 	buf->WDIAG_ASTAT = SYSC_WDIAG_ASTAT_AUX_W(aux_stat);
 

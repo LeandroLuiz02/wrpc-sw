@@ -180,6 +180,8 @@ struct gpio_pin pin_ertm15_leds_ser = { &board.gpio_aux, 66 };
 struct gpio_pin pin_ertm15_leds_updtclk = { &board.gpio_aux, 67 };
 struct gpio_pin pin_ertm15_leds_shftclk = { &board.gpio_aux, 68 };
 
+struct gpio_pin pin_tm_clk_aux0_lock_en = {  &board.gpio_aux, 71 };
+struct gpio_pin pin_fpg_fast_pps_sel = {  &board.gpio_aux, 72 };
 
 // a/b/lo/ref, red->green
 struct gpio_pin pin_ertm15_led_clka_red = { &board.gpio_ertm15_leds, 0 };
@@ -228,6 +230,8 @@ spll_gain_schedule_t spll_main_ocxo_gain_sched;
 #define ERTM14_BIST_FLASH_FS_MOUNT 11
 #define ERTM14_BIST_MMC_14 12
 #define ERTM14_BIST_MMC_15 13
+#define ERTM14_BIST_ERTM15_PRESENCE 14
+#define ERTM14_BIST_PLL_LOCK 15
 
 #define BIST_STATUS_DONE (1<<0)
 #define BIST_STATUS_ERROR (1<<1)
@@ -241,6 +245,7 @@ struct bist_stage
 };
 
 static struct bist_stage ertm_bist[] = {
+    {ERTM14_BIST_ERTM15_PRESENCE, "Check eRTM15 presence", 1},
     {ERTM14_BIST_FLASH_PRESENCE, "Check flash presence", 1},
     {ERTM14_BIST_FLASH_FS_MOUNT, "Mount flash FS", 1},
     {ERTM14_BIST_LTC6950, "LTC6950", 1},
@@ -253,6 +258,7 @@ static struct bist_stage ertm_bist[] = {
     {ERTM14_BIST_DDS_REF, "DDS comm (REF)", 1},
     {ERTM14_BIST_MMC_14, "MMC Link (eRTM14)", 1},
     {ERTM14_BIST_MMC_15, "MMC Link (eRTM15)", 1},
+    {ERTM14_BIST_PLL_LOCK, "PLL Lock", 1},
 
     {0, NULL}};
 
@@ -363,11 +369,32 @@ static struct wrc_sensor ertm_sensors[] = {
     }
 };
 
+
+#define MMC_POLL_STATE_IDLE 0
+#define MMC_POLL_STATE_WAIT_RESPONSE 1
+
+#define ERTM14_MMC_POLL_PERIOD_MS 1000 /* milliseconds */
+#define ERTM14_MMC_RX_TIMEOUT_MS 1000 /* milliseconds */
+
+struct ertm14_mmc_link
+{
+    struct uart_link ulink;
+    int poll_state;
+    timeout_t poll_timeout, rx_timeout;
+};
+
+static struct ertm14_mmc_link mmc14_link;
+static struct ertm14_mmc_link mmc15_link;
+
+
 static void mmc_show_version_info( const char *brdname, struct ertm14_mmc_state *st );
 static void streamers_init(void);
 static void streamers_set_rx_latency( uint32_t lat );
 static void streamers_set_rx_timeout( uint32_t tmo );
 void streamers_reset_rx_stats(void);
+
+int mmc_link_request_state(struct ertm14_mmc_link *link);
+int mmc_link_poll_state(struct ertm14_mmc_link *link, struct ertm14_mmc_state *state, int blocking);
 
 uint32_t bswap32(uint32_t v)
 {
@@ -390,6 +417,8 @@ uint16_t bswap16(uint16_t v)
 
     return rv;
 }
+
+//#define PROFILE_ULINK
 
 void bist_checkpoint( struct bist_stage *bist, int id, int channel, int pass )
 {
@@ -466,22 +495,47 @@ static void mmc_comm_init(void);
 
 #define LTC6950_ID_VALUE 0x65
 
-// fixme: use PRESENCE_A/B pins instead of LTC6950 PLL chip
-static int check_ertm15_presence(void)
+static int wait_ertm15_presence(void)
 {
-    ltc695x_init(&board.ltc6950_pll, &board.spi_ltc6950);
-    int id;
-    //for(;;)
-    {
-         id = ltc695x_read( &board.ltc6950_pll, 0x16 );
+    board_dbg("Waiting for the eRTM15 to power up...\n");
 
-        board_dbg("detect LTC6950: ID %x should be %x\n", id, LTC6950_ID_VALUE );
+    led_action( &board.leds.sync, LED_COLOR_1 | LED_COLOR_2, LED_BLINK );
+    
+    timeout_t e15_powerup_timeout;
+    timeout_t e15_rx_timeout;
+
+    tmo_init( &e15_powerup_timeout, 60000 );
+
+    while( !tmo_expired( &e15_powerup_timeout ) )
+    {
+        struct ertm14_mmc_state state;
+    
+        tmo_init( &e15_rx_timeout, 1000 );
+
+        mmc_link_request_state( &mmc15_link );
+
+        int ret = -1;
+        while( !tmo_expired( &e15_rx_timeout ) )
+        {
+            leds_update();
+            ret = mmc_link_poll_state( &mmc15_link, &state, 0 );
+            if( ret != 0 )
+                break;
+        }
+
+        if( ret > 0 )
+        {
+            uint32_t flags = bswap32( state.flags );
+            board_dbg("Got eRTM15 rsp, flags = %x\n", flags );
+
+            if( flags & ERTM_FLAGS_POWERED_ON )
+            {
+                return 1;
+            }
+        }
     }
 
-    if( id != LTC6950_ID_VALUE )
-        return 0;
-
-    return 1;
+    return -1;
 }
 
 /* CLKA inverted outputs: 0, 1, 4, 5, 6 (LTC6953 ordering) */
@@ -595,6 +649,9 @@ static void ertm14_spll_setup(void)
 #endif
 
 	spll_set_gain_schedule( gs );
+
+    // Aux clock 0 is used for 'factory' calibration of CLKAB/LO/REF outputs.
+    spll_set_aux_mode( 0, SPLL_AUX_MODE_PHASE_MONITOR );
 }
 
 
@@ -616,6 +673,14 @@ static void ertm14_dds_trigger_ioupdate( struct ad9910_device *dev )
     int channel = (dev == &board.dds_ad9910_ref ? ERTM14_DDS_IOUPDATE_REF : ERTM14_DDS_IOUPDATE_LO);
     fine_pulse_gen_force_pulse( &board.dds_sync_dev, channel );
 }
+
+
+static int ertm14_is_ioupdate_triggered( struct ad9910_device *dev )
+{
+    int channel = (dev == &board.dds_ad9910_ref ? ERTM14_DDS_IOUPDATE_REF : ERTM14_DDS_IOUPDATE_LO);
+    return fine_pulse_gen_is_triggered( &board.dds_sync_dev, 1 << channel );
+}
+
 
 static int ertm14_switch_sys_clock( int use_sys_from_pll )
 {
@@ -734,6 +799,11 @@ static void ertm14_dds_sync_calibrate(void)
         {
             if (windows[j].smp_err)
             {
+                if( windows[j].length >= MIN_SAMPLE_WINDOW_LENGTH && windows[j].best_length < 0 )
+                {
+                    windows[j].best_start = windows[j].start;
+                    windows[j].best_length = windows[j].length;
+                }
 
                 windows[j].start = -1;
                 windows[j].length = 0;
@@ -744,17 +814,10 @@ static void ertm14_dds_sync_calibrate(void)
                     windows[j].start = fine;
 
                 windows[j].length++;
-
-                if( windows[j].length >= MIN_SAMPLE_WINDOW_LENGTH && windows[j].best_length < 0)
-                {
-                    windows[j].best_start = windows[j].start;
-                    windows[j].best_length = windows[j].length;
-
-                }
             }
         }
 
-//        pp_printf("SmpERR LO %d REF %d\n", windows[0].smp_err, windows[1].smp_err);
+        //pp_printf("Fine %d SmpERR LO %d REF %d\n", fine, windows[0].smp_err, windows[1].smp_err);
 
         fine += AD9910_FINE_DELAY_STEP_PS;
     }
@@ -775,6 +838,9 @@ static void ertm14_dds_sync_calibrate(void)
 
     fine_pulse_gen_setup_channel ( &board.dds_sync_dev, ERTM14_DDS_SYNC_LO, 1, 100000 + windows[0].setpoint, 0, FINE_PULSE_GEN_CONTINUOUS );
     fine_pulse_gen_setup_channel ( &board.dds_sync_dev, ERTM14_DDS_SYNC_REF, 1, 100000 + windows[1].setpoint, 0, FINE_PULSE_GEN_CONTINUOUS );
+
+    fine_pulse_gen_trigger( &board.dds_sync_dev, channel_mask, 1 );
+        while ( !fine_pulse_gen_is_triggered( &board.dds_sync_dev, channel_mask ) );
 }
 
 
@@ -812,6 +878,10 @@ static int control_uart_poll(void)
     {
         struct uart_packet t, *tx_pkt = &t;
 
+        #ifdef PROFILE_ULINK
+        board_dbg("UL RXReq %d ms\n", timer_get_tics() );
+        #endif
+
         /*... dispatch */
         if( pkt->ptype == ERTM14_UART_PTYPE_PING )
         {
@@ -830,7 +900,15 @@ static int control_uart_poll(void)
 	    ertm_process_psnmp(pkt, tx_pkt);
 
 	    /* we presume this is binary, snmp or not */
+        #ifdef PROFILE_ULINK
+        board_dbg("UL TXResp %d ms\n", timer_get_tics() );
+        #endif
+
             uart_link_send(&board.control_uart_link, tx_pkt);
+        #ifdef PROFILE_ULINK
+        board_dbg("UL TXDone %d ms\n", timer_get_tics() );
+        #endif
+
 	}
     }
 
@@ -897,6 +975,9 @@ static int apply_dds_config( struct ad9910_device *dev, struct ertm14_dds_state*
     uint32_t new_ftw = old_state->ftw;
     uint32_t new_ampl_factor = old_state->ampl_factor;
 
+//    board_dbg("apply dds cfg: af %d mask %d\n", new_state->ampl_factor, mask->ampl_factor );
+//    board_dbg("apply dds cfg: ftw %d mask %d\n", new_state->ftw, mask->ftw );
+
     int config_changed = 0;
 
 	if( mask->ampl_factor && ( new_state->ampl_factor != old_state->ampl_factor) )
@@ -921,7 +1002,24 @@ static int apply_dds_config( struct ad9910_device *dev, struct ertm14_dds_state*
     if( config_changed )
     {
         board_dbg("DDS[%p]: changing FTW=0x%08x, ampl=%d\n", dev, new_ftw, new_ampl_factor );
+
+        //        shw_pps_gen_enable_output(1);
+        // shw_pps_gen_unmask_output(1);
+
+        //fine_pulse_gen_setup_channel ( &board.dds_sync_dev, ERTM14_DDS_IOUPDATE_LO, 1, board.dds_sync_delays[ERTM14_DDS_IOUPDATE_LO], 0, 0 );
+        //fine_pulse_gen_setup_channel ( &board.dds_sync_dev, ERTM14_DDS_IOUPDATE_REF, 1, board.dds_sync_delays[ERTM14_DDS_IOUPDATE_REF], 0, 0 );
+
         ad9910_program( dev, new_ftw, 0, new_ampl_factor );
+
+        // ugly hack below: when the NCO reset is subscribed to, we must wait until the IOUPDATE pulse has been forcefully generated.
+        // otherwise, the NCO SYNC FSM will take over too early and the sync pulse will never be produced (or produced when the next cycle/NCO reset arrives)
+
+        // we need some sort of builtin PPM here, but for the SPS operation this is enough
+        do
+        {
+            timer_delay_ms(100);
+        } while( !ertm14_is_ioupdate_triggered ( dev ) );
+
         return 1;
     }
 
@@ -1016,7 +1114,6 @@ void ertm14_apply_config(struct ertm14_board_state *cfg,
 	for (i = ERTM14_RF_OUT_MIN_ID; i <= ERTM14_RF_OUT_MAX_ID; i++) {
 		int st_lo = cfg->lo.out_state[i] == ERTM15_RF_OUT_ON ? 1 : 0;
 		int st_ref = cfg->ref.out_state[i] == ERTM15_RF_OUT_ON ? 1 : 0;
-	//	board_dbg("i %d lo %x ref %x\n", i, st_lo, st_ref );
 
         if( force_all )
         {
@@ -1077,6 +1174,13 @@ void get_version_info(struct ertm14_version_info *bi)
 				    sizeof(bi->ertm14_firmware_version));
 	strncpy(bi->ertm15_firmware_version, ertm15_board_info.git_tag,
 				    sizeof(bi->ertm15_firmware_version));
+
+
+    uint32_t cd;
+    if( storage_get_calibration_parameter( CAL_PARAM_CALIBRATION_DATE, &cd ) < 0 )
+        cd = 0;
+
+    bi->calibration_date = cd;
 }
 
 void get_fpga_info(uint8_t *bi)
@@ -1410,6 +1514,8 @@ static int rf_nco_sync_fsm( int is_ref, struct ertm14_dds_state *state, uint32_t
 
             if( trigd )
             {
+                led_action( is_ref ? &board.leds.ref : &board.leds.lo, LED_COLOR_1, LED_BLINK_SINGLE_NEGATIVE );
+                led_action( is_ref ? &board.leds.ref : &board.leds.lo, LED_COLOR_2, LED_OFF );
                 board_dbg("nco_sync[%s]: triggered!\n", name);
                 rf_nco_sync_arm_channel( state, ioupdate_channel );
                 state->sync_state = ERTM14_CLK_SYNC_STATE_READY;
@@ -1426,6 +1532,8 @@ static int rf_nco_sync_fsm( int is_ref, struct ertm14_dds_state *state, uint32_t
 
             if( trigd )
             {
+                led_action( is_ref ? &board.leds.ref : &board.leds.lo, LED_COLOR_1, LED_BLINK_SINGLE_NEGATIVE );
+                led_action( is_ref ? &board.leds.ref : &board.leds.lo, LED_COLOR_2, LED_OFF );
                 rf_nco_sync_arm_channel( state, ioupdate_channel );
                 state->sync_state = ERTM14_CLK_SYNC_STATE_READY;
             }
@@ -1469,6 +1577,14 @@ static int ertm14_clkab_sync_task(void)
     uint8_t *stateA = ertm14_current_state->clka_sync_state;
     uint8_t *stateB = ertm14_current_state->clkb_sync_state;
 
+// OK, I'm commenting this one out at the request of the RF guys - we have reduced the choice of
+// CLKAB frequencies to the integer multiplies of 62.5 MHz, so that no matter how many times the WR link
+// is established, once synced during startup, CLKA/B edges will be always synchronous to the WR PPS.
+
+// This prevents the 2ms-long squelch of the CLKA/B outputs (imposed by the LTC6953 chip), which causes
+// the SIS83k boards clocked using the eRTM to reset due to loss of clock.
+
+/*
     if( evt == WRC_EVENT_TIMING_UP )
     {
         int i;
@@ -1480,7 +1596,7 @@ static int ertm14_clkab_sync_task(void)
             stateB[i] = ERTM14_CLK_SYNC_STATE_RESTART;
         }
     }
-
+*/
     uint64_t secs;
     uint32_t nsecs;
 
@@ -1512,6 +1628,8 @@ static int ertm14_clkab_sync_task(void)
                     if( stateA[i] == ERTM14_CLK_SYNC_STATE_RESTART )
                     {
                         board_dbg("[clkab_sync] CLKA%d pending\n", i);
+                        led_action( &board.leds.clka, LED_COLOR_1, LED_ON );
+                        led_action( &board.leds.clka, LED_COLOR_2, LED_ON );
                         clkab_enable_sync( ertm14_current_state, ERTM14_OUT_CLKA, i, 1 );
                         stateA[i] = ERTM14_CLK_SYNC_STATE_WAIT_TRIGGER;
                         any_output_pending = 1;
@@ -1520,6 +1638,8 @@ static int ertm14_clkab_sync_task(void)
                     if( stateB[i] == ERTM14_CLK_SYNC_STATE_RESTART )
                     {
                         board_dbg("[clkab_sync] CLKB%d pending\n", i);
+                        led_action( &board.leds.clkb, LED_COLOR_1, LED_ON );
+                        led_action( &board.leds.clkb, LED_COLOR_2, LED_ON );
                         clkab_enable_sync( ertm14_current_state, ERTM14_OUT_CLKB, i, 1 );
                         stateB[i] = ERTM14_CLK_SYNC_STATE_WAIT_TRIGGER;
                         any_output_pending = 1;
@@ -1553,6 +1673,8 @@ static int ertm14_clkab_sync_task(void)
                         board_dbg("[clkab_sync] CLKA%d synced!\n", i);
                         clkab_enable_sync( ertm14_current_state, ERTM14_OUT_CLKA, i, 0 );
                         stateA[i] = ERTM14_CLK_SYNC_STATE_READY;
+                        led_action( &board.leds.clka, LED_COLOR_1, LED_ON );
+                        led_action( &board.leds.clka, LED_COLOR_2, LED_OFF );
                     }
 
                     if( stateB[i] == ERTM14_CLK_SYNC_STATE_WAIT_TRIGGER )
@@ -1560,6 +1682,8 @@ static int ertm14_clkab_sync_task(void)
                         board_dbg("[clkab_sync] CLKB%d synced!\n", i);
                         clkab_enable_sync( ertm14_current_state, ERTM14_OUT_CLKB, i, 0 );
                         stateB[i] = ERTM14_CLK_SYNC_STATE_READY;
+                        led_action( &board.leds.clkb, LED_COLOR_1, LED_ON );
+                        led_action( &board.leds.clkb, LED_COLOR_2, LED_OFF );
                     }
                 }
             }
@@ -1664,6 +1788,18 @@ static void ertm14_init_leds(void)
 {
     blink_led(&pin_led_sync_green);
     blink_led(&pin_led_sync_red);
+
+    led_create( &board.leds.sync, &pin_led_sync_green, &pin_led_sync_red, LED_TYPE_DUAL_COLOR, LED_OFF );
+    led_set_blink_timing( &board.leds.sync, 1000, 500 );
+    led_set_blink_timing( &board.leds.lo, 50, 50 );
+    led_set_blink_timing( &board.leds.ref, 50, 50 );
+
+    led_action( &board.leds.sync, LED_COLOR_1, LED_BLINK );
+}
+
+
+static void ertm15_init_leds(void)
+{
     blink_led(&pin_ertm15_led_ref_green);
     blink_led(&pin_ertm15_led_lo_green);
     blink_led(&pin_ertm15_led_clkb_green);
@@ -1673,16 +1809,11 @@ static void ertm14_init_leds(void)
     blink_led(&pin_ertm15_led_clkb_red);
     blink_led(&pin_ertm15_led_clka_red);
 
-    leds_init();
 
     led_create( &board.leds.clka, &pin_ertm15_led_clka_green, &pin_ertm15_led_clka_red, LED_TYPE_DUAL_COLOR, LED_OFF );
     led_create( &board.leds.clkb, &pin_ertm15_led_clkb_green, &pin_ertm15_led_clkb_red, LED_TYPE_DUAL_COLOR, LED_OFF );
     led_create( &board.leds.lo, &pin_ertm15_led_lo_green, &pin_ertm15_led_lo_red, LED_TYPE_DUAL_COLOR, LED_OFF );
     led_create( &board.leds.ref, &pin_ertm15_led_ref_green, &pin_ertm15_led_ref_red, LED_TYPE_DUAL_COLOR, LED_OFF );
-    led_create( &board.leds.sync, &pin_led_sync_green, &pin_led_sync_red, LED_TYPE_DUAL_COLOR, LED_OFF );
-
-    led_set_blink_timing( &board.leds.sync, 1000, 500 );
-    led_action( &board.leds.sync, LED_COLOR_1, LED_BLINK );
 }
 
 static void set_main_dac( int value )
@@ -1723,11 +1854,40 @@ int ertm15_pll_init(void)
     ltc695x_configure(&board.ltc6950_pll, &pll_ertm15_bootstrap_config);
 
     board_dbg("Using 100 MHz OCXO\n");
-    //ltc6950_write( &board.ltc6950_pll, 0x15, 4 ); // RDIVOUT = 0, output div = 50
     ltc695x_write(&board.ltc6950_pll, 0x8, 0x1); // reference divider = 1
-
     ltc695x_write(&board.ltc6950_pll, 0x15, 50); // RDIVOUT = 0, output div = 50
-    ltc695x_write(&board.ltc6950_pll, 0x0a, 10); // N divider = 10 (VCO @ 1GHz, PFD @ 10 MHz)
+    ltc695x_write(&board.ltc6950_pll, 0x0a, 10); // N divider = 10 (VCO @ 1GHz, PFD @ 100 MHz)
+
+    int locked = 0;
+
+    timeout_t lock_timeout;
+    tmo_init( &lock_timeout, 1000 );
+
+    // wait for the PLL to lock
+    do {
+        if( tmo_expired( &lock_timeout) )
+            break;
+
+        locked = ltc695x_read(&board.ltc6950_pll, 0) & LTC695x_R0_LOCK;
+
+        timer_delay_ms(10);
+    } while( !locked );
+
+    bist_checkpoint( ertm_bist, ERTM14_BIST_PLL_LOCK, 0, locked );
+
+    if( !locked )
+        return -1;
+
+    // now that we are locked, we can sync the outputs so that all coutners start at the same time
+    gen_gpio_out( &pin_ltc6950_sync, 0 );
+    ltc6950_set_syncen( &board.ltc6950_pll, 0x1f );
+
+    gen_gpio_out( &pin_ltc6950_sync, 1 );
+    timer_delay_ms(10);
+    gen_gpio_out( &pin_ltc6950_sync, 0 );
+
+    ltc6950_set_syncen( &board.ltc6950_pll, 0x0 );
+
     board.mode |= ERTM14_MODE_OCXO_100MHZ;
     return 0;
 }
@@ -1946,9 +2106,6 @@ int ertm14_low_level_init(void)
     board.mode |= ERTM14_MODE_WITHOUT_ERTM15;
 #endif
 
-
-    leds_init();
-
     /* apply a default, sane configuration (initialize the config struct) */
     ertm14_config_init();
 
@@ -1961,6 +2118,7 @@ int ertm14_low_level_init(void)
     gen_gpio_out(&pin_main_xo_en_n, 0);
 
     x595_gpio_create ( &board.gpio_ertm15_leds, 1, &pin_ertm15_leds_updtclk, &pin_ertm15_leds_shftclk, NULL, &pin_ertm15_leds_ser);
+    leds_init();
 
     /* initialize the SPI bus for the main PLL (IC?) */
     bb_spi_create ( &board.spi_pll_main,
@@ -2004,17 +2162,35 @@ int ertm14_low_level_init(void)
         &pin_ad9910_lo_sclk,
         100 );
 
+    mmc_comm_init();
+
+    ertm14_init_leds();
+
     /* detect if the eRTM15 is present and decide how to configure the board */
-    int ertm15_present = check_ertm15_presence();
+    int ertm15_present = wait_ertm15_presence();
 
     if( !ertm15_present )
         board.mode |= ERTM14_MODE_WITHOUT_ERTM15;
 
     if ( board.mode & ERTM14_MODE_WITHOUT_ERTM15 )
-        board_dbg( "Configuring board *WITHOUT* eRTM15 support (eRTM15 not found or disabled in software).\n");
+        board_dbg( "Configuring board *WITHOUT* eRTM15 support (eRTM15 not found, not powered on or disabled in software). The WRC will not be functional!\n");
     else
         board_dbg( "Configuring board WITH eRTM15 support.\n");
-    
+
+    bist_checkpoint( ertm_bist, ERTM14_BIST_ERTM15_PRESENCE, 0, ertm15_present );
+
+    if( !ertm15_present )
+    {
+        led_action( &board.leds.sync, LED_COLOR_1, LED_OFF );
+        led_action( &board.leds.sync, LED_COLOR_2, LED_BLINK );
+        return 0;
+    }
+    else
+    {
+        led_action( &board.leds.sync, LED_COLOR_1, LED_OFF );
+        led_action( &board.leds.sync, LED_COLOR_2, LED_OFF );
+    }
+
 
     /* Initialize the clock monitor core - it monitors the frequencies of all clocks coming to the FPGA.
        We use it to self-diagnose if the board's oscillators are working correctly. */
@@ -2030,7 +2206,7 @@ int ertm14_low_level_init(void)
     /* Set up the eRTM14's PLLs (AD9516s) */
     ertm14_init_ref_clock_distribution();
 
-    ertm14_init_leds();
+    ertm15_init_leds();
 
     // fixme: detect fail
     //ertm15_check_oscillators();
@@ -2088,6 +2264,7 @@ int ertm14_low_level_init(void)
         ertm15_init_dds();
 
         /* Program the DDSes to some meaninfgul settings, say, 205 MHz */
+
         ad9910_program(&board.dds_ad9910_ref, ERTM14_DDS_DEFAULT_FTW, 0, ERTM14_DDS_DEFAULT_AMPLITUDE );
         ad9910_program(&board.dds_ad9910_lo, ERTM14_DDS_DEFAULT_FTW, 0, ERTM14_DDS_DEFAULT_AMPLITUDE );
 
@@ -2119,7 +2296,8 @@ int ertm14_low_level_init(void)
     board_dbg("Init Control UART Link\n");
     uart_link_create_wrpc_console( &board.control_uart_link );
 
-    mmc_comm_init();
+    board.control_uart_link.rx_next_timeout_ms = 5; // to avoid 'choking' effect
+    board.control_uart_link.extra_verbose = 0;
 
     board_dbg("Init RF transceiver & streamers\n");
 
@@ -2128,6 +2306,9 @@ int ertm14_low_level_init(void)
     wr_rf_frame_transceiver_create( &board.rf_xcvr, BASE_ERTM14_RF_FRAME_TRANSCEIVER );
 
     ertm14_set_pps_out_mode( ERTM14_PPS_OUT_MODE_PPS );
+
+    led_action( &board.leds.ref, LED_COLOR_1 | LED_COLOR_2, LED_ON );
+    led_action( &board.leds.lo, LED_COLOR_1 | LED_COLOR_2, LED_ON );
 
     board_dbg("eRTM14/15 early init done\n");
 
@@ -2236,12 +2417,10 @@ static struct {
     int freq;
     int divider;
 } clkab_freqs [] = {
-    { 1000000000, 1 },
-    { 500000000, 2},
-    { 250000000, 4},
-    { 200000000, 5},
-    { 125000000, 8},
-    { 62500000, 16},
+    { 500000000, 1},
+    { 250000000, 2},
+    { 125000000, 4},
+    { 62500000, 8},
     {-1,-1}
 };
 
@@ -2335,6 +2514,16 @@ int wrc_board_early_init()
 
     storage_load_calibration();
 
+    uint32_t cd;
+
+    if( storage_get_calibration_parameter( CAL_PARAM_CALIBRATION_DATE, &cd ) < 0 )
+        cd = 0;
+
+    if( !cd )
+        board_dbg("WARNING! Board calibration info has no calibration date!\n");
+    else
+        board_dbg("Calibration data: %d UTC timestamp\n", cd );
+
    	net_rst();
 
     int ll = ertm14_low_level_init();
@@ -2355,22 +2544,6 @@ int wrc_board_early_init()
 
     return ll;
 }
-
-#define MMC_POLL_STATE_IDLE 0
-#define MMC_POLL_STATE_WAIT_RESPONSE 1
-
-#define ERTM14_MMC_POLL_PERIOD_MS 1000 /* milliseconds */
-#define ERTM14_MMC_RX_TIMEOUT_MS 1000 /* milliseconds */
-
-struct ertm14_mmc_link
-{
-    struct uart_link ulink;
-    int poll_state;
-    timeout_t poll_timeout, rx_timeout;
-};
-
-static struct ertm14_mmc_link mmc14_link;
-static struct ertm14_mmc_link mmc15_link;
 
 /* FIXME: these should be in a .h file */
 extern int phy_calibration_poll(void);
@@ -2602,8 +2775,63 @@ int ertm15_update_rf_monitor( void )
     return 0;
 }
 
+static int prev_ptp_servo_state = -1;
+static int prev_ptp_state = -1;
+
 int ertm14_update_leds( void )
 {
+
+    /* White Rabbit Servo */
+    enum {
+        WR_UNINITIALIZED = 0,
+        WR_SYNC_NSEC,
+        WR_SYNC_TAI,
+        WR_SYNC_PHASE,
+        WR_TRACK_PHASE,
+        WR_WAIT_OFFSET_STABLE,
+    };
+
+
+    /* Enumeration States (table 8, page 73) */
+    enum {
+        PPS_END_OF_TABLE	= 0,
+        PPS_INITIALIZING,
+        PPS_FAULTY,
+        PPS_DISABLED,
+        PPS_LISTENING,
+        PPS_PRE_MASTER,
+        PPS_MASTER,
+        PPS_PASSIVE,
+        PPS_UNCALIBRATED,
+        PPS_SLAVE,
+    };
+
+    int ptp_servo_state = wrc_ptp_get_servo_state();
+    int ptp_state = wrc_ptp_get_state();
+
+    if( ptp_servo_state != prev_ptp_servo_state || ptp_state != prev_ptp_state )
+    {
+        if( ptp_servo_state == WR_TRACK_PHASE && ptp_state == PPS_SLAVE )
+        {
+            led_action( &board.leds.sync, LED_COLOR_1, LED_ON );
+            led_action( &board.leds.sync, LED_COLOR_2, LED_OFF );
+        }
+        else if ( ptp_state == PPS_LISTENING || ptp_state == PPS_INITIALIZING )
+        {
+            led_action( &board.leds.sync, LED_COLOR_1, LED_OFF );
+            led_action( &board.leds.sync, LED_COLOR_2, LED_OFF );
+        }
+        else if ( ptp_state == PPS_SLAVE )
+        {
+            led_action( &board.leds.sync, LED_COLOR_1, LED_BLINK );
+            led_action( &board.leds.sync, LED_COLOR_2, LED_OFF );
+        }
+
+        prev_ptp_servo_state = ptp_servo_state;
+        prev_ptp_state = ptp_state;
+    }
+
+
     leds_update();
     return 0;
 }
@@ -2618,13 +2846,17 @@ int wrc_board_init()
     console_set_mode_switch_hook( &console_uart_dev, control_uart_mode_callback );
 
     wrc_task_create( "control-uart", NULL, control_uart_poll );
-    wrc_task_create( "rf-nco-sync", ertm14_dds_nco_sync_init, ertm14_dds_nco_sync_task );
-    wrc_task_create( "clkab-sync", ertm14_clkab_sync_init, ertm14_clkab_sync_task );
-    wrc_task_create( "phy-cal", phy_calibration_init, phy_calibration_poll );
     wrc_task_create( "mmc14", mmc14_link_init, mmc14_link_poll );
-    wrc_task_create( "mmc15", mmc15_link_init, mmc15_link_poll );
-    wrc_task_create( "rf-monitor", ertm15_init_rf_monitor, ertm15_update_rf_monitor );
     wrc_task_create( "leds", NULL, ertm14_update_leds );
+    wrc_task_create( "phy-cal", phy_calibration_init, phy_calibration_poll );
+
+    if( ! ( board.mode & ERTM14_MODE_WITHOUT_ERTM15 ) )
+    {
+        wrc_task_create( "rf-nco-sync", ertm14_dds_nco_sync_init, ertm14_dds_nco_sync_task );
+        wrc_task_create( "clkab-sync", ertm14_clkab_sync_init, ertm14_clkab_sync_task );
+        wrc_task_create( "mmc15", mmc15_link_init, mmc15_link_poll );
+        wrc_task_create( "rf-monitor", ertm15_init_rf_monitor, ertm15_update_rf_monitor );
+    }
 
     struct ertm14_board_state mask;
     memset(&mask, 0xff, sizeof( struct ertm14_board_state )); // make sure we commit everything to HW
@@ -2637,6 +2869,99 @@ int wrc_board_init()
 
 int wrc_board_create_tasks()
 {
+
+    return 0;
+}
+
+void ertm14_sync_pulse_cal()
+{
+    pp_printf("Sync Pulse calibration [press X to continue]:\n");
+
+    int dly_clka =  board.dds_sync_delays[ERTM14_PLL_SYNC_CLKA];
+    int dly_clkb =  board.dds_sync_delays[ERTM14_PLL_SYNC_CLKB];
+    int dly_ioupd_ref =  board.dds_sync_delays[ERTM14_DDS_IOUPDATE_REF];
+    int dly_ioupd_lo =  board.dds_sync_delays[ERTM14_DDS_IOUPDATE_LO];
+
+
+    pp_printf("Current offsets:\n CLKA = %d ps\n CLKB = %d ps\n DDS REF = %d ps\n DDS LO = %d ps\n", dly_clka, dly_clkb,  dly_ioupd_ref, dly_ioupd_lo);
+
+    uint32_t channel_mask = ( 1 << ERTM14_PLL_SYNC_CLKA ) | ( 1<< ERTM14_PLL_SYNC_CLKB )
+                            | ( 1<< ERTM14_DDS_IOUPDATE_LO) | ( 1<< ERTM14_DDS_IOUPDATE_REF);
+
+    shw_pps_gen_init();
+    shw_pps_gen_enable_output(1);
+    shw_pps_gen_unmask_output(1);
+
+    ertm14_set_pps_out_mode(0);
+
+  
+
+    int offset;
+
+    // CLKA @ 400 ps
+    // CLKB @ 400 ps
+
+    offset = 400;
+    ertm14_set_pps_out_mode(0);
+
+    int div = ertm14_get_clkab_divider( 62500000 );
+
+
+
+    clkab_set_output_divider( ertm14_current_state, 0, ERTM14_CLKAB_OUT_FRONT_PANEL, div );
+    clkab_set_output_divider( ertm14_current_state, 1, ERTM14_CLKAB_OUT_FRONT_PANEL, div );
+
+    int i;
+    for( i = ERTM14_CLKAB_OUT_MIN_ID; i <= ERTM14_CLKAB_OUT_MAX_ID; i++ )
+    {
+        clkab_enable_sync( ertm14_current_state, ERTM14_OUT_CLKA, i, 1 );
+        clkab_enable_sync( ertm14_current_state, ERTM14_OUT_CLKB, i, 1 );
+    }
+
+    gen_gpio_out( &pin_tm_clk_aux0_lock_en, 1 );
+
+    spll_init( SPLL_MODE_FREE_RUNNING_MASTER, 0, 0 );
+
+    int quit = 0;
+    do
+    {
+        pp_printf("Offset is %d ps, a = increase, z = decrease, x = quit\n", offset);
+
+        fine_pulse_gen_setup_channel ( &board.dds_sync_dev, ERTM14_PLL_SYNC_CLKA, 1, offset, 1000, 0 );
+        fine_pulse_gen_setup_channel ( &board.dds_sync_dev, ERTM14_PLL_SYNC_CLKB, 1, offset, 1000, 0 );
+        fine_pulse_gen_setup_channel ( &board.dds_sync_dev, ERTM14_DDS_IOUPDATE_LO, 1, offset, 0, 0 );
+        fine_pulse_gen_setup_channel ( &board.dds_sync_dev, ERTM14_DDS_IOUPDATE_REF, 1, offset, 0, 0 );
+
+        fine_pulse_gen_trigger( &board.dds_sync_dev, channel_mask, 0 );
+
+#if 0
+        struct spll_aux_clock_status st = spll_get_aux_status( 0 );
+
+        pp_printf("Aux0: en:%d rdy:%d ph:%s\n", 
+        st.flags & SPLL_AUX_MONITOR_ENABLED ? 1 : 0,
+        st.flags & SPLL_AUX_MONITOR_READY ? 1 : 0,
+        st.phase
+        );
+#endif
+        while ( !fine_pulse_gen_is_triggered (&board.dds_sync_dev, channel_mask ) );
+
+        int c = console_getc();
+        switch(c)
+        {
+            case 'a': if( offset < 16000 ) offset += 100; break;
+            case 'z': if( offset > 100 ) offset -= 100; break;
+            case 'x': quit = 1; break;
+            default: break;
+        }
+    } while(!quit);
+
+    gen_gpio_out( &pin_tm_clk_aux0_lock_en, 0 );
+
+    for( i = ERTM14_CLKAB_OUT_MIN_ID; i <= ERTM14_CLKAB_OUT_MAX_ID; i++ )
+    {
+        clkab_enable_sync( ertm14_current_state, ERTM14_OUT_CLKA, i, 0 );
+        clkab_enable_sync( ertm14_current_state, ERTM14_OUT_CLKB, i, 0 );
+    }
 
     return 0;
 }

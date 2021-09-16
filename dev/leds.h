@@ -36,6 +36,7 @@ struct gpio_pin;
 #define LED_OFF 1
 #define LED_BLINK 2
 #define LED_BLINK_SINGLE (1<<4)
+#define LED_BLINK_SINGLE_NEGATIVE (1<<5)
 
 #define LED_COLOR_1 (1<<0)
 #define LED_COLOR_2 (1<<1)

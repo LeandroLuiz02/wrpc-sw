@@ -145,6 +145,8 @@ struct ertm_board_info {
 	/* MMC firmware versions */
 	char		ertm14_firmware_version[32];
 	char		ertm15_firmware_version[32];
+	uint32_t        calibration_date;
+
 	/* unused */
 	struct ertm_device_metadata
 			firmware_metadata;
@@ -189,6 +191,7 @@ struct ertm_nco_reset {
 	};
 	uint32_t	current_stream_id;
 	uint32_t	rx_count;
+	uint32_t	rx_timeouts;
 	uint32_t	reset_count;
 	uint32_t	connector;
 	uint32_t	unused[7];
