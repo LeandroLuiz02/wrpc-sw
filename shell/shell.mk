@@ -5,7 +5,8 @@ obj-$(CONFIG_WR_NODE) += \
 	shell/cmd_mac.o \
 	shell/cmd_ps.o \
 	shell/cmd_uptime.o \
-	shell/cmd_diag.o
+	shell/cmd_diag.o \
+	shell/cmd_sleep.o \
 
 obj-$(CONFIG_EMBEDDED_NODE) += \
 	shell/cmd_stat.o \
@@ -21,7 +22,6 @@ obj-$(CONFIG_EMBEDDED_NODE) += \
 obj-$(CONFIG_IP) +=				shell/cmd_ip.o
 obj-$(CONFIG_WRPC_PPSI) +=			shell/cmd_verbose.o
 obj-$(CONFIG_CMD_CONFIG) +=			shell/cmd_config.o
-obj-$(CONFIG_CMD_SLEEP) +=			shell/cmd_sleep.o
 obj-$(CONFIG_CMD_NETCONSOLE) +=			shell/cmd_netconsole.o
 obj-$(CONFIG_CMD_LL) +=				shell/cmd_ll.o
 obj-$(CONFIG_CMD_PPS) +=			shell/cmd_pps.o
