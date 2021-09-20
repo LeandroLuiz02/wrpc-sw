@@ -14,6 +14,8 @@
 #include <wrc.h>
 #include "shell.h"
 
+extern int wrc_ui_refperiod;
+
 static int cmd_refresh(const char *args[])
 {
 	int sec;

@@ -5,7 +5,6 @@ obj-$(CONFIG_WR_NODE) += \
 	shell/cmd_mac.o \
 	shell/cmd_ps.o \
 	shell/cmd_uptime.o \
-	shell/cmd_refresh.o \
 	shell/cmd_diag.o
 
 obj-$(CONFIG_EMBEDDED_NODE) += \
@@ -27,6 +26,7 @@ obj-$(CONFIG_CMD_NETCONSOLE) +=			shell/cmd_netconsole.o
 obj-$(CONFIG_CMD_LL) +=				shell/cmd_ll.o
 obj-$(CONFIG_CMD_PPS) +=			shell/cmd_pps.o
 obj-$(CONFIG_CMD_LEAPSEC) +=			shell/cmd_leapsec.o
+obj-$(CONFIG_CMD_REFRESH) +=			shell/cmd_refresh.o
 obj-$(CONFIG_FLASH_INIT) +=			shell/cmd_init.o
 obj-$(CONFIG_VLAN) +=				shell/cmd_vlan.o
 

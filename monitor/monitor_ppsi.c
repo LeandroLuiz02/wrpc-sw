@@ -55,6 +55,8 @@ extern char *wrc_hw_name;
 static int prev_gui_description = 0;
 static int gui_description = 1;
 static uint32_t next_update_ticks;
+/* refresh period for _gui_ and _stat_ commands */
+int wrc_ui_refperiod = WRC_MONITOR_REFRESH_PERIOD;
 
 void print_main_description(void);
 void print_main_data(void);
@@ -299,7 +301,7 @@ int wrc_mon_gui(void)
 	    && last_servo_count == s->update_count)
 		return 0;
 
-	next_update_ticks = now + WRC_MONITOR_REFRESH_PERIOD;
+	next_update_ticks = now + wrc_ui_refperiod;
 	last_servo_count = s->update_count;
 	prev_gui_description = gui_description;
 	gui_description = DESCRIPTION_MAIN;
@@ -811,7 +813,7 @@ int wrc_log_stats(void)
 	}
 
 	/* stats update condition for Master mode */
-	if (wrc_task_not_yet(&last_update_tick, WRC_DIAG_REFRESH_PERIOD))
+	if (wrc_task_not_yet(&last_update_tick, wrc_ui_refperiod))
 		return 0;
 
 

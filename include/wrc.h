@@ -95,9 +95,6 @@ void shell_init(void);
 /* Default width (in 8ns/16ns units) of the pulses on the PPS output */
 #define PPS_WIDTH (10 * 1000 * 1000 / NS_PER_CLOCK) /* 10ms */
 
-/* refresh period for _gui_ and _stat_ commands */
-extern int wrc_ui_refperiod;
-
 /* Init functions and defaults for the wrs build */
 int ad9516_init(int scb_ver, int ljd_present);
 int ljd_ad9516_init(void);

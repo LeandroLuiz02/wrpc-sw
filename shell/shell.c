@@ -74,6 +74,12 @@
 #define HAS_CMD_CONFIG 0
 #endif
 
+#ifdef CONFIG_CMD_REFRESH
+#define HAS_CMD_REFRESH 1
+#else
+#define HAS_CMD_REFRESH 0
+#endif
+
 #ifdef CONFIG_LATENCY_PROBE
 #define HAS_LATENCY_PROBE 1
 #else
@@ -434,6 +440,8 @@ void shell_register_commands(void)
 	REGISTER_WRC_COMMAND(ps);
 	REGISTER_WRC_COMMAND(ptp);
 	REGISTER_WRC_COMMAND(ptrack);
+	if (HAS_CMD_REFRESH)
+		REGISTER_WRC_COMMAND(refresh);
 	REGISTER_WRC_COMMAND(sdb);
 	REGISTER_WRC_COMMAND(sfp);
 	REGISTER_WRC_COMMAND(stat);
