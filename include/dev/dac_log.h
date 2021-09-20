@@ -20,6 +20,12 @@
 #ifndef __DAC_LOG_H
 #define __DAC_LOG_H
 
+#ifdef CONFIG_DAC_LOG
+#define HAS_DAC_LOG 1
+#else
+#define HAS_DAC_LOG 0
+#endif
+
 void daclog_init(void);
 int daclog_poll(void);
 

@@ -16,6 +16,7 @@
 #include <wrc.h>
 #include "temperature.h"
 #include "dev/console.h"
+#include "dev/dac_log.h"
 #include "dev/syscon.h"
 #include "dev/temp-fake.h"
 #include "dev/temp-w1.h"
@@ -414,6 +415,8 @@ void shell_register_commands(void)
 	REGISTER_WRC_COMMAND(calibration);
 	if (HAS_CMD_CONFIG)
 		REGISTER_WRC_COMMAND(config);
+	if (HAS_DAC_LOG)
+		REGISTER_WRC_COMMAND(daclog);
 	if (HAS_CMD_LL)
 		REGISTER_WRC_COMMAND(delays);
 	if (HAS_CMD_LL)
