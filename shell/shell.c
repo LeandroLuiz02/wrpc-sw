@@ -28,7 +28,7 @@
 
 /* interactive shell state definitions */
 
-#define SHELL_MAX_COMMANDS 32
+#define SHELL_MAX_COMMANDS 40
 
 #define SH_PROMPT 0
 #define SH_INPUT 1
