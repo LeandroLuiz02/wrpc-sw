@@ -442,6 +442,7 @@ void shell_register_commands(void)
 	if (HAS_TEMP_SENSORS)
 		REGISTER_WRC_COMMAND(temp);
 	REGISTER_WRC_COMMAND(time);
+	REGISTER_WRC_COMMAND(uptime);
 	REGISTER_WRC_COMMAND(ver);
 	REGISTER_WRC_COMMAND(verbose);
 	if (HAS_VLANS)
