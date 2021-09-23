@@ -525,7 +525,7 @@ userspace tools, that interacts with a SPEC board plugged into a PCI-Express
 slot.\\
 
 \begin{lstlisting}
-$ git clone https://ohwr.org/fmc-projects/spec/spec-sw.git <your_location>/spec-sw
+$ git clone https://ohwr.org/project/spec-sw.git <your_location>/spec-sw
 $ cd <your_location>/spec-sw
 $ git checkout 0745464
 $ make
@@ -845,7 +845,7 @@ the part above \texttt{Synchronization status}.
 
 If you want to log statistics from the WRPC operation, it is better to use a
 \texttt{stat} shell command. It reports the same information as \texttt{gui},
-but in a single line, which is easier to parse and analyze:
+but in a single line, which is easier to parse and analyze. Example for the slave mode:
 
 \begin{lstlisting}
 wrc# stat
@@ -858,15 +858,25 @@ asym:39392 crtt:49642 cko:2 setp:5082 ucnt:271 hd:31730 md:46211 ad:0 temp: 52.6
 (...)
 \end{lstlisting}
 
+For master mode:
+\begin{lstlisting}
+wrc# stat
+lnk:1 rx:10955 tx:8050 lock:1 ptp:master sec:1630462668 nsec:109213512 hd:33525 \
+md:30000 ad:0 temp:48.3125 C
+lnk:1 rx:10956 tx:8054 lock:1 ptp:master sec:1630462669 nsec:109084328 hd:33523 \
+md:30000 ad:0 temp:48.3125 C
+(...)
+\end{lstlisting}
+
 \vspace{1em}
-Unlike \texttt{gui}, the \texttt{stat} command runs asynchronously: you can still
+Unlike \texttt{gui}, the \texttt{stat} command runs in the background: you can still
 issue shell commands while stats are running. You can stop statistics by running
 \texttt{stat} again. As an alternative to the toggling action of \texttt{stat}
 alone, you can use ``\texttt{stat on}'' or ``\texttt{stat off}''.
 
-Statistics are printed every time the WR servo runs; thus no statistics
-are reported when the node is running in master and GrandMaster mode, nor when your node
-is running as slave and the master disappeared.\\
+Statistics are printed every time the WR servo runs; thus statistics
+are reported once per second the node is running in master and GrandMaster mode.
+No statistics are reported when the link is down.
 
 You can verify the synchronization performance by observing the offset between
 1-PPS signals from the WR Master and your WRPC running in the Slave mode. Please
@@ -1779,8 +1789,8 @@ and \texttt{duration} fields come from reading the \texttt{PPSG} nanosecond coun
 \label{Uptime Counter}
 
 \textit{Wrpc-sw} now maintains an ``uptime'' counter, in seconds. It lives
-at binary address 0xa0. It can be queried by \textit{etherbone}, or
-seen in memory maps.
+at binary address 0xa0. It can be queried by \textit{etherbone},
+seen in memory maps or displayed with \texttt{uptime} command.
 
 In addition to knowing how much the node has been up, it can be used to
 know roughly when a node got stuck, and whether software is still
@@ -2030,6 +2040,12 @@ the build of WRPC.
     WRPC and ppsi. It is an optional command, enabled at build time by
     \texttt{CONFIG\_CMD\_CONFIG}. \\
 
+  \code{daclog off} &\\
+  \code{daclog <ipaddr> <macaddr>} & sends the \textit{DAC} output and input to
+  the \textit{VCXO} main oscillator via UDP packets to port 1050 on
+  a host defined with \code{<ipaddr>} and \code{<macaddr>}.
+  It is an optional command, enabled at build time by \texttt{CONFIG\_DACLOG}. \\
+
   \code{delays}& \\
   \code{delays <tx> <rx>} & gets or sets the constant delays in frame
     transmission, only available if \texttt{CONFIG\_CMD\_LL}. Delays are
@@ -2195,6 +2211,9 @@ the build of WRPC.
     subcommands in a single \texttt{ptp} command. With no arguments,
     the command reports the current values.\\
 
+  \code{ptrack <enable|disable>} & print status, enable or disable phase tracking.
+    Useful for demos.\\
+
   \code{refresh} & changes the update time period of the gui and stat commands.
     Default period is 1 second. If you set the period to 0, the log message is
     only generated one time. \\
@@ -2242,8 +2261,9 @@ the build of WRPC.
 
   \code{sfp show} & prints all SFP transceivers stored in database \\
 
-  \code{stat} & toggles reporting of loggable statistics. You can pass
-    \texttt{on} or \texttt{off} as argument as an alternative to toggling \\
+  \code{stat <on|off>} & without parameter, toggles reporting of loggable
+    statistics. You can pass \texttt{on} or \texttt{off} as argument as an
+    alternative to toggling \\
 
   \code{stat bts} & prints bitslide value for established WR Link, needed by
     the calibration procedure \\
