@@ -61,9 +61,6 @@ struct wrpc_socket *ptpd_netif_create_socket(struct wrpc_socket *sock,
 		pp_printf("%s: no socket slots left\n", __func__);
 		return NULL;
 	}
-	net_verbose("%s: socket %p for %04x:%04x, slot %i\n", __func__,
-		    sock, ntohs(bind_addr->ethertype),
-		    udpport, i);
 
 	if (wrpc_get_port_state(&pstate, "wr0" /* unused */) < 0)
 		return NULL;
@@ -77,6 +74,10 @@ struct wrpc_socket *ptpd_netif_create_socket(struct wrpc_socket *sock,
 		sock->bind_addr.ethertype = htons(0x0800); /* IPv4 */
 		sock->bind_addr.udpport = udpport;
 	}
+
+	net_verbose("%s: socket %p for %04x:%04x, slot %i\n", __func__,
+		    sock, ntohs(sock->bind_addr.ethertype),
+		    udpport, i);
 
 	/*get mac from endpoint */
 	ep_get_mac_addr(&wrc_endpoint_dev, sock->local_mac);
