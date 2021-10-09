@@ -1,15 +1,17 @@
 OUTPUT_FORMAT("elf32-littleriscv")
 ENTRY(_start)
+/* Define the size of exception stack size */
+#define EXCEPTIONSTACKSIZE 0x400
 
 
 MEMORY
 {
     ram :
 	ORIGIN = 0x00000000,
-	LENGTH = CONFIG_RAMSIZE - CONFIG_STACKSIZE
+	LENGTH = CONFIG_RAMSIZE - CONFIG_STACKSIZE - EXCEPTIONSTACKSIZE
     stack :
-	ORIGIN = CONFIG_RAMSIZE - CONFIG_STACKSIZE,
-	LENGTH = CONFIG_STACKSIZE
+	ORIGIN = CONFIG_RAMSIZE - CONFIG_STACKSIZE - EXCEPTIONSTACKSIZE,
+	LENGTH = CONFIG_STACKSIZE + EXCEPTIONSTACKSIZE
 }
 
 SECTIONS
@@ -134,13 +136,13 @@ SECTIONS
 	*(.bss.*)
 	*(.gnu.linkonce.b.*)
 	*(COMMON)
-  } > ram
+    } > ram
 
     /* End of RAM for checking stack overflows */
     PROVIDE(_endram = ORIGIN(stack));
 
     /* First location in stack is highest address in STACK */
-    PROVIDE(_fstack = ORIGIN(stack) + LENGTH(stack) - 0x400);
+    PROVIDE(_fstack = ORIGIN(stack) + LENGTH(stack) - EXCEPTIONSTACKSIZE);
     PROVIDE(_fexception_stack = ORIGIN(stack) + LENGTH(stack) - 0x4);
     PROVIDE(_end = .);
     /* This may be missing, according to .config */
