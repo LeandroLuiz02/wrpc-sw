@@ -4,6 +4,7 @@ SDBFS ?= no
 
 CFLAGS = -Wall -ggdb -I../include -I../liblinux -I../liblinux/extest
 CFLAGS += -D__GIT_VER__="\"$(GIT_VER)\"" -D__GIT_USR__="\"$(GIT_USR)\""
+CFLAGS += -DBUILD_HOST
 LDFLAGS = -lutil -L../liblinux -ldevmap -L../liblinux/extest -lextest
 LDFLAGS += -lreadline
 ALL    = genraminit genramvhd genrammif

@@ -13,6 +13,7 @@
 #include <wrc.h>
 
 #include "minipc.h"
+#include <endianness.h>
 
 #define RTIPC_EXPORT_STRUCTURES
 #include "rt_ipc.h"
