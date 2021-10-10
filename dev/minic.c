@@ -139,7 +139,7 @@ int minic_rx_frame(struct wr_ethhdr *hdr, uint8_t * payload, uint32_t buf_size,
 
 		if (rx_type == WRF_DATA && hdr_size < ETH_HEADER_SIZE) {
 			/* reading header */
-			ptr16_hdr[hdr_size>>1] = rx_data;
+			ptr16_hdr[hdr_size>>1] = htons(rx_data);
 			hdr_size += 2;
 		} else if (rx_type != WRF_STATUS && payload_size > buf_size) {
 			/* we've filled the whole buffer, in this case retreive
@@ -148,10 +148,10 @@ int minic_rx_frame(struct wr_ethhdr *hdr, uint8_t * payload, uint32_t buf_size,
 			payload_size += 2;
 		} else if (rx_type == WRF_DATA) {
 			/* normal situation, retreiving payload */
-			ptr16_payload[payload_size>>1] = rx_data;
+			ptr16_payload[payload_size>>1] = htons(rx_data);
 			payload_size += 2;
 		} else if (rx_type == WRF_BYTESEL) {
-			ptr16_payload[payload_size>>1] = rx_data;
+			ptr16_payload[payload_size>>1] = htons(rx_data);
 			payload_size += 1;
 		} else if (rx_type == WRF_STATUS && hdr_size > 0) {
 			/* receiving status means error in our frame or
@@ -249,18 +249,18 @@ int minic_tx_frame(struct wr_ethhdr_vlan *hdr, uint8_t *payload, uint32_t size,
 	/* Write the header of the frame */
 	ptr = (uint16_t *)hdr;
 	for (i = 0; i < hwords; ++i)
-		minic_txword(WRF_DATA, ptr[i]);
+		minic_txword(WRF_DATA, htons(ptr[i]));
 
 	/* Write the payload without the last word (which can be one byte) */
 	ptr = (uint16_t *)payload;
 	for (i = 0; i < pwords-1; ++i)
-		minic_txword(WRF_DATA, ptr[i]);
+		minic_txword(WRF_DATA, htons(ptr[i]));
 
 	/* Write last word of the payload (which can be one byte) */
 	if (size % 2 == 0)
-		minic_txword(WRF_DATA, ptr[i]);
+		minic_txword(WRF_DATA, htons(ptr[i]));
 	else
-		minic_txword(WRF_BYTESEL, ptr[i]);
+		minic_txword(WRF_BYTESEL, htons(ptr[i]));
 
 	/* Write also OOB if needed */
 	if (hwts) {
