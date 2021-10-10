@@ -72,7 +72,7 @@ jump_table:
     .word undefined_handler
     .word undefined_handler
     .word undefined_handler
-    .word undefined_handler
+    .word spll_irq_entry
     .word undefined_handler
     .word undefined_handler
     .word undefined_handler

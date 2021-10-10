@@ -245,7 +245,7 @@ static inline void update_loops(struct softpll_state *s, int tag_value, int tag_
 	}
 }
 
-void _irq_entry(void)
+void spll_irq_entry(void)
 {
 	struct softpll_state *s = (struct softpll_state *)&softpll;
 	uint32_t trr;
