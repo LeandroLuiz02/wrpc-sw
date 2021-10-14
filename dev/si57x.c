@@ -26,6 +26,9 @@
 
 #include "hw/si570_if_wb.h"
 
+#include <wrc-debug.h>
+#include <hw/rawmem.h>
+#include "dev/syscon.h"
 
 #define SI57X_PIN_SCL 0
 #define SI57X_PIN_SDA 1
@@ -34,7 +37,7 @@ void si57x_gpio_out(const struct gpio_pin *pin, int value)
 {
 	struct wr_si57x_interface_device* dev = ( struct wr_si57x_interface_device* ) pin->device->priv;
 
-	
+
 
 	uint32_t mask = (pin->pin == SI57X_PIN_SCL ? SI570_GPCR_SCL : SI570_GPCR_SDA );
 	uint32_t reg = (value ? SI570_REG_GPSR : SI570_REG_GPCR );
@@ -86,7 +89,7 @@ void si57x_write( struct wr_si57x_interface_device *dev, uint8_t addr, uint8_t *
 	bb_i2c_start( &dev->master );
 	bb_i2c_put_byte( &dev->master, dev->i2c_addr << 1 );
 	bb_i2c_put_byte( &dev->master, addr );
-	
+
 	for(i = 0; i < count; i ++)
 	{
 		bb_i2c_put_byte( &dev->master, data[i] );
@@ -121,7 +124,7 @@ void si57x_get_xtal_frequency( struct wr_si57x_interface_device *dev, uint32_t* 
 	uint64_t f0 = 100000000;
 	uint64_t f_xtal = (f0 * hs_div * n1 ) * ( 1ULL << 28 ) / rfreq;
 
-	
+
 	board_dbg("Si57x: xtal frequency = %d Hz\n", (int) f_xtal );
 
 	if( freq_hz )
@@ -178,7 +181,7 @@ void si57x_reset(struct wr_si57x_interface_device *dev )
 }
 
 
-int si57x_set_frequency( struct wr_si57x_interface_device *dev, uint32_t f_xtal, uint32_t freq_hz )
+int si57x_set_frequency( struct wr_si57x_interface_device *dev, uint32_t f_xtal, uint32_t freq_hz, int vco_gain )
 {
 	uint8_t regs[16];
 	uint64_t rfreq;
@@ -206,9 +209,11 @@ int si57x_set_frequency( struct wr_si57x_interface_device *dev, uint32_t f_xtal,
 
 	timer_delay_ms(10);
 
+	board_dbg("Si57x: VCO Gain=%d\n", vco_gain);
+
 	writel( (uint32_t) ( rfreq & 0xffffffffULL), dev->base_addr + SI570_REG_RFREQL );
 	writel( (uint32_t) ( rfreq >> 32) | (((n1-1) & 0xff) << 8) | (hsdiv << 16), dev->base_addr + SI570_REG_RFREQH );
-	writel( SI570_CR_ENABLE | SI570_CR_CLK_DIV_W(200) | SI570_CR_I2C_ADDR_W ( ( dev->i2c_addr << 1 ) ) | SI570_CR_GAIN_W(2), dev->base_addr + SI570_REG_CR );
+	writel( SI570_CR_ENABLE | SI570_CR_CLK_DIV_W(200) | SI570_CR_I2C_ADDR_W ( ( dev->i2c_addr << 1 ) ) | SI570_CR_GAIN_W(vco_gain), dev->base_addr + SI570_REG_CR );
 
 	si57x_read( dev, 135, &r135, 1 );
 	si57x_read( dev, 137, &r137, 1 );
@@ -239,5 +244,3 @@ void wr_si57x_interface_init( struct wr_si57x_interface_device *dev, uint32_t ba
 	dev->pin_sda.pin = SI57X_PIN_SDA;
 	bb_i2c_create( &dev->master, &dev->pin_scl, &dev->pin_sda );
 }
-
-
