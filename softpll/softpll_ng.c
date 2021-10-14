@@ -416,16 +416,26 @@ void spll_shutdown()
 	SPLL->EIC_IDR = 1;
 }
 
-void spll_start_channel(int channel)
+int spll_start_channel(int channel)
 {
 	struct softpll_state *s = (struct softpll_state *) &softpll;
 
 	if (s->seq_state != SEQ_READY || !channel) {
 		pll_verbose("Can't start channel %d, the PLL is not ready\n",
 			  channel);
-		return;
+		return -1;
 	}
+
+	struct spll_main_state *m = &s->aux[channel - 1].pll.dmtd;
+
+	m->div_cnt = 0;
+	m->div_ref = s->aux[channel - 1].div_ref;
+	m->div_fb = s->aux[channel - 1].div_fb;
+
 	mpll_start(&s->aux[channel - 1].pll.dmtd);
+	m->frequency_lock_threshold = 100; // HACK: make this programmable (we need higher threshold for the main VCO than for the AUXes, esp. silabs)
+
+	return 0;
 }
 
 void spll_stop_channel(int channel)
@@ -528,7 +538,7 @@ void spll_get_num_channels(int *n_ref, int *n_out)
 		*n_out = spll_n_chan_out;
 }
 
-void spll_show_stats()
+void spll_show_stats(void)
 {
 	struct softpll_state *s = (struct softpll_state *)&softpll;
 	const char *statename;
@@ -538,6 +548,8 @@ void spll_show_stats()
 	else
 		statename = seq_states[s->seq_state];
 
+	pp_printf("softpll: n_ref %d n_out %d\n", spll_n_chan_ref, spll_n_chan_out);
+
 	if (softpll.mode > 0)
 		    pp_printf("softpll: irqs:%d seq:%s mode:%d "
 		     "alignment_state:%d HL%d ML%d HY=%d MY=%d DelCnt=%d setpoint:%d\n",
@@ -546,6 +558,29 @@ void spll_show_stats()
 			      s->helper.ld.locked, s->mpll.locked,
 			      s->helper.pi.y, s->mpll.pi.y,
 			      s->delock_count, s->mpll.phase_shift_current);
+
+	int ch;
+
+	for (ch = 1; ch < spll_n_chan_out; ch++)
+	{
+		struct spll_aux_state *s = (struct spll_aux_state *) &softpll.aux[ch - 1];
+
+		pp_printf("softpll: AUX%d [ratio %d/%d = %d Hz]: ph %ld seq %d en %d lock %d samples %d nref %d nout %d ERR=%d Y=%d\n",
+				ch-1,
+				s->div_fb,
+				s->div_ref,
+				REF_CLOCK_FREQ_HZ * s->div_fb / s->div_ref,
+				s->phase_value,
+				s->seq_state,
+				s->pll.dmtd.enabled,
+				s->pll.dmtd.locked,
+				s->pll.dmtd.sample_n,
+				s->pll.dmtd.n_ref,
+				s->pll.dmtd.n_out,
+				s->pll.dmtd.pi.x,
+				s->pll.dmtd.pi.y );
+
+	}
 }
 
 int spll_shifter_busy(int channel)
@@ -573,7 +608,7 @@ void spll_enable_ptracker(int ref_channel, int enable)
 	}
 }
 
-int spll_get_delock_count()
+int spll_get_delock_count(void)
 {
 	return softpll.delock_count;
 }
@@ -602,8 +637,10 @@ static int spll_update_aux_clocks(void)
 					if( s->mode == SPLL_AUX_MODE_SLAVE )
 					{
 						pll_verbose("softpll: enabled slave aux channel %d\n", ch);
-						spll_start_channel(ch);
-						s->seq_state = AUX_LOCK_PLL;
+						if( !spll_start_channel(ch) )
+						{
+							s->seq_state = AUX_LOCK_PLL;
+						}
 						done_sth++;
 					}
 					else if ( s->mode == SPLL_AUX_MODE_PHASE_MONITOR )
@@ -739,7 +776,7 @@ void spll_set_dac(int index, int value)
 	}
 }
 
-int spll_update()
+int spll_update(void)
 {
 	int ret = 0;
 
@@ -820,9 +857,9 @@ int spll_get_debug_queue_samples( uint32_t *buf, int count, int undersample )
 	{
 		uint32_t v = SPLL->DFR_HOST_R0;
 
-		int tag = (v & DBG_TAG_MASK) >> DBG_TAG_SHIFT;
+		uint32_t h = v >> 24;
 
-		if(pass || tag == DBG_EVENT)
+		if(pass || (h & DBG_EVENT) )
 		{
 			*buf++ = v;
 			n_ents ++;
@@ -849,6 +886,12 @@ int spll_get_debug_queue_samples( uint32_t *buf, int count, int undersample )
 void spll_set_aux_mode( int channel, int mode )
 {
 	softpll.aux[channel].mode = mode;
+}
+
+void spll_set_aux_frequency_ratio( int channel, int div_ref, int div_fb )
+{
+	softpll.aux[channel].div_fb = div_fb;
+	softpll.aux[channel].div_ref = div_ref;
 }
 
 int spll_pshifter_freeze(int freeze)
