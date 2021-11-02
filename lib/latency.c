@@ -13,7 +13,7 @@
 #include "ipv4.h"
 #include <dev/endpoint.h> /* get_mac_addr() */
 #include <ppsi/jiffies.h> /* time_before() */
-
+#include <lib/syslog.h>
 #define jiffies timer_get_tics()
 
 #ifdef CONFIG_LATENCY_SYSLOG
