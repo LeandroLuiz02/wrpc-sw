@@ -24,6 +24,14 @@
 #define DETERMINISTIC_BINARY 0
 #endif
 
+#ifdef CONFIG_ARCH_RISCV
+#define ARCH_STRING "RISCV"
+#endif
+#ifdef CONFIG_ARCH_LM32
+#define ARCH_STRING "LM32"
+#endif
+
+
 static int cmd_ver(const char *args[])
 {
 	int hwram = sysc_get_memsize();
@@ -35,7 +43,7 @@ static int cmd_ver(const char *args[])
 	else
 		pp_printf("Built: %s %s by %s\n", build_date, build_time,
 			  build_by);
-	pp_printf("Built for %d kB RAM, stack is %d bytes\n",
+	pp_printf("Built for %s, %d kB RAM, stack is %d bytes\n", ARCH_STRING,
 		  CONFIG_RAMSIZE / 1024, CONFIG_STACKSIZE);
 	/* hardware reports memory size, with a 16kB granularity */
 	if ( hwram / 16 != CONFIG_RAMSIZE / 1024 / 16)
