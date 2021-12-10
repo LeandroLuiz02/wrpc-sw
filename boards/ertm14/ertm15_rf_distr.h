@@ -22,11 +22,11 @@
 #define __ERTM15_RF_DISTR_H
 
 #include <stdint.h>
+#include "ertm-common.h"
 
-
-#define ERTM15_RF_OUT_ON 0
-#define ERTM15_RF_OUT_MONITOR 1
-#define ERTM15_RF_OUT_OFF 2
+#define ERTM15_RF_OUT_ON	ERTM_COMMON_RF_OUT_ON
+#define ERTM15_RF_OUT_MONITOR	ERTM_COMMON_RF_OUT_MONITOR
+#define ERTM15_RF_OUT_OFF	ERTM_COMMON_RF_OUT_OFF
 
 #define ERTM15_RF_LO 0
 #define ERTM15_RF_REF 1

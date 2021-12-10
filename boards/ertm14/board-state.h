@@ -19,6 +19,7 @@
 #if defined(CONFIG_TARGET_ERTM14)
 #include "hw/wrc_diags_regs.h"
 #include "ertm15_rf_distr.h"
+#include "ertm-common.h"
 #endif
 
 /* OK, I'm committing an evil thing below, but wbgen and its way of defining packed structures is to blame.
@@ -32,17 +33,17 @@
     #endif
 #endif
 
-#define ERTM14_RF_OUT_MIN_ID 4
-#define ERTM14_RF_OUT_MAX_ID 12
+#define ERTM14_RF_OUT_MIN_ID		ERTM_COMMON_RF_OUT_MIN_ID
+#define ERTM14_RF_OUT_MAX_ID		ERTM_COMMON_RF_OUT_MAX_ID
 
-#define ERTM14_CLKAB_OUT_MIN_ID 4
-#define ERTM14_CLKAB_OUT_MAX_ID 15
+#define ERTM14_CLKAB_OUT_MIN_ID		ERTM_COMMON_CLKAB_OUT_MIN_ID
+#define ERTM14_CLKAB_OUT_MAX_ID		ERTM_COMMON_CLKAB_OUT_MAX_ID
 
 #define ERTM14_MAX_SENSORS_COUNT 21
 
-#define ERTM14_SYNC_SOURCE_NONE 0
-#define ERTM14_SYNC_SOURCE_PPS 1
-#define ERTM14_SYNC_SOURCE_RF_TRIGGER 2
+#define ERTM14_SYNC_SOURCE_NONE		ERTM_COMMON_SYNC_SOURCE_NONE
+#define ERTM14_SYNC_SOURCE_PPS          ERTM_COMMON_SYNC_SOURCE_PPS
+#define ERTM14_SYNC_SOURCE_RF_TRIGGER   ERTM_COMMON_SYNC_SOURCE_RF_TRIGGER
 
 // sync unit channels
 // SYNC_IN(+/-) of AD9910
@@ -100,19 +101,22 @@
 
 /* Clock output sync procedure restarted. This can happen when
    the output frequency or amplitude is changed by the user */
-#define ERTM14_CLK_SYNC_STATE_RESTART 0
+#define ERTM14_CLK_SYNC_STATE_RESTART 		ERTM_COMMON_CLK_SYNC_STATE_RESTART
 
 /* The clock sync state machine is waiting for the WR timing to become available */
-#define ERTM14_CLK_SYNC_STATE_WAIT_TIMING 1
+#define ERTM14_CLK_SYNC_STATE_WAIT_TIMING 	ERTM_COMMON_CLK_SYNC_STATE_WAIT_TIMING
 
 /* The clock sync state machine is configuring the sync pulse generator */
-#define ERTM14_CLK_SYNC_STATE_CONFIGURE 2
+#define ERTM14_CLK_SYNC_STATE_CONFIGURE 	ERTM_COMMON_CLK_SYNC_STATE_CONFIGURE
 
 /* The clock sync state machine is waiting for the sycn pulse to be triggered */
-#define ERTM14_CLK_SYNC_STATE_WAIT_TRIGGER 3
+#define ERTM14_CLK_SYNC_STATE_WAIT_TRIGGER 	ERTM_COMMON_CLK_SYNC_STATE_WAIT_TRIGGER
 
 /* Resync done, output clock is ready */
-#define ERTM14_CLK_SYNC_STATE_READY 4
+#define ERTM14_CLK_SYNC_STATE_READY 		ERTM_COMMON_CLK_SYNC_STATE_READY
+
+
+
 
 /* streamer default latency and timeout */
 #define ERTM14_NCO_RESET_DEFAULT_LATENCY (16000/16)
