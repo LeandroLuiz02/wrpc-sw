@@ -1115,7 +1115,6 @@ int ertm_nco_reset_subscribe(struct ertm_status *handle,
 	}
 	if ((res = get_dds(bs, connector, &dds)) != 0)
 		return res;
-
 	if (!((mode == ERTM14_SYNC_SOURCE_NONE) ||
 		(mode == ERTM14_SYNC_SOURCE_RF_TRIGGER) ||
 		(mode == ERTM14_SYNC_SOURCE_PPS))) {
