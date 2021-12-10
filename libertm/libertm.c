@@ -1101,7 +1101,7 @@ int ertm_nco_reset_get_status(struct ertm_status *handle, struct ertm_nco_reset 
 }
 
 int ertm_nco_reset_subscribe(struct ertm_status *handle,
-		enum ertm_connector connector, int enable, int channel, uint32_t stream_id)
+		enum ertm_connector connector, int mode, int channel, uint32_t stream_id)
 {
 	struct uart_link *link = &handle->link;
 	struct ertm14_board_state *bs = &handle->state->board_state;
@@ -1116,16 +1116,16 @@ int ertm_nco_reset_subscribe(struct ertm_status *handle,
 	if ((res = get_dds(bs, connector, &dds)) != 0)
 		return res;
 		
-	if (!((enable == ERTM14_SYNC_SOURCE_NONE) ||
-		(enable == ERTM14_SYNC_SOURCE_RF_TRIGGER) ||
-		(enable == ERTM14_SYNC_SOURCE_PPS))) {
+	if (!((mode == ERTM14_SYNC_SOURCE_NONE) ||
+		(mode == ERTM14_SYNC_SOURCE_RF_TRIGGER) ||
+		(mode == ERTM14_SYNC_SOURCE_PPS))) {
 			errno = -EINVAL;
 			return ERTM_BAD_SYNC_SOURCE;
 	}
 
 	/* need DDS LO/REF; type of sync; and reset the counter */
 	/* channel does not play any role here, nor stream (yet) */
-	nco_subscription->sync_source = enable;
+	nco_subscription->sync_source = mode;
 	nco_subscription->connector = (connector == ERTM_LO) ?
 		ERTM14_DDS_SYNC_LO : ERTM14_DDS_SYNC_REF;
 	nco_subscription->reset_count = 0;

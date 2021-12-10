@@ -80,6 +80,11 @@ enum ertm_connector {
 #define	ERTM_SYNC_STATE_WAIT_TRIGGER ERTM14_CLK_SYNC_STATE_WAIT_TRIGGER
 #define	ERTM_SYNC_STATE_READY        ERTM14_CLK_SYNC_STATE_READY
 
+/* sync modes */
+#define ERTM_SYNC_SOURCE_NONE		ERTM14_SYNC_SOURCE_NONE
+#define ERTM_SYNC_SOURCE_PPS		ERTM14_SYNC_SOURCE_PPS
+#define ERTM_SYNC_SOURCE_RF_TRIGGER	ERTM14_SYNC_SOURCE_RF_TRIGGER
+
 struct ertm_sync_states {
 	int	sync_state;
 	char	*label;
@@ -294,7 +299,7 @@ int ertm_get_voltages(struct ertm_status *handle, struct ertm_voltages *volts);	
 int ertm_rf_nco_reset_enable(struct ertm_status *handle, int enable);
 int ertm_rf_nco_reset(struct ertm_status *handle);
 int ertm_nco_reset_subscribe(struct ertm_status *handle,
-		enum ertm_connector, int enable, int channel, uint32_t stream_id);
+		enum ertm_connector, int mode, int channel, uint32_t stream_id);
 int ertm_nco_reset_get_status(struct ertm_status *handle, struct ertm_nco_reset status[]);
 
 /* WR enable/diagnostics */
