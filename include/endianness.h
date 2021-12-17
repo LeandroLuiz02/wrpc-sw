@@ -10,6 +10,12 @@
 #include <arpa/inet.h>
 
 #elif defined CONFIG_ARCH_RISCV
+
+static inline uint64_t htonll(uint64_t hostllong)
+{
+    return __builtin_bswap64(hostllong);
+}
+
 static inline uint32_t htonl(uint32_t hostlong)
 {
     return __builtin_bswap32(hostlong);
@@ -17,6 +23,10 @@ static inline uint32_t htonl(uint32_t hostlong)
 
 static inline uint16_t htons(uint16_t hostshort){
     return __builtin_bswap16(hostshort);
+}
+
+static inline uint64_t ntohll(uint64_t netllong){
+    return __builtin_bswap64(netllong);
 }
 
 static inline uint32_t ntohl(uint32_t netlong){
@@ -29,8 +39,10 @@ static inline uint16_t ntohs(uint16_t netshort){
 #elif defined CONFIG_ARCH_LM32
 #define ntohs(x) (x)
 #define ntohl(x) (x)
+#define ntohll(x) (x)
 #define htons(x) (x)
 #define htonl(x) (x)
+#define htonll(x) (x)
 
 #else
 #error (Wrong Arch!)
