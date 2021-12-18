@@ -10,7 +10,6 @@
 #ifdef BOARD_USE_SDB
 
 #include <wrc.h>
-#define SDBFS_BIG_ENDIAN
 #include <libsdbfs.h>
 
 /* The following pointers are exported */

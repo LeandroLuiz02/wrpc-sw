@@ -21,7 +21,6 @@
 #include "dev/i2c_eeprom.h"
 #include <sdb.h>
 
-#define SDBFS_BIG_ENDIAN
 #include <libsdbfs.h>
 #include <dev/fram.h>
 

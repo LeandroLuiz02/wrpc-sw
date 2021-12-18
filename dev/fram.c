@@ -14,7 +14,6 @@
 #include <dev/bb_spi.h>
 #include <dev/syscon.h>
 
-#define SDBFS_BIG_ENDIAN
 #include <libsdbfs.h>
 
 struct fram_device wrc_fram_dev;
