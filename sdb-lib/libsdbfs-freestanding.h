@@ -14,6 +14,8 @@
 #  define htons(x) (x)
 #  define ntohl(x) (x)
 #  define htonl(x) (x)
+#  define ntohll(x) (x)
+#  define htonll(x) (x)
 #elif CPU_ARCH == RISCV
 /* FIXME: fix for riscv */
 #warning FIXME: fix sdbfs for riscv
