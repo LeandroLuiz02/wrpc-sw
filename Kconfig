@@ -80,6 +80,7 @@ config PRINT_BUFSIZE
 
 config RAMSIZE
 	int
+	default CUSTOM_RAMSIZE if DEVELOPER
 	default 65536 if TARGET_WR_SWITCH
 	default 196608 if TARGET_ERTM14
 	default 131072 if ARCH_RISCV
@@ -576,7 +577,10 @@ config HOST_PROCESS
 config CUSTOM_RAMSIZE
 	depends on DEVELOPER && (ARCH_LM32 || ARCH_RISCV)
 	int "Size of the RAM in the FPGA for this program"
-	default 131072
+	default 65536 if TARGET_WR_SWITCH
+	default 196608 if TARGET_ERTM14
+	default 131072 if ARCH_RISCV
+	default 196608
 	help
 	  The usual configuration for wrpc-sw is 0x16000 bytes
 	  (i.e. 88kB = 90112 bytes) but if your project has less or
