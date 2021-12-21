@@ -20,7 +20,7 @@ OBJDUMP         = $(CROSS_COMPILE)objdump
 ENDIAN := $(shell ./check-endian $(CC))
 
 CFLAGS-CPU-LM32  = -mmultiply-enabled -mbarrel-shift-enabled
-CFLAGS-CPU-RISCV = -march=rv32im -mabi=ilp32
+CFLAGS-CPU-RISCV = -march=rv32im$(USE-COMP-INSTR-y) -mabi=ilp32
 
 CFLAGS = -Wall -ggdb -Os $(CFLAGS-CPU-$(CPU_ARCH))
 CFLAGS += -I../include/linux -I../include # for <sdb.h>
