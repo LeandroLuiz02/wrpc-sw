@@ -28,11 +28,11 @@
  * This source file is a drop-in replacement of the legacy one: it manages
  * both i2c and w1 devices even if the interface is the old i2c-based one
  */
-#define SDB_VENDOR	0x46696c6544617461LL /* "FileData" */
-#define SDB_DEV_INIT	0x77722d69 /* wr-i (nit) */
-#define SDB_DEV_MAC	0x6d61632d /* mac- (address) */
-#define SDB_DEV_SFP	0x7366702d /* sfp- (database) */
-#define SDB_DEV_CALIB	0x63616c69 /* cali (bration) */
+#define SDB_VENDOR	htonll(0x46696c6544617461LL) /* "FileData" */
+#define SDB_DEV_INIT	htonl(0x77722d69) /* wr-i (nit) */
+#define SDB_DEV_MAC	htonl(0x6d61632d) /* mac- (address) */
+#define SDB_DEV_SFP	htonl(0x7366702d) /* sfp- (database) */
+#define SDB_DEV_CALIB	htonl(0x63616c69) /* cali (bration) */
 
 /* constants for scanning I2C EEPROMs */
 #define EEPROM_START_ADR 0
@@ -1082,13 +1082,13 @@ int storage_mount( struct storage_device *dev )
 		{
 			storage_dbg("try entry point 0x%08x\n", dev->entry_points[i] );
 			dev->rwops->read( dev, dev->entry_points[i], (void *)&magic, sizeof(magic) );
-			if (magic == SDB_MAGIC)
+			if (ntohl(magic) == SDB_MAGIC)
 				break;
 		}
 	}
 
 	/* found? mount it! */
-	if (magic == SDB_MAGIC) {
+	if (ntohl(magic) == SDB_MAGIC) {
 		storage_dbg("found SDBFS at 0x%x in device '%s'\n",
 				dev->entry_points[i], dev->name );
 		wrc_sdbfs.drvdata = dev;
