@@ -550,18 +550,29 @@ static int sfp_entry(struct s_sfpinfo *sfp, int oper, int pos)
 			pp_printf("sfp: corrupted checksum\n");
 			goto out;
 		}
+		sfp->alpha = ntohll(sfp->alpha);
+		sfp->dTx = ntohl(sfp->dTx);
+		sfp->dRx = ntohl(sfp->dRx);
 	}
 	if (oper == SFP_ADD) {
+		/* Make a copy because changing endianess by htonl, change
+		 * the data */
+		memcpy(&tempsfp, sfp, sizeof(tempsfp));
 		/* count checksum */
-		ptr = (uint8_t *)sfp;
+		ptr = (uint8_t *)&tempsfp;
+
+		tempsfp.alpha = htonll(tempsfp.alpha);
+		tempsfp.dTx = htonl(tempsfp.dTx);
+		tempsfp.dRx = htonl(tempsfp.dRx);
+
 		/* use sizeof() - 1 because we don't include checksum */
 		for (i = 0; i < sizeof(struct s_sfpinfo) - 1; ++i)
 			chksum = chksum + *(ptr++);
-		sfp->chksum = chksum;
+		tempsfp.chksum = chksum;
 		/* add SFP at the end of DB */
 		sdb_offset = 1 /* sfpcount */ + sfpcount * sizeof(*sfp);
-		if (sdbfs_fwrite(&wrc_sdbfs, sdb_offset, sfp, sizeof(*sfp))
-				!= sizeof(*sfp)) {
+		if (sdbfs_fwrite(&wrc_sdbfs, sdb_offset, &tempsfp, sizeof(*sfp))
+				!= sizeof(tempsfp)) {
 			goto out;
 		}
 		sfpcount++;
