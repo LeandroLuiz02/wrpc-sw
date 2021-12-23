@@ -36,6 +36,18 @@ static inline uint32_t ntohl(uint32_t netlong){
 static inline uint16_t ntohs(uint16_t netshort){
     return __builtin_bswap16(netshort);
 }
+
+#define htonl_mem(mem, size) ntohl_mem(mem, size)
+
+static inline void ntohl_mem(uint32_t *mem, int size_bytes)
+{
+	int i;
+
+	for (i = 0; i < size_bytes / sizeof(uint32_t); i++) {
+		mem[i] = ntohl(mem[i]);
+	}
+}
+
 #elif defined CONFIG_ARCH_LM32
 #define ntohs(x) (x)
 #define ntohl(x) (x)
@@ -43,6 +55,9 @@ static inline uint16_t ntohs(uint16_t netshort){
 #define htons(x) (x)
 #define htonl(x) (x)
 #define htonll(x) (x)
+
+#define htonl_mem(mem, size) ntohl_mem(mem, size)
+static inline void ntohl_mem(uint32_t *mem, int size_bytes) { return; }
 
 #else
 #error (Wrong Arch!)

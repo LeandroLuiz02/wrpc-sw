@@ -735,11 +735,12 @@ wrc_cal_data_t* storage_get_calibration_data(void)
 	return &cal_data;
 }
 
-
 int storage_load_calibration(void)
 {
 	int ret = 0;
 	int i;
+	/* cal data with network endianess, for read/write to flash */
+	wrc_cal_data_t cal_data_ne;
 
 	cal_data.param_count = 0;
 
@@ -749,13 +750,16 @@ int storage_load_calibration(void)
 		return -1;
 	}	
 
-	if (sdbfs_fread(&wrc_sdbfs, 0, &cal_data, sizeof(cal_data))
-		    != sizeof(cal_data))
+	if (sdbfs_fread(&wrc_sdbfs, 0, &cal_data_ne, sizeof(cal_data_ne))
+		    != sizeof(cal_data_ne))
 	{
 		ret = -1;
 		cal_data.param_count = 0;
 		goto out_close;
 	}
+
+	cal_data = cal_data_ne;
+	ntohl_mem((uint32_t *)&cal_data, sizeof(cal_data));
 
 	if( cal_data.magic != CAL_FILE_MAGIC )
 	{
@@ -797,8 +801,8 @@ int storage_save_calibration(void)
 {
 	int ret = 0;
 	int i;
-
-	cal_data.magic = CAL_FILE_MAGIC;
+	/* cal data with network endianess, for read/write to flash */
+	wrc_cal_data_t cal_data_ne;
 
 	if (sdbfs_open_id(&wrc_sdbfs, SDB_VENDOR, SDB_DEV_CALIB) < 0)
 	{
@@ -806,15 +810,19 @@ int storage_save_calibration(void)
 		return -1;
 	}
 
+	cal_data.magic = CAL_FILE_MAGIC;
 	cal_data.checksum = calc_checksum( &cal_data );
+	cal_data_ne = cal_data;
+	htonl_mem((uint32_t *)&cal_data_ne, sizeof(cal_data_ne));
 
 	sdbfs_ferase(&wrc_sdbfs, 0, wrc_sdbfs.f_len);
 
-	if (sdbfs_fwrite(&wrc_sdbfs, 0, &cal_data, sizeof(cal_data))
-	    != sizeof(cal_data))
+	if (sdbfs_fwrite(&wrc_sdbfs, 0, &cal_data_ne, sizeof(cal_data_ne))
+	    != sizeof(cal_data_ne))
 			goto out_close;
 
-	storage_dbg("Saved %d bytes of calibration data:\n", sizeof(cal_data ));
+	storage_dbg("Saved %d bytes of calibration data:\n",
+		    sizeof(cal_data_ne));
 
 	for(i = 0; i < cal_data.param_count; i++)
 	{
