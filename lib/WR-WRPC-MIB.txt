@@ -68,7 +68,7 @@ wrpcVersionSwBuildBy           OBJECT-TYPE
     STATUS                     current
     DESCRIPTION
         "The software build by, as returned from
-         'git config -get-all user.name' at build time"
+         'git config --get user.name' at build time"
     ::= { wrpcVersionGroup 3 }
 
 wrpcVersionSwBuildDate         OBJECT-TYPE
