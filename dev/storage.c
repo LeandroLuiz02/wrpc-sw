@@ -1181,14 +1181,15 @@ int storage_sdbfs_format( struct storage_device *dev, uint32_t addr, int force_b
 	/* scan through files */
 	for (i = 1; i < SDBFS_REC; ++i) {
 		/* relocate each file depending on base address and block size*/
-		size = sdbfs[i].sdb_component.addr_last -
-			sdbfs[i].sdb_component.addr_first;
-		sdbfs[i].sdb_component.addr_first = cur_adr;
-		sdbfs[i].sdb_component.addr_last  = cur_adr + size;
+		size = ntohll(sdbfs[i].sdb_component.addr_last) -
+			ntohll(sdbfs[i].sdb_component.addr_first);
+		sdbfs[i].sdb_component.addr_first = htonll((uint64_t) cur_adr);
+		sdbfs[i].sdb_component.addr_last  =
+					    htonll((uint64_t)(cur_adr + size));
 		cur_adr = SDB_ALIGN(cur_adr + (size + 1), wrc_sdbfs.blocksize);
 	}
 	/* update the directory */
-	sdbfs_dir->sdb_component.addr_first = base_addr;
+	sdbfs_dir->sdb_component.addr_first = htonll(base_addr);
 	sdbfs_dir->sdb_component.addr_last  =
 		sdbfs[SDBFS_REC-1].sdb_component.addr_last;
 
@@ -1196,8 +1197,8 @@ int storage_sdbfs_format( struct storage_device *dev, uint32_t addr, int force_b
 	{
 		strncpy(buf, (char *)sdbfs[i].sdb_component.product.name, 18);
 		pp_printf("filename: %s; first: %x; last: %x\n", buf,
-				(int)sdbfs[i].sdb_component.addr_first,
-				(int)sdbfs[i].sdb_component.addr_last);
+			  (int)ntohll(sdbfs[i].sdb_component.addr_first),
+			  (int)ntohll(sdbfs[i].sdb_component.addr_last));
 	}
 
 	
