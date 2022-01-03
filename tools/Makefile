@@ -52,7 +52,7 @@ eb-w1-write: eb-w1-write.c ../dev/w1.c ../dev/w1-eeprom.c eb-w1.c
 
 GENSDBFS_SRCS = gensdbfs.c ../sdb-lib/access.c ../sdb-lib/glue.c
 
-gensdbfs:	
+gensdbfs: $(GENSDBFS_SRCS)
 	${CC} $(CFLAGS) -o $@ $(GENSDBFS_SRCS)
 
 sdb-wrpc.bin: sdbfs

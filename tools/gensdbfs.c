@@ -19,6 +19,7 @@
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <arpa/inet.h>
+#include <byteswap.h>
 
 #include <sdb.h>
 #include "gensdbfs.h"
@@ -507,10 +508,19 @@ static struct sdbf *prepare_dir(char *name, struct sdbf *parent)
 	return tree;
 }
 
+/* Swap bytes in a given word */
+static inline unsigned int swap_bytes(unsigned int buf, int swap_output)
+{
+	if (swap_output)
+		return __bswap_32(buf);
+	
+	return buf;
+}
+
 /*
  * Generate C header file from sdbfs binary
  */
-static int gen_header(char *bin_name, char *h_name)
+static int gen_header(char *bin_name, char *h_name, int swap_output)
 {
 	FILE *b_file, *h_file;
 	unsigned int buf;
@@ -529,7 +539,8 @@ static int gen_header(char *bin_name, char *h_name)
 		buf = 0;
 		bytes = fread(&buf, 1, 4, b_file);
 		if (bytes > 0)
-			fprintf(h_file,"0x%08X,\n", htonl(buf));
+			fprintf(h_file, "0x%08X,\n",
+				htonl(swap_bytes(buf, swap_output)));
 	}
 	/* remove last "," */
 	fseek(h_file, -2, SEEK_END);
@@ -547,6 +558,7 @@ static int usage(char *prgname)
 	fprintf(stderr, "  -b <number> : block size (default 64)\n");
 	fprintf(stderr, "  -s <number> : device size (default: as needed)\n");
 	fprintf(stderr, "  -c <output header> : create C header file with the binary\n");
+	fprintf(stderr, "  -e          : swap bytes in words for the C header\n");
 	fprintf(stderr, "  -v          : print generation logs\n");
 	fprintf(stderr, "  a file called \"" CFG_NAME "\", in each "
 		"subdir is used as configuration file\n");
@@ -561,10 +573,11 @@ int main(int argc, char **argv)
 	char *rest;
 	struct sdbf *tree;
 	int gen_c = 0;
+	int gen_c_swap = 0;
 	char *h_filename;
 
 	prgname = argv[0];
-	while ( (c = getopt(argc, argv, "b:s:c:v")) != -1) {
+	while ( (c = getopt(argc, argv, "b:s:c:ev")) != -1) {
 		switch (c) {
 		case 'b':
 			blocksize = strtol(optarg, &rest, 0);
@@ -586,6 +599,9 @@ int main(int argc, char **argv)
 			h_filename = optarg;
 			gen_c = 1;
 			break;
+		case 'e':
+			gen_c_swap = 1;
+			break;
 		case 'v':
 			verbose = 1;
 			break;
@@ -593,6 +609,12 @@ int main(int argc, char **argv)
 	}
 	if (optind != argc - 2)
 		usage(prgname);
+
+	if (gen_c_swap && !gen_c) {
+		fprintf(stderr, "%s: '-e' parameter can be used only with "
+			"'-c'\n", prgname);
+		exit(1);
+	}
 
 	/* check input and output */
 	if (stat(argv[optind], &stbuf) < 0) {
@@ -638,7 +660,7 @@ int main(int argc, char **argv)
 	}
 
 	if (gen_c)
-		gen_header(argv[optind+1], h_filename);
+		gen_header(argv[optind+1], h_filename, gen_c_swap);
 
 	exit(0);
 }
