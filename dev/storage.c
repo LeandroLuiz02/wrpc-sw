@@ -1239,7 +1239,7 @@ void storage_sdbfs_list()
 		d->sdb_component.product.record_type = '\0';
 		pp_printf("file 0x%08x @ 0x%08x, name %19s\n",
 			  (int)(d->sdb_component.product.device_id),
-			  (int)(d->sdb_component.addr_first),
+			  (int)(ntohll(d->sdb_component.addr_first)),
 			  (char *)(d->sdb_component.product.name));
 		new = 0;
 	}
