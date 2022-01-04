@@ -79,7 +79,7 @@ void get_hw_name(char *str)
 {
 	uint32_t val;
 
-	val = syscon->HWIR;
+	val = ntohl(syscon->HWIR);
 	memcpy(str, &val, HW_NAME_LENGTH-1);
 }
 
