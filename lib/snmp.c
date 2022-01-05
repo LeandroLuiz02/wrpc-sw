@@ -891,7 +891,6 @@ static int func_aux_diag(uint8_t *buf, uint8_t in_oid_limb_matched_len,
 {
 	int oid_twig_len = buf[0] - in_oid_limb_matched_len;
 	uint8_t *in_oid_limb_end = &buf[1 + in_oid_limb_matched_len];
-	uint8_t oid_twig_matching_len;
 	struct snmp_oid *oid;
 	struct snmp_oid leaf_obj;
 	int return_first = 0;
@@ -924,9 +923,6 @@ static int func_aux_diag(uint8_t *buf, uint8_t in_oid_limb_matched_len,
 		in_oid_limb_end[TABLE_ROW] = TABLE_FIRST_ROW;
 		oid_twig_len = table_size;
 	}
-	/* Decide what is shorter the rest of the OID, or the
-	 * matching part */
-	oid_twig_matching_len = min(oid_twig_len, table_size);
 
 	/* For get and set twig size has to be exact */
 	if (!snmp_get_next && (oid_twig_len != table_size)) {
@@ -1237,8 +1233,8 @@ static int get_temp(uint8_t *buf, struct snmp_oid *obj)
 					t = -(signed)t;
 					l += sprintf(buffer, "-");
 				}
-				sprintf(buffer, "%d.%04d", t >> 16,
-					    ((t & 0xffff) * 10 * 1000 >> 16));
+				sprintf(buffer, "%d.%04d", (int) (t >> 16),
+					(int) ((t & 0xffff) * 10 * 1000 >> 16));
 				break;
 			}
 		}
@@ -1920,6 +1916,9 @@ static int snmp_respond(uint8_t *buf)
 		(void) set_ptp_config;
 		(void) set_ptp_restart;
 		(void) set_aux_diag;
+		(void) set_shell_cmd;
+		(void) set_netconsole;
+		(void) set_sdb;
 		(void) func_aux_diag;
 		(void) get_i32sat_pp;
 		(void) oid_array_wrpcAuxRwTable;

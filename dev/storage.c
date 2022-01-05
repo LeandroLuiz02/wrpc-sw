@@ -1202,8 +1202,9 @@ int storage_sdbfs_format( struct storage_device *dev, uint32_t addr, int force_b
 	}
 
 	
-	pp_printf("Formatting SDBFS in %s (base 0x%08x, size 0x%08x)...\n", dev->name,
-			base_addr, (uint32_t) (SDBFS_REC * wrc_sdbfs.blocksize) );
+	pp_printf("Formatting SDBFS in %s (base 0x%08x, size 0x%08x)...\n",
+		  dev->name, (unsigned int) base_addr,
+		  (unsigned int) (SDBFS_REC * wrc_sdbfs.blocksize) );
 
 	storage_sdbfs_erase(dev, addr, force_base);
 

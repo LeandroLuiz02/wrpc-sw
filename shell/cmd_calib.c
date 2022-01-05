@@ -46,14 +46,15 @@ static int cmd_calibration(const char *args[])
 
 			int value = atoi(args[2]);
 
-			pp_printf("Setting calibration parameter %s [0x%x] to %d\n", args[1], param ,value );
+			pp_printf("Setting calibration parameter %s [0x%x] to %d\n",
+				  args[1], (unsigned int) param, value);
 			storage_set_calibration_parameter( param, value );
 		}
 
 	} else if (!args[0]) {
 		if (storage_phtrans(&trans, 0) > 0) {
 			pp_printf("Found phase transition in EEPROM: %dps\n",
-				trans);
+				  (unsigned int) trans);
 
 			return 0;
 		} else {

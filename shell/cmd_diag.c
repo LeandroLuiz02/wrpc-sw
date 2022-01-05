@@ -23,8 +23,9 @@ static int cmd_diag(const char *args[])
 
 	if (!args[0]) {
 		pp_printf("Aux diagnostics info:\n");
-		pp_printf("id: %d.%d, r/w words: %d, r/o words: %d\n", id, ver,
-				nrw, nro);
+		pp_printf("id: %d.%d, r/w words: %d, r/o words: %d\n",
+			  (unsigned int) id, (unsigned int) ver,
+			  (unsigned int) nrw, (unsigned int) nro);
 		return 0;
 	}
 
@@ -34,12 +35,14 @@ static int cmd_diag(const char *args[])
 		for(i=0; i<nro; i++ )
 		{
 			ret = diag_read_word(i, DIAG_RO_BANK, &val);
-			pp_printf("RO word %-3d = 0x%08x\n", i, val );
+			pp_printf("RO word %-3d = 0x%08x\n", i,
+				  (unsigned int) val);
 		}
 		for(i=0; i<nrw; i++ )
 		{
 			ret = diag_read_word(i, DIAG_RW_BANK, &val);
-			pp_printf("RW word %-3d = 0x%08x\n", i, val );
+			pp_printf("RW word %-3d = 0x%08x\n", i,
+				  (unsigned int) val);
 		}
 		return ret;
 	}
@@ -48,7 +51,8 @@ static int cmd_diag(const char *args[])
 		addr = atoi(args[1]);
 		ret = diag_read_word(addr, DIAG_RO_BANK, &val);
 		if (!ret)
-			pp_printf("Word %d is 0x%08x\n", addr, val);
+			pp_printf("Word %d is 0x%08x\n",
+				  (unsigned int) addr, (unsigned int) val);
 		return ret;
 	}
 
@@ -56,7 +60,8 @@ static int cmd_diag(const char *args[])
 		addr = atoi(args[1]);
 		ret = diag_read_word(addr, DIAG_RW_BANK, &val);
 		if (!ret)
-			pp_printf("Word %d is 0x%08x\n", addr, val);
+			pp_printf("Word %d is 0x%08x\n",
+				  (unsigned int) addr, (unsigned int) val);
 		return ret;
 	}
 
@@ -66,7 +71,7 @@ static int cmd_diag(const char *args[])
 		ret = diag_write_word(addr, val);
 		if (!ret)
 			pp_printf("Value 0x%08x written to the word %d\n",
-				  val, addr);
+				  (unsigned int) val, (unsigned int) addr);
 		return ret;
 	}
 

@@ -840,11 +840,11 @@ int wrc_log_stats(void)
 
 	for (i = 0; i < n_out - 1; i++) {
 		aux_stat = spll_get_aux_status(i);
-		pp_printf("aux%d:%08x%08x ", i, aux_stat.flags, aux_stat.phase);
+		pp_printf("aux%d:%08x%08x ", i, (int) aux_stat.flags, (int) aux_stat.phase);
 	}
 
 	/* fixme: clock is not always 125 MHz */
-	pp_printf("sec:%d nsec:%09d ", (uint32_t) sec, nsec);
+	pp_printf("sec:%d nsec:%09d ", (int) sec, (int) nsec);
 	wrh_servo = (ppi_static.protocol_extension == PPSI_EXT_WR && ppi_static.extState == PP_EXSTATE_ACTIVE) ?
 			(wrh_servo_t*) ppi_static.ext_data : NULL;
 
@@ -861,11 +861,11 @@ int wrc_log_stats(void)
 		pp_printf("dms:%Ld ", pp_time_to_picos(&s->delayMS));
 
 		pp_printf("dtxm:%d drxm:%d ",
-			  (int32_t) pp_time_to_picos(&wr_servo_ext->delta_txm),
-			  (int32_t) pp_time_to_picos(&wr_servo_ext->delta_rxm));
+			  (int) pp_time_to_picos(&wr_servo_ext->delta_txm),
+			  (int) pp_time_to_picos(&wr_servo_ext->delta_rxm));
 		pp_printf("dtxs:%d drxs:%d ",
-			  (int32_t) pp_time_to_picos(&wr_servo_ext->delta_txs),
-			  (int32_t) pp_time_to_picos(&wr_servo_ext->delta_rxs));
+			  (int) pp_time_to_picos(&wr_servo_ext->delta_txs),
+			  (int) pp_time_to_picos(&wr_servo_ext->delta_rxs));
 		pp_printf("asym:%Ld ", interval_to_picos(ppi_static.portDS->delayAsymmetry));
 
 		crtt = wr_servo_ext->rawDelayMM;
@@ -877,9 +877,9 @@ int wrc_log_stats(void)
 		/* Cable RTT */
 		pp_printf("crtt:%Ld ", pp_time_to_picos(&crtt));
 		/* Clock offset */
-		pp_printf("cko:%d ", (int32_t) pp_time_to_picos(&s->offsetFromMaster));
-		pp_printf("setp:%d ", wrh_servo->cur_setpoint_ps);
-		pp_printf("ucnt:%d ", (int32_t) s->update_count);
+		pp_printf("cko:%d ", (int) pp_time_to_picos(&s->offsetFromMaster));
+		pp_printf("setp:%d ", (int) wrh_servo->cur_setpoint_ps);
+		pp_printf("ucnt:%d ", (int) s->update_count);
 		pp_printf("bslide:%d ", ep_get_bitslide(&wrc_endpoint_dev));
 	}
 
@@ -890,8 +890,8 @@ int wrc_log_stats(void)
 		int32_t temp;
 
 		temp = wrc_temp_get("pcb");
-		pp_printf("temp:%d.%04d C", temp >> 16,
-			  (int)((temp & 0xffff) * 10 * 1000 >> 16));
+		pp_printf("temp:%d.%04d C", (int) (temp >> 16),
+			  (int) ((temp & 0xffff) * 10 * 1000 >> 16));
 	}
 
 	pp_printf("\n");

@@ -35,7 +35,7 @@ static int cmd_ps(const char *args[])
 			if (args[1])
 				print_task_time_threshold = atoi(args[1]);
 			pp_printf("print_task_time_threshold %d\n",
-				  print_task_time_threshold);
+				  (unsigned int) print_task_time_threshold);
 			return 0;
 		}
 	}

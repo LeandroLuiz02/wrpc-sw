@@ -49,12 +49,12 @@ static int cmd_time(const char *args[])
 			return 0;
 		}
 	} else if (args[0] && !strcasecmp(args[0], "raw")) {
-		pp_printf("%d %d\n", (uint32_t) sec, nsec);
+		pp_printf("%d %d\n", (unsigned int) sec, (unsigned int) nsec);
 		return 0;
 	}
 
 	pp_printf("%s +%d nanoseconds.\n",
-		  format_time(sec,  TIME_FORMAT_LEGACY), nsec);
+		  format_time(sec, TIME_FORMAT_LEGACY), (unsigned int) nsec);
 	/* fixme: clock freq is not always 125 MHz */
 
 	return 0;

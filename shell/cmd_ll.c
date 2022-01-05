@@ -29,7 +29,7 @@ static int cmd_devmem(const char *args[])
 		fromhex(args[1], (void *)&value);
 		*addr = value;
 	} else {
-		pp_printf("%08x = %08x\n", (int)addr, *addr);
+		pp_printf("%08x = %08x\n", (int) addr, (unsigned int) *addr);
 	}
 	return 0;
 }
@@ -70,8 +70,8 @@ static int cmd_delays(const char *args[])
 		picos_to_pp_time(rx, &wr_servo_ext->delta_rxm);
 		picos_to_pp_time(tx, &wr_servo_ext->delta_txm);
 	} else {
-		pp_printf("tx: %i   rx: %i\n", sfp_info.sfp_params.dTx,
-			  sfp_info.sfp_params.dRx);
+		pp_printf("tx: %i   rx: %i\n", (int) sfp_info.sfp_params.dTx,
+			  (int) sfp_info.sfp_params.dRx);
 	}
 	return 0;
 }

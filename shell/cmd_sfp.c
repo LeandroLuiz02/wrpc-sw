@@ -128,8 +128,8 @@ static int cmd_sfp(const char *args[])
 			pp_printf("%d: PN:", i + 1);
 			for (temp = 0; temp < SFP_PN_LEN; ++temp)
 				pp_printf("%c", sfp.pn[temp]);
-			pp_printf(" dTx: %8d dRx: %8d alpha: %19Ld\n", sfp.dTx,
-				sfp.dRx, sfp.alpha);
+			pp_printf(" dTx: %8d dRx: %8d alpha: %19Ld\n",
+				  (int) sfp.dTx, (int) sfp.dRx, sfp.alpha);
 		}
 		return 0;
 	} else if (!strcasecmp(args[0], "match")) {
@@ -156,8 +156,9 @@ static int cmd_sfp(const char *args[])
 		}
 		/* match successful */
 		pp_printf("SFP matched, dTx=%d dRx=%d alpha=%Ld\n",
-			sfp_info.sfp_params.dTx, sfp_info.sfp_params.dRx,
-			sfp_info.sfp_params.alpha);
+			  (int) sfp_info.sfp_params.dTx,
+			  (int) sfp_info.sfp_params.dRx,
+			  sfp_info.sfp_params.alpha);
 		return ret;
 	} else if (args[1] && !strcasecmp(args[0], "ena")) {
 		ep_sfp_enable(&wrc_endpoint_dev, atoi(args[1]));

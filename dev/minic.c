@@ -78,7 +78,7 @@ void minic_init()
 	mcr = minic_readl(MINIC_REG_MCR);
 	if (MINIC_MCR_VER_R(mcr) != MINIC_HDL_VERSION) {
 		pp_printf("Error: Minic HDL version %d not supported by sw\n",
-				MINIC_MCR_VER_R(mcr));
+			  (int) MINIC_MCR_VER_R(mcr));
 		ver_supported = 0;
 		return;
 	}
@@ -223,7 +223,7 @@ int minic_rx_frame(struct wr_ethhdr *hdr, uint8_t * payload, uint32_t buf_size,
 int minic_tx_frame(struct wr_ethhdr_vlan *hdr, uint8_t *payload, uint32_t size,
 		   struct hw_timestamp *hwts)
 {
-	uint32_t d_hdr, mcr, pwords, hwords;
+	uint32_t mcr, pwords, hwords;
 	int ts_valid;
 	int i, hsize;
 	uint16_t *ptr;
@@ -240,8 +240,6 @@ int minic_tx_frame(struct wr_ethhdr_vlan *hdr, uint8_t *payload, uint32_t size,
 	if (size + hsize < 60)
 		size = 60 - hsize;
 	pwords = ((size + 1) >> 1);
-
-	d_hdr = 0;
 
 	/* First we write status word (empty status for Tx) */
 	minic_txword(WRF_STATUS, 0);
@@ -281,7 +279,8 @@ int minic_tx_frame(struct wr_ethhdr_vlan *hdr, uint8_t *payload, uint32_t size,
 	}
 
 	if (i == 1000)
-		pp_printf("Warning: tx not terminated infinite mcr=0x%x\n",mcr);
+		pp_printf("Warning: tx not terminated infinite mcr=0x%x\n",
+			  (unsigned int) mcr);
 
 	if (hwts) {
 		uint32_t raw_ts;
@@ -319,6 +318,7 @@ int minic_tx_frame(struct wr_ethhdr_vlan *hdr, uint8_t *payload, uint32_t size,
 		}
 
 		EXPLODE_WR_TIMESTAMP(raw_ts, counter_r, counter_f);
+		(void) counter_f; /* Make a compiler happy */
 		shw_pps_gen_get_time(&sec, &nsec);
 
 		if (counter_r > 3 * REF_CLOCK_FREQ_HZ / 4 && nsec < 250000000)
@@ -331,7 +331,7 @@ int minic_tx_frame(struct wr_ethhdr_vlan *hdr, uint8_t *payload, uint32_t size,
 		
 		minic.tx_count++;
         }
-        
+
 	return size;
 }
 
