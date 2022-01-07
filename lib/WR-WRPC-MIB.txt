@@ -553,7 +553,7 @@ wrpcPtpAlpha64                 OBJECT-TYPE
     STATUS                     current
     DESCRIPTION
             "Alpha used by PTP"
-    ::= { wrpcPtpGroup 26 }
+    ::= { wrpcPtpGroup 27 }
 
 -- ****************************************************************************
 wrpcPtpConfigGroup             OBJECT IDENTIFIER ::= { wrpcCore 6 }
