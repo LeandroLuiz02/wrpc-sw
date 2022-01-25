@@ -2873,7 +2873,7 @@ int wrc_board_create_tasks()
     return 0;
 }
 
-void ertm14_sync_pulse_cal()
+void ertm14_sync_pulse_cal(void)
 {
     pp_printf("Sync Pulse calibration [press X to continue]:\n");
 
