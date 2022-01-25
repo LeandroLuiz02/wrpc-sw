@@ -16,6 +16,7 @@ extern "C" {
 
 #include <stdint.h>
 #include "ertm-common.h"
+#include "hw/wrc_diags_regs.h"
 
 struct ertm_lib_version {
 	char *lib_version;
