@@ -99,6 +99,7 @@ int ltc6953_configure_output( struct ltc695x_device *dev, int output, int divide
         case 8: div_mp = 7; div_md = 1; break;
         case 16: div_mp = 15; div_md = 1; break;
         case 10: div_mp = 9; div_md = 1; break;
+        case 50: div_mp = 25-1; div_md = 1; break;
         case 100: div_mp = 25 - 1; div_md = 2; break;
         default: return -EINVAL; // unsupported divider
     }
