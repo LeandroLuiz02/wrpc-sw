@@ -214,29 +214,45 @@ struct ertm_nco_status {
 	};
 };
 
-struct ertm_wr_status {
+struct ertm_wr_status
+{
 	/* FIXME: copied, not #include'd, from wrc_diags_regs.h */
 	/* this is an alias of struct WRC_DIAGS_WB */
-	uint32_t VER;		/* [0x0]: REG Version register */
-	uint32_t CTRL;         	/* [0x4]: REG Ctrl */
-	uint32_t WDIAG_SSTAT;  	/* [0x8]: REG WRPC Diag: servo status */
-	uint32_t WDIAG_PSTAT;  	/* [0xc]: REG WRPC Diag: Port status */
-	uint32_t WDIAG_PTPSTAT;	/* [0x10]: REG WRPC Diag: PTP state */
-	uint32_t WDIAG_ASTAT;  	/* [0x14]: REG WRPC Diag: AUX state */
-	uint32_t WDIAG_TXFCNT; 	/* [0x18]: REG WRPC Diag: Tx PTP Frame cnts */
-	uint32_t WDIAG_RXFCNT; 	/* [0x1c]: REG WRPC Diag: Rx PTP Frame cnts */
-	uint32_t WDIAG_SEC_MSB;	/* [0x20]: REG WRPC Diag:local time [msb of s] */
-	uint32_t WDIAG_SEC_LSB;	/* [0x24]: REG WRPC Diag: local time [lsb of s] */
-	uint32_t WDIAG_NS;     	/* [0x28]: REG WRPC Diag: local time [ns] */
-	uint32_t WDIAG_MU_MSB; 	/* [0x2c]: REG WRPC Diag: Round trip (mu) [msb of ps] */
-	uint32_t WDIAG_MU_LSB; 	/* [0x30]: REG WRPC Diag: Round trip (mu) [lsb of ps] */
-	uint32_t WDIAG_DMS_MSB;	/* [0x34]: REG WRPC Diag: Master-slave delay (dms) [msb of ps] */
-	uint32_t WDIAG_DMS_LSB;	/* [0x38]: REG WRPC Diag: Master-slave delay (dms) [lsb of ps] */
-	uint32_t WDIAG_ASYM;   	/* [0x3c]: REG WRPC Diag: Total link asymmetry [ps] */
-	uint32_t WDIAG_CKO;    	/* [0x40]: REG WRPC Diag: Clock offset (cko) [ps] */
-	uint32_t WDIAG_SETP;   	/* [0x44]: REG WRPC Diag: Phase setpoint (setp) [ps] */
-	uint32_t WDIAG_UCNT;   	/* [0x48]: REG WRPC Diag: Update counter (ucnt) */
-	uint32_t WDIAG_TEMP;   	/* [0x4c]: REG WRPC Diag: Board temperature [C degree] */
+	uint32_t VER;			/* [0x0]: REG Version register */
+	uint32_t CTRL;			/* [0x4]: REG Ctrl */
+	uint32_t WDIAG_SSTAT;	/* [0x8]: REG WRPC Diag: servo status */
+	uint32_t WDIAG_PSTAT;	/* [0xc]: REG WRPC Diag: Port status */
+	uint32_t WDIAG_PTPSTAT; /* [0x10]: REG WRPC Diag: PTP state */
+	uint32_t WDIAG_ASTAT;	/* [0x14]: REG WRPC Diag: AUX state */
+	uint32_t WDIAG_TXFCNT;	/* [0x18]: REG WRPC Diag: Tx PTP Frame cnts */
+	uint32_t WDIAG_RXFCNT;	/* [0x1c]: REG WRPC Diag: Rx PTP Frame cnts */
+	uint32_t WDIAG_SEC_MSB; /* [0x20]: REG WRPC Diag:local time [msb of s] */
+	uint32_t WDIAG_SEC_LSB; /* [0x24]: REG WRPC Diag: local time [lsb of s] */
+	uint32_t WDIAG_NS;		/* [0x28]: REG WRPC Diag: local time [ns] */
+	uint32_t WDIAG_MU_MSB;	/* [0x2c]: REG WRPC Diag: Round trip (mu) [msb of ps] */
+	uint32_t WDIAG_MU_LSB;	/* [0x30]: REG WRPC Diag: Round trip (mu) [lsb of ps] */
+	uint32_t WDIAG_DMS_MSB; /* [0x34]: REG WRPC Diag: Master-slave delay (dms) [msb of ps] */
+	uint32_t WDIAG_DMS_LSB; /* [0x38]: REG WRPC Diag: Master-slave delay (dms) [lsb of ps] */
+	uint32_t WDIAG_ASYM;	/* [0x3c]: REG WRPC Diag: Total link asymmetry [ps] */
+	uint32_t WDIAG_CKO;		/* [0x40]: REG WRPC Diag: Clock offset (cko) [ps] */
+	uint32_t WDIAG_SETP;	/* [0x44]: REG WRPC Diag: Phase setpoint (setp) [ps] */
+	uint32_t WDIAG_UCNT;	/* [0x48]: REG WRPC Diag: Update counter (ucnt) */
+	uint32_t WDIAG_TEMP;	/* [0x4c]: REG WRPC Diag: Board temperature [C degree] */
+	uint32_t WDIAG_AUX0_DETAIL_STAT; /* [0x50]: REG (ro) WRPC Diag: Aux0 detailed clock status */
+	uint32_t WDIAG_AUX1_DETAIL_STAT; /* [0x54]: REG (ro) WRPC Diag: Aux1 detailed clock status */
+	uint32_t WDIAG_AUX2_DETAIL_STAT; /* [0x58]: REG (ro) WRPC Diag: Aux2 detailed clock status */
+	uint32_t WDIAG_AUX3_DETAIL_STAT; /* [0x5c]: REG (ro) WRPC Diag: Aux3 detailed clock status */
+	uint32_t WDIAG_RX_ERR_CNT; /* [0x60]: REG (ro) WRPC Diag: RX Error count */
+	uint32_t WDIAG_SERVO_UPTIME_MSB; /* [0x64]: REG (ro) WRPC Diag: Servo Up Timestamp (MSB) */
+	uint32_t WDIAG_SERVO_UPTIME_LSB; /* [0x68]: REG (ro) WRPC Diag: Servo Up Timestamp (LSB) */
+	uint32_t WDIAG_SERVO_RESTART_COUNT; /* [0x6c]: REG (ro) WRPC Diag: Servo restart count */
+	uint32_t WDIAG_BITSLIDE; /* [0x70]: REG (ro) WRPC Diag: Transceiver bitslide */
+	uint32_t WDIAG_DELTA_RX_M; /* [0x74]: REG (ro) WRPC Diag: delta_Rx_M parameter from the link delay model */
+	uint32_t WDIAG_DELTA_RX_S; /* [0x78]: REG (ro) WRPC Diag: delta_Rx_S parameter from the link delay model */
+	uint32_t WDIAG_DELTA_TX_M; /* [0x7c]: REG (ro) WRPC Diag: delta_Tx_M parameter from the link delay model */
+	uint32_t WDIAG_DELTA_TX_S; /* [0x80]: REG (ro) WRPC Diag: delta_Tx_S parameter from the link delay model */
+	uint32_t WDIAG_SPLL_HY; /* [0x84]: REG (ro) WRPC Diag: SoftPLL Helper DAC value (HY) */
+	uint32_t WDIAG_SPLL_MY; /* [0x88]: REG (ro) WRPC Diag: SoftPLL Main DAC value (MY) */
 };
 
 /* as a general rule, all methods in libertm return an integer exit
