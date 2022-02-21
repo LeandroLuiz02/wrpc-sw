@@ -109,9 +109,10 @@ static void wrc_initialize(void)
 	spll_very_init();
 	usleep_init();
 	netif_init();
-	wdiags_init();
 
 	wrc_board_early_init();
+
+	wdiags_init();
 
 	pp_printf("WR Core: starting up...\n");
 	get_hw_name(wrc_hw_name);
