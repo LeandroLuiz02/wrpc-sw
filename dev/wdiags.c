@@ -18,16 +18,29 @@
 
 #define WDIAGS_VERSION 2
 
+#if defined(BASE_WDIAGS_PRIV)
+	static void *wdiags_base = BASE_WDIAGS_PRIV;
+#else
+	static void *wdiags_base = NULL;
+#endif
+
+
 int wdiag_write( uint32_t reg, uint32_t value )
 {
-//	pp_printf("wdiag_write %x %x\n",reg,value);
+	if( !wdiags_base )
+		return -1;
 	// fixme: there's a max of 64 diag registers.
-	writel( value, (void*) ( BASE_WDIAGS_PRIV + reg ) );
+	
+	writel( value, (void*) ( wdiags_base + reg ) );
+	return 0;
 }
 
 uint32_t wdiag_read( uint32_t reg )
 {
-	return readl( (void*) ( BASE_WDIAGS_PRIV + reg )  );
+	if( !wdiags_base )
+		return 0xdeadbeef;
+
+	return readl( (void*) ( wdiags_base + reg )  );
 }
 
 
@@ -118,14 +131,31 @@ void wdiags_write_temp(uint32_t temp)
 	wdiag_write( WRC_DIAGS_WDIAG_TEMP, temp );
 }
 
-void wdiags_init()
+void wdiags_set_base_address( void *base )
+{
+	wdiags_base = base;
+}
+
+int wdiags_init()
 {
 	int i;
+
+	if( wdiags_base == NULL )
+	{
+		dev_dbg("wdiags: no base address specified.\n");
+		return -1;
+	}
+	else
+	{
+		dev_dbg("wdiags: base addr = 0x%x.\n", wdiags_base );
+	}
 
 	for( i = 0; i < 64; i++ )
 		wdiag_write( i * 4, 0 );
 
 	wdiag_write( WRC_DIAGS_VER, WDIAGS_VERSION );
+
+	return 0;
 }
 
 void wdiags_write_aux_clock_details( int clk_id, uint32_t mode, uint32_t phase, int enabled, int ready )
@@ -161,4 +191,10 @@ void wdiags_write_ptp_deltas( int dtxm, int drxm, int dtxs, int drxs )
 	wdiag_write( WRC_DIAGS_WDIAG_DELTA_RX_S, drxs );
 	wdiag_write( WRC_DIAGS_WDIAG_DELTA_TX_M, dtxm );
 	wdiag_write( WRC_DIAGS_WDIAG_DELTA_TX_S, dtxs );
+}
+
+void wdiags_write_pll_diags( int hy, int my )
+{
+	wdiag_write( WRC_DIAGS_WDIAG_SPLL_HY, hy );
+	wdiag_write( WRC_DIAGS_WDIAG_SPLL_MY, my );
 }

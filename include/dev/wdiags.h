@@ -25,8 +25,12 @@ void wdiags_write_cnts(uint32_t tx, uint32_t rx, uint32_t rx_errors);
 void wdiags_write_time(uint64_t sec, uint32_t nsec);
 void wdiags_write_temp(uint32_t temp);
 void wdiags_write_aux_clock_details( int clk_id, uint32_t mode, uint32_t phase, int enabled, int ready );
-void wdiags_init(void);
+int wdiags_init(void);
 void wdiags_write_bitslide(int bitslide);
 void wdiags_write_ptp_deltas( int dtxm, int drxm, int dtxs, int drxs );
+void wdiags_set_base_address( void *base );
+void wdiags_write_bitslide(int bitslide);
+void wdiags_write_ptp_deltas( int dtxm, int drxm, int dtxs, int drxs );
+void wdiags_write_pll_diags( int hy, int my );
 
 #endif
