@@ -29,7 +29,6 @@
 #include "revision.h"
 #include "wrc_global.h"
 #include "hw/wrc_diags_regs.h"
-#include "hw/wrc_diags_regs_v1.h"
 
 #ifndef CONFIG_PRINTF_FULL
 #error ("WRPC monitor requires full version of pp_printf implementation")
@@ -726,8 +725,6 @@ int wrc_ptp_get_servo_state( void )
 {
 	struct wr_servo_state *ss =
 		&((struct wr_data *)ppi->ext_data)->servo_state;
-		int32_t asym   = (int32_t)(ss->picos_mu-2LL * ss->delta_ms);
-		int wr_mode    = (ss->flags & WR_FLAG_VALID) ? 1 : 0;
 	return  ss->state;
 }
 
@@ -855,10 +852,14 @@ int wrc_wr_diags(void)
 		wdiags_write_temp(temp);
 	}
 
+	wdiags_write_pll_diags( spll_get_dac(-1), spll_get_dac(0) ); // fixme: #defines for DAC IDs
+
 	/* **************** unlock data from reading by user  ************** */
 	wdiag_set_valid(1);
 	return 1;
 }
+
+#if 0
 
 /*
  * this function can be used to factor out most of the stuff
@@ -871,7 +872,7 @@ int wrc_wr_diags(void)
  *  do not write directly to syscon, but to an arbitrary address.
  *  That will clean the code here *enormously*
  */
-int wrc_diags_dump(struct wrc_diags_regs_v1 *buf)
+int wrc_diags_dump(struct wrc_diags *buf)
 {
 	struct hal_port_state ps;
 	int tx, rx;
@@ -880,7 +881,7 @@ int wrc_diags_dump(struct wrc_diags_regs_v1 *buf)
 	uint32_t aux_stat;
 	int i, temp, n_out;
 
-	buf->VER = 0x12345678;
+	buf->VER = 2;
 	buf->CTRL = 0xcafebabe;
 	/* frame statistics */
 	minic_get_stats(&tx, &rx, NULL);
@@ -935,5 +936,9 @@ int wrc_diags_dump(struct wrc_diags_regs_v1 *buf)
 	temp = wrc_temp_get("pcb");
 	buf->WDIAG_TEMP = temp;
 
+	buf->WDIAG_BITSLIDE =
+
 	return 1;
 }
+
+#endif
