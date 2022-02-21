@@ -352,3 +352,45 @@ memory-map:
       width: 32
       access: ro
       address: 0x6c
+  - reg:
+      name: WDIAG_BITSLIDE
+      description: 'WRPC Diag: Transceiver bitslide'
+      width: 32
+      access: ro
+      address: 0x70
+  - reg:
+      name: WDIAG_DELTA_RX_M
+      description: 'WRPC Diag: delta_Rx_M parameter from the link delay model'
+      width: 32
+      access: ro
+      address: 0x74
+  - reg:
+      name: WDIAG_DELTA_RX_S
+      description: 'WRPC Diag: delta_Rx_S parameter from the link delay model'
+      width: 32
+      access: ro
+      address: 0x78
+  - reg:
+      name: WDIAG_DELTA_TX_M
+      description: 'WRPC Diag: delta_Tx_M parameter from the link delay model'
+      width: 32
+      access: ro
+      address: 0x7c
+  - reg:
+      name: WDIAG_DELTA_TX_S
+      description: 'WRPC Diag: delta_Tx_S parameter from the link delay model'
+      width: 32
+      access: ro
+      address: 0x80
+  - reg:
+      name: WDIAG_SPLL_HY
+      description: 'WRPC Diag: SoftPLL Helper DAC value (HY)'
+      width: 32
+      access: ro
+      address: 0x84
+  - reg:
+      name: WDIAG_SPLL_MY
+      description: 'WRPC Diag: SoftPLL Main DAC value (MY)'
+      width: 32
+      access: ro
+      address: 0x88

@@ -1,6 +1,6 @@
 #ifndef __CHEBY__WRC_DIAGS__H__
 #define __CHEBY__WRC_DIAGS__H__
-#define WRC_DIAGS_SIZE 112 /* 0x70 */
+#define WRC_DIAGS_SIZE 140 /* 0x8c */
 
 /* Version register */
 #define WRC_DIAGS_VER 0x0UL
@@ -105,13 +105,26 @@
 /* WRPC Diag: Servo restart count */
 #define WRC_DIAGS_WDIAG_SERVO_RESTART_COUNT 0x6cUL
 
+/* WRPC Diag: Transceiver bitslide */
 #define WRC_DIAGS_WDIAG_BITSLIDE 0x70UL
 
+/* WRPC Diag: delta_Rx_M parameter from the link delay model */
 #define WRC_DIAGS_WDIAG_DELTA_RX_M 0x74UL
+
+/* WRPC Diag: delta_Rx_S parameter from the link delay model */
 #define WRC_DIAGS_WDIAG_DELTA_RX_S 0x78UL
+
+/* WRPC Diag: delta_Tx_M parameter from the link delay model */
 #define WRC_DIAGS_WDIAG_DELTA_TX_M 0x7cUL
+
+/* WRPC Diag: delta_Tx_S parameter from the link delay model */
 #define WRC_DIAGS_WDIAG_DELTA_TX_S 0x80UL
 
+/* WRPC Diag: SoftPLL Helper DAC value (HY) */
+#define WRC_DIAGS_WDIAG_SPLL_HY 0x84UL
+
+/* WRPC Diag: SoftPLL Main DAC value (MY) */
+#define WRC_DIAGS_WDIAG_SPLL_MY 0x88UL
 
 struct wrc_diags {
   /* [0x0]: REG (rw) Version register */
@@ -198,7 +211,26 @@ struct wrc_diags {
   /* [0x6c]: REG (ro) WRPC Diag: Servo restart count */
   uint32_t WDIAG_SERVO_RESTART_COUNT;
 
+  /* [0x70]: REG (ro) WRPC Diag: Transceiver bitslide */
   uint32_t WDIAG_BITSLIDE;
+
+  /* [0x74]: REG (ro) WRPC Diag: delta_Rx_M parameter from the link delay model */
+  uint32_t WDIAG_DELTA_RX_M;
+
+  /* [0x78]: REG (ro) WRPC Diag: delta_Rx_S parameter from the link delay model */
+  uint32_t WDIAG_DELTA_RX_S;
+
+  /* [0x7c]: REG (ro) WRPC Diag: delta_Tx_M parameter from the link delay model */
+  uint32_t WDIAG_DELTA_TX_M;
+
+  /* [0x80]: REG (ro) WRPC Diag: delta_Tx_S parameter from the link delay model */
+  uint32_t WDIAG_DELTA_TX_S;
+
+  /* [0x84]: REG (ro) WRPC Diag: SoftPLL Helper DAC value (HY) */
+  uint32_t WDIAG_SPLL_HY;
+
+  /* [0x88]: REG (ro) WRPC Diag: SoftPLL Main DAC value (MY) */
+  uint32_t WDIAG_SPLL_MY;
 };
 
 #endif /* __CHEBY__WRC_DIAGS__H__ */
