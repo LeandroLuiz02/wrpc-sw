@@ -123,27 +123,42 @@ static struct ertm_voltages voltages_defaults = {
 };
 struct ertm_wr_status wr_status_default = {
 	/* FIXME: copied, not #include'd, from wrc_diags_regs.h */
-	/* eventually replace by struct wrc_diags_regs_v1 */
-	.VER		= 0xdeadbabe,	/* [0x0]: REG Version register */
-	.CTRL		= 0,   		/* [0x4]: REG Ctrl */
-	.WDIAG_SSTAT	= 0,  		/* [0x8]: REG WRPC Diag: servo status */
-	.WDIAG_PSTAT	= 1,  		/* [0xc]: REG WRPC Diag: Port status */
-	.WDIAG_PTPSTAT	= 3,		/* [0x10]: REG WRPC Diag: PTP state */
-	.WDIAG_ASTAT	= 0xa5,		/* [0x14]: REG WRPC Diag: AUX state */
-	.WDIAG_TXFCNT	= 0xa5,		/* [0x18]: REG WRPC Diag: Tx PTP Frame cnts */
-	.WDIAG_RXFCNT	= 0xa5,		/* [0x1c]: REG WRPC Diag: Rx PTP Frame cnts */
-	.WDIAG_SEC_MSB	= 0xa5,		/* [0x20]: REG WRPC Diag:local time [msb of s] */
-	.WDIAG_SEC_LSB	= 0xa5,		/* [0x24]: REG WRPC Diag: local time [lsb of s] */
-	.WDIAG_NS	= 0xa5,     	/* [0x28]: REG WRPC Diag: local time [ns] */
-	.WDIAG_MU_MSB	= 0xa5,		/* [0x2c]: REG WRPC Diag: Round trip (mu) [msb of ps] */
-	.WDIAG_MU_LSB	= 0xa5,		/* [0x30]: REG WRPC Diag: Round trip (mu) [lsb of ps] */
-	.WDIAG_DMS_MSB	= 0xa5,		/* [0x34]: REG WRPC Diag: Master-slave delay (dms) [msb of ps] */
-	.WDIAG_DMS_LSB	= 0xa5,		/* [0x38]: REG WRPC Diag: Master-slave delay (dms) [lsb of ps] */
-	.WDIAG_ASYM	= 0xa5,		/* [0x3c]: REG WRPC Diag: Total link asymmetry [ps] */
-	.WDIAG_CKO	= 0xa5,		/* [0x40]: REG WRPC Diag: Clock offset (cko) [ps] */
-	.WDIAG_SETP	= 0xa5,		/* [0x44]: REG WRPC Diag: Phase setpoint (setp) [ps] */
-	.WDIAG_UCNT	= 0xa5,		/* [0x48]: REG WRPC Diag: Update counter (ucnt) */
-	.WDIAG_TEMP	= 0xa5,		/* [0x4c]: REG WRPC Diag: Board temperature [C degree] */
+	/* eventually replace by struct wrc_diags */
+	.VER = 0xdeadbabe,	   /* [0x0]: REG Version register */
+	.CTRL = 0,			   /* [0x4]: REG Ctrl */
+	.WDIAG_SSTAT = 0,	   /* [0x8]: REG WRPC Diag: servo status */
+	.WDIAG_PSTAT = 1,	   /* [0xc]: REG WRPC Diag: Port status */
+	.WDIAG_PTPSTAT = 3,	   /* [0x10]: REG WRPC Diag: PTP state */
+	.WDIAG_ASTAT = 0xa5,   /* [0x14]: REG WRPC Diag: AUX state */
+	.WDIAG_TXFCNT = 0xa5,  /* [0x18]: REG WRPC Diag: Tx PTP Frame cnts */
+	.WDIAG_RXFCNT = 0xa5,  /* [0x1c]: REG WRPC Diag: Rx PTP Frame cnts */
+	.WDIAG_SEC_MSB = 0xa5, /* [0x20]: REG WRPC Diag:local time [msb of s] */
+	.WDIAG_SEC_LSB = 0xa5, /* [0x24]: REG WRPC Diag: local time [lsb of s] */
+	.WDIAG_NS = 0xa5,	   /* [0x28]: REG WRPC Diag: local time [ns] */
+	.WDIAG_MU_MSB = 0xa5,  /* [0x2c]: REG WRPC Diag: Round trip (mu) [msb of ps] */
+	.WDIAG_MU_LSB = 0xa5,  /* [0x30]: REG WRPC Diag: Round trip (mu) [lsb of ps] */
+	.WDIAG_DMS_MSB = 0xa5, /* [0x34]: REG WRPC Diag: Master-slave delay (dms) [msb of ps] */
+	.WDIAG_DMS_LSB = 0xa5, /* [0x38]: REG WRPC Diag: Master-slave delay (dms) [lsb of ps] */
+	.WDIAG_ASYM = 0xa5,	   /* [0x3c]: REG WRPC Diag: Total link asymmetry [ps] */
+	.WDIAG_CKO = 0xa5,	   /* [0x40]: REG WRPC Diag: Clock offset (cko) [ps] */
+	.WDIAG_SETP = 0xa5,	   /* [0x44]: REG WRPC Diag: Phase setpoint (setp) [ps] */
+	.WDIAG_UCNT = 0xa5,	   /* [0x48]: REG WRPC Diag: Update counter (ucnt) */
+	.WDIAG_TEMP = 0xa5,	   /* [0x4c]: REG WRPC Diag: Board temperature [C degree] */
+	.WDIAG_AUX0_DETAIL_STAT = 0xa5,
+	.WDIAG_AUX1_DETAIL_STAT = 0xa5,
+	.WDIAG_AUX2_DETAIL_STAT = 0xa5,
+	.WDIAG_AUX3_DETAIL_STAT = 0xa5,
+	.WDIAG_RX_ERR_CNT = 0xa5,
+	.WDIAG_SERVO_UPTIME_MSB = 0xa5,
+	.WDIAG_SERVO_UPTIME_LSB = 0xa5,
+	.WDIAG_SERVO_RESTART_COUNT = 0xa5,
+	.WDIAG_BITSLIDE = 0xa5,
+	.WDIAG_DELTA_RX_M = 0xa5,
+	.WDIAG_DELTA_RX_S = 0xa5,
+	.WDIAG_DELTA_TX_M = 0xa5,
+	.WDIAG_DELTA_TX_S = 0xa5,
+	.WDIAG_SPLL_HY = 0xa5,
+	.WDIAG_SPLL_MY = 0xa5,
 };
 
 /* WARNING: mostly unused */
@@ -428,7 +443,7 @@ void board_state_to_host_order(struct ertm14_board_state *board, struct ertm14_b
 	}
 }
 
-static void diags_to_host(struct wrc_diags_regs_v1 *diags, struct wrc_diags_regs_v1 *host)
+static void diags_to_host(struct wrc_diags *diags, struct wrc_diags *host)
 {
 	int i;
 	int ndiags = sizeof(*diags) / sizeof(uint32_t);
@@ -453,12 +468,12 @@ int ertm_get_board_config(struct ertm_status *st, struct ertm14_board_state *bs)
 	return 0;
 }
 
-int ertm_get_wr_diags(struct ertm_status *st, struct wrc_diags_regs_v1 *wrc_diags)
+int ertm_get_wr_diags(struct ertm_status *st, struct wrc_diags *wrc_diags)
 {
 	int res;
 
 	struct uart_link *link = &st->link;
-	struct wrc_diags_regs_v1 d, *diags = &d;
+	struct wrc_diags d, *diags = &d;
 
 	res = ertm_proto_cycle(link, ertm14_get_wrc_diags, NULL, diags);
 	if (res < 0)
@@ -1152,7 +1167,7 @@ int ertm_rf_nco_reset_enable(struct ertm_status *handle, int enable)
 
 int ertm_wr_diags(struct ertm_status *handle, struct ertm_wr_status *status)
 {
-	struct wrc_diags_regs_v1 *s = (struct wrc_diags_regs_v1 *)status;
+	struct wrc_diags *s = (struct wrc_diags *)status;
 	return ertm_get_wr_diags(handle, s);
 }
 
