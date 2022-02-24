@@ -243,6 +243,7 @@ static void print_board_temp(uint32_t val)
 void display_wrc_diags_cooked(struct ertm_wr_status *diags)
 {
 	char fmt[] = "%-20s\t0x%08x\n";
+	char human[] = "%-20s\t0x%08x (%7d)\n";
 
 	printf(fmt, "Version register", diags->VER);
 	printf(fmt, "Ctrl", diags->CTRL);
@@ -269,8 +270,8 @@ void display_wrc_diags_cooked(struct ertm_wr_status *diags)
 	printf(fmt, "Link Delay Model delta_Rx_S [ps]", diags->WDIAG_DELTA_RX_S);
 	printf(fmt, "Link Delay Model delta_Tx_M [ps]", diags->WDIAG_DELTA_TX_M);
 	printf(fmt, "Link Delay Model delta_Tx_S [ps]", diags->WDIAG_DELTA_TX_S);
-	printf(fmt, "SoftPLL Helper DAC value [0-65535]", diags->WDIAG_SPLL_HY);
-	printf(fmt, "SoftPLL Main DAC value [0-65535]", diags->WDIAG_SPLL_MY);
+	printf(human, "SoftPLL Helper DAC value [0-65535]", diags->WDIAG_SPLL_HY, diags->WDIAG_SPLL_HY);
+	printf(human, "SoftPLL Main DAC value [0-65535]", diags->WDIAG_SPLL_MY, diags->WDIAG_SPLL_MY);
 }
 
 static const char *source_name(int sync_source)
