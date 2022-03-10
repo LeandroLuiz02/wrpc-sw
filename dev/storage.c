@@ -759,7 +759,7 @@ int storage_load_calibration(void)
 	}
 
 	cal_data = cal_data_ne;
-	ntohl_mem((uint32_t *)&cal_data, sizeof(cal_data));
+	ntohl_mem((uint8_t *)&cal_data, sizeof(cal_data));
 
 	if( cal_data.magic != CAL_FILE_MAGIC )
 	{
@@ -813,7 +813,7 @@ int storage_save_calibration(void)
 	cal_data.magic = CAL_FILE_MAGIC;
 	cal_data.checksum = calc_checksum( &cal_data );
 	cal_data_ne = cal_data;
-	htonl_mem((uint32_t *)&cal_data_ne, sizeof(cal_data_ne));
+	htonl_mem((uint8_t *)&cal_data_ne, sizeof(cal_data_ne));
 
 	sdbfs_ferase(&wrc_sdbfs, 0, wrc_sdbfs.f_len);
 

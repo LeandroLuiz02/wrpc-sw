@@ -39,12 +39,13 @@ static inline uint16_t ntohs(uint16_t netshort){
 
 #define htonl_mem(mem, size) ntohl_mem(mem, size)
 
-static inline void ntohl_mem(uint32_t *mem, int size_bytes)
+/* Change endianess on a memory region */
+static inline void ntohl_mem(uint8_t *mem, int size_bytes)
 {
 	int i;
 
-	for (i = 0; i < size_bytes / sizeof(uint32_t); i++) {
-		mem[i] = ntohl(mem[i]);
+	for (i = 0; i < size_bytes ; i += sizeof(uint32_t)) {
+		*(uint32_t*)(mem + i) = ntohl(*(uint32_t*)(mem + i));
 	}
 }
 
@@ -57,7 +58,7 @@ static inline void ntohl_mem(uint32_t *mem, int size_bytes)
 #define htonll(x) (x)
 
 #define htonl_mem(mem, size) ntohl_mem(mem, size)
-static inline void ntohl_mem(uint32_t *mem, int size_bytes) { return; }
+static inline void ntohl_mem(uint8_t *mem, int size_bytes) { return; }
 
 #else
 #error (Wrong Arch!)
