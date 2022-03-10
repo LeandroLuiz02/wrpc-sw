@@ -24,7 +24,7 @@ void panic(const char *fmt, ...)
 	}
 }
 
-void __assert(const char *func, int line, int forever,
+void __assert_wrpc(const char *func, int line, int forever,
 		     const char *fmt, ...)
 {
 	va_list args;
