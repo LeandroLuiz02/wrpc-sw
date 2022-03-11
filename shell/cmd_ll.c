@@ -45,7 +45,7 @@ static int cmd_delays(const char *args[])
 	wr_servo_ext_t * wr_servo_ext = NULL;
 
 	int tx, rx;
-	
+
 	if (!ppg || !ppg->pp_instances)
 		return -1;
 	wr_servo = (ppg->pp_instances->protocol_extension == PPSI_EXT_WR
