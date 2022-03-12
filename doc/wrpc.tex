@@ -149,17 +149,18 @@ distributed in the following places:
 
 \item \url{https://ohwr.org/project/wr-cores/wikis/Documents/}
 
-	hosts the pdf documentation for every official release.
-	The place where you can find already synthesized demo bitstreams,
-	ready to be downloaded to one of the officially supported boards.
+  Hosts the pdf documentation for every official release.
+  The place where you can find already synthesized demo bitstreams,
+  ready to be downloaded to one of the officially supported boards.
 
 \item \url{https://ohwr.org/project/wr-cores.git}
 
-	repository with HDL sources of the WRPC.
+  Repository with HDL sources of the WRPC.
 
 \item \url{https://ohwr.org/project/wrpc-sw.git}
 
-  repository with the LM32 software running inside the WRPC
+  Repository with the software running inside the WRPC. As today both, the LM32
+  and the RISC-V soft-core processors are supported by software.
 
 \end{itemize*}
 Other tools useful for building and running the WRPC can be downloaded from the
@@ -174,16 +175,27 @@ following locations:
 
 \item {\small\url{https://ohwr.org/project/wrpc-sw/uploads/a2e8eeba448fbc8d580e68004e6f6c7f/lm32.tar.xz}}
 
-  LM32 toolchain used to compile the LM32 software running inside the WRPC.
-  This is a 32-bit version of the toolchain. If you encounter problems running
-  this toolchain on modern 64bit machines, try 64-bit version described below.
+  When the LM32 is used as soft-core processor inside the WRPC, this toolchain
+  can be used to compile the software for WRPC. This version of the toolchain
+  is for 32-bit systems. It can be used on 64-bit systems, but can fail to work
+  on some filesystems. If you encounter problems running this toolchain on
+  modern 64bit machines, try the 64-bit version described below.
 
 \item {\small\url{https://ohwr.org/project/wrpc-sw/uploads/2776ce0ba43503d1486ae205b48fb450/lm32_host_64bit.tar.xz}}
 
-  LM32 toolchain used to compile the LM32 software running inside the WRPC
-  (64-bit version of the toolchain).
+  When the LM32 is used as soft-core processor inside the WRPC, this toolchain
+  can be used to compile the software for WRPC. This is a 64-bit version of
+  the toolchain. For LM32 architecture this should be the default choice.
 
-  \end{itemize*}
+\item {\small\url{https://ohwr.org/project/wrpc-sw/wikis/uploads/e445916c27cc49cc62a370aded9cacb2/riscv_gcc_11_1_0.tar.xz}}
+
+  When the RISC-V is used as soft-core processor inside the WRPC, this toolchain
+  based on GCC 11.0.0 can be used to compile the software for WRPC. This
+  toolchain can work only on 64bit host machines. The instruction how to build
+  the toolchain for RISC-V can be found in
+  the appendix~\ref{appendix:building_RISCV_toolchain}.
+
+\end{itemize*}
 Repositories containing the WRPC gateware and software (\textit{wr-cores},
 \textit{wrpc-sw}) are tagged with \texttt{wrpc-v4.1} tag. Other tools used to
 build the core and load it into the FPGA should be used in their newest stable
@@ -234,9 +246,26 @@ available from \textit{ohwr.org}.
 Depending on your needs, building the WRPC can be a one- or two-step process.
 In most of the cases you only need to synthesize the FPGA firmware (section
 \ref{HDL synthesis}). This way, you get a working WRPC with the default/release
-LM32 software running inside the core. If, for some reasons, you need to modify
-the LM32 software, please check also section \ref{LM32 software compilation}
+software running inside the core. If, for some reasons, you need to modify
+the soft-core processor's software, please check also
+section~\ref{Software compilation}
 which contains a description of the software compilation process.
+
+% ==========================================================================
+\subsection{Supported soft-core processors}
+\label{Supported soft-core processors}
+
+% TODO: fix before the release
+The release v5.0 of WRPC supports the build with LM32 or RISC-V soft-core
+processor. Both, the gateware and software have to be build for the same,
+selected architecture.
+
+The main reasons to introduce the RISC-V architecture are:
+\begin{itemize}
+  \item lack of LM32 support by modern versions of GNU GCC
+  \item reduced footprint size of the software
+  \item licensing issues
+\end{itemize}
 
 % ==========================================================================
 \subsection{HDL synthesis}
@@ -414,49 +443,72 @@ Open the project file \texttt{fasec\_ref\_design.xpr} and continue with regular
 Vivado flow to synthesize the bitstream.
 
 % ==========================================================================
-\subsection{LM32 software compilation}
-\label{LM32 software compilation}
+\subsection{Software compilation}
+\label{Software compilation}
 
-\textbf{Note:} By default, the LM32 software for a stable release is embedded
+By default, the LM32 or the RISC-V software for a stable release is embedded
 inside the FPGA bitstream you've downloaded from \textit{ohwr.org} or
 synthesized in section \ref{HDL synthesis}. You can skip this section, unless
-you need to make some custom changes to the LM32 software and compile it
-yourself.\\
+you need to make some custom changes to the soft-core processor's software and
+compile it yourself.\\
 
 \textbf{Note:} To compile also the host tools that come with this software
 package you will need a \emph{readline-dev} library. In some Linux distributions
 you would have to install it manually. E.g. in Ubuntu, please install
 \emph{libreadline-dev} package.\\
 
-First, you need to download and unpack the LM32 toolchain from the location
+As mentioned in the section \ref{Supported soft-core processors}, the WRPC from
+the v5.0 release can be build for LM32 or RISC-V soft-core processor. Major
+parts of the building process are the same for both architecures.
+
+First, you need to download and unpack the toolchain from the location
 mentioned in section \ref{Repositories and Releases}. The following example
-uses 32bit version of a toolchain.
+uses 32bit version of a LM32 toolchain.
 \begin{lstlisting}
 $ wget https://www.ohwr.org/project/wrpc-sw/uploads/a2e8eeba448fbc8d580e68004e6f6c7f/\
 lm32.tar.xz
 $ tar xJf lm32.tar.xz -C <your_location>
 \end{lstlisting}
 
-If you encounter problems running it, please use the 64bit version.
+If you encounter problems running it, please use the LM32's 64bit version.
 \begin{lstlisting}
 $ wget https://www.ohwr.org/project/wrpc-sw/uploads/2776ce0ba43503d1486ae205b48fb450/\
 lm32_host_64bit.tar.xz
 $ tar xJf lm32_host_64bit.tar.xz -C <your_location>
 \end{lstlisting}
 
+If you decide to use RISC-V, please use the following toolchain:
+\begin{lstlisting}
+$ wget https://ohwr.org/project/wrpc-sw/wikis/uploads/e445916c27cc49cc62a370aded9cacb2/\
+riscv_gcc_11_1_0.tar.xz
+$ tar xJf riscv_gcc_11_1_0.tar.xz -C <your_location>
+\end{lstlisting}
+
 Then you need to set a \texttt{CROSS\_COMPILE} environment variable in order
-to compile the software for the LM32 processor:
+to compile the software. For the LM32 processor:
 \begin{lstlisting}
 $ export CROSS_COMPILE="<your_location>/lm32/bin/lm32-elf-"
 \end{lstlisting}
+For the RISC-V processor:
+\begin{lstlisting}
+$ export CROSS_COMPILE="<your_location>/riscv/bin/riscv32-unknown-elf-"
+\end{lstlisting}
+
+Or you can let the build system to select the proper toolchain based on
+the selected architecture:
+\begin{lstlisting}
+$ export CROSS_COMPILE_LM32="<your_location>/lm32/bin/lm32-elf-"
+$ export CROSS_COMPILE_RISCV="<your_location>/riscv/bin/riscv32-unknown-elf-"
+\end{lstlisting}
+
 
 To get the sources of the WRPC software, please clone the \textit{wrpc-sw} git
-repository tagged with \texttt{wrpc-v4.1} tag. The commands in the listing below
+repository tagged with \texttt{wrpc-v5.0} tag. The commands in the listing below
 clone the \textit{wrpc-sw} repository together with submodules needed for this software.\\
 \begin{lstlisting}
 $ git clone https://ohwr.org/project/wrpc-sw.git <your_location>/wrpc-sw
 $ cd <your_location>/wrpc-sw
-$ git checkout wrpc-v4.1
+$ git checkout wrpc-v5.0
 \end{lstlisting}
 
 \textbf{Note:} If you use WRPC within another project, you may need to checkout
@@ -482,6 +534,11 @@ three boards mentioned in this manual \code{spec\_defconfig} can be used.
 $ make spec_defconfig
 \end{lstlisting}
 
+Each configuration file includes the definition of the architecture used for
+soft-processor. To change it call the configuration tools described above or
+manually set configuration options \texttt{CONFIG\_ARCH\_LM32} and
+\texttt{CONFIG\_ARCH\_RISCV}.
+
 After the package is configured, just run \code{make} without parameters to
 build your binary file:
 \begin{lstlisting}
@@ -496,11 +553,12 @@ from the network.
 The compilation process produces the binary in 3 different formats:
 \begin{itemize*}
   \item \textit{wrc.bin} can be then used with the loader from \textit{spec-sw}
-    or \textit{svec-sw} software package to program the LM32 inside the White
+    or \textit{svec-sw} software package to program the soft-core processor
+    inside the White
     Rabbit PTP Core (see section \ref{Programming FPGA} for details).
-  \item \textit{wrc.bram} you can use to initialize WRPC internal RAM with LM32
+  \item \textit{wrc.bram} you can use to initialize WRPC internal RAM with
     software during the synthesis for Xilinx FPGAs.
-  \item \textit{wrc.mif} you can use to initialize WRPC internal RAM with LM32
+  \item \textit{wrc.mif} you can use to initialize WRPC internal RAM with
     software during the synthesis for Altera FPGAs.
 \end{itemize*}
 The location of \textit{wrc.bram}/\textit{wrc.mif} files should be passed to the
@@ -568,7 +626,7 @@ $ sudo tools/spec-fwloader \
 
 If everything went right up to this moment you have your board running the FPGA 
 bitstream with the WR PTP Core. If you need to load your own \texttt{wrc.bin}
-compiled in section \ref{LM32 software compilation}, you can use the
+compiled in section \ref{Software compilation}, you can use the
 \texttt{spec-cl} tool:
 \begin{lstlisting}
 $ sudo tools/spec-cl <your_location>/wrpc-sw/wrc.bin
@@ -720,7 +778,7 @@ Cesium clock). Depending on your board you should connect:
 \subsection{Init script}
 \label{Init script}
 WRPC has a possibility to load user-defined intialization script on every
-startup. If you run WRPC release v4.1 or higher, the default LM32 software
+startup. If you run WRPC release v4.1 or higher, the default software
 comes with a built-in init script. The default script disables VLAN support,
 loads calibration values from the SFP database (provided that it was written
 earlier by the user) and starts PTP in slave mode. Here are the actual WRPC
@@ -1487,7 +1545,7 @@ can use one of them to access conveniently the Wishbone registers for WRPC
 diagnostics using the \texttt{wrpc-diags} tool.
 
 You will find \texttt{wrpc-diags} tool in the \textit{wrpc-sw} repository. If
-you have not yet cloned it, please see section \ref{LM32 software compilation}
+you have not yet cloned it, please see section \ref{Software compilation}
 for more instructions how this should be done, as well as how to compile it.
 
 The tool is self documented in the sense that a help \texttt{h} command lists
@@ -1593,7 +1651,7 @@ frames, which can be useful for diagnostics and debugging. One way of accessing
 this information is by using the \texttt{diag} command of the WR PTP Core Shell.
 An alternative is to use the \texttt{wr-streamers} tool described in this
 section. You will find it in the \textit{wrpc-sw} repository. If
-you have not yet cloned it, please see section \ref{LM32 software compilation}
+you have not yet cloned it, please see section \ref{Software compilation}
 for more instructions how this should be done, as well as how to compile it.\\
 
 The available statistical information is identical to the one that can be
@@ -1728,7 +1786,8 @@ To this aim, you can pass a memory image (dump of RAM content) of \textit{wrpc} 
 The tool will print information for softpll, ppsi data structures,
 ptp data sets and version information.
 
-For example, for the \textit{spec} board, you can use the resource file in
+For example, for the \textit{spec} board and WRPC using LM32 as a soft-core
+processor, you can use the resource file in
 \textit{sysfs} to look at a live system, or copy the file for off-line
 analysis. The following command line show both uses:
 
@@ -1750,6 +1809,23 @@ please use \texttt{mapper} then \texttt{wrpc\_dump}.
 \textbf{Note:} Data read by \texttt{mapper} may look as if it has wrong endianness compared
 to the file used for programming LM32 by \texttt{spec-cl}, but \texttt{spec-cl} is the
 one which change the endianness of the binary data during the programming.
+
+For the \textit{spec} board and WRPC using RISC-V as a soft-core processor,
+the procedure to read the WRPC memory is different. The read can be done by
+using the \texttt{spec-cl} tool with parameteres \texttt{-r} (perform read)
+and \texttt{-i} (use RISC-V architecture):
+\begin{lstlisting}
+   <path_to_spec-sw>/tools/spec-cl -i -r dump_file.bin
+   ./tools/wrpc-dump dump_file.bin
+\end{lstlisting}
+
+\texttt{spec-cl} tool can be found in the \texttt{spec-sw} repo. Be aware
+that the read of memory using spec-cl causes the restart of the RISC-V
+soft-core.
+
+\textbf{Note:} Depending on the selected soft-core processor architecture
+the \texttt{wrpc-dump} can be built for LM32 or RISC-V. The tool does not
+support both architectures in the same binary.
 
 With \textit{etherbone}, you can get a snapshot for \textit{wrpc} memory using
 \texttt{eb-get} and the proper address (the size is always 128kB)
@@ -1909,7 +1985,7 @@ wrc# vlan off
 \end{lstlisting}
 
 Current implementation allows to configure up to 4 VLAN IDs (VIDs) at build
-time. The following Kconfig options are available in the LM32 software:
+time. The following Kconfig options are available in the software:
 \begin{longtable}{  p{6.5cm}  p{9cm} }
 
 \small{\textit{CONFIG\_VLAN}} &
@@ -1920,7 +1996,7 @@ time. The following Kconfig options are available in the LM32 software:
 \small{\textit{CONFIG\_VLAN\_NR}} &
 
   The default \textit{vlan} number for the CPU (class 0).  All network traffic
-        directed to (and originating from) the LM32 processor will
+        directed to (and originating from) the soft-core processor will
         belong to this VLAN.  The~value can be changed at run time
         using the \texttt{vlan set} shell command.\\
 & \\
@@ -2088,7 +2164,8 @@ the build of WRPC.
     the end of the initialization script \\
 
   \code{init boot} & executes the script stored in Flash/EEPROM (the same
-    action is done automatically when WRPC starts after resetting LM32) \\
+    action is done automatically when WRPC starts after resetting the soft-core
+    processor) \\
 
   \code{init erase} & erases the initialization script in Flash/EEPROM  \\
 
@@ -2457,7 +2534,7 @@ write your \textit{output.mcs} file to the Flash memory.
 \newpage
 % ##########################################################################
 \section{wrpc-dump with Older WRPC Binaries}
-\label{wrpc-dump with Older WRPC Binaries}
+\label{appendix:wrpc_dump_with_Older_WRPC_Binaries}
 
 The tool has another working mode, that you can use with older
 \textit{wrpc} builds, where the special table is missing (but please be
@@ -2511,7 +2588,7 @@ This is not needed if the dump is retrieved using Etherbone.
 % ##########################################################################
 \newpage
 \section{Adding new objects to the SNMP}
-\label{Adding new objects to the SNMP}
+\label{appendix:adding_new_objects_to_the_SNMP}
 
 The \textit{Mini SNMP responder} can be easily expanded to export new objects.
 Values of new objects can come from WRPC's variables or other HDL modules
@@ -2675,6 +2752,33 @@ in file \texttt{snmp\_test\_config.bash}.
 
 These tests have to be executed after any changes are made to the \textit{Mini SNMP
 responder}.
+
+
+% --------------------------------------------------------------------------
+\newpage
+\section{Building RISC-V toolchain}
+\label{appendix:building_RISCV_toolchain}
+
+This section describes how to build from scratch the toolchain for RISC-V.
+Firstly, clone the \texttt{riscv-gnu-toolchain} repo and checkout the tag
+\texttt{2022.03.09} (or commit \texttt{051b9f7d}). This will allow to build
+the GCC 11.1.0 for the RISC-V architecture.
+\begin{lstlisting}
+git clone https://github.com/riscv/riscv-gnu-toolchain -b 2022.03.09
+\end{lstlisting}
+Run the configuration script with parameters to specify the installation
+directory and the details for the RISC-V architecture.
+The selected options use soft-float (\texttt{ilp32}) and allow to use
+compressed instruction set.
+\begin{lstlisting}
+./configure --prefix=<install_dir> --with-arch=rv32i --with-abi=ilp32
+\end{lstlisting}
+Start the build of the toolchain.
+\begin{lstlisting}
+make
+\end{lstlisting}
+The output will be copied to the specified \texttt{<install\_dir>}.
+
 
 % --------------------------------------------------------------------------
 \newpage
