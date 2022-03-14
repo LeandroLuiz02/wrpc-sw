@@ -485,6 +485,8 @@ void print_version(void)
 {
 	fprintf(stderr, "Built in wrpc-sw repo ver:%s, by %s on %s %s\n",
 		__GIT_VER__, __GIT_USR__, __TIME__, __DATE__);
+	fprintf(stderr, "Support for %s architecture.\n",
+		HAS_ARCH_RISCV ? "RISC-V" : "LM32");
 	fprintf(stderr, "Supported WRPC structures version %d\n",
 		WRPC_SHMEM_VERSION);
 	fprintf(stderr, "Supported PPSI structures version %d\n",
