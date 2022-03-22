@@ -16,7 +16,7 @@
 #include <dev/netif.h>
 #include <lib/ipv4.h>
 #include <wrc_global.h>
-#include <temperature.h>
+#include <sensors.h>
 #include <libwr/sfp_lib.h>
 #include <sfp.h>
 
@@ -606,7 +606,7 @@ void dump_mem_wrpc_temperatures_list(void *mapaddr, unsigned long wrc_global_off
 			/* read the temperature value
 			 * fixed point, 16.16 (signed!) */
 			temperature_val = wrpc_get_l32(sensor_addr + sensor_val_off);
-			if (temperature_val == TEMP_INVALID)
+			if (temperature_val == WRC_SENSOR_INVALID_VALUE)
 				printf("val: INVALID\n");
 			else
 				printf("val: %d.%04d C\n", temperature_val >> 16,

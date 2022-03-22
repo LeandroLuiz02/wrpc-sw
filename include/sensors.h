@@ -26,7 +26,7 @@
 
 #define WRC_SENSOR_INVALID_VALUE (0x80000000)
 
-struct wrc_temp_sensor {
+struct wrc_sensor
 {
 	const char* name;
 	uint8_t flags;
@@ -35,27 +35,23 @@ struct wrc_temp_sensor {
 };
 
 struct wrc_onetemp {
-.h
 	char *name;
 	int32_t t;  /* fixed point, 16.16 (signed!) */
 };
 
-#define TEMP_INVALID (0x8000 << 16)
-
-struct wrc_temp_group {
+struct wrc_temp {
 	int used;
-	int (*read)(struct wrc_temp_group *);
-	struct wrc_temp_sensor *t; /* zero-terminated */
+	int (*read)(struct wrc_temp *);
+	void *data;
+	struct wrc_onetemp *t; /* zero-terminated */
 };
-
-extern struct wrc_temp_group temp_sensors[WRC_MAX_TEMPERATURES];
 
 /* lib functions  */
 extern uint32_t wrc_temp_get(char *name);
-struct wrc_temp_sensor *wrc_temp_getnext(struct wrc_temp_sensor *);
+struct wrc_onetemp *wrc_temp_getnext(struct wrc_onetemp *);
 extern int wrc_temp_format(char *buffer, int len);
+void wrc_temp_init(void);
 int wrc_temp_refresh(void);
-int wrc_temp_register(struct wrc_temp_group *new_temp_sensor);
 
 /* generic sensor functions */
 void wrc_register_sensors( struct wrc_sensor* s);

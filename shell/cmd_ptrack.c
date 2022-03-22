@@ -19,13 +19,9 @@
 #endif
 
 extern int wrc_phase_tracking;
-extern struct pp_globals *ppg;
 
 static int cmd_ptrack(const char *args[])
 {
-	struct pp_instance *ppi = ppg->pp_instances;
-
-#ifdef CONFIG_HAS_EXT_WR
 	if (args[0] && !strcasecmp(args[0], "enable")) {
 		pp_printf("UnFreezing SPLL phase shifter\n");
 		spll_vco_freeze(0);

@@ -3,7 +3,7 @@
 #include <softpll_ng.h>
 #include <sfp.h>
 #include <wrc_global.h>
-#include <temperature.h>
+#include <sensors.h>
 
 #include <wrpc.h>
 
@@ -53,21 +53,14 @@ struct dump_info  dump_wrpc_info[] = {
 	DUMP_FIELD(unsigned_long, max_run_ticks), /* in ticks */
 
 #undef DUMP_STRUCT
-#define DUMP_STRUCT struct wrc_temp_group
+#define DUMP_STRUCT struct wrc_sensor
 	/* Save the size of the structure, there is no other way to pass
 	 * the size of wrc_task structure */
-	DUMP_HEADER_SIZE("wrc_temp_group", sizeof(struct wrc_temp_group)),
-	DUMP_FIELD(int, used),
-	DUMP_FIELD(pointer, t), /* pointer to temperatures' list */
-
-#undef DUMP_STRUCT
-#define DUMP_STRUCT struct wrc_temp_sensor
-	/* Save the size of the structure, there is no other way to pass
-	 * the size of wrc_task structure */
-	DUMP_HEADER_SIZE("wrc_temp_sensor", sizeof(struct wrc_temp_sensor)),
+	DUMP_HEADER_SIZE("wrc_sensor", sizeof(struct wrc_sensor)),
 	DUMP_FIELD(pointer, name),
-	DUMP_FIELD(uint32_t, t), /* int32_t, fixed point, 16.16 (signed!) */
-
+	DUMP_FIELD(uint8_t, flags),
+	DUMP_FIELD(uint8_t, id),
+	DUMP_FIELD(uint16_t, value),
 
 #undef DUMP_STRUCT
 #define DUMP_STRUCT struct softpll_state

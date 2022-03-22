@@ -342,30 +342,29 @@ void print_main_description(void)
 	pp_printf(      "Iface |        MAC        |       IP (source)       |    RX   |    TX   | VLAN\n");
 	pp_printf(      "------+-------------------+-------------------------+---------+---------+-----\n");
 
-		if( i == 0 ) // fixme: independent rx/tx stats for each interface
-		{
-			int rx_er;
-			minic_get_stats(&tx, &rx, &rx_er);
-			cprintf(C_GREY, "(RX: %d, TX: %d, RX errors: %d)", rx, tx, rx_er);
-		}
+	for (i = 0 ; i < ndevs; i++) {
+		/* reuse the string above, strings between "|" will be overwritten anyway */
+		pp_printf("Iface |        MAC        |       IP (source)       |    RX   |    TX   | VLAN\n");
 	}
 
-	spll_get_num_channels(NULL, &n_out);
-
-	if (!state.state) {
-		return 1;
+	pp_printf("\n----- HAL ---|---------------- PPSI -------------------------------------------------\n");
+	pp_printf(  " Iface| Freq |    Config    | MAC of peer port  |    PTP/EXT/PDETECT States    | Pro \n");
+	pp_printf(  "------+------+--------------+-------------------+------------------------------+-----\n");
+	for (i = 0 ; i < ndevs; i++) {
+		/* reuse the string above, strings between "|" will be overwritten anyway */
+		pp_printf(" Iface| Freq |    Config    | MAC of peer port  |    PTP/EXT/PDETECT States    | Pro \n");
 	}
 
 	cprintf(C_BLUE, "Pro - Protocol mapping: V-Ethernet over "
 			"VLAN; U-UDP; R-Ethernet\n");
-
+	
 	cprintf(C_CYAN, "\n--------------------------- Synchronization status ----------------------------");
 }
 
 void print_main_data(void)
 {
 	struct wrc_port_state state;
-	int tx, rx;
+	int tx, rx, rx_err;
 	int leap_sec, tmp;
 	uint64_t sec;
 	uint32_t nsec;
@@ -380,7 +379,7 @@ void print_main_data(void)
 	/* TAI Time */
 	pcprintf(4, 11, C_WHITE, "%s", format_time(sec, TIME_FORMAT_SORTED));
 
-
+	
 	/* UTC offset */
 	wrc_ptp_get_leapsec(&leap_sec , &tmp /* dummy */);
 	pprintf(4, 44, "%d", leap_sec);
@@ -414,22 +413,201 @@ void print_main_data(void)
 			pcprintf(9, 1, C_RED, "*%s: ", ndev->name);
 		}
 
+		if (i == 0) /* FIXME: should be independent for each interface */
+		{
+			ep_get_mac_addr(&wrc_endpoint_dev, mac);
+			format_mac(buf, mac);
+			pcprintf(9, 9, C_MAGENTA, "%s", buf);
+			if (HAS_IP && port_up) {
+				uint8_t ip[INET_ALEN];
 
-	for(i = 0; i <= n_out - 1; i++) {
-		cprintf(C_GREY, "Aux clock %d status:        ", i);
+				getIP(ip);
+				format_ip(buf, ip);
+				switch (*ip_status) {
+				case IP_TRAINING:
+					pcprintf(9, 29, C_RED,   "BOOTP running          ");
+					break;
+				case IP_OK_BOOTP:
+					pcprintf(9, 29, C_GREEN, "%16s(BOOTP)", buf);
+					break;
+				case IP_OK_STATIC:
+					pcprintf(9, 29, C_GREEN, "%15s(static)", buf);
+					break;
+				}
+			} else
+				pcprintf(9, 29, C_GREEN, "                       ");
+
+			minic_get_stats(&tx, &rx, &rx_err);
+			pcprintf(9, 55, C_MAGENTA, "%7d", rx);
+			pprintf(9, 65, "%7d", tx);
+			pprintf(9, 75, "%4d", *wrc_vlan_number);
+		}
+
+	}
+	/* 
+	----- HAL ---|---------------- PPSI -------------------------------------------------
+	 Iface| Freq |    Config    | MAC of peer port  |    PTP/EXT/PDETECT States    | Pro 
+	------+------+--------------+-------------------+------------------------------+----- */
+
+	for (i = 0 ; i < ndevs; i++) {
+		struct wrc_netif_device *ndev = netif_get_device(i);
+		int port_up = ndev->link_state == NETIF_LINK_UP;
+		int color;
+
+		if (port_up) {
+			pcprintf(14, 1, C_GREEN, " %s: ", ndev->name);
+		} else {
+			pcprintf(14, 1, C_RED,   "*%s: ", ndev->name);
+		}
+
+		/* FIXME: should be independent for each interface */
+		wrpc_get_port_state(&state, NULL);
+
+		if (state.locked)
+			pcprintf(14, 9, C_GREEN, "Lock");
+		else
+			pcprintf(14, 9, C_RED,   "    ");
+
+		
+/* ----------------------------------------------------------------------------------------------------------------------- */
+		/*
+		 * Actually, what is interesting is the PTP state.
+		 * For this lookup, the port in ppsi shmem
+		 */
+		/* Assume one instance per port */
+		/* FIXME: add support of more ports */
+//		for (j = 0; j < ppg->nlinks; j++) {
+			{
+			char str_config[15];
+			/* so far support only for one instance */
+			struct pp_instance *ppi_pt = ppg->pp_instances;
+			int proto_extension = ppi_pt->protocol_extension;
+			struct proto_ext_info_t *pe_info = IS_PROTO_EXT_INFO_AVAILABLE(proto_extension) ? &proto_ext_info[proto_extension] :  &proto_ext_info[0] ;
+			unsigned char *p = ppi_pt->activePeer;
+			char * extension_state_name = EMPTY_EXTENSION_STATE_NAME;
+			char proto;
+			char mac_buf[20];
+
+#if 0 /* FIXME: only one instance so far */
+			if (strcmp(if_name,
+					ppi->cfg.iface_name)) {
+				/* Instance not for this interface
+				    * skip */
+				continue;
+			}
+#endif
+			// Evaluate the instance configuration
+			strcpy(str_config,"unknown");
+			if (is_slaveOnly(ppg->defaultDS)) {
+				strncpy(str_config, "slaveOnly", sizeof(str_config) - 1);
+			} else {
+				if (is_externalPortConfigurationEnabled(ppg->defaultDS)) {
+					int s = 0;
+					for (s = 0; s < sizeof(desired_states) / sizeof(struct desired_state_t); s++) {
+						if (desired_states[s].state == ppi_pt->externalPortConfigurationPortDS.desiredState) {
+							strncpy(str_config, desired_states[s].str_state, sizeof(str_config) - 1);
+							break;
+						}
+					}
+
+				} else {
+					if (is_masterOnly(ppi_pt->portDS)) {
+						strncpy(str_config, "masterOnly", sizeof(str_config) - 1);
+					} else {
+						strncpy(str_config, "auto", sizeof(str_config) - 1);
+					}
+				}
+			}
+			str_config[sizeof(str_config) - 1] = 0; // Force the string to be well terminated
+			pcprintf(14, 16, C_WHITE, "%-12s", str_config);
+
+			/* peer not implemented */
+			pprintf(14, 31, format_mac(mac_buf, p));
+
+			pcprintf(14, 51, C_GREEN, "%s/", getStateAsString(pp_instance_state_to_name, ppi_pt->state));
+			/* print extension state */
+			switch (ppi_pt->protocol_extension) {
+#if CONFIG_HAS_EXT_WR
+			case PPSI_EXT_WR :
+			{
+				portDS_t *portDS = ppi_pt->portDS;
+				struct wr_dsport *extPortDS;
+
+				extension_state_name = getStateAsString(wr_instance_extension_state, - 1); // Default value
+
+				if (portDS) {
+					if ((extPortDS = portDS->ext_dsport))
+						extension_state_name = getStateAsString(wr_instance_extension_state, extPortDS->state);
+				}
+				break;
+			}
+#endif
+#if CONFIG_HAS_EXT_L1SYNC
+			case PPSI_EXT_L1S :
+			{
+				portDS_t *portDS;
+
+				extension_state_name = getStateAsString(l1e_instance_extension_state, - 1); // Default value
+				if ((portDS = wrs_shm_follow(ppsi_head, ppi->portDS))) {
+					l1e_ext_portDS_t *extPortDS;
+
+					if ((extPortDS = wrs_shm_follow(ppsi_head, portDS->ext_dsport))) {
+							extension_state_name = getStateAsString(l1e_instance_extension_state, extPortDS->basic.L1SyncState);
+					}
+				}
+				break;
+			}
+#endif
+			}
+			pp_printf("%s/%s", extension_state_name, getStateAsString(prot_detection_state_name, ppi_pt->pdstate));
+
+			/* proto */
+			switch (ppi_pt->proto) {
+			case PPSI_PROTO_RAW:
+				proto = 'R';
+				break;
+			case PPSI_PROTO_UDP:
+				proto = 'U';
+				break;
+			case PPSI_PROTO_VLAN:
+				proto = 'V';
+				break;
+			default:
+				proto = '?';
+			}
+
+			pcprintf(14, 82, C_WHITE, "%c", proto);
+			color = extensionStateColor(ppi_pt);
+			cprintf(color, "-%c", pe_info->short_ext_name);
+		}
+/* ----------------------------------------------------------------------------------------------------------------------- */
+	}
+
+	return;
+}
+
+void print_aux_data(void)
+{
+	int n_out, i;
+	struct spll_aux_clock_status aux_stat;
+
+	spll_get_num_channels(NULL, &n_out);
+
+	for (i = 0; i < n_out - 1; i++) {
+		cprintf(C_MAGENTA, "\n\nAux clock %d status:        ", i);
 
 		aux_stat = spll_get_aux_status(i);
 
 		if (aux_stat.flags & SPLL_AUX_SLAVE_ENABLED)
 			cprintf(C_GREEN, "enabled");
 
-		if (aux_stat.flags & SPLL_AUX_MONITOR_ENABLED )
+		if (aux_stat.flags & SPLL_AUX_MONITOR_ENABLED)
 			cprintf(C_GREEN, "monitor");
 
 		if (aux_stat.flags & SPLL_AUX_SLAVE_LOCKED)
 			cprintf(C_GREEN, ", locked");
 
-		if (aux_stat.flags & SPLL_AUX_TRACKING_READY)
+		if (aux_stat.flags & SPLL_AUX_MONITOR_READY)
 		{
 			cprintf(C_GREEN, ", ready");
 			cprintf(C_WHITE, " (AUX-to-WR offset: %d ps)", aux_stat.phase);
@@ -456,10 +634,19 @@ void print_servo_description()
 	pp_printf("delayCoefficient :");
 	pprintf(25, 45, "fpa\n");
 
-	cprintf(C_GREY, "Extra stats: ");
-	cprintf(C_WHITE, " Sync packet errors: %d followup errors: %d servo restarts: %d\n", ppi->stats.sync_errors, ppi->stats.followup_errors, ppi->stats.servo_restarts);
-
-	return 0;
+	pp_printf("ingressLatency   :\n");
+	pp_printf("egressLatency    :\n");
+	pp_printf("semistaticLatency:\n");
+	pp_printf("offsetFromMaster :\n");
+	if (gui_description & DESCRIPTION_WR_SERVO) {
+		pp_printf("Phase setpoint   :\n");
+		pp_printf("Skew             :\n");
+	}
+	pp_printf("Update counter   :\n");
+	if (gui_description & DESCRIPTION_WR_SERVO) {
+		pp_printf("Master PHY delays TX:\n"); /* RX: */
+		pp_printf("Slave  PHY delays TX:\n"); /* RX: */
+	}
 }
 
 void print_servo_data(struct pp_instance *ppi)
@@ -491,11 +678,11 @@ void print_servo_data(struct pp_instance *ppi)
 
 	/* should print WR servio description */
 	gui_description |= wrh_servo ? DESCRIPTION_WR_SERVO : 0;
-
+	
 	/* Avoid printing new data if change in description is expected.
 	 * This avoids extra redraw of data values */
 	if(prev_gui_description
-		!= (gui_description
+		!= (gui_description 
 		    & (DESCRIPTION_MAIN
 		       | DESCRIPTION_SERVO
 		       | DESCRIPTION_WR_SERVO)
@@ -519,14 +706,14 @@ void print_servo_data(struct pp_instance *ppi)
 		cprintf(C_RED, "Tracking forcibly disabled\n");
 	else
 		pp_printf("\e[K"); /* clear till the end of a line */
-
+		
 
 	/* +- Timing parameters --------------------------------------------------------- */
 
 	pcprintf(21, 20, C_WHITE, "%19s nsec", interval_to_string(ppg->currentDS->meanDelay));
 
 	/*delayMS */
-	pcprintf(22, 20, C_WHITE,"%24s", optimized_pp_time_toString_ps_as_ns(&ppi->servo->delayMS, buf));
+	pcprintf(22, 20, C_WHITE,"%24s", optimized_pp_time_toString_ps_as_ns(&ppi->servo->delayMS, buf));	
 	{
 		struct pp_time *delayMM = wr_servo_ext ?
 				&wr_servo_ext->rawDelayMM :
@@ -604,8 +791,8 @@ void print_servo_data(struct pp_instance *ppi)
 
 int wrc_log_stats(void)
 {
-	struct hal_port_state state;
-	int tx, rx, rx_errors;
+	struct wrc_port_state state;
+	int tx, rx, rx_err;
 	struct spll_aux_clock_status aux_stat;
 	uint64_t sec;
 	uint32_t nsec;
@@ -641,8 +828,9 @@ int wrc_log_stats(void)
 
 	shw_pps_gen_get_time(&sec, &nsec);
 	wrpc_get_port_state(&state, NULL);
-	minic_get_stats(&tx, &rx, &rx_errors);
-	pp_printf("lnk:%d rx:%d tx:%d ", state.state, rx, tx);
+	minic_get_stats(&tx, &rx, &rx_err);
+
+	pp_printf("lnk:%d rx:%d tx:%d ", (wrc_global_link.link_up == NETIF_LINK_UP), rx, tx);
 	pp_printf("lock:%d ", state.locked ? 1 : 0);
 	pp_printf("ptp:%s ", get_state_as_string(&ppi_static, ppi_static.state));
 
@@ -714,30 +902,11 @@ int wrc_log_stats(void)
 	return 1;
 }
 
-/* this is to avoid breaking wrc_wr_diags and its clone */
-uint32_t wrc_temp_get(char *name)
-{
-	struct wrc_sensor *s = wrc_sensor_find_by_type( WRC_SENSOR_TEMP_CELSIUS );
-	return s->value;
-}
-
-int wrc_ptp_get_servo_state( void )
-{
-	struct wr_servo_state *ss =
-		&((struct wr_data *)ppi->ext_data)->servo_state;
-	return  ss->state;
-}
-
-int wrc_ptp_get_state( void )
-{
-	return ppi->state;
-}
-
 int wrc_wr_diags(void)
 {
-	struct hal_port_state ps;
-	static uint32_t last_jiffies;
-	int tx, rx, rx_errors;
+	struct wrc_port_state ps;
+	static uint32_t last_update_tick;
+	int tx, rx, rx_err;
 	uint64_t sec;
 	uint32_t nsec;
 	int n_out;
@@ -760,10 +929,10 @@ int wrc_wr_diags(void)
 
 	/* ***************** lock data from reading by user **************** */
 	wdiag_set_valid(0);
-
+	
 	/* frame statistics */
-	minic_get_stats(&tx, &rx, &rx_errors);
-	wdiags_write_cnts(tx,rx,rx_errors);
+	minic_get_stats(&tx, &rx, &rx_err);
+	wdiags_write_cnts(tx, rx, rx_err);
 
 	/* local time */
 	shw_pps_gen_get_time(&sec, &nsec);
@@ -788,71 +957,59 @@ int wrc_wr_diags(void)
 	*/
 	wdiags_write_ptp_state((uint8_t)ppi->state);
 
-
+	
 	/* servo state (if slave)s */
-	if(ptp_mode == WRC_MODE_SLAVE){
-		struct wr_servo_state *ss =
-			&((struct wr_data *)ppi->ext_data)->servo_state;
-		int32_t asym   = (int32_t)(ss->picos_mu-2LL * ss->delta_ms);
-		int wr_mode    = (ss->flags & WR_FLAG_VALID) ? 1 : 0;
-		int servostate =  ss->state;
-		/* see ppsi/proto-ext-whiterabbit/wr-constants.c:
-		0: WR_UNINITIALIZED = 0,
-		1: WR_SYNC_NSEC,
-		2: WR_SYNC_TAI,
-		3: WR_SYNC_PHASE,
-		4: WR_TRACK_PHASE,
-		5: WR_WAIT_OFFSET_STABLE */
+	if (ptp_mode == WRC_MODE_SLAVE) {
+		struct pp_servo *s = SRV(ppg->pp_instances);
+		struct wr_servo_ext *wr_servo_ext = NULL;
+		struct wrh_servo_t *wrh_servo = NULL;
+		int32_t asym;
+		int wr_mode;
+		int32_t cur_setpoint_ps = 0;
+		uint64_t mu = 0;
 
-		wdiags_write_servo_state(wr_mode, servostate, ss->picos_mu,
-					 ss->delta_ms, asym, ss->offset,
-					 ss->cur_setpoint,ss->update_count, 0, 0); // fixme: add wdiags v2
+		asym = interval_to_picos(ppi_static.portDS->delayAsymmetry);
+		wr_mode = (s->flags & PP_SERVO_FLAG_VALID) ? 1 : 0;
 
-		wdiags_write_ptp_deltas( ss->delta_tx_m, ss->delta_rx_m, ss->delta_tx_s, ss->delta_rx_s );
+		wrh_servo = (ppi_static.protocol_extension == PPSI_EXT_WR && ppi_static.extState == PP_EXSTATE_ACTIVE) ?
+			    (wrh_servo_t*) ppi_static.ext_data : NULL;
+
+		if (wrh_servo) {
+			wr_servo_ext = &((struct wr_data *)wrh_servo)->servo_ext;
+			mu = pp_time_to_picos(&wr_servo_ext->rawDelayMM),
+			cur_setpoint_ps = wrh_servo->cur_setpoint_ps;
+		}
+
+		/* see ppsi/include/hw-specific/wrh.h:
+		0: WRH_UNINITIALIZED = 0,
+		1: WRH_SYNC_TAI,
+		2: WRH_SYNC_NSEC,
+		3: WRH_SYNC_PHASE,
+		4: WRH_TRACK_PHASE,
+		5: WRH_WAIT_OFFSET_STABLE */
+		wdiags_write_servo_state(wr_mode,
+					 s->state,
+					 mu,
+					 pp_time_to_picos(&s->delayMS),
+					 asym,
+					 (int32_t) pp_time_to_picos(&s->offsetFromMaster),
+					 cur_setpoint_ps,
+					 ppi_static.servo->update_count, 0, 0);
 	}
 
-	/* auxiliar channels (if any) */
+	/* Auxiliar channels (if any) */
 	spll_get_num_channels(NULL, &n_out);
 	if (n_out > 8) n_out = 8; /* hardware limit. */
-	for(i = 0; i < n_out; i++) {
-		aux_stat |= (( SPLL_AUX_SLAVE_LOCKED | SPLL_AUX_MONITOR_READY ) & spll_get_aux_status(i).flags) << i;
+	for (i = 0; i < n_out; i++) {
+		aux_stat |= ((SPLL_AUX_SLAVE_LOCKED | SPLL_AUX_MONITOR_READY) & spll_get_aux_status(i).flags) << i;
 	}
-
 	wdiags_write_aux_state(aux_stat);
-
-
-
-	for(i = 0; i < n_out - 1; i++)
-	{
-		int mode;
-		int enabled;
-		int ready;
-		struct spll_aux_clock_status st = spll_get_aux_status( i );
-
-		if( st.mode == SPLL_AUX_MODE_SLAVE )
-		{
-			mode = 0;
-			enabled = st.flags & SPLL_AUX_SLAVE_ENABLED ? 1 : 0;
-			ready = st.flags & SPLL_AUX_SLAVE_LOCKED ? 1 : 0 ;
-		}
-		else
-		{
-			mode = 1;
-			enabled = st.flags & SPLL_AUX_MONITOR_ENABLED ? 1 : 0;
-			ready = st.flags & SPLL_AUX_MONITOR_READY ? 1 : 0 ;
-		}
-
-		wdiags_write_aux_clock_details( i, mode, st.phase, enabled, ready );
-	}
-
 
 	/* temperature */
 	if (HAS_TEMP_SENSORS) {
 		temp = wrc_temp_get("pcb");
 		wdiags_write_temp(temp);
 	}
-
-	wdiags_write_pll_diags( spll_get_dac(-1), spll_get_dac(0) ); // fixme: #defines for DAC IDs
 
 	/* **************** unlock data from reading by user  ************** */
 	wdiag_set_valid(1);

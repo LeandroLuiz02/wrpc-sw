@@ -16,6 +16,7 @@
 #define C_BLUE 4
 #define C_MAGENTA 5
 #define C_CYAN 6
+#define C_GREY 7
 /* Default foreground color, White or Black depends on User's terminal */
 #define C_WHITE 9
 

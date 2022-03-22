@@ -17,6 +17,8 @@
 #define BOARD_HAS_CUSTOM_NETWORK_INIT 1
 #define BOARD_MAX_CONSOLE_DEVICES 2
 
+#define BOARD_USE_EVENTS 0
+
 /* Board-specific parameters */
 #define TICS_PER_SECOND 1000
 
