@@ -69,9 +69,6 @@
 
 #define NS_PER_CLOCK 16
 
-/* Baud rate of the builtin UART (does not apply to the VUART) */
-#define UART_BAUDRATE 115200ULL
-
 /* Maximum number of simultaneously created sockets */
 #define NET_MAX_SOCKETS 12
 

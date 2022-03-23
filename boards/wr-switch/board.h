@@ -13,8 +13,6 @@
 #define NS_PER_CLOCK          16
 #define REF_CLOCK_PERIOD_PS   16000
 
-#define UART_BAUDRATE 115200
-
 /* RT CPU Memory layout */
 #define BASE_UART 0x10000
 #define BASE_SOFTPLL 0x10100

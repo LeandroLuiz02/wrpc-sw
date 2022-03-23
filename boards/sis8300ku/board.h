@@ -38,9 +38,6 @@
 #define REF_CLOCK_PERIOD_PS 16000
 #define REF_CLOCK_FREQ_HZ 62500000
 
-/* Baud rate of the builtin UART (does not apply to the VUART) */
-#define UART_BAUDRATE 115200ULL
-
 /* Maximum number of simultaneously created sockets */
 #define NET_MAX_SOCKETS 12
 
@@ -69,7 +66,7 @@
 
 #define FMC_EEPROM_ADR 0x50
 
-#define SDBFS_REC 6 
+#define SDBFS_REC 6
 
 void sdb_find_devices(void);
 void sdb_print_devices(void);

@@ -40,9 +40,6 @@
 #  define REF_CLOCK_FREQ_HZ 125000000
 #endif
 
-/* Baud rate of the builtin UART (does not apply to the VUART) */
-#define UART_BAUDRATE 115200ULL
-
 /* Maximum number of simultaneously created sockets */
 #define NET_MAX_SOCKETS 12
 
