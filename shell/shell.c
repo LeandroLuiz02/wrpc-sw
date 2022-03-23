@@ -452,6 +452,7 @@ void shell_register_commands(void)
 		REGISTER_WRC_COMMAND(syslog);
 	if (HAS_TEMP_SENSORS)
 		REGISTER_WRC_COMMAND(temp);
+	REGISTER_WRC_COMMAND(sensors);
 	REGISTER_WRC_COMMAND(time);
 	REGISTER_WRC_COMMAND(uptime);
 	REGISTER_WRC_COMMAND(ver);
@@ -464,8 +465,4 @@ void shell_register_commands(void)
 		REGISTER_WRC_COMMAND(w1r);
 		REGISTER_WRC_COMMAND(w1w);
 	}
-	REGISTER_WRC_COMMAND(sensors);
-	REGISTER_WRC_COMMAND(ptrack);
-	if (HAS_IP)
-		REGISTER_WRC_COMMAND(ip);
 }
