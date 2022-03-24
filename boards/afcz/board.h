@@ -91,6 +91,8 @@ int board_update(void);
 
 #define BOARD_MAX_CONSOLE_DEVICES 1
 
+#define BOARD_USE_EVENTS 0
+
 #define CONSOLE_UART_BAUDRATE 115200
 
 #define SDB_ADDRESS 0x30000

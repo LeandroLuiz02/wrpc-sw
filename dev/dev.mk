@@ -54,6 +54,9 @@ obj-$(CONFIG_TARGET_WR_SWITCH) += \
 obj-$(CONFIG_TARGET_AFCZ) += \
 				dev/clock_monitor.o \
 
+obj-$(CONFIG_TARGET_AFCZ_V2) += \
+				dev/clock_monitor.o \
+
 obj-$(CONFIG_TARGET_SIS8300KU) += \
 
 obj-$(CONFIG_TARGET_ERTM14) += \
