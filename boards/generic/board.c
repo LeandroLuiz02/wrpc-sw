@@ -1,6 +1,7 @@
 #include "board.h"
 #include "dev/bb_spi.h"
 #include "dev/bb_i2c.h"
+#include "dev/w1.h"
 #include "dev/spi_flash.h"
 #include "dev/i2c_eeprom.h"
 #include "dev/syscon.h"
@@ -62,17 +63,45 @@ int wrc_board_early_init()
 	return 0;
 }
 
+static int board_get_persistent_mac(uint8_t *mac)
+{
+	int i;
+	struct w1_dev *d;
+	
+	/* Try from SDB */
+	if (storage_get_persistent_mac(0, mac) == 0)
+		return 0;
+
+	/* Get from one-wire (derived from unique id) */
+	w1_scan_bus(&wrpc_w1_bus);
+	for (i = 0; i < W1_MAX_DEVICES; i++) {
+		d = wrpc_w1_bus.devs + i;
+		if (d->rom) {
+			mac[0] = 0x22;
+			mac[1] = 0x33;
+			mac[2] = 0xff & (d->rom >> 32);
+			mac[3] = 0xff & (d->rom >> 24);
+			mac[4] = 0xff & (d->rom >> 16);
+			mac[5] = 0xff & (d->rom >> 8);
+			return 0;
+                }
+	}
+
+	/* Not found */
+	return -1;
+}
+
 int wrc_board_init()
 {
 	uint8_t mac_addr[6];
 	/*
 	 * Try reading MAC addr stored in flash
 	 */
-	if (storage_get_persistent_mac(0, mac_addr) == -1) {
+	if (board_get_persistent_mac(mac_addr) < 0) {
 		board_dbg("Failed to get MAC address from the flash. Using fallback address.\n");
 		mac_addr[0] = 0x22;
 		mac_addr[1] = 0x33;
-		mac_addr[2] = 0x44;	/* fallback MAC if get_persistent_mac fails */
+		mac_addr[2] = 0x44;
 		mac_addr[3] = 0x55;
 		mac_addr[4] = 0x66;
 		mac_addr[5] = 0x77;
