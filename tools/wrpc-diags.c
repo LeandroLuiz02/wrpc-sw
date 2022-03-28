@@ -65,7 +65,7 @@ static void print_port_status(uint32_t val)
 	};
 	int i, idx;
 
-	fprintf(stderr, "Port status:\t\t", val );
+	fprintf(stderr, "Port status:\t\t");
 	for (i = 0; i < nbits; ++i) {
 		idx = (val & (1 << i)) ? 1 : 0;
 		fprintf(stderr, "%s, ", pstat_str[i][idx]);
@@ -189,7 +189,6 @@ static void print_aux_clock_status_single( int index, uint32_t r )
 
 static void print_aux_clock_status( int is_be, volatile struct wrc_diags *d )
 {
-	int i;
 	print_aux_clock_status_single( 0, iomemr32(is_be, d->WDIAG_AUX0_DETAIL_STAT) );
 	print_aux_clock_status_single( 1, iomemr32(is_be, d->WDIAG_AUX1_DETAIL_STAT) );
 	print_aux_clock_status_single( 2, iomemr32(is_be, d->WDIAG_AUX2_DETAIL_STAT) );
