@@ -194,11 +194,12 @@ static int cern_vmebridge_match(int argc, char *argv[])
  * Parse mandatory arguments to mmap VME physical address space
  * return 0 on sucess, -1 in case of error
  */
-static int cern_vmebridge_parse_args(int argc, char *argv[],
+static int cern_vmebridge_parse_args(int *argc, char *argv[],
 			struct mapping_args *map_args)
 {
 	struct vmebridge_map_args *vme_args;
 	int ret, arg_count = 0, c, option_index = 0;
+	int nargc = 1;
 
 	vme_args = calloc(1, sizeof(struct vmebridge_map_args));
 	if (!vme_args)
@@ -209,7 +210,7 @@ static int cern_vmebridge_parse_args(int argc, char *argv[],
 	vme_args->data_width = 32;
 	vme_args->am = 0x39;
 
-	while ((c = getopt_long(argc, argv, "w:o:m:a:CERN_VMEBRIDGE", long_options,
+	while ((c = getopt_long(*argc, argv, "w:o:m:a:", long_options,
 				&option_index)) != -1) {
 		switch(c) {
 		case CERN_VMEBRIDGE:
@@ -246,20 +247,23 @@ static int cern_vmebridge_parse_args(int argc, char *argv[],
 			++arg_count;
 			break;
 		case '?':
-			/* ignore unknown arguments */
+			/* Only keep unknown arguments */
+			argv[nargc++] = argv[optind - 1];
 			break;
 		}
 	}
+	*argc = nargc;
 	return (arg_count == CERN_VMEBRIDGE_REQUIRED_ARG_NB) ? 0 : -1;
 }
 #endif
 
 #define REQUIRED_ARG_NB 2
-struct mapping_args *dev_parse_mapping_args(int argc, char *argv[])
+struct mapping_args *dev_parse_mapping_args(int *argc, char *argv[])
 {
 	struct mapping_args *map_args;
 	char c;
 	int ret, arg_count = 0;
+	int nargc = 1;
 
 	map_args = calloc(1, sizeof(struct mapping_args));
 	if (!map_args)
@@ -271,44 +275,50 @@ struct mapping_args *dev_parse_mapping_args(int argc, char *argv[])
 	 */
 	opterr = 0;
 #ifdef SUPPORT_CERN_VMEBRIDGE
-	if (cern_vmebridge_match(argc, argv)) {
-		ret = cern_vmebridge_parse_args(argc, argv, map_args);
+	if (cern_vmebridge_match(*argc, argv)) {
+		nargc = *argc;
+		ret = cern_vmebridge_parse_args(&nargc, argv, map_args);
 		if (ret < 0) {
 			goto out;
 		}
-		/*
-	 	 * getopts variable: reset argument index in case application
-		 * needs to parse arguments lokkink for specific args.
-	 	 */
-		optind = 1;
-		return map_args;
+	}
+#else
+	if (0) {
 	}
 #endif
-	while ((c = getopt (argc, argv, "o:f:")) != -1)
-	{
-		switch (c)
+	else {
+		while ((c = getopt (*argc, argv, "o:f:")) != -1)
 		{
-		case 'o':
-			ret = sscanf(optarg, "0x%x",
-				     (unsigned int *)&map_args->offset);
-			if (ret != 1) {
-				goto out;
+			switch (c)
+			{
+			case 'o':
+				ret = sscanf(optarg, "0x%x",
+					     (unsigned int *)&map_args->offset);
+				if (ret != 1) {
+					goto out;
+				}
+				++arg_count;
+				break;
+			case 'f':
+				map_args->resource_file = optarg;
+				++arg_count;
+				break;
+			case '?':
+				/* keep unknown arguments */
+				argv[nargc++] = argv[optind - 1];
+				break;
 			}
-			++arg_count;
-			break;
-		case 'f':
-			map_args->resource_file = optarg;
-			++arg_count;
-			break;
-		case '?':
-			/* ignore unknown arguments */
-			break;
+		}
+		
+		if (arg_count != REQUIRED_ARG_NB) {
+			goto out;
 		}
 	}
 
-	if (arg_count != REQUIRED_ARG_NB) {
-		goto out;
-	}
+	/* Copy remaining arguments (including null) */
+	while (optind <= *argc)
+		argv[nargc++] = argv[optind++];
+	*argc = nargc - 1;
 
 	/*
 	 * getopts variable: reset argument index in case application needs to

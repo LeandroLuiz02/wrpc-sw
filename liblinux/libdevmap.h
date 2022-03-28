@@ -34,7 +34,7 @@ struct mapping_desc {
 extern struct mapping_desc *dev_map(struct mapping_args *map_args,
 				    uint32_t map_length);
 extern void dev_unmap(struct mapping_desc *dev);
-extern struct mapping_args *dev_parse_mapping_args(int argc, char *argv[]);
+extern struct mapping_args *dev_parse_mapping_args(int *argc, char *argv[]);
 extern const char * const dev_mapping_help();
 extern const char * const dev_get_version();
 

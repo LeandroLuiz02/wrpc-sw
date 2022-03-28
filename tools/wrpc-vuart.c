@@ -272,7 +272,7 @@ int main(int argc, char *argv[])
 	struct mapping_args *map_args;
 	struct mapping_desc *vuart = NULL;
 
-	map_args = dev_parse_mapping_args(argc, argv);
+	map_args = dev_parse_mapping_args(&argc, argv);
 	if (!map_args) {
 		wrpc_vuart_help(argv[0]);
 		goto out;

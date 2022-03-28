@@ -858,7 +858,7 @@ int main(int argc, char *argv[])
 	int ret;
 	struct mapping_args *map_args;
 
-	map_args = dev_parse_mapping_args(argc, argv);
+	map_args = dev_parse_mapping_args(&argc, argv);
 	if (!map_args) {
 		wrstm_help(argv[0]);
 		return -1;
