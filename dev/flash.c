@@ -11,7 +11,6 @@
 #include <dev/flash.h>
 #include <storage.h>
 
-#define SDBFS_BIG_ENDIAN
 #include <libsdbfs.h>
 
 #include "dev/syscon.h"

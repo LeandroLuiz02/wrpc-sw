@@ -8,6 +8,9 @@ CROSS_COMPILE_RISCV ?= riscv-elf-
 CROSS_COMPILE-$(CONFIG_ARCH_LM32) ?= $(CROSS_COMPILE_LM32)
 CROSS_COMPILE-$(CONFIG_ARCH_RISCV) ?= $(CROSS_COMPILE_RISCV)
 
+# use compressed instructions for RISCV
+USE-COMP-INSTR-$(CONFIG_RISCV_COMP_INSTR) = c
+
 # use a cross compiler for all architectures
 CROSS_COMPILE ?= $(CROSS_COMPILE-y)
 
@@ -94,12 +97,12 @@ obj-$(CONFIG_EMBEDDED_NODE) += \
 	lib/ppsi-wrappers.o
 
 cflags-$(CONFIG_ARCH_LM32) += -mmultiply-enabled -mbarrel-shift-enabled
-cflags-$(CONFIG_ARCH_RISCV) += -march=rv32im -mabi=ilp32
+cflags-$(CONFIG_ARCH_RISCV) += -march=rv32im$(USE-COMP-INSTR-y) -mabi=ilp32
 ldflags-$(CONFIG_ARCH_LM32) = -mmultiply-enabled -mbarrel-shift-enabled \
 	-nostdlib -T $(LDS-y)
-ldflags-$(CONFIG_ARCH_RISCV) = -march=rv32im -mabi=ilp32 \
+ldflags-$(CONFIG_ARCH_RISCV) = -march=rv32im$(USE-COMP-INSTR-y) -mabi=ilp32 \
 	-nostdlib -T $(LDS-y)
-asflags-$(CONFIG_ARCH_RISCV) += -march=rv32im -mabi=ilp32
+asflags-$(CONFIG_ARCH_RISCV) += -march=rv32im$(USE-COMP-INSTR-y) -mabi=ilp32
 arch-files-$(CONFIG_ARCH_LM32) = $(OUTPUT).bram $(OUTPUT).vhd $(OUTPUT).mif
 arch-files-$(CONFIG_ARCH_RISCV) = $(OUTPUT).bram $(OUTPUT).vhd $(OUTPUT).mif
 
@@ -156,7 +159,7 @@ OUTPUT-$(CONFIG_TARGET_WR_SWITCH) = rt_cpu
 OUTPUT := $(OUTPUT-y)
 
 GIT_VER = $(shell git describe --always --dirty | sed  's;^wr-switch-sw-;;')
-GIT_USR = $(shell git config --get-all user.name)
+GIT_USR = $(shell git config --get user.name)
 export GIT_VER
 export GIT_USR
 
@@ -188,10 +191,10 @@ $(obj-ppsi): gitmodules
 	$(MAKE) -C $(PPSI) ppsi.a WRPCSW_ROOT=.. \
 		CROSS_COMPILE=$(CROSS_COMPILE) CONFIG_NO_PRINTF=y \
 		USER_CFLAGS="$(PPSI_USER_CFLAGS)" \
-		CPU_ARCH=$(CPU_ARCH)
+		CPU_ARCH=$(CPU_ARCH) \
 
 sdb-lib/libsdbfs.a:
-	$(MAKE) -C sdb-lib CPU_ARCH=$(CPU_ARCH)
+	$(MAKE) -C sdb-lib CPU_ARCH=$(CPU_ARCH) USE-COMP-INSTR-y=$(USE-COMP-INSTR-y)
 
 $(OUTPUT).elf: $(LDS-y) $(AUTOCONF) gitmodules config.o $(OBJS)
 	$(CC) $(CFLAGS) -D__GIT_VER__="\"$(GIT_VER)\"" -D__GIT_USR__="\"$(GIT_USR)\"" -c revision.c

@@ -151,7 +151,7 @@ hdl_testbench_p:
 #else
 	.word 0
 #endif
-.extern _irq_entry
+.extern spll_irq_entry
 .org 0xc0
         .global _interrupt_handler
         .type 	_interrupt_handler, @function
@@ -160,7 +160,7 @@ _interrupt_handler:
     calli   _save_all
     mvi     r1, SIGINT
 #ifndef __MICO_NO_INTERRUPTS__
-    calli  _irq_entry
+    calli  spll_irq_entry
 #else
     wcsr    IE, r0
 #endif

@@ -13,7 +13,7 @@
 #include "ipv4.h"
 #include <dev/endpoint.h> /* get_mac_addr() */
 #include <ppsi/jiffies.h> /* time_before() */
-
+#include <lib/syslog.h>
 #define jiffies timer_get_tics()
 
 #ifdef CONFIG_LATENCY_SYSLOG
@@ -75,8 +75,9 @@ static void ts_sub(struct wr_timestamp *t2, struct wr_timestamp *t1,
 static void latency_warning(void) {
 	if (!lat_verbose)
 		return;
-	pp_printf("lat: unexpected %i.%i after %i.%i\n",
-		  frame.sequence, frame.type, prev_sequence, prev_type);
+	pp_printf("lat: unexpected %d.%d after %d.%d\n",
+		  (unsigned int) frame.sequence, (unsigned int) frame.type,
+		  (unsigned int) prev_sequence, (unsigned int) prev_type);
 }
 
 /* report once a minute */
@@ -198,9 +199,9 @@ static int latency_poll_rx(void)
 
 	if (lat_verbose) {
 		pp_printf("lat: %9i %6i.%03i %6i.%03i\n",
-			  frame.sequence,
-			  lat[0].nsec, lat[0].phase,
-			  lat[1].nsec, lat[1].phase);
+			  (unsigned int) frame.sequence,
+			  (int) lat[0].nsec, (int) lat[0].phase,
+			  (int) lat[1].nsec, (int) lat[1].phase);
 		return 1;
 	} else {
 		latency_report(lat);
@@ -254,7 +255,7 @@ static int latency_poll_tx(void)
 	} else if (frame.ts->sec - lasts >= 10) {
 		lasts = frame.ts->sec;
 		pp_printf("latency: seq %9i sent @ %9i\n",
-			  sequence, lasts);
+			  (unsigned int) sequence, (unsigned int) lasts);
 	}
 	return 1;
 
@@ -296,8 +297,9 @@ static int cmd_ltest(const char *args[])
 			lastt = 0; /* reset, so it fires immediately */
 		}
 	}
-	pp_printf("%i.%03i (%s)\n", latency_period_ms / 1000,
-		  latency_period_ms % 1000, lat_verbose ? "verbose" : "quiet");
+	pp_printf("%i.%03i (%s)\n", (unsigned int) (latency_period_ms / 1000),
+		  (unsigned int) (latency_period_ms % 1000),
+		  lat_verbose ? "verbose" : "quiet");
 	return 0;
 }
 

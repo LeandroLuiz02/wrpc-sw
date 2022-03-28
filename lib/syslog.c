@@ -137,7 +137,7 @@ int syslog_poll(void)
 		len = syslog_header(buf, SYSLOG_DEFAULT_LEVEL, ip);
 		len += pp_sprintf(buf + len, "(%s) Node up "
 				 "since %i seconds", format_mac(b, mac),
-				 (tics - tics_zero) / 1000);
+				 (int) ((tics - tics_zero) / 1000));
 		goto send;
 	}
 
@@ -151,7 +151,8 @@ int syslog_poll(void)
 		down_tics = now - down_tics;
 		len = syslog_header(buf, SYSLOG_DEFAULT_LEVEL, ip);
 		len += pp_sprintf(buf + len, "Link up after %i.%03i s",
-				 down_tics / 1000, down_tics % 1000);
+				  (unsigned int) (down_tics / 1000),
+				  (unsigned int) (down_tics % 1000));
 		down_tics = 0;
 		goto send;
 	}
@@ -180,15 +181,17 @@ int syslog_poll(void)
 		if (track_ok_count == 1) {
 			len = syslog_header(buf, SYSLOG_DEFAULT_LEVEL, ip);
 			len += pp_sprintf(buf + len,
-				   "Tracking after %i.%03i s",
-				   prev_tics / 1000, prev_tics % 1000);
+					  "Tracking after %i.%03i s",
+					  (unsigned int) (prev_tics / 1000),
+					  (unsigned int) (prev_tics % 1000));
 			goto send;
 		}
 		len = syslog_header(buf, SYSLOG_DEFAULT_LEVEL, ip);
 		len += pp_sprintf(buf + len,
 				  "%i-th re-rtrack after %i.%03i s",
 				  track_ok_count,
-				  prev_tics / 1000, prev_tics % 1000);
+				  (unsigned int) (prev_tics / 1000),
+				  (unsigned int) (prev_tics % 1000));
 		/* Report if we didn't really loose time */
 		if (!bad_track_lost)
 			len += pp_sprintf(buf + len, " (max delta %i ps)",

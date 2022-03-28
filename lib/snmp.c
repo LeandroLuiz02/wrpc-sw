@@ -307,6 +307,7 @@ static int get_time(uint8_t *buf, struct snmp_oid *obj);
 static int get_servo(uint8_t *buf, struct snmp_oid *obj);
 static int get_port(uint8_t *buf, struct snmp_oid *obj);
 static int get_temp(uint8_t *buf, struct snmp_oid *obj);
+static int get_sfp_pn_curr(uint8_t *buf, struct snmp_oid *obj);
 static int get_sfp(uint8_t *buf, struct snmp_oid *obj);
 static int get_mac(uint8_t *buf, struct snmp_oid *obj);
 static int get_aux_diag(uint8_t *buf, struct snmp_oid *obj);
@@ -440,7 +441,7 @@ static uint8_t oid_wrpcShellCmdReturnCode[] =    {4,0};
 	 OIDs */
 /* wrpcVersionGroup */
 static struct snmp_oid oid_array_wrpcVersionGroup[] = {
-	OID_FIELD_VAR(   oid_wrpcVersionHwType,      get_p,        NO_SET,   ASN_OCTET_STR, &wrc_hw_name),
+	OID_FIELD_VAR(   oid_wrpcVersionHwType,      get_pp,       NO_SET,   ASN_OCTET_STR, &wrc_hw_name),
 	OID_FIELD_VAR(   oid_wrpcVersionSwVersion,   get_pp,       NO_SET,   ASN_OCTET_STR, &build_revision),
 	OID_FIELD_VAR(   oid_wrpcVersionSwBuildBy,   get_pp,       NO_SET,   ASN_OCTET_STR, &build_by),
 	OID_FIELD_VAR(   oid_wrpcVersionSwBuildDate, get_pp,       NO_SET,   ASN_OCTET_STR, &snmp_build_date),
@@ -512,7 +513,7 @@ static struct snmp_oid oid_array_wrpcPtpConfigGroup[] = {
 /* wrpcPortGroup */
 static struct snmp_oid oid_array_wrpcPortGroup[] = {
 	OID_FIELD_VAR(   oid_wrpcPortLinkStatus,     get_port,     NO_SET,   ASN_INTEGER,   PORT_LINK_STATUS),
-	OID_FIELD_VAR(   oid_wrpcPortSfpPn,          get_p,        NO_SET,   ASN_OCTET_STR, &sfp_info.sfp_params.pn),
+	OID_FIELD_VAR(   oid_wrpcPortSfpPn,          get_sfp_pn_curr,NO_SET, ASN_OCTET_STR, NULL),
 	OID_FIELD_VAR(   oid_wrpcPortSfpInDB,        get_p,        NO_SET,   ASN_INTEGER,   &sfp_info.sfp_in_db),
 	OID_FIELD_VAR(   oid_wrpcPortInternalTX,     get_p,        NO_SET,   ASN_COUNTER,   &minic.tx_count),
 	OID_FIELD_VAR(   oid_wrpcPortInternalRX,     get_p,        NO_SET,   ASN_COUNTER,   &minic.rx_count),
@@ -891,7 +892,6 @@ static int func_aux_diag(uint8_t *buf, uint8_t in_oid_limb_matched_len,
 {
 	int oid_twig_len = buf[0] - in_oid_limb_matched_len;
 	uint8_t *in_oid_limb_end = &buf[1 + in_oid_limb_matched_len];
-	uint8_t oid_twig_matching_len;
 	struct snmp_oid *oid;
 	struct snmp_oid leaf_obj;
 	int return_first = 0;
@@ -924,9 +924,6 @@ static int func_aux_diag(uint8_t *buf, uint8_t in_oid_limb_matched_len,
 		in_oid_limb_end[TABLE_ROW] = TABLE_FIRST_ROW;
 		oid_twig_len = table_size;
 	}
-	/* Decide what is shorter the rest of the OID, or the
-	 * matching part */
-	oid_twig_matching_len = min(oid_twig_len, table_size);
 
 	/* For get and set twig size has to be exact */
 	if (!snmp_get_next && (oid_twig_len != table_size)) {
@@ -1238,8 +1235,8 @@ static int get_temp(uint8_t *buf, struct snmp_oid *obj)
 					t = -(signed)t;
 					l += sprintf(buffer, "-");
 				}
-				sprintf(buffer, "%d.%04d", t >> 16,
-					    ((t & 0xffff) * 10 * 1000 >> 16));
+				sprintf(buffer, "%d.%04d", (int) (t >> 16),
+					(int) ((t & 0xffff) * 10 * 1000 >> 16));
 				break;
 			}
 		}
@@ -1254,6 +1251,16 @@ static int get_temp(uint8_t *buf, struct snmp_oid *obj)
 	return 0;
 }
 
+/* sfp pn is without NULL termination */
+static int get_sfp_pn_curr(uint8_t *buf, struct snmp_oid *obj)
+{
+	char sfp_pn[SFP_PN_LEN + 1];
+
+	memcpy(sfp_pn, sfp_info.sfp_params.pn, SFP_PN_LEN);
+	sfp_pn[SFP_PN_LEN] = 0;
+
+	return get_value(buf, obj->asn, &sfp_pn);
+}
 
 static int get_sfp(uint8_t *buf, struct snmp_oid *obj)
 {
@@ -1922,6 +1929,9 @@ static int snmp_respond(uint8_t *buf)
 		(void) set_ptp_config;
 		(void) set_ptp_restart;
 		(void) set_aux_diag;
+		(void) set_shell_cmd;
+		(void) set_netconsole;
+		(void) set_sdb;
 		(void) func_aux_diag;
 		(void) get_i32sat_pp;
 		(void) oid_array_wrpcAuxRwTable;

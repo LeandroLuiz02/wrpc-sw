@@ -33,7 +33,8 @@ static int cmd_sdb(const char *args[])
 			storage_sdbfs_format( &wrc_storage_dev, base, 0 );
 		} else {
 			base = atoi(args[1]);
-			pp_printf("Formatting using custom location 0x%X\n", base);
+			pp_printf("Formatting using custom location 0x%X\n",
+				  (unsigned int) base);
 			storage_sdbfs_format( &wrc_storage_dev, base, 1 );
 		}
 		return 0;
@@ -44,7 +45,8 @@ static int cmd_sdb(const char *args[])
 			storage_sdbfs_erase( &wrc_storage_dev, base, 0 );
 		} else {
 			base = atoi(args[1]);
-			pp_printf("Erasing using custom location 0x%X\n", base);
+			pp_printf("Erasing using custom location 0x%X\n",
+				  (unsigned int) base);
 			storage_sdbfs_erase( &wrc_storage_dev, base, 1 );
 		}
 		return 0;

@@ -63,7 +63,6 @@ trap_entry:
 jump_table:
     .word undefined_handler
     .word undefined_handler
-    .word undefined_insn_handler
     .word undefined_handler
     .word undefined_handler
     .word undefined_handler
@@ -73,6 +72,7 @@ jump_table:
     .word undefined_handler
     .word undefined_handler
     .word undefined_handler
+    .word spll_irq_entry
     .word undefined_handler
     .word undefined_handler
     .word undefined_handler
@@ -118,12 +118,9 @@ jump_table_return:
     lw     t5,120(a0)
     lw     t6,124(a0)
     lw     a0,40(a0)
-    sret
+    mret
 
 .weak undefined_handler
 undefined_handler:
     j      undefined_handler
 
-.weak undefined_insn_handler
-undefined_insn_handler:
-    j      undefined_insn_handler

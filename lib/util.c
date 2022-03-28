@@ -272,14 +272,28 @@ int atoi(const char *s)
 	return res;
 }
 
-#ifdef CONFIG_ARCH_RISCV
-#warning (FIXME: fix endiansess conversion functions)
-#define ntohs(x) (x)
-#define ntohl(x) (x)
-#define htons(x) (x)
-#define htons(x) (x)
+/* Quick and dirty function to be used for debugging to dump the memory */
+void dump_mem(uint8_t *p, int size)
+{
+    int i = 0;
+    uint8_t *end = p + size;
 
-#endif
+    pp_printf("0x%x size 0x%x\n", (int) p, size);
+    while(1){
+	pp_printf("0x%x:", (unsigned int) p);
+
+	for (i = 0; i < 8; i++) {
+	    pp_printf(" %02x", *p);
+	    p++;
+	    if (p >= end) {
+		pp_printf("\n");
+		return;
+	    }
+	}
+
+	pp_printf("\n");
+    }
+}
 
 /* To save code, in the div of two int64 numbers
  * use signed 64bit division, then correct the sign of the result */

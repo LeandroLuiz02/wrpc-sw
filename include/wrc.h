@@ -33,14 +33,6 @@
 /* Don't use abs from the library */
 #define abs(x) ((x >= 0) ? x : -x)
 
-#ifndef htons
-#  define htons(x)      (x)
-#endif
-
-#ifndef htonl
-#  define htonl(x)      (x)
-#endif
-
 #undef offsetof
 #define offsetof(TYPE, MEMBER) ((long) &((TYPE *)0)->MEMBER)
 #undef ARRAY_SIZE

@@ -31,8 +31,10 @@ static int cmd_faketemp(const char *args[])
 	const char *dot;
 
 	if (!args[0]) {
-		pp_printf("%08x %08x %08x\n", temp_fake_data[0].t,
-			  temp_fake_data[1].t, temp_fake_data[2].t);
+		pp_printf("%08x %08x %08x\n",
+			  (unsigned int) temp_fake_data[0].t,
+			  (unsigned int) temp_fake_data[1].t,
+			  (unsigned int) temp_fake_data[2].t);
 		return 0;
 	}
 

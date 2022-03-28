@@ -92,8 +92,8 @@ extern int wrc_temp_format(char *buffer, int len)
 			t = -(signed)t;
 			l += sprintf(buffer + l, "-");
 		}
-		l += sprintf(buffer + l,"%d.%04d", t >> 16,
-			     ((t & 0xffff) * 10 * 1000 >> 16));
+		l += sprintf(buffer + l,"%d.%04d", (int) (t >> 16),
+			     (int) ((t & 0xffff) * 10 * 1000 >> 16));
 	}
 	return l;
 }

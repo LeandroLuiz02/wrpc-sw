@@ -9,18 +9,19 @@
 #define SDB_USER	0
 #define SDB_FREESTAND	1
 
-#ifdef SDBFS_BIG_ENDIAN
+
+#if defined SDBFS_BIG_ENDIAN || defined CONFIG_ARCH_LM32
 #  define ntohs(x) (x)
 #  define htons(x) (x)
 #  define ntohl(x) (x)
 #  define htonl(x) (x)
-#elif CPU_ARCH == RISCV
-/* FIXME: fix for riscv */
-#warning FIXME: fix sdbfs for riscv
-#  define ntohs(x) (x)
-#  define htons(x) (x)
-#  define ntohl(x) (x)
-#  define htonl(x) (x)
+#  define ntohll(x) (x)
+#  define htonll(x) (x)
+#elif defined SDBFS_LITTLE_ENDIAN || defined CONFIG_ARCH_RISCV
+#  ifndef CONFIG_ARCH_RISCV
+#    define CONFIG_ARCH_RISCV
+#  endif
+#  include <endianness.h>
 #else
-#  error "No support, yet, for little-endian freestanding library"
+#  error "Unknown endianness for freestanding library"
 #endif

@@ -8,10 +8,14 @@
 
 #ifdef unix
   static inline void clear_irq(void) {}
+
 #elif defined(CONFIG_ARCH_RISCV)
-  /* FIXME: fix for riscv */
-  #warning FIXME: fix irq.h for riscv
-  static inline void clear_irq(void) {}
+static inline void clear_irq(void) {
+    unsigned long t;
+    /* AW: needed? */
+    asm volatile ("csrrc %0, mip, %1" : "=r"(t) : "r"(1 << 11));
+}
+
 #else
 static inline void clear_irq(void)
 {
@@ -23,6 +27,6 @@ static inline void clear_irq(void)
 
 void disable_irq(void);
 void enable_irq(void);
-void _irq_entry(void);
+void spll_irq_entry(void);
 
 #endif

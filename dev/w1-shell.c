@@ -73,7 +73,7 @@ static int cmd_w1(const char *args[])
 			pp_printf("device %i: %08x%08x\n", i,
 				  (int)(d->rom >> 32), (int)d->rom);
 		temp = w1_read_temp(d, 0);
-		pp_printf("temp: %d.%04d\n", temp >> 16,
+		pp_printf("temp: %d.%04d\n", (int) (temp >> 16),
 			  (int)((temp & 0xffff) * 10 * 1000 >> 16));
 		}
 	}

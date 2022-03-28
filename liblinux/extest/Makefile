@@ -4,7 +4,7 @@
 -include Makefile.specific
 
 GIT_VER =? $(shell git describe --always --dirty)
-GIT_USR =? $(shell git config --get-all user.name)
+GIT_USR =? $(shell git config --get user.name)
 
 LIB = libextest.a
 LOBJ := extest.o

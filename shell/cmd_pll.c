@@ -16,7 +16,7 @@
 
 static int cmd_pll(const char *args[])
 {
-	int cur, tgt;
+	int32_t cur, tgt;
 
 	if (!strcasecmp(args[0], "init")) {
 		if (!args[3])
@@ -36,7 +36,7 @@ static int cmd_pll(const char *args[])
 		if (!args[1])
 			return -EINVAL;
 		spll_get_phase_shift(atoi(args[1]), &cur, &tgt);
-		pp_printf("%d %d\n", cur, tgt);
+		pp_printf("%d %d\n", (int) cur, (int) tgt);
 	} else if (!strcasecmp(args[0], "start")) {
 		if (!args[1])
 			return -EINVAL;

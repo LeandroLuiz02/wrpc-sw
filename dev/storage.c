@@ -20,7 +20,6 @@
 #include "dev/i2c_eeprom.h"
 #include <sdb.h>
 
-#define SDBFS_BIG_ENDIAN
 #include <libsdbfs.h>
 #include <dev/fram.h>
 
@@ -28,11 +27,11 @@
  * This source file is a drop-in replacement of the legacy one: it manages
  * both i2c and w1 devices even if the interface is the old i2c-based one
  */
-#define SDB_VENDOR	0x46696c6544617461LL /* "FileData" */
-#define SDB_DEV_INIT	0x77722d69 /* wr-i (nit) */
-#define SDB_DEV_MAC	0x6d61632d /* mac- (address) */
-#define SDB_DEV_SFP	0x7366702d /* sfp- (database) */
-#define SDB_DEV_CALIB	0x63616c69 /* cali (bration) */
+#define SDB_VENDOR	htonll(0x46696c6544617461LL) /* "FileData" */
+#define SDB_DEV_INIT	htonl(0x77722d69) /* wr-i (nit) */
+#define SDB_DEV_MAC	htonl(0x6d61632d) /* mac- (address) */
+#define SDB_DEV_SFP	htonl(0x7366702d) /* sfp- (database) */
+#define SDB_DEV_CALIB	htonl(0x63616c69) /* cali (bration) */
 
 /* constants for scanning I2C EEPROMs */
 #define EEPROM_START_ADR 0
@@ -92,7 +91,7 @@ const struct storage_rwops spi_flash_rwops = {
 	sdb_flash_erase
 };
 
-const int32_t spi_flash_default_entry_points[] = 
+const int32_t spi_flash_default_entry_points[] =
 {
 				0x000000,	/* flash base */
 				0x100,		/* second page in flash */
@@ -310,18 +309,29 @@ static int sfp_entry(struct s_sfpinfo *sfp, int oper, int pos)
 			pp_printf("sfp: corrupted checksum\n");
 			goto out;
 		}
+		sfp->alpha = ntohll(sfp->alpha);
+		sfp->dTx = ntohl(sfp->dTx);
+		sfp->dRx = ntohl(sfp->dRx);
 	}
 	if (oper == SFP_ADD) {
+		/* Make a copy because changing endianess by htonl, change
+		 * the data */
+		memcpy(&tempsfp, sfp, sizeof(tempsfp));
 		/* count checksum */
-		ptr = (uint8_t *)sfp;
+		ptr = (uint8_t *)&tempsfp;
+
+		tempsfp.alpha = htonll(tempsfp.alpha);
+		tempsfp.dTx = htonl(tempsfp.dTx);
+		tempsfp.dRx = htonl(tempsfp.dRx);
+
 		/* use sizeof() - 1 because we don't include checksum */
 		for (i = 0; i < sizeof(struct s_sfpinfo) - 1; ++i)
 			chksum = chksum + *(ptr++);
-		sfp->chksum = chksum;
+		tempsfp.chksum = chksum;
 		/* add SFP at the end of DB */
 		sdb_offset = 1 /* sfpcount */ + sfpcount * sizeof(*sfp);
-		if (sdbfs_fwrite(&wrc_sdbfs, sdb_offset, sfp, sizeof(*sfp))
-				!= sizeof(*sfp)) {
+		if (sdbfs_fwrite(&wrc_sdbfs, sdb_offset, &tempsfp, sizeof(*sfp))
+				!= sizeof(tempsfp)) {
 			goto out;
 		}
 		sfpcount++;
@@ -496,6 +506,8 @@ int storage_load_calibration(void)
 {
 	int ret = 0;
 	int i;
+	/* cal data with network endianess, for read/write to flash */
+	wrc_cal_data_t cal_data_ne;
 
 	cal_data.param_count = 0;
 
@@ -503,15 +515,18 @@ int storage_load_calibration(void)
 	{
 		storage_dbg("%s: can't open cal file\n", __FUNCTION__);
 		return -1;
-	}	
+	}
 
-	if (sdbfs_fread(&wrc_sdbfs, 0, &cal_data, sizeof(cal_data))
-		    != sizeof(cal_data))
+	if (sdbfs_fread(&wrc_sdbfs, 0, &cal_data_ne, sizeof(cal_data_ne))
+		    != sizeof(cal_data_ne))
 	{
 		ret = -1;
 		cal_data.param_count = 0;
 		goto out_close;
 	}
+
+	cal_data = cal_data_ne;
+	ntohl_mem((uint8_t *)&cal_data, sizeof(cal_data));
 
 	if( cal_data.magic != CAL_FILE_MAGIC )
 	{
@@ -536,7 +551,7 @@ int storage_load_calibration(void)
 
 	for(i = 0; i < cal_data.param_count; i++)
 	{
-		storage_dbg( " - param %c%c%c%c = %d\n", 
+		storage_dbg( " - param %c%c%c%c = %d\n",
 			((cal_data.params[i].id) >> 24) & 0xff,
 			((cal_data.params[i].id) >> 16) & 0xff,
 			((cal_data.params[i].id) >> 8) & 0xff,
@@ -558,8 +573,8 @@ int storage_save_calibration(void)
 {
 	int ret = 0;
 	int i;
-
-	cal_data.magic = CAL_FILE_MAGIC;
+	/* cal data with network endianess, for read/write to flash */
+	wrc_cal_data_t cal_data_ne;
 
 	if (sdbfs_open_id(&wrc_sdbfs, SDB_VENDOR, SDB_DEV_CALIB) < 0)
 	{
@@ -567,19 +582,23 @@ int storage_save_calibration(void)
 		return -1;
 	}
 
+	cal_data.magic = CAL_FILE_MAGIC;
 	cal_data.checksum = calc_checksum( &cal_data );
+	cal_data_ne = cal_data;
+	htonl_mem((uint8_t *)&cal_data_ne, sizeof(cal_data_ne));
 
 	sdbfs_ferase(&wrc_sdbfs, 0, wrc_sdbfs.f_len);
 
-	if (sdbfs_fwrite(&wrc_sdbfs, 0, &cal_data, sizeof(cal_data))
-	    != sizeof(cal_data))
+	if (sdbfs_fwrite(&wrc_sdbfs, 0, &cal_data_ne, sizeof(cal_data_ne))
+	    != sizeof(cal_data_ne))
 			goto out_close;
 
-	storage_dbg("Saved %d bytes of calibration data:\n", sizeof(cal_data ));
+	storage_dbg("Saved %d bytes of calibration data:\n",
+		    sizeof(cal_data_ne));
 
 	for(i = 0; i < cal_data.param_count; i++)
 	{
-		storage_dbg( " - param %c%c%c%c = %d\n", 
+		storage_dbg( " - param %c%c%c%c = %d\n",
 			((cal_data.params[i].id) >> 24) & 0xff,
 			((cal_data.params[i].id) >> 16) & 0xff,
 			((cal_data.params[i].id) >> 8) & 0xff,
@@ -632,7 +651,7 @@ int storage_get_persistent_mac(int portnum, uint8_t *mac)
 		storage_dbg("%s: SDB file is empty\n", __func__);
 		ret = -1;
 	}
-	
+
 	if (ret < 0) {
 		storage_dbg("%s: failure\n", __func__);
 		return -1;
@@ -832,13 +851,13 @@ int storage_mount( struct storage_device *dev )
 		{
 			storage_dbg("try entry point 0x%08x\n", dev->entry_points[i] );
 			dev->rwops->read( dev, dev->entry_points[i], (void *)&magic, sizeof(magic) );
-			if (magic == SDB_MAGIC)
+			if (ntohl(magic) == SDB_MAGIC)
 				break;
 		}
 	}
 
 	/* found? mount it! */
-	if (magic == SDB_MAGIC) {
+	if (ntohl(magic) == SDB_MAGIC) {
 		storage_dbg("found SDBFS at 0x%x in device '%s'\n",
 				dev->entry_points[i], dev->name );
 		wrc_sdbfs.drvdata = dev;
@@ -912,28 +931,30 @@ int storage_sdbfs_format( struct storage_device *dev, uint32_t addr, int force_b
 	/* scan through files */
 	for (i = 1; i < SDBFS_REC; ++i) {
 		/* relocate each file depending on base address and block size*/
-		size = sdbfs[i].sdb_component.addr_last -
-			sdbfs[i].sdb_component.addr_first;
-		sdbfs[i].sdb_component.addr_first = cur_adr;
-		sdbfs[i].sdb_component.addr_last  = cur_adr + size;
+		size = ntohll(sdbfs[i].sdb_component.addr_last) -
+			ntohll(sdbfs[i].sdb_component.addr_first);
+		sdbfs[i].sdb_component.addr_first = htonll((uint64_t) cur_adr);
+		sdbfs[i].sdb_component.addr_last  =
+					    htonll((uint64_t)(cur_adr + size));
 		cur_adr = SDB_ALIGN(cur_adr + (size + 1), wrc_sdbfs.blocksize);
 	}
 	/* update the directory */
-	sdbfs_dir->sdb_component.addr_first = base_addr;
+	sdbfs_dir->sdb_component.addr_first = htonll(base_addr);
 	sdbfs_dir->sdb_component.addr_last  =
 		sdbfs[SDBFS_REC-1].sdb_component.addr_last;
 
-	for (i = 0; i < SDBFS_REC; ++i) 
+	for (i = 0; i < SDBFS_REC; ++i)
 	{
 		strncpy(buf, (char *)sdbfs[i].sdb_component.product.name, 18);
 		pp_printf("filename: %s; first: %x; last: %x\n", buf,
-				(int)sdbfs[i].sdb_component.addr_first,
-				(int)sdbfs[i].sdb_component.addr_last);
+			  (int)ntohll(sdbfs[i].sdb_component.addr_first),
+			  (int)ntohll(sdbfs[i].sdb_component.addr_last));
 	}
 
-	
-	pp_printf("Formatting SDBFS in %s (base 0x%08x, size 0x%08x)...\n", dev->name,
-			base_addr, (uint32_t) (SDBFS_REC * wrc_sdbfs.blocksize) );
+
+	pp_printf("Formatting SDBFS in %s (base 0x%08x, size 0x%08x)...\n",
+		  dev->name, (unsigned int) base_addr,
+		  (unsigned int) (SDBFS_REC * wrc_sdbfs.blocksize) );
 
 	storage_sdbfs_erase(dev, addr, force_base);
 
@@ -970,7 +991,7 @@ void storage_sdbfs_list()
 		d->sdb_component.product.record_type = '\0';
 		pp_printf("file 0x%08x @ 0x%08x, name %19s\n",
 			  (int)(d->sdb_component.product.device_id),
-			  (int)(d->sdb_component.addr_first),
+			  (int)(ntohll(d->sdb_component.addr_first)),
 			  (char *)(d->sdb_component.product.name));
 		new = 0;
 	}

@@ -31,6 +31,12 @@
 #define ntohl(x) __do_not_use
 #define ntohll(x) __do_not_use
 
+#ifdef CONFIG_ARCH_RISCV
+#define HAS_ARCH_RISCV 1
+#else
+#define HAS_ARCH_RISCV 0
+#endif
+
 /* create fancy macro to shorten the switch statements, assign val as a string to p */
 #define ENUM_TO_P_IN_CASE(val, p) \
 				case val: \
@@ -61,7 +67,7 @@ long long wrpc_get_64(void *p)
 	uint64_t *p64 = p;
 	uint64_t result;
 
-	if (endian_flag == DUMP_ENDIAN_FLAG) {
+	if (HAS_ARCH_RISCV || endian_flag == DUMP_ENDIAN_FLAG) {
 		return *p64;
 	}
 	result = __bswap_32((uint32_t)*p64);
@@ -75,7 +81,7 @@ long wrpc_get_l32(void *p)
 {
 	uint32_t *p32 = p;
 
-	if (endian_flag == DUMP_ENDIAN_FLAG)
+	if (HAS_ARCH_RISCV || endian_flag == DUMP_ENDIAN_FLAG)
 		return *p32;
 	return __bswap_32(*p32);
 }
@@ -89,7 +95,7 @@ int wrpc_get_16(void *p)
 {
 	uint16_t *p16 = p;
 
-	if (endian_flag == DUMP_ENDIAN_FLAG)
+	if (HAS_ARCH_RISCV || endian_flag == DUMP_ENDIAN_FLAG)
 		return *p16;
 	return __bswap_16(*p16);
 }
@@ -479,6 +485,8 @@ void print_version(void)
 {
 	fprintf(stderr, "Built in wrpc-sw repo ver:%s, by %s on %s %s\n",
 		__GIT_VER__, __GIT_USR__, __TIME__, __DATE__);
+	fprintf(stderr, "Support for %s architecture.\n",
+		HAS_ARCH_RISCV ? "RISC-V" : "LM32");
 	fprintf(stderr, "Supported WRPC structures version %d\n",
 		WRPC_SHMEM_VERSION);
 	fprintf(stderr, "Supported PPSI structures version %d\n",

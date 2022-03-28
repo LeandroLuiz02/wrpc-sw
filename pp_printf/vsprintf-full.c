@@ -366,6 +366,9 @@ int pp_vsprintf(char *buf, const char *fmt, va_list args)
 			base = 8;
 			break;
 
+		case 'p':
+			field_width = 2*sizeof(void *);
+			flags |= ZEROPAD;
 		case 'x':
 			flags |= SMALL;
 		case 'X':

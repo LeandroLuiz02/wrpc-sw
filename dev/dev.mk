@@ -4,6 +4,9 @@
 obj-$(CONFIG_ARCH_LM32) += 	dev/simple_uart.o dev/console.o
 obj-$(CONFIG_ARCH_RISCV) += 	dev/simple_uart.o dev/console.o
 
+sdbfs_swap_bytes-$(CONFIG_ARCH_LM32) =
+sdbfs_swap_bytes-$(CONFIG_ARCH_RISCV) = -e
+
 obj-$(CONFIG_EMBEDDED_NODE) += \
 	dev/endpoint.o \
 	dev/ep_pfilter.o \
@@ -89,4 +92,4 @@ $(pfilter-y): tools
 	./tools/pfilter-builder include/generated/
 
 $(sdbfsimg-y): tools
-	./tools/gensdbfs -c include/generated/sdbfs-default.h tools/sdbfs tools/sdbfs-default.bin
+	./tools/gensdbfs $(sdbfs_swap_bytes-y) -c include/generated/sdbfs-default.h tools/sdbfs tools/sdbfs-default.bin

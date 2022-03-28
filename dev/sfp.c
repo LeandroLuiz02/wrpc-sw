@@ -43,7 +43,7 @@ static int sfp_present(void)
 static void sfp_read_i2c(int addr, uint8_t *mem, int start,  int size)
 {
 	int i = start;
-	uint8_t data, sum;
+	uint8_t data;
 
 	bb_i2c_init( &dev_i2c_sfp );
 
@@ -55,7 +55,6 @@ static void sfp_read_i2c(int addr, uint8_t *mem, int start,  int size)
 	bb_i2c_get_byte(&dev_i2c_sfp, &data, 1);
 	bb_i2c_stop(&dev_i2c_sfp);
 	*(mem + i) = data;
-	sum = data;
 
 	bb_i2c_start( &dev_i2c_sfp );
 	bb_i2c_put_byte(&dev_i2c_sfp, addr << 1 | BB_I2C_WRITE);

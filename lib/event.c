@@ -47,10 +47,12 @@ static inline void queue_put( struct event_queue* buf, int c )
 
 static inline int queue_get( struct event_queue* buf )
 {
+    int rv;
+
     if( !buf->count )
         return -1;
 
-	int rv = buf->data[buf->tail];
+    rv = buf->data[buf->tail];
 
     buf->tail++;
     if (buf->tail >= buf->size)

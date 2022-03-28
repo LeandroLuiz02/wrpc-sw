@@ -7,21 +7,4 @@
 #include <sys/types.h>
 #include <stdlib.h>
 #include <stdint.h>
-
-#ifdef CONFIG_HOST_PROCESS
-#  include <arpa/inet.h>
-#elif defined(CONFIG_ARCH_RISCV)
-/* FIXME: fix endianness for riscV */
-#define ntohs(x) (x)
-#define ntohl(x) (x)
-#define htons(x) (x)
-#define htons(x) (x)
-#else
-
-#  ifndef __IEEE_BIG_ENDIAN
-#    error "Not big endian, or unknown endianness"
-#  endif
-
-  static inline uint16_t ntohs(uint16_t x) {return x;}
-
-#endif
+#include <endianness.h>

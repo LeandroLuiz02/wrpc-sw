@@ -15,7 +15,8 @@ extern void _reset_handler(void); /* user to reset again */
 
 void check_stack(void)
 {
-	assert(_endram == ENDRAM_MAGIC, "Stack overflow! (%x)\n", _endram);
+	assert(_endram == ENDRAM_MAGIC, "Stack overflow! (0x%x)\n",
+	       (unsigned int) _endram);
 }
 
 #ifdef CONFIG_CHECK_RESET
@@ -48,7 +49,9 @@ void check_reset(void)
 	pp_printf("\nWarning: the CPU was reset\nStack trace:\n");
 	while (p < &_fstack) {
 		pp_printf("%08x: %08x %08x %08x %08x\n",
-			  (int)p, save[0], save[1], save[2], save[3]);
+			  (int)p, (unsigned int) save[0],
+			  (unsigned int) save[1], (unsigned int) save[2],
+			  (unsigned int) save[3]);
 		p += 4;
 		save += 4;
 	}

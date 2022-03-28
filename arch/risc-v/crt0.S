@@ -60,6 +60,9 @@ hdl_testbench_p:
 
 .org 0x100
 
+    .global _reset_handler
+    .type   _reset_handler, @function
+_reset_handler:
 _entry:
 
     la     gp, _gp                 # Initialize global pointer

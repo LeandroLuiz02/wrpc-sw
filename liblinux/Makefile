@@ -8,7 +8,7 @@ LIB = libdevmap.a
 LOBJ := devmap.o
 
 GIT_VER ?= $(shell git describe --always --dirty)
-GIT_USR ?= $(shell git config --get-all user.name)
+GIT_USR ?= $(shell git config --get user.name)
 
 CC = cc
 CFLAGS = -Wall -ggdb -fPIC -Werror -I./ -I../include
