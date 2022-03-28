@@ -149,12 +149,11 @@ static void wrpc_vuart_term_main(struct mapping_desc *vuart, int keep_term, int 
 
 	if(!keep_term) {
 		tcgetattr(STDIN_FILENO,&oldkey);
+		memcpy(&newkey, &oldkey, sizeof(struct termios));
 		newkey.c_cflag = B9600 | CS8 | CLOCAL | CREAD;
 		newkey.c_iflag = IGNPAR;
 		newkey.c_oflag = 0;
-		newkey.c_lflag = 0;
-		newkey.c_cc[VMIN]=1;
-		newkey.c_cc[VTIME]=0;
+		newkey.c_lflag = ISIG;  /* Keep C-c, C-z, ... */
 		tcflush(STDIN_FILENO, TCIFLUSH);
 		tcsetattr(STDIN_FILENO,TCSANOW,&newkey);
 	}
@@ -188,8 +187,10 @@ static void wrpc_vuart_term_main(struct mapping_desc *vuart, int keep_term, int 
 					need_exit = 1; /* kill */
 				}
 				/* If the user character is C-a, then kill */
-				if(tx == '\x01')
+				if(tx == '\x01') {
 					need_exit = 1;
+					break;
+				}
 
 				ret = wr_vuart_write(vuart, &tx, 1);
 				if (ret != 1) {
