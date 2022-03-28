@@ -3,7 +3,7 @@
 
 # use a cross compiler depending on architecture
 CROSS_COMPILE_LM32 ?= lm32-elf-
-CROSS_COMPILE_RISCV ?= riscv-elf-
+CROSS_COMPILE_RISCV ?= riscv32-elf-
 
 CROSS_COMPILE-$(CONFIG_ARCH_LM32) ?= $(CROSS_COMPILE_LM32)
 CROSS_COMPILE-$(CONFIG_ARCH_RISCV) ?= $(CROSS_COMPILE_RISCV)
