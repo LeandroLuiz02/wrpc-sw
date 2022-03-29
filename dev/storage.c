@@ -53,6 +53,7 @@ static int sdbfs_erase_callback(struct sdbfs *fs, int offset, int count)
 int storage_mount( struct storage_device *dev )
 {
 	uint32_t magic = 0;
+	uint32_t addr;
 	int i;
 
 	/* Check if there is SDBFS in the memory */
@@ -61,31 +62,30 @@ int storage_mount( struct storage_device *dev )
 
 	for (i = 0; dev->entry_points[i] >= 0; i++)
 	{
-		if( dev->entry_points[i] < dev->size )
-		{
-			storage_dbg("try entry point 0x%08x\n", dev->entry_points[i] );
-			dev->rwops->read( dev, dev->entry_points[i], (void *)&magic, sizeof(magic) );
-			if (ntohl(magic) == SDB_MAGIC)
-				break;
-		}
-	}
+		addr = dev->entry_points[i];
+		if (addr >= dev->size)
+			continue;
 
-	/* found? mount it! */
-	if (ntohl(magic) == SDB_MAGIC) {
-		storage_dbg("found SDBFS at 0x%x in device '%s'\n",
-				dev->entry_points[i], dev->name );
-		wrc_sdbfs.drvdata = dev;
-		wrc_sdbfs.blocksize = dev->block_size;
-		wrc_sdbfs.entrypoint = dev->entry_points[i];
-		wrc_sdbfs.read = sdbfs_read_callback;
-		wrc_sdbfs.write = sdbfs_write_callback;
-		wrc_sdbfs.erase = sdbfs_erase_callback;
-		return 0;
+		storage_dbg("try entry point 0x%08x\n", addr);
+		dev->rwops->read(dev, addr, (void *)&magic, sizeof(magic) );
+		if (ntohl(magic) == SDB_MAGIC)
+			goto found;
 	}
-
 	storage_dbg("SDBFS not found.\n");
 
 	return -ENODEV;
+
+found:
+	/* found? mount it! */
+	storage_dbg("found SDBFS at 0x%x in device '%s'\n", addr, dev->name );
+	wrc_sdbfs.drvdata = dev;
+	wrc_sdbfs.blocksize = dev->block_size;
+	wrc_sdbfs.entrypoint = addr;
+	wrc_sdbfs.read = sdbfs_read_callback;
+	wrc_sdbfs.write = sdbfs_write_callback;
+	wrc_sdbfs.erase = sdbfs_erase_callback;
+	return 0;
+
 }
 
 
@@ -157,8 +157,7 @@ int storage_sdbfs_format( struct storage_device *dev, uint32_t addr, int force_b
 	sdbfs_dir->sdb_component.addr_last  =
 		sdbfs[SDBFS_REC-1].sdb_component.addr_last;
 
-	for (i = 0; i < SDBFS_REC; ++i)
-	{
+	for (i = 0; i < SDBFS_REC; ++i)	{
 		strncpy(buf, (char *)sdbfs[i].sdb_component.product.name, 18);
 		pp_printf("filename: %s; first: %x; last: %x\n", buf,
 			  (int)ntohll(sdbfs[i].sdb_component.addr_first),
@@ -180,13 +179,12 @@ int storage_sdbfs_format( struct storage_device *dev, uint32_t addr, int force_b
 	}
 
 	pp_printf("Verification...\n");
-		sdbfs_read_callback( &wrc_sdbfs, base_addr, sdbfs_buf, SDBFS_REC *
-				sizeof(struct sdb_device));
-		if(memcmp(sdbfs, sdbfs_buf, SDBFS_REC *
-				sizeof(struct sdb_device)))
-			pp_printf("Error.\n");
-		else
-			pp_printf("OK.\n");
+	sdbfs_read_callback( &wrc_sdbfs, base_addr, sdbfs_buf, SDBFS_REC *
+			     sizeof(struct sdb_device));
+	if(memcmp(sdbfs, sdbfs_buf, SDBFS_REC * sizeof(struct sdb_device)))
+		pp_printf("Error.\n");
+	else
+		pp_printf("OK.\n");
 
 	return storage_mount( dev );
 }
@@ -195,7 +193,7 @@ int storage_sdbfs_format( struct storage_device *dev, uint32_t addr, int force_b
 /*
  * A trivial dumper, just to show what's up in there
  */
-void storage_sdbfs_list()
+void storage_sdbfs_list(void)
 {
 	struct sdbfs *fs = &wrc_sdbfs;
 	struct sdb_device *d;
