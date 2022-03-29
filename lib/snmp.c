@@ -220,7 +220,7 @@
 }
 
 struct snmp_oid {
-	uint8_t *oid_match;
+	const uint8_t *oid_match;
 	int (*get)(uint8_t *buf, struct snmp_oid *obj);
 	/* *set is needed only when support for SNMP SET is enabled */
 	int (*set)(uint8_t *buf, struct snmp_oid *obj);
@@ -239,7 +239,7 @@ struct snmp_oid {
 }
 
 struct snmp_oid_limb {
-	uint8_t *oid_match;
+	const uint8_t *oid_match;
 	int (*twig_func)(uint8_t *buf, uint8_t in_oid_limb_matched_len,
 			  struct snmp_oid *obj, uint8_t flags);
 	struct snmp_oid *obj_array;
@@ -323,124 +323,124 @@ static int set_shell_cmd(uint8_t *buf, struct snmp_oid *obj);
 static int set_aux_diag(uint8_t *buf, struct snmp_oid *obj);
 static int data_aux_diag(uint8_t *buf, struct snmp_oid *obj, int mode);
 
-static void print_oid_verbose(uint8_t *oid, int len);
+static void print_oid_verbose(const uint8_t *oid, int len);
 static void snmp_fix_size(uint8_t *buf, int size);
 
-static uint8_t oid_wrpcVersionGroup[] =     {0x2B,6,1,4,1,96,101,1,1};
-static uint8_t oid_wrpcTimeGroup[] =        {0x2B,6,1,4,1,96,101,1,2};
+static const uint8_t oid_wrpcVersionGroup[] =     {0x2B,6,1,4,1,96,101,1,1};
+static const uint8_t oid_wrpcTimeGroup[] =        {0x2B,6,1,4,1,96,101,1,2};
 /* Include wrpcTemperatureEntry into OID */
-static uint8_t oid_wrpcTemperatureTable[] = {0x2B,6,1,4,1,96,101,1,3,1};
-static uint8_t oid_wrpcSpllStatusGroup[] =  {0x2B,6,1,4,1,96,101,1,4};
-static uint8_t oid_wrpcPtpGroup[] =         {0x2B,6,1,4,1,96,101,1,5};
-static uint8_t oid_wrpcPtpConfigGroup[] =   {0x2B,6,1,4,1,96,101,1,6};
-static uint8_t oid_wrpcPortGroup[] =        {0x2B,6,1,4,1,96,101,1,7};
+static const uint8_t oid_wrpcTemperatureTable[] = {0x2B,6,1,4,1,96,101,1,3,1};
+static const uint8_t oid_wrpcSpllStatusGroup[] =  {0x2B,6,1,4,1,96,101,1,4};
+static const uint8_t oid_wrpcPtpGroup[] =         {0x2B,6,1,4,1,96,101,1,5};
+static const uint8_t oid_wrpcPtpConfigGroup[] =   {0x2B,6,1,4,1,96,101,1,6};
+static const uint8_t oid_wrpcPortGroup[] =        {0x2B,6,1,4,1,96,101,1,7};
 /* Include wrpcSfpEntry into OID */
-static uint8_t oid_wrpcSfpTable[] =         {0x2B,6,1,4,1,96,101,1,8,1};
-static uint8_t oid_wrpcInitScriptConfigGroup[] =   {0x2B,6,1,4,1,96,101,1,9};
-static uint8_t oid_wrpcSdbGroup[] =         {0x2B,6,1,4,1,96,101,1,10};
-static uint8_t oid_wrpcNetconsoleGetGroup[] =  {0x2B,6,1,4,1,96,101,1,11,1};
-static uint8_t oid_wrpcNetconsoleSetGroup[] =  {0x2B,6,1,4,1,96,101,1,11,2};
-static uint8_t oid_wrpcShellCmdGroup[] =    {0x2B,6,1,4,1,96,101,1,12};
+static const uint8_t oid_wrpcSfpTable[] =         {0x2B,6,1,4,1,96,101,1,8,1};
+static const uint8_t oid_wrpcInitScriptConfigGroup[] = {0x2B,6,1,4,1,96,101,1,9};
+static const uint8_t oid_wrpcSdbGroup[] =         {0x2B,6,1,4,1,96,101,1,10};
+static const uint8_t oid_wrpcNetconsoleGetGroup[] = {0x2B,6,1,4,1,96,101,1,11,1};
+static const uint8_t oid_wrpcNetconsoleSetGroup[] = {0x2B,6,1,4,1,96,101,1,11,2};
+static const uint8_t oid_wrpcShellCmdGroup[] =    {0x2B,6,1,4,1,96,101,1,12};
 /* In below OIDs zeros will be replaced in the snmp_init function by values
  * read from FPA */
-static uint8_t oid_wrpcAuxRoTable[] =       {0x2B,6,1,4,1,96,101,2,0,0,1,1};
-static uint8_t oid_wrpcAuxRwTable[] =       {0x2B,6,1,4,1,96,101,2,0,0,2,1};
+static uint8_t oid_wrpcAuxRoTable[] =     {0x2B,6,1,4,1,96,101,2,0,0,1,1};
+static uint8_t oid_wrpcAuxRwTable[] =     {0x2B,6,1,4,1,96,101,2,0,0,2,1};
 
 /* wrpcVersionGroup */
-static uint8_t oid_wrpcVersionHwType[] =         {1,0};
-static uint8_t oid_wrpcVersionSwVersion[] =      {2,0};
-static uint8_t oid_wrpcVersionSwBuildBy[] =      {3,0};
-static uint8_t oid_wrpcVersionSwBuildDate[] =    {4,0};
+static const uint8_t oid_wrpcVersionHwType[] =         {1,0};
+static const uint8_t oid_wrpcVersionSwVersion[] =      {2,0};
+static const uint8_t oid_wrpcVersionSwBuildBy[] =      {3,0};
+static const uint8_t oid_wrpcVersionSwBuildDate[] =    {4,0};
 
 /* wrpcTimeGroup */
-static uint8_t oid_wrpcTimeTAI[] =               {1,0};
-static uint8_t oid_wrpcTimeTAIString[] =         {2,0};
-static uint8_t oid_wrpcTimeSystemUptime[] =      {3,0};
+static const uint8_t oid_wrpcTimeTAI[] =               {1,0};
+static const uint8_t oid_wrpcTimeTAIString[] =         {2,0};
+static const uint8_t oid_wrpcTimeSystemUptime[] =      {3,0};
 
 /* wrpcTemperatureTable */
-static uint8_t oid_wrpcTemperatureName[] =       {2};
-static uint8_t oid_wrpcTemperatureValue[] =      {3};
+static const uint8_t oid_wrpcTemperatureName[] =       {2};
+static const uint8_t oid_wrpcTemperatureValue[] =      {3};
 
 /* wrpcSpllStatusGroup */
-static uint8_t oid_wrpcSpllMode[] =              {1,0};
-static uint8_t oid_wrpcSpllIrqCnt[] =            {2,0};
-static uint8_t oid_wrpcSpllSeqState[] =          {3,0};
-static uint8_t oid_wrpcSpllAlignState[] =        {4,0};
-static uint8_t oid_wrpcSpllHlock[] =             {5,0};
-static uint8_t oid_wrpcSpllMlock[] =             {6,0};
-static uint8_t oid_wrpcSpllHY[] =                {7,0};
-static uint8_t oid_wrpcSpllMY[] =                {8,0};
-static uint8_t oid_wrpcSpllDelCnt[] =            {9,0};
+static const uint8_t oid_wrpcSpllMode[] =              {1,0};
+static const uint8_t oid_wrpcSpllIrqCnt[] =            {2,0};
+static const uint8_t oid_wrpcSpllSeqState[] =          {3,0};
+static const uint8_t oid_wrpcSpllAlignState[] =        {4,0};
+static const uint8_t oid_wrpcSpllHlock[] =             {5,0};
+static const uint8_t oid_wrpcSpllMlock[] =             {6,0};
+static const uint8_t oid_wrpcSpllHY[] =                {7,0};
+static const uint8_t oid_wrpcSpllMY[] =                {8,0};
+static const uint8_t oid_wrpcSpllDelCnt[] =            {9,0};
 
 /* wrpcPtpGroup */
-static uint8_t oid_wrpcPtpServoStateN[] =        { 5,0};
-static uint8_t oid_wrpcPtpClockOffsetPsHR[] =    { 8,0};
-static uint8_t oid_wrpcPtpSkew[] =               { 9,0};
-static uint8_t oid_wrpcPtpRTT[] =                {10,0};
-static uint8_t oid_wrpcPtpServoUpdates[] =       {12,0};
-static uint8_t oid_wrpcPtpServoUpdateTime[] =    {13,0};
-static uint8_t oid_wrpcPtpDeltaTxM[] =           {14,0};
-static uint8_t oid_wrpcPtpDeltaRxM[] =           {15,0};
-static uint8_t oid_wrpcPtpDeltaTxS[] =           {16,0};
-static uint8_t oid_wrpcPtpDeltaRxS[] =           {17,0};
-static uint8_t oid_wrpcPtpServoStateErrCnt[] =   {18,0};
-static uint8_t oid_wrpcPtpClockOffsetErrCnt[] =  {19,0};
-static uint8_t oid_wrpcPtpRTTErrCnt[] =          {20,0};
-static uint8_t oid_wrpcPtpAsymmetry[] =          {22,0};
-static uint8_t oid_wrpcPtpTX[] =                 {23,0};
-static uint8_t oid_wrpcPtpRX[] =                 {24,0};
-static uint8_t oid_wrpcPtpAlpha64[] =            {27,0};
+static const uint8_t oid_wrpcPtpServoStateN[] =        { 5,0};
+static const uint8_t oid_wrpcPtpClockOffsetPsHR[] =    { 8,0};
+static const uint8_t oid_wrpcPtpSkew[] =               { 9,0};
+static const uint8_t oid_wrpcPtpRTT[] =                {10,0};
+static const uint8_t oid_wrpcPtpServoUpdates[] =       {12,0};
+static const uint8_t oid_wrpcPtpServoUpdateTime[] =    {13,0};
+static const uint8_t oid_wrpcPtpDeltaTxM[] =           {14,0};
+static const uint8_t oid_wrpcPtpDeltaRxM[] =           {15,0};
+static const uint8_t oid_wrpcPtpDeltaTxS[] =           {16,0};
+static const uint8_t oid_wrpcPtpDeltaRxS[] =           {17,0};
+static const uint8_t oid_wrpcPtpServoStateErrCnt[] =   {18,0};
+static const uint8_t oid_wrpcPtpClockOffsetErrCnt[] =  {19,0};
+static const uint8_t oid_wrpcPtpRTTErrCnt[] =          {20,0};
+static const uint8_t oid_wrpcPtpAsymmetry[] =          {22,0};
+static const uint8_t oid_wrpcPtpTX[] =                 {23,0};
+static const uint8_t oid_wrpcPtpRX[] =                 {24,0};
+static const uint8_t oid_wrpcPtpAlpha64[] =            {27,0};
 
 /* wrpcPtpConfigGroup */
-static uint8_t oid_wrpcPtpConfigRestart[] =      {1,0};
-static uint8_t oid_wrpcPtpConfigApply[] =        {2,0};
-static uint8_t oid_wrpcPtpConfigSfpPn[] =        {3,0};
-static uint8_t oid_wrpcPtpConfigDeltaTx[] =      {4,0};
-static uint8_t oid_wrpcPtpConfigDeltaRx[] =      {5,0};
-static uint8_t oid_wrpcPtpConfigAlpha[] =        {6,0};
+static const uint8_t oid_wrpcPtpConfigRestart[] =      {1,0};
+static const uint8_t oid_wrpcPtpConfigApply[] =        {2,0};
+static const uint8_t oid_wrpcPtpConfigSfpPn[] =        {3,0};
+static const uint8_t oid_wrpcPtpConfigDeltaTx[] =      {4,0};
+static const uint8_t oid_wrpcPtpConfigDeltaRx[] =      {5,0};
+static const uint8_t oid_wrpcPtpConfigAlpha[] =        {6,0};
 
 /* wrpcPortGroup */
-static uint8_t oid_wrpcPortLinkStatus[] =        {1,0};
-static uint8_t oid_wrpcPortSfpPn[] =             {2,0};
-static uint8_t oid_wrpcPortSfpInDB[] =           {3,0};
-static uint8_t oid_wrpcPortInternalTX[] =        {4,0};
-static uint8_t oid_wrpcPortInternalRX[] =        {5,0};
+static const uint8_t oid_wrpcPortLinkStatus[] =        {1,0};
+static const uint8_t oid_wrpcPortSfpPn[] =             {2,0};
+static const uint8_t oid_wrpcPortSfpInDB[] =           {3,0};
+static const uint8_t oid_wrpcPortInternalTX[] =        {4,0};
+static const uint8_t oid_wrpcPortInternalRX[] =        {5,0};
 
 /* oid_wrpcSfpTable */
-static uint8_t oid_wrpcSfpPn[] =                 {2};
-static uint8_t oid_wrpcSfpDeltaTx[] =            {3};
-static uint8_t oid_wrpcSfpDeltaRx[] =            {4};
-static uint8_t oid_wrpcSfpAlpha[] =              {5};
+static const uint8_t oid_wrpcSfpPn[] =                 {2};
+static const uint8_t oid_wrpcSfpDeltaTx[] =            {3};
+static const uint8_t oid_wrpcSfpDeltaRx[] =            {4};
+static const uint8_t oid_wrpcSfpAlpha[] =              {5};
 
 /* wrpcInitScriptConfigGroup */
-static uint8_t oid_wrpcInitScriptConfigApply[] =        {1,0};
-static uint8_t oid_wrpcInitScriptConfigLine[] =         {2,0};
+static const uint8_t oid_wrpcInitScriptConfigApply[] =        {1,0};
+static const uint8_t oid_wrpcInitScriptConfigLine[] =         {2,0};
 
 /* oid_wrpcSdbGroup */
-static uint8_t oid_wrpcSdbApply[] =              {1,0};
-static uint8_t oid_wrpcSdbMemType[] =            {2,0};
-static uint8_t oid_wrpcSdbBaseAddr[] =           {3,0};
-static uint8_t oid_wrpcSdbParam[] =              {4,0};
+static const uint8_t oid_wrpcSdbApply[] =              {1,0};
+static const uint8_t oid_wrpcSdbMemType[] =            {2,0};
+static const uint8_t oid_wrpcSdbBaseAddr[] =           {3,0};
+static const uint8_t oid_wrpcSdbParam[] =              {4,0};
 
 /* oid_wrpcNetconsoleGetGroup */
-static uint8_t oid_wrpcNetconsoleGetStatus[] =   {1,0};
-static uint8_t oid_wrpcNetconsoleGetPeerMac[] =  {2,0};
-static uint8_t oid_wrpcNetconsoleGetPeerIp[] =   {3,0};
-static uint8_t oid_wrpcNetconsoleGetPeerPort[] = {4,0};
+static const uint8_t oid_wrpcNetconsoleGetStatus[] =   {1,0};
+static const uint8_t oid_wrpcNetconsoleGetPeerMac[] =  {2,0};
+static const uint8_t oid_wrpcNetconsoleGetPeerIp[] =   {3,0};
+static const uint8_t oid_wrpcNetconsoleGetPeerPort[] = {4,0};
 
 /* oid_wrpcNetconsoleSetGroup */
-static uint8_t oid_wrpcNetconsoleSetApply[] =    {1,0};
+static const uint8_t oid_wrpcNetconsoleSetApply[] =    {1,0};
 
 /* oid_wrpcShellCmdGroup */
-static uint8_t oid_wrpcShellCmdRun[] =           {1,0};
-static uint8_t oid_wrpcShellCmdLine[] =          {2,0};
-static uint8_t oid_wrpcShellCmdMagic[] =         {3,0};
-static uint8_t oid_wrpcShellCmdReturnCode[] =    {4,0};
+static const uint8_t oid_wrpcShellCmdRun[] =           {1,0};
+static const uint8_t oid_wrpcShellCmdLine[] =          {2,0};
+static const uint8_t oid_wrpcShellCmdMagic[] =         {3,0};
+static const uint8_t oid_wrpcShellCmdReturnCode[] =    {4,0};
 
 /* NOTE: to have SNMP_GET_NEXT working properly this array has to be sorted by
 	 OIDs */
 /* wrpcVersionGroup */
-static struct snmp_oid oid_array_wrpcVersionGroup[] = {
+static const struct snmp_oid oid_array_wrpcVersionGroup[] = {
 	OID_FIELD_VAR(   oid_wrpcVersionHwType,      get_pp,       NO_SET,   ASN_OCTET_STR, &wrc_hw_name),
 	OID_FIELD_VAR(   oid_wrpcVersionSwVersion,   get_pp,       NO_SET,   ASN_OCTET_STR, &build_revision),
 	OID_FIELD_VAR(   oid_wrpcVersionSwBuildBy,   get_pp,       NO_SET,   ASN_OCTET_STR, &build_by),
@@ -449,7 +449,7 @@ static struct snmp_oid oid_array_wrpcVersionGroup[] = {
 };
 
 /* wrpcTimeGroup */
-static struct snmp_oid oid_array_wrpcTimeGroup[] = {
+static const struct snmp_oid oid_array_wrpcTimeGroup[] = {
 	OID_FIELD_VAR(   oid_wrpcTimeTAI,            get_time,     NO_SET,   ASN_COUNTER64, TAI_NUM),
 	OID_FIELD_VAR(   oid_wrpcTimeTAIString,      get_time,     NO_SET,   ASN_OCTET_STR, TAI_STRING),
 	OID_FIELD_VAR(   oid_wrpcTimeSystemUptime,   get_time,     NO_SET,   ASN_TIMETICKS, UPTIME_NUM),
@@ -457,14 +457,14 @@ static struct snmp_oid oid_array_wrpcTimeGroup[] = {
 };
 
 /* wrpcTemperatureTable */
-static struct snmp_oid oid_array_wrpcTemperatureTable[] = {
+static const struct snmp_oid oid_array_wrpcTemperatureTable[] = {
 	OID_FIELD_VAR(   oid_wrpcTemperatureName,    get_temp,     NO_SET,   ASN_OCTET_STR, NULL),
 	OID_FIELD_VAR(   oid_wrpcTemperatureValue,   get_temp,     NO_SET,   ASN_OCTET_STR, NULL),
 	{ 0, }
 };
 
 /* wrpcSpllStatusGroup */
-static struct snmp_oid oid_array_wrpcSpllStatusGroup[] = {
+static const struct snmp_oid oid_array_wrpcSpllStatusGroup[] = {
 	OID_FIELD_VAR(   oid_wrpcSpllMode,           get_p,        NO_SET,   ASN_INTEGER,   &stats.mode),
 	OID_FIELD_VAR(   oid_wrpcSpllIrqCnt,         get_p,        NO_SET,   ASN_COUNTER,   &stats.irq_cnt),
 	OID_FIELD_VAR(   oid_wrpcSpllSeqState,       get_p,        NO_SET,   ASN_INTEGER,   &stats.seq_state),
@@ -478,7 +478,7 @@ static struct snmp_oid oid_array_wrpcSpllStatusGroup[] = {
 };
 
 /* wrpcPtpGroup */
-static struct snmp_oid oid_array_wrpcPtpGroup[] = {
+static const struct snmp_oid oid_array_wrpcPtpGroup[] = {
 	OID_FIELD_VAR(   oid_wrpcPtpServoStateN,     get_servo,    NO_SET,   ASN_INTEGER,   SERVO_STATEN), /* add standardPTP(99)? */
 	OID_FIELD_VAR(   oid_wrpcPtpClockOffsetPsHR, get_servo,    NO_SET,   ASN_INTEGER,   SERVO_CLOCKOFFSET),
 	OID_FIELD_VAR(   oid_wrpcPtpSkew,            get_servo,    NO_SET,   ASN_INTEGER,   SERVO_SKEW),
@@ -500,7 +500,7 @@ static struct snmp_oid oid_array_wrpcPtpGroup[] = {
 };
 
 /* wrpcPtpConfigGroup */
-static struct snmp_oid oid_array_wrpcPtpConfigGroup[] = {
+static const struct snmp_oid oid_array_wrpcPtpConfigGroup[] = {
 	OID_FIELD_VAR(   oid_wrpcPtpConfigRestart,   get_p,        set_ptp_restart,ASN_INTEGER, &ptp_restart_status),
 	OID_FIELD_VAR(   oid_wrpcPtpConfigApply,     get_p,        set_ptp_config, ASN_INTEGER, &ptp_config_apply_status),
 	OID_FIELD_VAR(   oid_wrpcPtpConfigSfpPn,     get_p,        set_p,    ASN_OCTET_STR, &snmp_ptp_config.pn),
@@ -511,7 +511,7 @@ static struct snmp_oid oid_array_wrpcPtpConfigGroup[] = {
 };
 
 /* wrpcPortGroup */
-static struct snmp_oid oid_array_wrpcPortGroup[] = {
+static const struct snmp_oid oid_array_wrpcPortGroup[] = {
 	OID_FIELD_VAR(   oid_wrpcPortLinkStatus,     get_port,     NO_SET,   ASN_INTEGER,   PORT_LINK_STATUS),
 	OID_FIELD_VAR(   oid_wrpcPortSfpPn,          get_sfp_pn_curr,NO_SET, ASN_OCTET_STR, NULL),
 	OID_FIELD_VAR(   oid_wrpcPortSfpInDB,        get_p,        NO_SET,   ASN_INTEGER,   &sfp_info.sfp_in_db),
@@ -522,7 +522,7 @@ static struct snmp_oid oid_array_wrpcPortGroup[] = {
 };
 
 /* wrpcSfpTable */
-static struct snmp_oid oid_array_wrpcSfpTable[] = {
+static const struct snmp_oid oid_array_wrpcSfpTable[] = {
 	OID_FIELD_VAR(   oid_wrpcSfpPn,        get_sfp,        NULL,    ASN_OCTET_STR, NULL),
 	OID_FIELD_VAR(   oid_wrpcSfpDeltaTx,   get_sfp,        NULL,    ASN_INTEGER,   NULL),
 	OID_FIELD_VAR(   oid_wrpcSfpDeltaRx,   get_sfp,        NULL,    ASN_INTEGER,   NULL),
@@ -531,14 +531,14 @@ static struct snmp_oid oid_array_wrpcSfpTable[] = {
 };
 
 /* wrpcInitScriptConfigGroup */
-static struct snmp_oid oid_array_wrpcInitScriptConfigGroup[] = {
+static const struct snmp_oid oid_array_wrpcInitScriptConfigGroup[] = {
 	OID_FIELD_VAR(   oid_wrpcInitScriptConfigApply,     get_p,        set_init_script_config, ASN_INTEGER,   &init_script_config_apply_status),
 	OID_FIELD_VAR(   oid_wrpcInitScriptConfigLine,      get_p,        set_p,                  ASN_OCTET_STR, &init_script_line),
 	{ 0, }
 };
 
 /* wrpcSdbGroup */
-static struct snmp_oid oid_array_wrpcSdbGroup[] = {
+static const struct snmp_oid oid_array_wrpcSdbGroup[] = {
 	OID_FIELD_VAR(   oid_wrpcSdbApply,    get_p,        set_sdb,  ASN_INTEGER, &sdb_apply_status),
 	OID_FIELD_VAR(   oid_wrpcSdbMemType,  get_p,        set_p,    ASN_INTEGER, &sdb_mem_type),
 	OID_FIELD_VAR(   oid_wrpcSdbBaseAddr, get_p,        set_p,    ASN_INTEGER, &sdb_base_addr),
@@ -547,7 +547,7 @@ static struct snmp_oid oid_array_wrpcSdbGroup[] = {
 };
 
 /* wrpcNetconsoleGetGroup */
-static struct snmp_oid oid_array_wrpcNetconsoleGetGroup[] = {
+static const struct snmp_oid oid_array_wrpcNetconsoleGetGroup[] = {
 	OID_FIELD_VAR(   oid_wrpcNetconsoleGetStatus,   get_p,        NO_SET,         ASN_INTEGER,   &netconsole_status),
 	OID_FIELD_VAR(   oid_wrpcNetconsoleGetPeerMac,  get_mac,      NO_SET,         ASN_OCTET_STR, &netconsole_sock_addr.mac),
 	OID_FIELD_VAR(   oid_wrpcNetconsoleGetPeerIp,   get_p,        NO_SET,         ASN_IPADDRESS, &netconsole_udp_addr.daddr),
@@ -556,13 +556,13 @@ static struct snmp_oid oid_array_wrpcNetconsoleGetGroup[] = {
 };
 
 /* wrpcNetconsoleSetGroup */
-static struct snmp_oid oid_array_wrpcNetconsoleSetGroup[] = {
+static const struct snmp_oid oid_array_wrpcNetconsoleSetGroup[] = {
 	OID_FIELD_VAR(   oid_wrpcNetconsoleSetApply,   get_p,        set_netconsole, ASN_INTEGER,   &netconsole_apply_status),
 	{ 0, }
 };
 
 /* wrpcShellCmdGroup */
-static struct snmp_oid oid_array_wrpcShellCmdGroup[] = {
+static const struct snmp_oid oid_array_wrpcShellCmdGroup[] = {
 	OID_FIELD_VAR(   oid_wrpcShellCmdRun,        get_p, set_shell_cmd, ASN_INTEGER,   &shell_cmd_apply_status),
 	OID_FIELD_VAR(   oid_wrpcShellCmdLine,       get_p, set_p,         ASN_OCTET_STR, &shell_cmd_line),
 	OID_FIELD_VAR(   oid_wrpcShellCmdMagic,      get_p, set_p,         ASN_INTEGER,   &shell_cmd_magic),
@@ -570,47 +570,47 @@ static struct snmp_oid oid_array_wrpcShellCmdGroup[] = {
 	{ 0, }
 };
 
-static struct snmp_oid oid_array_wrpcAuxRoTable[] = {
+static const struct snmp_oid oid_array_wrpcAuxRoTable[] = {
 	OID_FIELD_VAR(NULL, get_aux_diag, NO_SET, ASN_UNSIGNED, AUX_DIAG_RO),
 	{ 0, }
 };
 
-static struct snmp_oid oid_array_wrpcAuxRwTable[] = {
+static const struct snmp_oid oid_array_wrpcAuxRwTable[] = {
 	OID_FIELD_VAR(NULL, get_aux_diag, set_aux_diag, ASN_UNSIGNED, AUX_DIAG_RW),
 	{ 0, }
 };
 
 
 /* Array of groups and tables */
-static struct snmp_oid_limb oid_limb_array[] = {
-	OID_LIMB_FIELD(oid_wrpcVersionGroup,     func_group, oid_array_wrpcVersionGroup),
-	OID_LIMB_FIELD(oid_wrpcTimeGroup,        func_group, oid_array_wrpcTimeGroup),
+static const struct snmp_oid_limb oid_limb_array[] = {
+	OID_LIMB_FIELD(oid_wrpcVersionGroup,     func_group, (void *)oid_array_wrpcVersionGroup),
+	OID_LIMB_FIELD(oid_wrpcTimeGroup,        func_group, (void *)oid_array_wrpcTimeGroup),
 #ifdef CONFIG_TEMP_SENSORS
-	OID_LIMB_FIELD(oid_wrpcTemperatureTable, func_table, oid_array_wrpcTemperatureTable),
+	OID_LIMB_FIELD(oid_wrpcTemperatureTable, func_table, (void *)oid_array_wrpcTemperatureTable),
 #endif
-	OID_LIMB_FIELD(oid_wrpcSpllStatusGroup,  func_group, oid_array_wrpcSpllStatusGroup),
-	OID_LIMB_FIELD(oid_wrpcPtpGroup,         func_group, oid_array_wrpcPtpGroup),
-	OID_LIMB_FIELD(oid_wrpcPtpConfigGroup,   func_group, oid_array_wrpcPtpConfigGroup),
-	OID_LIMB_FIELD(oid_wrpcPortGroup,        func_group, oid_array_wrpcPortGroup),
-	OID_LIMB_FIELD(oid_wrpcSfpTable,         func_table, oid_array_wrpcSfpTable),
+	OID_LIMB_FIELD(oid_wrpcSpllStatusGroup,  func_group, (void *)oid_array_wrpcSpllStatusGroup),
+	OID_LIMB_FIELD(oid_wrpcPtpGroup,         func_group, (void *)oid_array_wrpcPtpGroup),
+	OID_LIMB_FIELD(oid_wrpcPtpConfigGroup,   func_group, (void *)oid_array_wrpcPtpConfigGroup),
+	OID_LIMB_FIELD(oid_wrpcPortGroup,        func_group, (void *)oid_array_wrpcPortGroup),
+	OID_LIMB_FIELD(oid_wrpcSfpTable,         func_table, (void *)oid_array_wrpcSfpTable),
 #if defined(CONFIG_SNMP_INIT) && defined(CONFIG_SNMP_SET)
-	OID_LIMB_FIELD(oid_wrpcInitScriptConfigGroup, func_group, oid_array_wrpcInitScriptConfigGroup),
+	OID_LIMB_FIELD(oid_wrpcInitScriptConfigGroup, func_group, (void *)oid_array_wrpcInitScriptConfigGroup),
 #endif
 #if defined(CONFIG_SNMP_SDB) && defined(CONFIG_SNMP_SET)
-	OID_LIMB_FIELD(oid_wrpcSdbGroup,         func_group, oid_array_wrpcSdbGroup),
+	OID_LIMB_FIELD(oid_wrpcSdbGroup,         func_group, (void *)oid_array_wrpcSdbGroup),
 #endif
 #ifdef CONFIG_SNMP_NETCONSOLE
-	OID_LIMB_FIELD(oid_wrpcNetconsoleGetGroup,  func_group, oid_array_wrpcNetconsoleGetGroup),
+	OID_LIMB_FIELD(oid_wrpcNetconsoleGetGroup,  func_group, (void *)oid_array_wrpcNetconsoleGetGroup),
 #endif
 #if defined(CONFIG_SNMP_NETCONSOLE) && defined(CONFIG_SNMP_SET)
-	OID_LIMB_FIELD(oid_wrpcNetconsoleSetGroup,  func_group, oid_array_wrpcNetconsoleSetGroup),
+	OID_LIMB_FIELD(oid_wrpcNetconsoleSetGroup,  func_group, (void *)oid_array_wrpcNetconsoleSetGroup),
 #endif
 #if defined(CONFIG_SNMP_CMD) && defined(CONFIG_SNMP_SET)
-	OID_LIMB_FIELD(oid_wrpcShellCmdGroup,    func_group, oid_array_wrpcShellCmdGroup),
+	OID_LIMB_FIELD(oid_wrpcShellCmdGroup,    func_group, (void *)oid_array_wrpcShellCmdGroup),
 #endif
 #ifdef CONFIG_SNMP_AUX_DIAG
-	OID_LIMB_FIELD(oid_wrpcAuxRoTable,       func_aux_diag, oid_array_wrpcAuxRoTable),
-	OID_LIMB_FIELD(oid_wrpcAuxRwTable,       func_aux_diag, oid_array_wrpcAuxRwTable),
+	OID_LIMB_FIELD(oid_wrpcAuxRoTable,       func_aux_diag, (void *)oid_array_wrpcAuxRoTable),
+	OID_LIMB_FIELD(oid_wrpcAuxRwTable,       func_aux_diag, (void *)oid_array_wrpcAuxRwTable),
 #endif
 	{ 0, }
 };
@@ -1837,7 +1837,7 @@ static uint8_t match_array[] = {
 };
 
 
-static void print_oid_verbose(uint8_t *oid, int len)
+static void print_oid_verbose(const uint8_t *oid, int len)
 {
 	/*uint8_t * oid_end = oid + len;*/
 	int i = 0;
@@ -1909,7 +1909,7 @@ static uint8_t snmp_prepare_error(uint8_t *buf, uint8_t error)
 /* And, now, work out your generic frame responder... */
 static int snmp_respond(uint8_t *buf)
 {
-	struct snmp_oid_limb *oid_limb = NULL;
+	const struct snmp_oid_limb *oid_limb = NULL;
 	uint8_t *newbuf = NULL;
 	uint8_t *new_oid;
 	uint8_t *buf_oid_len;

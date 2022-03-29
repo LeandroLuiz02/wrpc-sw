@@ -52,6 +52,7 @@ SECTIONS
 	*(.rdata)
 	*(.rodata)
 	*(.rodata.*)
+	*(.srodata.*)
 	*(.gnu.linkonce.r.*)
     } > ram
 
@@ -107,7 +108,6 @@ SECTIONS
     {
 	*(.sdata)
 	*(.sdata.*)
-	*(.srodata.*)
 	*(.gnu.linkonce.s.*)
 	. = ALIGN(4);
     } > ram
