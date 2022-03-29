@@ -214,11 +214,14 @@ config.o: .config $(AUTOCONF)
 	$(OBJCOPY) -I binary $(OBJCOPY-TARGET-y) .config.bin $@
 	rm -f .config.bin
 
-%.bin: %.elf
-	${OBJCOPY} -O binary $^ $@
+GENRAM_ENDIAN_FLAG-$(CONFIG_ARCH_LM32) =
+GENRAM_ENDIAN_FLAG-$(CONFIG_ARCH_RISCV) ?= -l
 
-%.bram: tools %.bin
-	./tools/genraminit $*.bin $(CONFIG_RAMSIZE) > $@
+%.bin: %.elf
+	${OBJCOPY} -O binary $< $@
+
+%.bram: %.bin tools
+	./tools/genraminit $(GENRAM_ENDIAN_FLAG-y) $< $(CONFIG_RAMSIZE) > $@
 
 %.vhd: tools %.bin
 	./tools/genramvhd -s $(CONFIG_RAMSIZE) $*.bin > $@
