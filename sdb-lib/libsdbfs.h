@@ -30,8 +30,6 @@ struct sdbfs {
 	unsigned long flags;
 
 	/* The "driver" must offer some methods */
-	void *data;			/* Use this if directly mapped */
-	unsigned long datalen;		/* Length of the above array */
 	int (*read)(struct sdbfs *fs, int offset, void *buf, int count);
 	int (*write)(struct sdbfs *fs, int offset, void *buf, int count);
 	int (*erase)(struct sdbfs *fs, int offset, int count);
@@ -53,21 +51,13 @@ struct sdbfs {
 /* Some flags are set by the user, some (convert32) by the library */
 #define SDBFS_F_VERBOSE		0x0001 /* not really used yet */
 #define SDBFS_F_CONVERT32	0x0002 /* swap SDB words as they are read */
-#define SDBFS_F_ZEROBASED	0x0004 /* zero is a valid data pointer */
 
 /* Defined in glue.c */
-int sdbfs_dev_create(struct sdbfs *fs);
-int sdbfs_dev_destroy(struct sdbfs *fs);
-struct sdbfs *sdbfs_dev_find(const char *name);
-unsigned long sdbfs_find_name(struct sdbfs *fs, const char *name);
-unsigned long sdbfs_find_id(struct sdbfs *fs, uint64_t vid, uint32_t did);
-int sdbfs_open_name(struct sdbfs *fs, const char *name);
 int sdbfs_open_id(struct sdbfs *fs, uint64_t vid, uint32_t did);
 int sdbfs_close(struct sdbfs *fs);
 struct sdb_device *sdbfs_scan(struct sdbfs *fs, int newscan);
 
 /* Defined in access.c */
-int sdbfs_fstat(struct sdbfs *fs, struct sdb_device *record_return);
 int sdbfs_fread(struct sdbfs *fs, int offset, void *buf, int count);
 int sdbfs_fwrite(struct sdbfs *fs, int offset, void *buf, int count);
 int sdbfs_ferase(struct sdbfs *fs, int offset, int count);

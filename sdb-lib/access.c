@@ -11,14 +11,6 @@
 /* To avoid many #ifdef and associated mess, all headers are included there */
 #include "libsdbfs.h"
 
-int sdbfs_fstat(struct sdbfs *fs, struct sdb_device *record_return)
-{
-	if (!fs->currentp)
-		return -ENOENT;
-	memcpy(record_return, fs->currentp, sizeof(*record_return));
-	return 0;
-}
-
 int sdbfs_fread(struct sdbfs *fs, int offset, void *buf, int count)
 {
 	int ret;
@@ -29,11 +21,7 @@ int sdbfs_fread(struct sdbfs *fs, int offset, void *buf, int count)
 		offset = fs->read_offset;
 	if (offset + count > fs->f_len)
 		count = fs->f_len - offset;
-	ret = count;
-	if (fs->data)
-		memcpy(buf, fs->data + fs->f_offset + offset, count);
-	else
-		ret = fs->read(fs, fs->f_offset + offset, buf, count);
+	ret = fs->read(fs, fs->f_offset + offset, buf, count);
 	if (ret > 0)
 		fs->read_offset = offset + ret;
 	return ret;
@@ -49,11 +37,7 @@ int sdbfs_fwrite(struct sdbfs *fs, int offset, void *buf, int count)
 		offset = fs->read_offset;
 	if (offset + count > fs->f_len)
 		count = fs->f_len - offset;
-	ret = count;
-	if (fs->data)
-		memcpy(fs->data + fs->f_offset + offset, buf, count);
-	else
-		ret = fs->write(fs, fs->f_offset + offset, buf, count);
+	ret = fs->write(fs, fs->f_offset + offset, buf, count);
 	if (ret > 0)
 		fs->read_offset = offset + ret;
 	return ret;
@@ -69,11 +53,7 @@ int sdbfs_ferase(struct sdbfs *fs, int offset, int count)
 		offset = fs->read_offset;
 	if (offset + count > fs->f_len)
 		count = fs->f_len - offset;
-	ret = count;
-	if (fs->data)
-		memset(fs->data + fs->f_offset + offset, 0xFF, count);
-	else
-		ret = fs->erase(fs, fs->f_offset + offset, count);
+	ret = fs->erase(fs, fs->f_offset + offset, count);
 	if (ret > 0)
 		fs->read_offset = offset + ret;
 	return ret;
