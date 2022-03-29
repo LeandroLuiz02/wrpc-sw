@@ -1208,6 +1208,7 @@ static int get_i32sat_pp(uint8_t *buf, struct snmp_oid *obj)
 
 static int get_temp(uint8_t *buf, struct snmp_oid *obj)
 {
+	#if 0
 	struct wrc_temp_sensor *p;
 	int l = 0, i = TABLE_FIRST_ROW;
 	int32_t t;
@@ -1218,7 +1219,6 @@ static int get_temp(uint8_t *buf, struct snmp_oid *obj)
 	row = obj->oid_match[TABLE_ROW];
 	col = obj->oid_match[TABLE_COL];
 	snmp_verbose("%s: row%d, col%d\n", __func__, row, col);
-	#if 0
 	for (p = wrc_temp_getnext(NULL); p; p = wrc_temp_getnext(p), i++) {
 		if (row == i) {
 			t = p->t;

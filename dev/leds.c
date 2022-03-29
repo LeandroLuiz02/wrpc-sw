@@ -26,10 +26,8 @@
 
 #include "dev/gpio.h"
 #include "dev/leds.h"
-#ifndef BOARD_MAX_LEDS
-#warning Please define BOARD_MAX_LEDS!
-#define BOARD_MAX_LEDS 1
-#endif
+
+#ifdef BOARD_MAX_LEDS
 
 static struct led_device *leds[BOARD_MAX_LEDS];
 
@@ -119,12 +117,12 @@ static void led_update_single(struct led_device *led)
             if( led->blink_period == 0 )
                 break;
 
-                t %= led->blink_period;
-                v = t < led->blink_period_on ? 1 : 0;
-                if (led->type & LED_TYPE_INVERT)
+	    t %= led->blink_period;
+	    v = t < led->blink_period_on ? 1 : 0;
+	    if (led->type & LED_TYPE_INVERT)
                     v = 1 - v;
 
-                gen_gpio_out(led->pins[i], v);
+	    gen_gpio_out(led->pins[i], v);
 
             break;
         }
@@ -142,3 +140,4 @@ void leds_update()
         if (leds[i])
             led_update_single(leds[i]);
 }
+#endif /* BOARD_MAX_LEDS */

@@ -30,7 +30,7 @@ struct console_uart_priv_data
     void (*mode_switch_hook)( int is_binary );
 };
 
-static struct console_uart_priv_data console_uart_priv, console_uart_priv_2nd;
+static struct console_uart_priv_data console_uart_priv;
 struct console_device console_uart_dev, console_uart_2nd;
 struct console_device* console_devs[BOARD_MAX_CONSOLE_DEVICES];
 static struct console_device console_netconsole_dev;

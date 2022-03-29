@@ -138,7 +138,7 @@ obj-$(CONFIG_ARCH_RISCV) += check-error.o
 # add system check functions like stack overflow and check reset
 obj-y += system_checks.o
 
-CFLAGS = $(cflags-y) -Wall -Wstrict-prototypes \
+CFLAGS = $(cflags-y) -Wall -Werror -Wstrict-prototypes \
 	-ffunction-sections -fdata-sections -Os \
 	-include include/wrc.h -ggdb 
 
@@ -190,7 +190,7 @@ $(obj-ppsi): gitmodules
 		CPU_ARCH=$(CPU_ARCH) \
 
 $(OUTPUT).elf: $(LDS-y) $(AUTOCONF) gitmodules config.o $(OBJS)
-	$(CC) $(CFLAGS) -D__GIT_VER__="\"$(GIT_VER)\"" -D__GIT_USR__="\"$(GIT_USR)\"" -c revision.c
+	$(CC) $(CFLAGS) -D__GIT_VER__="\"$(GIT_VER)\"" -D__GIT_USR__="\"$(GIT_USR)\"" -Wno-error -c revision.c
 	${CC} -Wl,-Map,$(OUTPUT).map -o $@ revision.o config.o $(OBJS) $(LDFLAGS)
 	${OBJDUMP} -d $(OUTPUT).elf > $(OUTPUT)_disasm.S
 	$(SIZE) $@

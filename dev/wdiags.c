@@ -19,7 +19,7 @@
 #define WDIAGS_VERSION 2
 
 #if defined(BASE_WDIAGS_PRIV)
-	static void *wdiags_base = BASE_WDIAGS_PRIV;
+static void *wdiags_base = (void *)(BASE_WDIAGS_PRIV);
 #else
 	static void *wdiags_base = NULL;
 #endif
