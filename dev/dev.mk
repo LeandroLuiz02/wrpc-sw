@@ -23,6 +23,7 @@ obj-$(CONFIG_EMBEDDED_NODE) += \
 	dev/ltc695x.o \
 	dev/ad9520.o \
 	dev/i2c_eeprom.o \
+	dev/sdbfs.o \
 	dev/storage.o \
 	dev/storage-flash.o \
 	dev/storage-fram.o \

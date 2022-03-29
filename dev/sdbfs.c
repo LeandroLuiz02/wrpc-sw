@@ -101,6 +101,43 @@ int sdbfs_open_id(struct sdbfs *fs, uint64_t vid, uint32_t did)
 	return -ENOENT;
 }
 
+
+int sdbfs_fread(struct sdbfs *fs, int offset, void *buf, int count)
+{
+	int ret;
+
+	if (!fs->currentp)
+		return -ENOENT;
+	if (offset + count > fs->f_len)
+		count = fs->f_len - offset;
+	ret = fs->read(fs, fs->f_offset + offset, buf, count);
+	return ret;
+}
+
+int sdbfs_fwrite(struct sdbfs *fs, int offset, void *buf, int count)
+{
+	int ret;
+
+	if (!fs->currentp)
+		return -ENOENT;
+	if (offset + count > fs->f_len)
+		count = fs->f_len - offset;
+	ret = fs->write(fs, fs->f_offset + offset, buf, count);
+	return ret;
+}
+
+int sdbfs_ferase(struct sdbfs *fs, int offset, int count)
+{
+	int ret;
+
+	if (!fs->currentp)
+		return -ENOENT;
+	if (offset + count > fs->f_len)
+		count = fs->f_len - offset;
+	ret = fs->erase(fs, fs->f_offset + offset, count);
+	return ret;
+}
+
 int sdbfs_close(struct sdbfs *fs)
 {
 	fs->currentp = NULL;

@@ -138,10 +138,6 @@ obj-$(CONFIG_ARCH_RISCV) += check-error.o
 # add system check functions like stack overflow and check reset
 obj-y += system_checks.o
 
-# WR node has SDB support, WR switch does not
-obj-$(CONFIG_WR_NODE) += sdb-lib/libsdbfs.a
-cflags-$(CONFIG_WR_NODE) += -Isdb-lib
-
 CFLAGS = $(cflags-y) -Wall -Wstrict-prototypes \
 	-ffunction-sections -fdata-sections -Os \
 	-include include/wrc.h -ggdb 
@@ -193,9 +189,6 @@ $(obj-ppsi): gitmodules
 		USER_CFLAGS="$(PPSI_USER_CFLAGS)" \
 		CPU_ARCH=$(CPU_ARCH) \
 
-sdb-lib/libsdbfs.a:
-	$(MAKE) -C sdb-lib CPU_ARCH=$(CPU_ARCH) USE-COMP-INSTR-y=$(USE-COMP-INSTR-y)
-
 $(OUTPUT).elf: $(LDS-y) $(AUTOCONF) gitmodules config.o $(OBJS)
 	$(CC) $(CFLAGS) -D__GIT_VER__="\"$(GIT_VER)\"" -D__GIT_USR__="\"$(GIT_USR)\"" -c revision.c
 	${CC} -Wl,-Map,$(OUTPUT).map -o $@ revision.o config.o $(OBJS) $(LDFLAGS)
@@ -237,7 +230,6 @@ clean: boards-clean
 		$(OUTPUT).bin rules-*.bin \
 		$(OUTPUT).bram $(OUTPUT).vhd $(OUTPUT).mif $(OUTPUT)_disasm.S
 	$(MAKE) -C $(PPSI) clean
-	$(MAKE) -C sdb-lib clean
 	$(MAKE) -C tools clean
 	$(MAKE) -C liblinux clean
 	$(MAKE) -C liblinux/extest clean

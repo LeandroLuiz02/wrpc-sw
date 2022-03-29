@@ -50,7 +50,7 @@ wrpc-w1-write: wrpc-w1-write.c ../dev/w1.c ../dev/w1-eeprom.c ../dev/w1-hw.c
 eb-w1-write: eb-w1-write.c ../dev/w1.c ../dev/w1-eeprom.c eb-w1.c
 	$(CC) $(CFLAGS) -I $(EB) $^ $(LDFLAGS) -o $@ -L $(EB)/.libs -letherbone
 
-GENSDBFS_SRCS = gensdbfs.c ../sdb-lib/access.c ../sdb-lib/glue.c
+GENSDBFS_SRCS = gensdbfs.c
 
 gensdbfs: $(GENSDBFS_SRCS)
 	${CC} $(CFLAGS) -o $@ $(GENSDBFS_SRCS)
