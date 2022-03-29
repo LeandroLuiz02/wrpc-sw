@@ -12,7 +12,6 @@
 
 #include <sdb.h> /* Please point your "-I" to some sensible place */
 
-#define SDBFS_DEPTH 4 /* Max number of subdirectory depth */
 /*
  * Data structures: please not that the library intself doesn't use
  * malloc, so it's the caller who must deal withallocation/removal.
@@ -23,11 +22,9 @@
 struct sdbfs {
 
 	/* Some fields are informative */
-	char *name;			/* may be null */
 	void *drvdata;			/* driver may need some detail.. */
 	unsigned long blocksize;
 	unsigned long entrypoint;
-	unsigned long flags;
 
 	/* The "driver" must offer some methods */
 	int (*read)(struct sdbfs *fs, int offset, void *buf, int count);
@@ -39,18 +36,11 @@ struct sdbfs {
 	struct sdb_device current_record;
 	unsigned long f_len;
 	unsigned long f_offset;		/* start of file */
-	unsigned long read_offset;	/* current location */
-	struct sdbfs *next;
-	/* The following ones are directory-aware */
-	unsigned long base[SDBFS_DEPTH];	/* for relative addresses */
-	unsigned long this[SDBFS_DEPTH];	/* current sdb record */
-	int nleft[SDBFS_DEPTH];
-	int depth;
-};
 
-/* Some flags are set by the user, some (convert32) by the library */
-#define SDBFS_F_VERBOSE		0x0001 /* not really used yet */
-#define SDBFS_F_CONVERT32	0x0002 /* swap SDB words as they are read */
+	/* The following ones are directory-aware */
+	unsigned long this;	/* current sdb record */
+	int nleft;
+};
 
 /* Defined in glue.c */
 int sdbfs_open_id(struct sdbfs *fs, uint64_t vid, uint32_t did);

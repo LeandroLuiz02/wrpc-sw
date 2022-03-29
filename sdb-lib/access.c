@@ -17,13 +17,9 @@ int sdbfs_fread(struct sdbfs *fs, int offset, void *buf, int count)
 
 	if (!fs->currentp)
 		return -ENOENT;
-	if (offset < 0)
-		offset = fs->read_offset;
 	if (offset + count > fs->f_len)
 		count = fs->f_len - offset;
 	ret = fs->read(fs, fs->f_offset + offset, buf, count);
-	if (ret > 0)
-		fs->read_offset = offset + ret;
 	return ret;
 }
 
@@ -33,13 +29,9 @@ int sdbfs_fwrite(struct sdbfs *fs, int offset, void *buf, int count)
 
 	if (!fs->currentp)
 		return -ENOENT;
-	if (offset < 0)
-		offset = fs->read_offset;
 	if (offset + count > fs->f_len)
 		count = fs->f_len - offset;
 	ret = fs->write(fs, fs->f_offset + offset, buf, count);
-	if (ret > 0)
-		fs->read_offset = offset + ret;
 	return ret;
 }
 
@@ -49,12 +41,8 @@ int sdbfs_ferase(struct sdbfs *fs, int offset, int count)
 
 	if (!fs->currentp)
 		return -ENOENT;
-	if (offset < 0)
-		offset = fs->read_offset;
 	if (offset + count > fs->f_len)
 		count = fs->f_len - offset;
 	ret = fs->erase(fs, fs->f_offset + offset, count);
-	if (ret > 0)
-		fs->read_offset = offset + ret;
 	return ret;
 }
