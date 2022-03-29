@@ -12,6 +12,7 @@
 #include <storage.h>
 
 #include "types.h"
+#include "dev/endpoint.h"
 #include <sdb.h>
 
 #include <libsdbfs.h>

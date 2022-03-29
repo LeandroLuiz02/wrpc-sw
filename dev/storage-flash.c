@@ -26,29 +26,10 @@ static const int32_t spi_flash_default_entry_points[] =
 				0x600000,	/* after SVEC AFPGA bitstream */
 				-1 };
 
-/* Functions for Flash access */
-static int sdb_flash_read(struct storage_device *dev, int offset, void *buf, int count)
-{
-	struct spi_flash_device *priv = (struct spi_flash_device* ) dev->priv;
-	return spi_flash_read( priv ,offset, buf, count);
-}
-
-static int sdb_flash_write(struct storage_device *dev, int offset, void *buf, int count)
-{
-	struct spi_flash_device *priv = (struct spi_flash_device* ) dev->priv;
-	return spi_flash_write( priv, offset, buf, count);
-}
-
-static int sdb_flash_erase(struct storage_device *dev, int offset, int count)
-{
-	struct spi_flash_device *priv = (struct spi_flash_device* ) dev->priv;
-	return spi_flash_erase( priv, offset, count);
-}
-
 static const struct storage_rwops spi_flash_rwops = {
-	sdb_flash_read,
-	sdb_flash_write,
-	sdb_flash_erase
+	(void *)spi_flash_read,
+	(void *)spi_flash_write,
+	(void *)spi_flash_erase
 };
 
 void storage_spiflash_create(struct storage_device *dev, struct spi_flash_device *flash)

@@ -10,6 +10,7 @@
 
 /* To avoid many #ifdef and associated mess, all headers are included there */
 #include "libsdbfs.h"
+#include "storage.h"
 
 /*
  * To open by name or by ID we need to scan the tree. The scan
@@ -24,9 +25,7 @@ static struct sdb_device *sdbfs_readentry(struct sdbfs *fs,
 	 * returns the pointer to the entry, which may be stored in
 	 * the fs structure itself. Only touches fs->current_record.
 	 */
-	if (!fs->read)
-		return NULL;
-	fs->read(fs, offset, &fs->current_record, sizeof(fs->current_record));
+	fs->dev->rwops->read(fs->dev->priv, offset, &fs->current_record, sizeof(fs->current_record));
 
 	return &fs->current_record;
 }
@@ -110,7 +109,7 @@ int sdbfs_fread(struct sdbfs *fs, int offset, void *buf, int count)
 		return -ENOENT;
 	if (offset + count > fs->f_len)
 		count = fs->f_len - offset;
-	ret = fs->read(fs, fs->f_offset + offset, buf, count);
+	ret = fs->dev->rwops->read(fs->dev->priv, fs->f_offset + offset, buf, count);
 	return ret;
 }
 
@@ -122,7 +121,7 @@ int sdbfs_fwrite(struct sdbfs *fs, int offset, void *buf, int count)
 		return -ENOENT;
 	if (offset + count > fs->f_len)
 		count = fs->f_len - offset;
-	ret = fs->write(fs, fs->f_offset + offset, buf, count);
+	ret = fs->dev->rwops->write(fs->dev->priv, fs->f_offset + offset, buf, count);
 	return ret;
 }
 
@@ -134,7 +133,7 @@ int sdbfs_ferase(struct sdbfs *fs, int offset, int count)
 		return -ENOENT;
 	if (offset + count > fs->f_len)
 		count = fs->f_len - offset;
-	ret = fs->erase(fs, fs->f_offset + offset, count);
+	ret = fs->dev->rwops->erase(fs->dev->priv, fs->f_offset + offset, count);
 	return ret;
 }
 
