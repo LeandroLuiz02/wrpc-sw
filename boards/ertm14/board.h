@@ -82,8 +82,6 @@ int board_update(void);
 extern unsigned char *BASE_MINIC;
 extern unsigned char *BASE_EP;
 
-#define SDB_ADDRESS 0x50000
-
 #define FMC_EEPROM_ADR 0x50
 
 #define SDBFS_REC 5

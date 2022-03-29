@@ -57,8 +57,6 @@
 
 #define CONSOLE_UART_BAUDRATE 115200
 
-#define SDB_ADDRESS 0x30000
-
 #define CFG_EEPROM_ADR 0x50
 #define MAC_CHIP_ADR   0x51
 

@@ -101,10 +101,6 @@ char *wrc_hw_name = wrc_global.wrc_hw_name;
 
 static void wrc_initialize(void)
 {
-#ifdef CONFIG_USE_SDB
-	sdb_find_devices();
-#endif
-
 	console_init();
 	timer_init(1);
 	spll_very_init();
@@ -214,9 +210,6 @@ static int ui_update(void)
 void init_hw_after_reset(void)
 {
 	/* Ok, now init the devices so we can printf and delay */
-#ifdef CONFIG_USE_SDB
-	sdb_find_devices();
-#endif
 	console_init();
 	timer_init(1);
 }

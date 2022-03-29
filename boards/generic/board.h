@@ -76,8 +76,6 @@
 
 #define CONSOLE_UART_BAUDRATE 115200
 
-#define SDB_ADDRESS 0x30000
-
 #define FMC_EEPROM_ADR 0x50
 
 #define SDBFS_REC 5

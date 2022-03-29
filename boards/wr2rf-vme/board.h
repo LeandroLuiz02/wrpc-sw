@@ -57,8 +57,6 @@ int board_update(void);
 
 #define ERTM14_MAX_CONFIGS 8
 
-#define SDB_ADDRESS 0x50000
-
 #define FMC_EEPROM_ADR 0x50
 
 #define SDBFS_REC 5
