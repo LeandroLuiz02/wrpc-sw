@@ -6,7 +6,6 @@ CFLAGS = -Wall -ggdb -I../include -I../liblinux -I../liblinux/extest
 CFLAGS += -D__GIT_VER__="\"$(GIT_VER)\"" -D__GIT_USR__="\"$(GIT_USR)\""
 CFLAGS += -DBUILD_HOST
 LDFLAGS = $(TOOLS_LDFLAGS) -lutil -L../liblinux -ldevmap -L../liblinux/extest -lextest
-LDFLAGS += -lreadline
 ALL    = genraminit genramvhd genrammif
 #ALL   += wrpc-w1-read wrpc-w1-write
 ALL   += pfilter-builder
@@ -74,10 +73,10 @@ dump_mem_ppsi_wrpc.o: ../ppsi/tools/dump_mem_ppsi_wrpc.c
 dump_mem_ppsi_wrpc.o: CFLAGS+=-include $(AUTOCONF) -I../ppsi/include -I../ppsi/arch-wrpc -I../ppsi/arch-wrpc/include -I.
 
 wr-streamers: wr-streamers.c
-	$(CC) $(CFLAGS)  $^ $(LDFLAGS) -o $@
+	$(CC) $(CFLAGS)  $^ $(LDFLAGS) -o $@ -lreadline
 
 wrpc-diags: wrpc-diags.c
-	$(CC) $(CFLAGS)  $^ $(LDFLAGS) -o $@
+	$(CC) $(CFLAGS)  $^ $(LDFLAGS) -o $@ -lreadline
 
 wrpc-vuart: wrpc-vuart.c
 	$(CC) $(CFLAGS) -Werror  $^ $(LDFLAGS) -o $@
