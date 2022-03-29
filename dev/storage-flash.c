@@ -45,7 +45,7 @@ static int sdb_flash_erase(struct storage_device *dev, int offset, int count)
 	return spi_flash_erase( priv, offset, count);
 }
 
-const struct storage_rwops spi_flash_rwops = {
+static const struct storage_rwops spi_flash_rwops = {
 	sdb_flash_read,
 	sdb_flash_write,
 	sdb_flash_erase
@@ -53,13 +53,11 @@ const struct storage_rwops spi_flash_rwops = {
 
 void storage_spiflash_create(struct storage_device *dev, struct spi_flash_device *flash)
 {
-	static const char* spi_flash_str = "spi-flash";
-	dev->name = (char *) spi_flash_str;
+	dev->name = "spi-flash";
 	dev->priv = flash;
-	dev->rwops = (struct storage_rwops *) &spi_flash_rwops;
+	dev->rwops = &spi_flash_rwops;
 	dev->size = flash->size;
 	dev->cfg_entry = flash->cfg_entry;
 	dev->block_size = flash->sector_size;
-	dev->entry_points = (int32_t *) spi_flash_default_entry_points;
-	dev->flags = STORAGE_FLAG_DEVICE_OK;
+	dev->entry_points = spi_flash_default_entry_points;
 }

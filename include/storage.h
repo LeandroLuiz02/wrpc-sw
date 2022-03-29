@@ -44,6 +44,13 @@
 #define HAS_GENSDBFS 0
 #endif
 
+/* Well-knonw SDB files.  */
+#define SDB_VENDOR	htonll(0x46696c6544617461LL) /* "FileData" */
+#define SDB_DEV_INIT	htonl(0x77722d69) /* wr-i (nit) */
+#define SDB_DEV_MAC	htonl(0x6d61632d) /* mac- (address) */
+#define SDB_DEV_SFP	htonl(0x7366702d) /* sfp- (database) */
+#define SDB_DEV_CALIB	htonl(0x63616c69) /* cali (bration) */
+
 
 struct storage_device;
 
@@ -70,19 +77,17 @@ struct storage_rwops
 
 struct storage_device
 {
-	char *name;
+	const char *name;
 	void *priv;
 	uint32_t block_size;
 	uint32_t size;
 	uint32_t cfg_entry;
-	int32_t *entry_points;
+	const int32_t *entry_points;
 	const struct storage_rwops *rwops;
-	int flags;
 };
 
-#define STORAGE_FLAG_DEVICE_OK (1<<0)
-
 extern struct storage_device wrc_storage_dev;
+extern struct sdbfs wrc_sdbfs;
 
 void storage_spiflash_create(struct storage_device *dev, struct spi_flash_device *flash);
 void storage_i2ceeprom_create(struct storage_device *dev, struct i2c_eeprom_device *eeprom);

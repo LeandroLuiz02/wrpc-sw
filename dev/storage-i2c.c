@@ -38,7 +38,7 @@ static int sdb_i2c_eeprom_erase(struct storage_device *dev, int offset, int coun
 }
 
 /* Functions for I2C EEPROM access */
-const struct storage_rwops i2c_eeprom_rwops = {
+static const struct storage_rwops i2c_eeprom_rwops = {
 	sdb_i2c_eeprom_read,
 	sdb_i2c_eeprom_write,
 	sdb_i2c_eeprom_erase
@@ -46,13 +46,11 @@ const struct storage_rwops i2c_eeprom_rwops = {
 
 void storage_i2ceeprom_create(struct storage_device *dev, struct i2c_eeprom_device *eeprom)
 {
-	static const char* i2c_eeprom_str = "eeprom";
-	dev->name = (char *) i2c_eeprom_str;
+	dev->name = "eeprom";
 	dev->priv = eeprom;
-	dev->rwops = (struct storage_rwops *) &i2c_eeprom_rwops;
+	dev->rwops = &i2c_eeprom_rwops;
 	dev->size = 8192;
 	dev->cfg_entry = 0;
 	dev->block_size = 32;
-	dev->entry_points = (int32_t *) i2c_eeprom_default_entry_points;
-	dev->flags = STORAGE_FLAG_DEVICE_OK;
+	dev->entry_points = i2c_eeprom_default_entry_points;
 }

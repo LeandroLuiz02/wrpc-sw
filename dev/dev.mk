@@ -28,6 +28,10 @@ obj-$(CONFIG_EMBEDDED_NODE) += \
 	dev/storage-fram.o \
 	dev/storage-w1.o \
 	dev/storage-i2c.o \
+	dev/storage-sfp.o \
+	dev/storage-cal.o \
+	dev/storage-mac.o \
+	dev/storage-init.o \
 	dev/fine_pulse_generator.o \
 	dev/netif.o \
 	dev/leds.o \
