@@ -9,19 +9,14 @@
  */
 #include <errno.h>
 #include <wrc.h>
-#include <dev/w1.h>
 #include <storage.h>
 
 #include "types.h"
-#include "dev/bb_i2c.h"
 #include "dev/endpoint.h"
 #include "dev/syscon.h"
-#include "dev/spi_flash.h"
-#include "dev/i2c_eeprom.h"
 #include <sdb.h>
 
 #include <libsdbfs.h>
-#include <dev/fram.h>
 
 /*
  * This source file is a drop-in replacement of the legacy one: it manages
@@ -32,12 +27,6 @@
 #define SDB_DEV_MAC	htonl(0x6d61632d) /* mac- (address) */
 #define SDB_DEV_SFP	htonl(0x7366702d) /* sfp- (database) */
 #define SDB_DEV_CALIB	htonl(0x63616c69) /* cali (bration) */
-
-/* constants for scanning I2C EEPROMs */
-#define EEPROM_START_ADR 0
-#define EEPROM_STOP_ADR  127
-
-#define STORAGE_FLAG_DEVICE_OK (1<<0)
 
 #ifndef BOARD_USE_CUSTOM_SDBFS
 static const uint32_t sdbfs_default_bin[] =
@@ -50,163 +39,6 @@ static const uint32_t sdbfs_default_bin[] =
 
 struct storage_device wrc_storage_dev;
 struct sdbfs wrc_sdbfs;
-
-struct storage_device;
-
-
-
-struct storage_fram_priv
-{
-	struct fram_device *dev;
-};
-
-struct storage_w1_priv
-{
-	struct w1_bus *dev;
-};
-
-
-/* Functions for Flash access */
-static int sdb_flash_read(struct storage_device *dev, int offset, void *buf, int count)
-{
-	struct spi_flash_device *priv = (struct spi_flash_device* ) dev->priv;
-	return spi_flash_read( priv ,offset, buf, count);
-}
-
-static int sdb_flash_write(struct storage_device *dev, int offset, void *buf, int count)
-{
-	struct spi_flash_device *priv = (struct spi_flash_device* ) dev->priv;
-	return spi_flash_write( priv, offset, buf, count);
-}
-
-static int sdb_flash_erase(struct storage_device *dev, int offset, int count)
-{
-	struct spi_flash_device *priv = (struct spi_flash_device* ) dev->priv;
-	return spi_flash_erase( priv, offset, count);
-}
-
-const struct storage_rwops spi_flash_rwops = {
-	sdb_flash_read,
-	sdb_flash_write,
-	sdb_flash_erase
-};
-
-const int32_t spi_flash_default_entry_points[] =
-{
-				0x000000,	/* flash base */
-				0x100,		/* second page in flash */
-				0x200,		/* IPMI with MultiRecord */
-				0x300,		/* IPMI with larger MultiRecord */
-				0x170000,	/* after first FPGA bitstream */
-				0x2e0000,	/* after MultiBoot bitstream */
-				0x600000,	/* after SVEC AFPGA bitstream */
-				-1 };
-
-const int32_t i2c_eeprom_default_entry_points[] = {0, 64, 128, 256, 512, 1024, -1 };
-/* Functions for FRAM access */
-static int sdb_fram_read(struct storage_device *dev, int offset, void *buf, int count)
-{
-	struct storage_fram_priv *priv = (struct storage_fram_priv* ) dev->priv;
-	return fram_read( priv->dev , offset, buf, count);
-}
-
-static int sdb_fram_write(struct storage_device *dev, int offset, void *buf, int count)
-{
-	struct storage_fram_priv *priv = (struct storage_fram_priv* ) dev->priv;
-	return fram_write(priv->dev, offset, buf, count);
-}
-
-static int sdb_fram_erase(struct storage_device *dev, int offset, int count)
-{
-	struct storage_fram_priv *priv = (struct storage_fram_priv* ) dev->priv;
-	return fram_erase(priv->dev, offset, count);
-}
-
-const struct storage_rwops spi_fram_rwops = {
-	sdb_fram_read,
-	sdb_fram_write,
-	sdb_fram_erase
-};
-
-
-/* The methods for W1 access */
-static int sdb_w1_read(struct storage_device *dev, int offset, void *buf, int count)
-{
-	struct storage_w1_priv *priv = (struct storage_w1_priv* ) dev->priv;
-	return w1_read_eeprom_bus(priv->dev, offset, buf, count);
-}
-
-static int sdb_w1_write(struct storage_device *dev, int offset, void *buf, int count)
-{
-	struct storage_w1_priv *priv = (struct storage_w1_priv* ) dev->priv;
-	return w1_write_eeprom_bus(priv->dev, offset, buf, count);
-}
-
-static int sdb_w1_erase(struct storage_device *dev, int offset, int count)
-{
-	struct storage_w1_priv *priv = (struct storage_w1_priv* ) dev->priv;
-	return w1_erase_eeprom_bus(priv->dev, offset, count);
-}
-
-const struct storage_rwops spi_w1_rwops = {
-	sdb_w1_read,
-	sdb_w1_write,
-	sdb_w1_erase
-};
-
-
-/* The methods for I2C access */
-static int sdb_i2c_eeprom_read(struct storage_device *dev, int offset, void *buf, int count)
-{
-	struct i2c_eeprom_device *priv = (struct i2c_eeprom_device* ) dev->priv;
-	return i2c_eeprom_read(priv, offset, buf, count);
-}
-
-static int sdb_i2c_eeprom_write(struct storage_device *dev, int offset, void *buf, int count)
-{
-	struct i2c_eeprom_device *priv = (struct i2c_eeprom_device* ) dev->priv;
-	return i2c_eeprom_write(priv, offset, buf, count);
-}
-
-static int sdb_i2c_eeprom_erase(struct storage_device *dev, int offset, int count)
-{
-	struct i2c_eeprom_device *priv = (struct i2c_eeprom_device* ) dev->priv;
-	return i2c_eeprom_erase(priv, offset, count);
-}
-
-/* Functions for I2C EEPROM access */
-const struct storage_rwops i2c_eeprom_rwops = {
-	sdb_i2c_eeprom_read,
-	sdb_i2c_eeprom_write,
-	sdb_i2c_eeprom_erase
-};
-
-
-void storage_spiflash_create(struct storage_device *dev, struct spi_flash_device *flash)
-{
-	static const char* spi_flash_str = "spi-flash";
-	dev->name = (char *) spi_flash_str;
-	dev->priv = flash;
-	dev->rwops = (struct storage_rwops *) &spi_flash_rwops;
-	dev->size = flash->size;
-	dev->cfg_entry = flash->cfg_entry;
-	dev->block_size = flash->sector_size;
-	dev->entry_points = (int32_t *) spi_flash_default_entry_points;
-	dev->flags = STORAGE_FLAG_DEVICE_OK;
-}
-
-void storage_i2ceeprom_create(struct storage_device *dev, struct i2c_eeprom_device *eeprom)
-{
-	static const char* i2c_eeprom_str = "eeprom";
-	dev->name = (char *) i2c_eeprom_str;
-	dev->priv = eeprom;
-	dev->rwops = (struct storage_rwops *) &i2c_eeprom_rwops;
-	dev->size = 8192;
-	dev->cfg_entry = 0;
-	dev->block_size = 32;
-	dev->entry_points = (int32_t *) i2c_eeprom_default_entry_points;
-	dev->flags = STORAGE_FLAG_DEVICE_OK;
-}
 
 
 /*

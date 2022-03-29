@@ -24,6 +24,10 @@ obj-$(CONFIG_EMBEDDED_NODE) += \
 	dev/ad9520.o \
 	dev/i2c_eeprom.o \
 	dev/storage.o \
+	dev/storage-flash.o \
+	dev/storage-fram.o \
+	dev/storage-w1.o \
+	dev/storage-i2c.o \
 	dev/fine_pulse_generator.o \
 	dev/netif.o \
 	dev/leds.o \

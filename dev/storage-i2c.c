@@ -1,0 +1,58 @@
+/*
+ * This work is part of the White Rabbit project
+ *
+ * Copyright (C) 2012, 2013 CERN (www.cern.ch)
+ * Author: Grzegorz Daniluk <grzegorz.daniluk@cern.ch>
+ * Author: Alessandro Rubini <rubini@gnudd.com>
+ *
+ * Released according to the GNU GPL, version 2 or any later version.
+ */
+#include <errno.h>
+#include <wrc.h>
+#include <storage.h>
+
+#include "types.h"
+#include "dev/bb_i2c.h"
+#include "dev/i2c_eeprom.h"
+
+static const int32_t i2c_eeprom_default_entry_points[] = {0, 64, 128, 256, 512, 1024, -1 };
+
+
+/* The methods for I2C access */
+static int sdb_i2c_eeprom_read(struct storage_device *dev, int offset, void *buf, int count)
+{
+	struct i2c_eeprom_device *priv = (struct i2c_eeprom_device* ) dev->priv;
+	return i2c_eeprom_read(priv, offset, buf, count);
+}
+
+static int sdb_i2c_eeprom_write(struct storage_device *dev, int offset, void *buf, int count)
+{
+	struct i2c_eeprom_device *priv = (struct i2c_eeprom_device* ) dev->priv;
+	return i2c_eeprom_write(priv, offset, buf, count);
+}
+
+static int sdb_i2c_eeprom_erase(struct storage_device *dev, int offset, int count)
+{
+	struct i2c_eeprom_device *priv = (struct i2c_eeprom_device* ) dev->priv;
+	return i2c_eeprom_erase(priv, offset, count);
+}
+
+/* Functions for I2C EEPROM access */
+const struct storage_rwops i2c_eeprom_rwops = {
+	sdb_i2c_eeprom_read,
+	sdb_i2c_eeprom_write,
+	sdb_i2c_eeprom_erase
+};
+
+void storage_i2ceeprom_create(struct storage_device *dev, struct i2c_eeprom_device *eeprom)
+{
+	static const char* i2c_eeprom_str = "eeprom";
+	dev->name = (char *) i2c_eeprom_str;
+	dev->priv = eeprom;
+	dev->rwops = (struct storage_rwops *) &i2c_eeprom_rwops;
+	dev->size = 8192;
+	dev->cfg_entry = 0;
+	dev->block_size = 32;
+	dev->entry_points = (int32_t *) i2c_eeprom_default_entry_points;
+	dev->flags = STORAGE_FLAG_DEVICE_OK;
+}

@@ -80,6 +80,8 @@ struct storage_device
 	int flags;
 };
 
+#define STORAGE_FLAG_DEVICE_OK (1<<0)
+
 extern struct storage_device wrc_storage_dev;
 
 void storage_spiflash_create(struct storage_device *dev, struct spi_flash_device *flash);
