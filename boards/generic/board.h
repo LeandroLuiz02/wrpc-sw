@@ -14,7 +14,7 @@
  */
 
 #ifdef CONFIG_ARCH_RISCV
-#define DEV_BASE	0x80000000
+#define DEV_BASE	0x100000
 #elif defined CONFIG_ARCH_LM32
 #define DEV_BASE	0x40000
 #else
