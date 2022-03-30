@@ -17,7 +17,7 @@ _exception_entry:
     j      trap_entry
 
 .org WRPC_MARK
-/* Used by the dumping tool to identify byte ordering */	
+/* Used by the dumping tool to identify byte ordering */
 .ascii     "WRPC----"
 .int       0x01234567
 .short     0x89ab, 0xcdef
@@ -58,7 +58,7 @@ hdl_testbench_p:
     .word  0
 #endif
 
-.org 0x100
+.org 0x40
 
     .global _reset_handler
     .type   _reset_handler, @function

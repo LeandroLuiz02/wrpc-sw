@@ -10,15 +10,15 @@
 #define __CRT0_H__
 
 /* offsets for crt0.s */
-#define WRPC_MARK		0x80
-#define WRC_STATIC_PADDR	0x90
+#define WRPC_MARK		0x10
+#define WRC_STATIC_PADDR	0x20
 
-#define PPG_STATIC_PADDR	0x98
-#define STATS_PADDR		0x9c
-#define UPTIME_SEC_ADDR		0xa0
-#define VERSION_WRPC_ADDR	0xa4
-#define VERSION_PPSI_ADDR	0xa5
+#define PPG_STATIC_PADDR	0x28
+#define STATS_PADDR		0x2c
+#define UPTIME_SEC_ADDR		0x30
+#define VERSION_WRPC_ADDR	0x34
+#define VERSION_PPSI_ADDR	0x35
 
-#define HDL_TESTBENCH_PADDR	0xbc
+#define HDL_TESTBENCH_PADDR	0x38
 
 #endif /* __CRT0_H__ */
