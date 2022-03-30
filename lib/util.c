@@ -317,3 +317,21 @@ unsigned long long __umoddi3 (unsigned long long A, unsigned long long B)
 	volatile uint64_t x = A/B;
 	return A - (x)*B;
 }
+
+static char tolower(char c)
+{
+	if (c >= 'A' && c <= 'Z')
+		return c - 'A' + 'a';
+	return c;
+}
+
+int strcasecmp(const char *s1, const char *s2)
+{
+	while (tolower (*s1) == tolower (*s2)) {
+		if (*s1 == 0)
+			return 0;
+		s1++;
+		s2++;
+	}
+	return *s2 - *s1;
+}
