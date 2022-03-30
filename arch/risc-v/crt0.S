@@ -68,9 +68,6 @@ _entry:
     la     gp, _gp                 # Initialize global pointer
     la     sp, _fstack
 
-    la     t0, _fexception_stack
-    csrrw  t0, mscratch, t0
-
 # clear the bss segment
     la     t0, _fbss
     la     t1, _end

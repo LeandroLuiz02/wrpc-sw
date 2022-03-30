@@ -1,17 +1,14 @@
 OUTPUT_FORMAT("elf32-littleriscv")
 ENTRY(_start)
-/* Define the size of exception stack size */
-#define EXCEPTIONSTACKSIZE 0x400
-
 
 MEMORY
 {
     ram :
 	ORIGIN = 0x00000000,
-	LENGTH = CONFIG_RAMSIZE - CONFIG_STACKSIZE - EXCEPTIONSTACKSIZE
+	LENGTH = CONFIG_RAMSIZE - CONFIG_STACKSIZE
     stack :
-	ORIGIN = CONFIG_RAMSIZE - CONFIG_STACKSIZE - EXCEPTIONSTACKSIZE,
-	LENGTH = CONFIG_STACKSIZE + EXCEPTIONSTACKSIZE
+	ORIGIN = CONFIG_RAMSIZE - CONFIG_STACKSIZE
+	LENGTH = CONFIG_STACKSIZE
 }
 
 SECTIONS
@@ -23,7 +20,6 @@ SECTIONS
     /* Begining of code and text segment */
     . = 0;
     _ftext = .;
-    PROVIDE( eprol = . );
 
     /* text: Program code section */
     .text :
@@ -84,7 +80,7 @@ SECTIONS
     /*--------------------------------------------------------------------*/
 
     /* Start of initialized data segment */
-    . = ALIGN(16);
+    . = ALIGN(4);
      _fdata = .;
 
     /* data: Writable data */
@@ -100,7 +96,7 @@ SECTIONS
     _edata = .;
 
     /* Have _gp point to middle of sdata/sbss to maximize displacement range */
-    . = ALIGN(16);
+    . = ALIGN(4);
     _gp = . + 0x800;
 
     /* Writable small data segment */
@@ -117,7 +113,7 @@ SECTIONS
     /*--------------------------------------------------------------------*/
 
     /* Start of uninitialized data segment */
-    . = ALIGN(8);
+    . = ALIGN(4);
     _fbss = .;
 
     /* Writable uninitialized small data segment */
@@ -143,8 +139,7 @@ SECTIONS
     PROVIDE(_endram = ORIGIN(stack));
 
     /* First location in stack is highest address in STACK */
-    PROVIDE(_fstack = ORIGIN(stack) + LENGTH(stack) - EXCEPTIONSTACKSIZE);
-    PROVIDE(_fexception_stack = ORIGIN(stack) + LENGTH(stack) - 0x4);
+    PROVIDE(_fstack = ORIGIN(stack) + LENGTH(stack));
     PROVIDE(_end = .);
     /* This may be missing, according to .config */
     PROVIDE(fifo_log = 0);
