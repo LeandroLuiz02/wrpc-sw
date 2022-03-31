@@ -46,17 +46,6 @@ static const struct rule_set {
 	}
 };
 
-static uint32_t swap32(uint32_t v)
-{
-	uint32_t res;
-
-	res  = (v & 0xff000000) >> 24;
-	res |= (v & 0x00ff0000) >>  8;
-	res |= (v & 0x0000ff00) <<  8;
-	res |= (v & 0x000000ff) << 24;
-	return res;
-}
-
 void ep_pfilter_init_default(struct wr_endpoint_device *dev)
 {
 	const struct rule_set *s;
@@ -79,14 +68,8 @@ void ep_pfilter_init_default(struct wr_endpoint_device *dev)
 	vend = (uint32_t *) (s->ini + s->size);
 
 	/*
-	 * The array of words starts with 0x11223344 so we
-	 * can fix endianness. Do it.
+	 * The array of words starts with 0x11223344
 	 */
-	v = vini;
-	m = v[0];
-	if (m != 0x11223344)
-		for (v = vini; v < vend; v++)
-			*v = swap32(*v);
 	v = vini;
 	if (v[0] != 0x11223344) {
 		mac_dbg("pfilter: wrong magic number (got 0x%x)\n", m);
