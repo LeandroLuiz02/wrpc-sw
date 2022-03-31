@@ -26,13 +26,13 @@ void bb_i2c_delay(uint32_t delay)
 #define M_SCL_OUT(x) { gen_gpio_out( bus->pin_scl, x); bb_i2c_delay(bus->loop_delay); }
 #define M_SDA_IN gen_gpio_in(bus->pin_sda)
 
-void bb_i2c_start(struct i2c_bus *bus)
+void bb_i2c_start(const struct i2c_bus *bus)
 {
 	M_SDA_OUT(0);
 	M_SCL_OUT(0);
 }
 
-void bb_i2c_repeat_start(struct i2c_bus *bus)
+void bb_i2c_repeat_start(const struct i2c_bus *bus)
 {
 	M_SDA_OUT(1);
 	M_SCL_OUT(1);
@@ -40,14 +40,14 @@ void bb_i2c_repeat_start(struct i2c_bus *bus)
 	M_SCL_OUT(0);
 }
 
-void bb_i2c_stop(struct i2c_bus *bus)
+void bb_i2c_stop(const struct i2c_bus *bus)
 {
 	M_SDA_OUT(0);
 	M_SCL_OUT(1);
 	M_SDA_OUT(1);
 }
 
-int bb_i2c_put_byte(struct i2c_bus *bus, uint8_t data)
+int bb_i2c_put_byte(const struct i2c_bus *bus, uint8_t data)
 {
 	int i;
 	int ack;
@@ -68,7 +68,7 @@ int bb_i2c_put_byte(struct i2c_bus *bus, uint8_t data)
 	return ack == 0 ? 0 : -ENODEV;
 }
 
-void bb_i2c_get_byte(struct i2c_bus *bus, uint8_t *data, int last)
+void bb_i2c_get_byte(const struct i2c_bus *bus, uint8_t *data, int last)
 {
 
 	int i;
@@ -99,23 +99,22 @@ void bb_i2c_get_byte(struct i2c_bus *bus, uint8_t *data, int last)
 	*data = indata;
 }
 
-void bb_i2c_create( struct i2c_bus *bus,
-		    const struct gpio_pin *pin_scl,
-		    const struct gpio_pin *pin_sda )
+void bb_i2c_create(struct i2c_bus *bus,
+		   const struct gpio_pin *pin_scl,
+		   const struct gpio_pin *pin_sda )
 {
 	bus->pin_scl = pin_scl;
 	bus->pin_sda = pin_sda;
 	bus->loop_delay = 100;
-	
 }
 
-void bb_i2c_init(struct i2c_bus *bus)
+void bb_i2c_init(const struct i2c_bus *bus)
 {
 	M_SCL_OUT(1);
 	M_SDA_OUT(1);
 }
 
-int bb_i2c_devprobe(struct i2c_bus *bus, uint8_t i2c_addr)
+int bb_i2c_devprobe(const struct i2c_bus *bus, uint8_t i2c_addr)
 {
 	int ret;
 	bb_i2c_start(bus);
@@ -125,14 +124,15 @@ int bb_i2c_devprobe(struct i2c_bus *bus, uint8_t i2c_addr)
 	return ret;
 }
 
-void bb_i2c_scan(struct i2c_bus *bus)
+void bb_i2c_scan(const struct i2c_bus *bus)
 {
-    int i;
+	int i;
+
 	pp_printf("Scan\n");
-	for(i=0;i<0x80;i++)
-    {
-    	 bb_i2c_start(bus);
-     	if(!bb_i2c_put_byte(bus, i<<1)) pp_printf("found : %x\n", i);
-     	bb_i2c_stop(bus);
-    }
+	for (i=0; i<0x80; i++) {
+		bb_i2c_start(bus);
+		if (!bb_i2c_put_byte(bus, i<<1))
+			pp_printf("found : %x\n", i);
+		bb_i2c_stop(bus);
+	}
 }

@@ -9,11 +9,12 @@
  */
 #include "softpll_ng.h"
 #include "revision.h"
-const char *build_revision = stats.commit_id;
+const char *const build_revision = stats.commit_id;
 
-const char *build_date = stats.build_date;
-const char *build_time = stats.build_time;
-const char *build_by = stats.build_by;
+const char *const build_date = stats.build_date;
+const char *const build_time = stats.build_time;
+const char *const build_by = stats.build_by;
+
 /*
  * We export softpll internal status to the ARM cpu, for SNMP. Thus,
  * we place this structure at a known address in the linker script

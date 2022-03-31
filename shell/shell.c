@@ -299,11 +299,11 @@ int shell_interactive()
 	return 0;
 }
 
-static char shell_init_cmd[] = CONFIG_INIT_COMMAND;
+static const char shell_init_cmd[] = CONFIG_INIT_COMMAND;
 
 static int build_init_readcmd(uint8_t *cmd, int maxlen)
 {
-	static char *p = shell_init_cmd;
+	static const char *p = shell_init_cmd;
 	int i;
 
 	/* use semicolon as separator */
@@ -401,13 +401,13 @@ static int cmd_help(const char *args[])
 	return 0;
 }
 
-DEFINE_WRC_COMMAND(help) = {
+static DEFINE_WRC_COMMAND(help) = {
 	.name = "help",
 	.exec = cmd_help,
 };
 
 #define REGISTER_WRC_COMMAND(_name) \
-	{ extern struct wrc_shell_cmd __wrc_cmd_ ## _name; shell_register_command( &__wrc_cmd_ ## _name ); }
+	{ extern const struct wrc_shell_cmd __wrc_cmd_ ## _name; shell_register_command( &__wrc_cmd_ ## _name ); }
 
 void shell_register_commands(void)
 {

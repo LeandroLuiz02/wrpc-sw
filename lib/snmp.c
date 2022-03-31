@@ -277,9 +277,9 @@ extern struct pp_instance ppi_static;
 extern char *wrc_hw_name;
 /* __DATE__ and __TIME__ is already stored in struct spll_stats stats, but
  * redefining it here makes code smaller than concatenate existing one */
-static char *snmp_build_date = __DATE__ " " __TIME__;
+static const char snmp_build_date[] = __DATE__ " " __TIME__;
 /* store SNMP version, not fully used yet */
-uint8_t snmp_version;
+static uint8_t snmp_version;
 
 
 static uint8_t __snmp_queue[256];
@@ -442,9 +442,9 @@ static const uint8_t oid_wrpcShellCmdReturnCode[] =    {4,0};
 /* wrpcVersionGroup */
 static const struct snmp_oid oid_array_wrpcVersionGroup[] = {
 	OID_FIELD_VAR(   oid_wrpcVersionHwType,      get_pp,       NO_SET,   ASN_OCTET_STR, &wrc_hw_name),
-	OID_FIELD_VAR(   oid_wrpcVersionSwVersion,   get_pp,       NO_SET,   ASN_OCTET_STR, &build_revision),
-	OID_FIELD_VAR(   oid_wrpcVersionSwBuildBy,   get_pp,       NO_SET,   ASN_OCTET_STR, &build_by),
-	OID_FIELD_VAR(   oid_wrpcVersionSwBuildDate, get_pp,       NO_SET,   ASN_OCTET_STR, &snmp_build_date),
+	OID_FIELD_VAR(   oid_wrpcVersionSwVersion,   get_pp,       NO_SET,   ASN_OCTET_STR, (void *)&build_revision),
+	OID_FIELD_VAR(   oid_wrpcVersionSwBuildBy,   get_pp,       NO_SET,   ASN_OCTET_STR, (void *)&build_by),
+	OID_FIELD_VAR(   oid_wrpcVersionSwBuildDate, get_p,        NO_SET,   ASN_OCTET_STR, (void *)&snmp_build_date),
 	{ 0, }
 };
 
@@ -1819,7 +1819,7 @@ static int set_shell_cmd(uint8_t *buf, struct snmp_oid *obj)
 #define BYTE_ERROR_INDEX_i 16
 #define BYTE_OIDLEN_INDEX_i 22
 
-static uint8_t match_array[] = {
+static const uint8_t match_array[] = {
 	0x30, BYTE_SIZE,
 	0x02, 0x01, BYTE_VERSION, /* ASN_INTEGER, size 1 byte, version */
 	0x04, 0x06, /* ASN_OCTET_STR, strlen("public") */

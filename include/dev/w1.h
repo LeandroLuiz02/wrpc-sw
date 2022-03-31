@@ -95,7 +95,7 @@ extern int w1_write_eeprom_bus(struct w1_bus *bus,
 			     int offset, const uint8_t *buffer, int blen);
 extern int w1_erase_eeprom_bus(struct w1_bus *bus, int offset, int blen);
 
-extern struct w1_ops wrpc_w1_ops;
+extern const struct w1_ops wrpc_w1_ops;
 extern struct w1_bus wrpc_w1_bus;
 extern void wrpc_w1_init(void);
 

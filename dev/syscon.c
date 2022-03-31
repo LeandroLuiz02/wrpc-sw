@@ -61,12 +61,12 @@ const struct gpio_pin pin_sysc_net_rst = { &syscon_gpio, 4 };
 #define FMC_I2C_DELAY 15
 #define SFP_I2C_DELAY 300
 
-struct i2c_bus dev_i2c_fmc =
+const struct i2c_bus dev_i2c_fmc =
 	{ (struct gpio_pin*) &pin_sysc_fmc_scl,
 	  (struct gpio_pin*) &pin_sysc_fmc_sda,
 	  FMC_I2C_DELAY };
 
-struct i2c_bus dev_i2c_sfp =
+const struct i2c_bus dev_i2c_sfp =
 	{ (struct gpio_pin*) &pin_sysc_sfp_scl,
 	  (struct gpio_pin*) &pin_sysc_sfp_sda,
 	  SFP_I2C_DELAY };

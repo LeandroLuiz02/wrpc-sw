@@ -35,7 +35,7 @@ int spll_ljd_present = 0;
 
 #define MAIN_CHANNEL (spll_n_chan_ref)
 
-static const char *seq_states[] =
+static const char * const seq_states[] =
 {
 	[SEQ_START_EXT] = "start-ext",
 	[SEQ_WAIT_EXT] = "wait-ext",

@@ -69,12 +69,9 @@ int wrc_wr_diags(void);
 
 
 struct proto_ext_info_t {
-	int valid;
-	char *ext_name; /* Extension name */
-	char short_ext_name; /* Very short extension name - just one character */
-	int servo_ext_size; /* Size of the extension */
-	int ipc_cmd_tacking; /* Command to enable/disable servo tacking*/
-	int track_onoff;     /* Tracking on/off */
+	unsigned char valid;
+	char short_ext_name; /* Very short extension name - just one character */	const char *ext_name; /* Extension name */
+
 	time_t lastt;
 	int last_count;
 };
@@ -84,7 +81,6 @@ static struct proto_ext_info_t proto_ext_info [] = {
 				.valid = 1,
 				.ext_name = "PTP",
 				.short_ext_name = 'P',
-				.ipc_cmd_tacking = -1, /* Invalid */
 		},
 
 #if CONFIG_HAS_EXT_WR
@@ -92,9 +88,6 @@ static struct proto_ext_info_t proto_ext_info [] = {
 				.valid = 1,
 				.ext_name ="White-Rabbit",
 				.short_ext_name ='W',
-				.servo_ext_size = sizeof(struct wr_data),
-// 				.ipc_cmd_tacking = PTPDEXP_COMMAND_WR_TRACKING,
-				.track_onoff = 1,
 		},
 #endif
 #if CONFIG_HAS_EXT_L1SYNC
@@ -102,9 +95,6 @@ static struct proto_ext_info_t proto_ext_info [] = {
 				.valid = 1,
 				.ext_name ="L1Sync",
 				.short_ext_name ='L',
-				.servo_ext_size = sizeof(struct l1e_data),
-// 				.ipc_cmd_tacking = PTPDEXP_COMMAND_L1SYNC_TRACKING,
-				.track_onoff = 1,
 		},
 #endif
 
@@ -115,7 +105,7 @@ static struct proto_ext_info_t proto_ext_info [] = {
 #define PP_INSTANCE_STATE_MAX (sizeof(pp_instance_state_to_name) / sizeof(char *))
 
 /* define conversion array for the field state in the struct pp_instance */
-static char *pp_instance_state_to_name[] = {
+static const char * const pp_instance_state_to_name[] = {
 	/* from ppsi/include/ppsi/ieee1588_types.h, enum pp_std_states */
 	/* PPS_END_OF_TABLE = 0 */
 	[PPS_END_OF_TABLE] =      "EOT       ",
@@ -147,7 +137,7 @@ static char * l1e_instance_extension_state[]={
 
 #endif
 
-static char * timing_mode_state[] = {
+static const char * const timing_mode_state[] = {
 		[WRH_TM_GRAND_MASTER]=     "GM",
 		[WRH_TM_FREE_MASTER]=      "FR",
 		[WRH_TM_BOUNDARY_CLOCK]=   "BC",
@@ -156,7 +146,7 @@ static char * timing_mode_state[] = {
 	};
 
 #if CONFIG_HAS_EXT_WR
-static char * wr_instance_extension_state[]={
+static const char * const wr_instance_extension_state[]={
 		[WRS_IDLE ]=              "IDLE      ",
 		[WRS_PRESENT] =           "WR_PRESENT",
 		[WRS_S_LOCK] =            "WR_S_LOCK ",
@@ -172,7 +162,7 @@ static char * wr_instance_extension_state[]={
 
 #endif
 
-static char *prot_detection_state_name[]={
+static const char * const prot_detection_state_name[]={
 		"NONE   ", /* No meaning. No extension present */
 		"WA_MSG ", /* Waiting first message */
 		"PD_IPRG", /* Protocol detection  */
@@ -180,8 +170,8 @@ static char *prot_detection_state_name[]={
 		"EXT_OFF" /* Protocol not detected */
 };
 
-static struct desired_state_t{
-	char *str_state;
+static const struct desired_state_t{
+	const char *str_state;
 	int state;
 }
 
@@ -224,10 +214,10 @@ static inline int extensionStateColor(struct pp_instance *ppi)
 	}
 }
 
-static char *getStateAsString(char *p[], int index)
+static const char *getStateAsString(const char * const p[], int index)
 {
 	int i, len;
-	char *errMsg = "?????????????????????";
+	static const char errMsg[] = "?????????????????????";
 
 	len = strlen(p[0]);
 	for (i = 0; ; i++) {
@@ -482,9 +472,9 @@ void print_main_data(void)
 			/* so far support only for one instance */
 			struct pp_instance *ppi_pt = ppg->pp_instances;
 			int proto_extension = ppi_pt->protocol_extension;
-			struct proto_ext_info_t *pe_info = IS_PROTO_EXT_INFO_AVAILABLE(proto_extension) ? &proto_ext_info[proto_extension] :  &proto_ext_info[0] ;
+			const struct proto_ext_info_t *pe_info = IS_PROTO_EXT_INFO_AVAILABLE(proto_extension) ? &proto_ext_info[proto_extension] :  &proto_ext_info[0] ;
 			unsigned char *p = ppi_pt->activePeer;
-			char * extension_state_name = EMPTY_EXTENSION_STATE_NAME;
+			const char * extension_state_name = EMPTY_EXTENSION_STATE_NAME;
 			char proto;
 			char mac_buf[20];
 

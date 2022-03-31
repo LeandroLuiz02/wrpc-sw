@@ -33,7 +33,7 @@ static const uint32_t pfilter_rules_vlan[] =
 	#include "generated/pfilter-rules-vlan.h"
 };
 
-struct rule_set {
+static const struct rule_set {
 	const uint32_t *ini;
 	int size;
 } rule_sets[2] = {
@@ -59,7 +59,7 @@ static uint32_t swap32(uint32_t v)
 
 void ep_pfilter_init_default(struct wr_endpoint_device *dev)
 {
-	struct rule_set *s;
+	const struct rule_set *s;
 	uint8_t mac[6];
 	char buf[20];
 	uint32_t m, *vini, *vend, *v, *v_vlan = NULL;

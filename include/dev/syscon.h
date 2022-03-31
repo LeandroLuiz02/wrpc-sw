@@ -76,8 +76,8 @@ extern const struct gpio_pin pin_sysc_sfp_scl;
 extern const struct gpio_pin pin_sysc_sfp_sda;
 extern const struct gpio_pin pin_sysc_net_rst;
 
-extern struct i2c_bus dev_i2c_fmc;
-extern struct i2c_bus dev_i2c_sfp;
+extern const struct i2c_bus dev_i2c_fmc;
+extern const struct i2c_bus dev_i2c_sfp;
 extern struct spi_flash_device wrc_flash_dev;
 
 #define FMC_I2C_DELAY 15

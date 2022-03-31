@@ -24,7 +24,7 @@
 
 #define USE_CMD_PARAM -1
 
-struct subcmd {
+static const struct subcmd {
 	char *name;
 	int (*fun)(int);
 	int arg;
@@ -69,7 +69,7 @@ static char *is_mode[] = {[WRC_MODE_GM] = "gm", [WRC_MODE_MASTER] = "master",
 static int cmd_ptp(const char *args[])
 {
 	int i, j, ret;
-	struct subcmd *c;
+	const struct subcmd *c;
 	int l_arg;
 
 

@@ -55,7 +55,7 @@ static void w1_write_bit(struct w1_bus *bus, int bit)
 	__wait_cycle((void *) BASE_ONEWIRE);
 }
 
-struct w1_ops wrpc_w1_ops = {
+const struct w1_ops wrpc_w1_ops = {
 	.reset = w1_reset,
 	.read_bit = w1_read_bit,
 	.write_bit = w1_write_bit,

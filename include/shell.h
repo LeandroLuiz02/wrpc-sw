@@ -27,7 +27,7 @@ struct wrc_shell_cmd {
 
 /* Put the structures in their own section */
 #define DEFINE_WRC_COMMAND(_name) \
-	struct wrc_shell_cmd __wrc_cmd_ ## _name 
+	const struct wrc_shell_cmd __wrc_cmd_ ## _name
 
 char *env_get(const char *var);
 int env_set(const char *var, const char *value);
