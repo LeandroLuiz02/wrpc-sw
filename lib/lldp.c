@@ -21,6 +21,7 @@
 #include "ipv4.h"
 #include "shell.h"
 #include "wrc_ptp.h"
+#include "wrc_global.h"
 #include "dev/syscon.h"
 
 static uint8_t lldpdu[LLDP_MAX_PKT_LEN];
@@ -34,8 +35,6 @@ static struct wrpc_socket __static_lldp_socket = {
 
 static struct wrpc_socket *lldp_socket;
 static struct wr_sockaddr addr;
-
-extern char *wrc_hw_name;
 
 static void lldp_header_tlv(int tlv_type, int tlv_len)
 {
@@ -138,8 +137,8 @@ static void lldp_add_tlv(int tlv_type) {
 		pdu_p = &lldpdu[lldpdu_len + LLDP_HEADER];
 
 		/* TLV Info srting */
-		strncpy((char *)(pdu_p), wrc_hw_name, HW_NAME_LENGTH - 1);
-		pdu_p += strnlen(wrc_hw_name, HW_NAME_LENGTH - 1);
+		strncpy((char *)(pdu_p), wrc_global.wrc_hw_name, HW_NAME_LENGTH - 1);
+		pdu_p += strnlen(wrc_global.wrc_hw_name, HW_NAME_LENGTH - 1);
 		strcpy((char *)(pdu_p), ": ");
 		pdu_p += 2; /* length of ": " */
 		strncpy((char *)(pdu_p), build_revision, 32);

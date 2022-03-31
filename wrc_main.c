@@ -97,7 +97,6 @@ struct wrc_global wrc_global = {
 
 int *link_status = &wrc_global_link.link_up;
 int *wrc_vlan_number = &wrc_global_link.vlan;
-char *wrc_hw_name = wrc_global.wrc_hw_name;
 
 static void wrc_initialize(void)
 {
@@ -112,7 +111,7 @@ static void wrc_initialize(void)
 	wdiags_init();
 
 	pp_printf("WR Core: starting up...\n");
-	get_hw_name(wrc_hw_name);
+	get_hw_name(wrc_global.wrc_hw_name);
 
 #ifndef BOARD_HAS_CUSTOM_NETWORK_INIT
 	net_rst();

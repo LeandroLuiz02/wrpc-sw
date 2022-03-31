@@ -32,6 +32,7 @@
 #include "netconsole.h"
 #include "shell.h"
 #include "storage.h"
+#include "wrc_global.h"
 
 /* To be removed when RISCV is supported, for sure such macro/function will be
  * defined somewhere */
@@ -274,7 +275,6 @@ static uint32_t aux_diag_reg_rw_num;
 
 extern struct pp_instance ppi_static;
 
-extern char *wrc_hw_name;
 /* __DATE__ and __TIME__ is already stored in struct spll_stats stats, but
  * redefining it here makes code smaller than concatenate existing one */
 static const char snmp_build_date[] = __DATE__ " " __TIME__;
@@ -441,7 +441,7 @@ static const uint8_t oid_wrpcShellCmdReturnCode[] =    {4,0};
 	 OIDs */
 /* wrpcVersionGroup */
 static const struct snmp_oid oid_array_wrpcVersionGroup[] = {
-	OID_FIELD_VAR(   oid_wrpcVersionHwType,      get_pp,       NO_SET,   ASN_OCTET_STR, &wrc_hw_name),
+	OID_FIELD_VAR(   oid_wrpcVersionHwType,      get_p,        NO_SET,   ASN_OCTET_STR, (void *)&wrc_global.wrc_hw_name),
 	OID_FIELD_VAR(   oid_wrpcVersionSwVersion,   get_pp,       NO_SET,   ASN_OCTET_STR, (void *)&build_revision),
 	OID_FIELD_VAR(   oid_wrpcVersionSwBuildBy,   get_pp,       NO_SET,   ASN_OCTET_STR, (void *)&build_by),
 	OID_FIELD_VAR(   oid_wrpcVersionSwBuildDate, get_p,        NO_SET,   ASN_OCTET_STR, (void *)&snmp_build_date),

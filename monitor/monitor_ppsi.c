@@ -51,9 +51,7 @@
 /* internal "last", exported to shell command */
 uint32_t wrc_stats_last;
 extern struct pp_instance ppi_static;
-extern struct pp_globals ppg_static;
 extern struct pp_globals *ppg;
-extern char *wrc_hw_name;
 static int prev_gui_description = 0;
 static int gui_description = 1;
 static uint32_t next_update_ticks;
@@ -318,7 +316,7 @@ void print_main_description(void)
 	int ndevs;
 
 	pcprintf(1, 1, C_BLUE, "%s WR PTP Core Sync Monitor %s",
-		wrc_hw_name, build_revision);
+		wrc_global.wrc_hw_name, build_revision);
 	cprintf(C_MAGENTA, "\nEsc or q = exit; r = redraw GUI");
 
 	cprintf(C_BLUE, "\n\nTAI Time:%22sUTC offset:", "");
