@@ -24,9 +24,8 @@
    SoftPLL instantiation per project, so these can remain global. */
 extern int spll_n_chan_ref, spll_n_chan_out;
 
-extern volatile struct SPLL_WB *SPLL;
-extern volatile struct PPSG_WB *PPSG;
-
+#define SPLL ((volatile struct SPLL_WB*) (BASE_SOFTPLL))
+#define PPSG ((volatile struct PPSG_WB*) (BASE_PPS_GEN))
 
 /* PI regulator state */
 typedef struct {
