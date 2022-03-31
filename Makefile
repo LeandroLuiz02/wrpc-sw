@@ -71,9 +71,12 @@ dump-info.o: CFLAGS+=-Ippsi/tools
 	$(CC) -include $(AUTOCONF) -E -P $*.ld.S -o $@
 
 
+CONFIG_LTO=y
+
 cflags-y =	-ffreestanding -include $(AUTOCONF) -Iinclude \
 			-I. -Isoftpll -Iipc
 cflags-y +=	-I$(CURDIR)/pp_printf
+cflags-$(CONFIG_LTO) += -flto
 cflags-$(CONFIG_ARCH_LM32)  +=  -Iinclude/std
 cflags-$(CONFIG_ARCH_RISCV) +=  -Iinclude/std
 
@@ -142,6 +145,8 @@ CFLAGS = $(cflags-y) -Wall -Werror -Wstrict-prototypes \
 	-ffunction-sections -fdata-sections -Os \
 	-include include/wrc.h -ggdb 
 
+ldflags-$(CONFIG_LTO) += -flto
+
 # Assembler Flags
 ASFLAGS = -I. $(asflags-y)
 
@@ -168,7 +173,7 @@ all: tools $(OUTPUT).elf $(arch-files-y)
 # all: libertm
 
 .PRECIOUS: %.elf %.bin
-.PHONY: all tools clean gitmodules $(PPSI)/ppsi.a extest liblinux
+.PHONY: all tools clean gitmodules extest liblinux
 .PHONY: libertm boards-clean
 
 # we need to remove "ptpdump" support for ppsi if RAM size is small and
@@ -179,13 +184,14 @@ ifneq ($(CONFIG_RAMSIZE),131072)
   endif
 endif
 
-PPSI-FLAGS-$(CONFIG_ARCH_LM32) = CONFIG_NO_PRINTF=y
-PPSI-FLAGS-$(CONFIG_ARCH_RISCV) = CONFIG_NO_PRINTF=y
-PPSI-FLAGS-$(CONFIG_TARGET_GENERIC_PHY_8BIT) = CONFIG_TARGET_GENERIC_PHY_8BIT=y
+ifeq ($(CONFIG_LTO),y)
+  PPSI_USER_CFLAGS += -flto
+endif
 
 $(obj-ppsi): gitmodules
 	$(MAKE) -C $(PPSI) ppsi.a WRPCSW_ROOT=.. \
 		CROSS_COMPILE=$(CROSS_COMPILE) CONFIG_NO_PRINTF=y \
+		CONFIG_LTO=$(CONFIG_LTO) \
 		USER_CFLAGS="$(PPSI_USER_CFLAGS)" \
 		CPU_ARCH=$(CPU_ARCH) \
 
@@ -208,7 +214,7 @@ config.o: .config $(AUTOCONF)
 	rm -f .config.bin
 
 GENRAM_ENDIAN_FLAG-$(CONFIG_ARCH_LM32) =
-GENRAM_ENDIAN_FLAG-$(CONFIG_ARCH_RISCV) ?= -l
+GENRAM_ENDIAN_FLAG-$(CONFIG_ARCH_RISCV) = -l
 
 %.bin: %.elf
 	${OBJCOPY} -O binary $< $@
