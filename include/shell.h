@@ -15,8 +15,6 @@
 extern int wrc_ui_mode;
 extern int wrc_stat_running;
 
-void decode_mac(const char *str, unsigned char *mac);
-char *format_mac(char *s, const unsigned char *mac);
 void decode_ip(const char *str, unsigned char *ip);
 char *format_ip(char *s, const unsigned char *ip);
 
