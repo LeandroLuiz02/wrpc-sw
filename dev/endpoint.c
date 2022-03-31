@@ -66,7 +66,7 @@ void ep_get_mac_addr(struct wr_endpoint_device *dev, uint8_t *dev_addr)
 
 void ep_set_mac_addr(struct wr_endpoint_device* dev, uint8_t *addr)
 {
-	char buf[20];
+	char buf[20] __attribute__((unused));
 	memcpy(dev->mac_addr, addr, 6);
 
 	mac_dbg("endpoint @ 0x%x: set MAC to %s\n", dev->base,

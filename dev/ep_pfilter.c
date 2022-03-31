@@ -50,8 +50,8 @@ void ep_pfilter_init_default(struct wr_endpoint_device *dev)
 {
 	const struct rule_set *s;
 	uint8_t mac[6];
-	char buf[20];
-	uint32_t m, *vini, *vend, *v, *v_vlan = NULL;
+	char buf[20] __attribute__((unused));
+	uint32_t *vini, *vend, *v, *v_vlan = NULL;
 	uint64_t cmd_word;
 	int i;
 	static int inited;
