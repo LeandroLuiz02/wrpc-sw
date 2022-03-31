@@ -15,11 +15,7 @@ const char *const build_date = stats.build_date;
 const char *const build_time = stats.build_time;
 const char *const build_by = stats.build_by;
 
-/*
- * We export softpll internal status to the ARM cpu, for SNMP. Thus,
- * we place this structure at a known address in the linker script
- */
-struct spll_stats stats __attribute__((section(".stats"))) = {
+struct spll_stats stats = {
 	.magic = 0x5b1157a7,
 	.ver = SPLL_STATS_VER,
 #ifdef CONFIG_DETERMINISTIC_BINARY
@@ -28,11 +24,11 @@ struct spll_stats stats __attribute__((section(".stats"))) = {
 	.build_by = "",
 #else
 	.build_date = __DATE__,
-	.commit_id[sizeof(stats.build_date) - 1] = 0,
+	.build_date[sizeof(stats.build_date) - 1] = 0,
 	.build_time = __TIME__,
-	.commit_id[sizeof(stats.build_time) - 1] = 0,
+	.build_time[sizeof(stats.build_time) - 1] = 0,
 	.build_by = __GIT_USR__,
-	.commit_id[sizeof(stats.build_by) - 1] = 0,
+	.build_by[sizeof(stats.build_by) - 1] = 0,
 #endif
 	.commit_id = __GIT_VER__,
 	.commit_id[sizeof(stats.commit_id) - 1] = 0,
