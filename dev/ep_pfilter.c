@@ -23,12 +23,12 @@
 #include <hw/endpoint_regs.h>
 
 
-static const uint32_t pfilter_rules_novlan[] =
+static const uint8_t pfilter_rules_novlan[] =
 {
 	#include "generated/pfilter-rules-novlan.h"
 };
 
-static const uint32_t pfilter_rules_vlan[] =
+static const uint8_t pfilter_rules_vlan[] =
 {
 	#include "generated/pfilter-rules-vlan.h"
 };
@@ -36,7 +36,7 @@ static const uint32_t pfilter_rules_vlan[] =
 void ep_pfilter_init_default(struct wr_endpoint_device *dev)
 {
 	const uint8_t *mac = dev->mac_addr;
-	const uint32_t *vini, *vend, *v;
+	const uint8_t *vini, *vend, *v;
 	int i;
 	uint32_t latency_ethtype = CONFIG_LATENCY_ETHTYPE;
 
@@ -53,23 +53,15 @@ void ep_pfilter_init_default(struct wr_endpoint_device *dev)
 		vend = vini + ARRAY_SIZE(pfilter_rules_vlan);
 	}
 
-	/*
-	 * The array of words starts with 0x11223344
-	 */
-	if (vini[0] != 0x11223344) {
-		mac_dbg("pfilter: wrong magic number (got 0x%x)\n", m);
-		return;
-	}
-
 	ep_write( dev, EP_REG_PFCR0, 0);		// disable pfilter
 
-	for (i = 0, v = vini + 1; v < vend; v += 2, i++) {
+	for (i = 0, v = vini; v < vend; v += 5, i++) {
 		uint64_t cmd_word;
 		uint32_t l, h;
 		uint32_t cr0, cr1;
 
-		h = v[1];
-		l = v[0];
+		h = v[0];
+		l = (v[1] << 24) | (v[2] << 16) | (v[3] << 8) | v[4];
 
 		/*
 		 * Patch the local MAC address in place,
