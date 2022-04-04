@@ -30,18 +30,6 @@ SECTIONS
 	*(.gnu.linkonce.t.*)
     } > ram
 
-    /* init: Code to execute before main (called by crt0.S) */
-    .init :
-    {
-	KEEP( *(.init) )
-    } > ram
-
-    /* fini: Code to execute after main (called by crt0.S) */
-    .fini :
-    {
-	KEEP( *(.fini) )
-    } > ram
-
     /* rodata: Read-only data */
     .rodata :
     {
@@ -55,25 +43,6 @@ SECTIONS
     /* End of code and read-only segment */
     PROVIDE( etext = . );
     _etext = .;
-
-    /*--------------------------------------------------------------------*/
-    /* Global constructor/destructor segement                             */
-    /*--------------------------------------------------------------------*/
-    /* The .ctors/.dtors sections are special sections which contain a
-       list of constructor/destructor function pointers. crtbegin.o
-       includes code in a .init section which goes through the .ctors list
-       and calls each constuctor. crtend.o includes code in a .fini
-       section which goes through the .dtors list and calls each
-       destructor. crtbegin.o includes a special null pointer in its own
-       .ctors/.dtors sections which acts as a start indicator for those
-       lists. crtend.o also includes a special null pointer in its own
-       .ctors/.dtors sections which acts as an end indictor. The linker
-       commands below are setup so that crtbegin.o's .ctors/.dtors
-       sections are always first and crtend.o's .ctors/.dtors sections are
-       always last. This is the only way the list of functions will have
-       the begin and end indicators in the right place. */
-
-    /* ctors : Array of global constructor function pointers */
 
     /*--------------------------------------------------------------------*/
     /* Initialized data segment                                           */
