@@ -45,41 +45,7 @@
 #include "hw/wrc_diags_regs.h"
 #include "revision.h"
 
-/* FIXME: this is the 127th (re)(non)(un)definition of the ntohl macros
- * in the entire wrpc-sw codebase. This is insane and as non-portable
- * as can be. If arpa/inet.h or netinet/in.h is not given by the arch
- * lib, there must be one definition linked to the architecture in one
- * single header. This will work for lm32 and fail miserably elsewhere,
- * but there is no excuse for this state of affairs. Yuck */
-
-#include <machine/endian.h>
-#if defined(BYTE_ORDER) && BYTE_ORDER == BIG_ENDIAN
-/* The host byte order is the same as network byte order,
-   so these functions are all just identity. These are functions,
-   not macros, so they can pointer-referenced */
-static uint32_t htonl(uint32_t __hostlong)
-{
-	return __hostlong;
-}
-static uint32_t ntohl(uint32_t __netlong)
-{
-	return __netlong;
-}
-static uint16_t htons(uint16_t __hostshort)
-{
-	return __hostshort;
-}
-/* FIXME: this was half-done in include/ppsi-wrappers, only for this
- * function, hence a link-time clash. Yuck twice */
-#if 0
-static uint16_t ntohs(uint16_t __netshort)
-{
-	return __netshort;
-}
-#endif
-#else
-#error "building on a non-lm32 architecture"
-#endif
+#include "endianness.h"
 
 #include "board-state.h"
 #include "board-aux.h"
@@ -1579,7 +1545,7 @@ static void ertm14_clkab_sync_init(void)
 
 static int ertm14_clkab_sync_task(void)
 {
-    int evt = event_poll( evth_clkab_sync );
+  //    int evt = event_poll( evth_clkab_sync );
     uint8_t *stateA = ertm14_current_state->clka_sync_state;
     uint8_t *stateB = ertm14_current_state->clkb_sync_state;
 
@@ -2970,6 +2936,4 @@ void ertm14_sync_pulse_cal(void)
         clkab_enable_sync( ertm14_current_state, ERTM14_OUT_CLKA, i, 0 );
         clkab_enable_sync( ertm14_current_state, ERTM14_OUT_CLKB, i, 0 );
     }
-
-    return 0;
 }

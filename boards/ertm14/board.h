@@ -21,7 +21,7 @@
 #include "dev/spi_flash.h"
 #include "dev/bb_i2c.h"
 #include "dev/iuart.h"
-#include "ertm14-uart-link.h"
+// #include "ertm14-uart-link.h"
 #include "rf_frame_transceiver.h"
 #include "board-state.h"
 #include "common-uart-link.h"
