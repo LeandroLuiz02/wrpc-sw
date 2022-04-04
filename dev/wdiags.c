@@ -21,11 +21,11 @@
 #if defined(BASE_WDIAGS_PRIV)
 static void *wdiags_base = (void *)(BASE_WDIAGS_PRIV);
 #else
-	static void *wdiags_base = NULL;
+static void *wdiags_base = NULL;
 #endif
 
 
-int wdiag_write( uint32_t reg, uint32_t value )
+static int wdiag_write( uint32_t reg, uint32_t value )
 {
 	if( !wdiags_base )
 		return -1;
@@ -35,7 +35,7 @@ int wdiag_write( uint32_t reg, uint32_t value )
 	return 0;
 }
 
-uint32_t wdiag_read( uint32_t reg )
+static uint32_t wdiag_read( uint32_t reg )
 {
 	if( !wdiags_base )
 		return 0xdeadbeef;
@@ -136,7 +136,7 @@ void wdiags_set_base_address( void *base )
 	wdiags_base = base;
 }
 
-int wdiags_init()
+int wdiags_init(void)
 {
 	int i;
 
