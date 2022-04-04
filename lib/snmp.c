@@ -34,10 +34,6 @@
 #include "storage.h"
 #include "wrc_global.h"
 
-/* To be removed when RISCV is supported, for sure such macro/function will be
- * defined somewhere */
-#define ntohl(x) (x)
-
 #define ASN_BOOLEAN	((u_char)0x01)
 #define ASN_INTEGER	((u_char)0x02)
 #define ASN_OCTET_STR	((u_char)0x04)
