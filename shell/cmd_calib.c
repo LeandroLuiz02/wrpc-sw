@@ -50,7 +50,28 @@ static int cmd_calibration(const char *args[])
 				  args[1], (unsigned int) param, value);
 			storage_set_calibration_parameter( param, value );
 		}
+#ifdef CONFIG_CMD_CALIBRATION_SHOW
+		else if (!strcmp(args[0], "show")) {
+			wrc_cal_data_t *cal;
+			unsigned i;
 
+			if (!storage_is_calibration_loaded()) {
+				pp_printf("calibrations not loaded\n");
+				return 0;
+			}
+			cal = storage_get_calibration_data();
+			pp_printf("%u params:\n", (unsigned)cal->param_count);
+			for(i = 0; i < cal->param_count; i++) {
+				unsigned id = cal->params[i].id;
+				pp_printf( " %c%c%c%c = %u\n",
+					   (id >> 24) & 0xff,
+					   (id >> 16) & 0xff,
+					   (id >> 8) & 0xff,
+					   (id >> 0) & 0xff,
+					   (unsigned)cal->params[i].value);
+			}
+		}
+#endif
 	} else if (!args[0]) {
 		if (storage_phtrans(&trans, 0) > 0) {
 			pp_printf("Found phase transition in EEPROM: %dps\n",

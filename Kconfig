@@ -310,6 +310,14 @@ config GENSDBFS
     This option adds _sdb fs_ command to write empty SDBFS filesystem
     image in Flash/EEPROM.
 
+config CMD_CALIBRATION_SHOW
+	depends on WR_NODE
+	boolean "Add command to print all calibration values"
+	default n
+	help
+	  Adds an "show" to the calibration command to print all
+	  calibration values.
+
 config VLAN
   depends on WR_NODE
 	boolean "Filter and rx/tx frames in a VLAN (as opposed to untagged)"
