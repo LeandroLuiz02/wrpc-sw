@@ -18,6 +18,7 @@
  * with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include "wrc-debug.h"
 #include "dev/ad9520.h"
 #include "dev/bb_i2c.h"
 

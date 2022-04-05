@@ -8,6 +8,7 @@
  */
 #include <types.h>
 
+#include "wrc-debug.h"
 #include "dev/bb_spi.h"
 #include "dev/spi_flash.h"
 

@@ -6,6 +6,7 @@
 #include <string.h>
 #include <errno.h>
 
+#include "pp-printf.h"
 #include "shell.h"
 #include "dev/syscon.h"
 #include "storage.h"

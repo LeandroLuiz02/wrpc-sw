@@ -20,16 +20,14 @@
 
 
 #include <stdint.h>
-#include <stdio.h>
 #include <string.h>
 
+#include "board.h"
 #include "dev/iuart.h"
 
 // bare-metal version with real HW iuart
 
 #ifdef IUART_PLATFORM_BARE_METAL
-
-#include "board.h"
 
 #include <hw/wb_insn_uart.h>
 #include <hw/wb_uart.h>

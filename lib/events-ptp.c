@@ -8,6 +8,9 @@
  */
 
 #include <wrpc.h>
+#include "board.h"
+#include "wrc-debug.h"
+#include "wrc-event.h"
 #include "event.h"
 
 static int prev_ptp_mode;

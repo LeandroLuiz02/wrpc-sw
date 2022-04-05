@@ -7,11 +7,11 @@
  * Released according to the GNU GPL, version 2 or any later version.
  */
 
-#include "dev/syscon.h"
-
 #include <errno.h>
 #include <string.h>
 
+#include "dev/syscon.h"
+#include "pp-printf.h"
 #include "dev/gpio.h"
 #include "dev/bb_i2c.h"
 

@@ -9,6 +9,7 @@
 
 #include <stdint.h>
 
+#include "board.h"
 #include "event.h"
 
 // fixme: make configurable through BSPs/KConfig

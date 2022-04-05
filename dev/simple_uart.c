@@ -9,6 +9,7 @@
 
 #include <stdint.h>
 
+#include "wrc.h"
 #include "board.h"
 #include "dev/simple_uart.h"
 

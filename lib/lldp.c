@@ -14,6 +14,7 @@
 
 #include <string.h>
 
+#include "wrc.h"
 #include "revision.h"
 #include "ptpd_netif.h"
 #include "lldp.h"

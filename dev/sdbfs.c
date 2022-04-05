@@ -10,6 +10,8 @@
 
 /* To avoid many #ifdef and associated mess, all headers are included there */
 #include "libsdbfs.h"
+#include "dev/bb_i2c.h"
+#include "dev/i2c_eeprom.h"
 #include "storage.h"
 
 /*

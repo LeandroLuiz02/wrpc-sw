@@ -7,14 +7,14 @@
  * Released according to the GNU GPL, version 2 or any later version.
  */
 
+#include <errno.h>
+#include <string.h>
 
 #include "board.h"
 #include "dev/wdiags.h"
-
+#include "wrc-debug.h"
 #include <hw/wrc_diags_regs.h>
 
-#include <errno.h>
-#include <string.h>
 
 #define WDIAGS_VERSION 2
 

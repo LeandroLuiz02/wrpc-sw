@@ -1,4 +1,5 @@
 #include "board.h"
+#include "wrc-debug.h"
 #include "dev/bb_spi.h"
 #include "dev/bb_i2c.h"
 #include "dev/w1.h"

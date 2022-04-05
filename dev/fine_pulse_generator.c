@@ -21,6 +21,7 @@
 /* fine_pulse-gen - driver for DDS Sync Unit (fine pulse generator) */
 
 #include "board.h"
+#include "dev/syscon.h"
 
 #include "hw/wb_fine_pulse_gen.h"
 #include "dev/fine_pulse_generator.h"

@@ -7,13 +7,14 @@
  *
  * Released according to the GNU GPL, version 2 or any later version.
  */
+#include <errno.h>
+
 #include "types.h"
 #include "board.h"
 #include "dev/syscon.h"
 #include "dev/bb_i2c.h"
 #include "dev/gpio.h"
-
-#include <errno.h>
+#include "pp-printf.h"
 
 void bb_i2c_delay(uint32_t delay)
 {

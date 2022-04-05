@@ -9,11 +9,12 @@
  */
 /* SFP Detection / managenent functions */
 
-#include <stdio.h>
 #include <inttypes.h>
 #include <string.h>
 #include <errno.h>
 
+#include "wrc-task.h"
+#include "pp-printf.h"
 #include "dev/syscon.h"
 #include "dev/bb_i2c.h"
 #include "dev/gpio.h"

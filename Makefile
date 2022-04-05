@@ -142,8 +142,7 @@ obj-$(CONFIG_ARCH_RISCV) += check-error.o
 obj-y += system_checks.o
 
 CFLAGS = $(cflags-y) -Wall -Werror -Wstrict-prototypes \
-	-ffunction-sections -fdata-sections -Os \
-	-include include/wrc.h -ggdb 
+	-ffunction-sections -fdata-sections -Os -ggdb
 
 ldflags-$(CONFIG_LTO) += -flto
 

@@ -5,6 +5,7 @@
 #include <wrc_global.h>
 #include <sensors.h>
 
+#include <wrc.h>
 #include <wrpc.h>
 
 #include "dump-info.h"
