@@ -32,7 +32,7 @@ struct sfp_info sfp_info = {
 #endif
 	.version = WRC_G_SFP_VERSION,
 	.sfp_params = {
-		.alpha = 1235332333756144, /* default value for alpha */
+		.alpha = 0, /* default value for alpha */
 	},
 };
 
@@ -68,7 +68,7 @@ static void sfp_read_i2c(int addr, uint8_t *mem, int start,  int size)
 	bb_i2c_stop(&dev_i2c_sfp);
 }
 
-int verify_checksum(uint8_t *mem, int from, int to)
+static int verify_checksum(uint8_t *mem, int from, int to)
 {
 	int i;
 	uint16_t sum = 0;
