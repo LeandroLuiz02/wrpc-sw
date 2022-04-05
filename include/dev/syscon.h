@@ -85,21 +85,15 @@ extern struct spi_flash_device wrc_flash_dev;
 
 void timer_init(uint32_t enable);
 
-extern volatile struct SYSCON_WB *syscon;
-
 extern struct spi_bus spi_wrc_flash;
 extern struct spi_flash_device wrc_flash_dev;
 extern struct i2c_bus i2c_wrc_eeprom;
 extern struct i2c_eeprom_device wrc_eeprom_dev;
 
-static inline int sysc_get_memsize(void)
-{
-	return (SYSC_HWFR_MEMSIZE_R(syscon->HWFR) + 1) * 16;
-}
-
 #define HW_NAME_LENGTH 5 /* 4 letters + '\0' */
 void get_hw_name(char *str);
 void get_storage_info(int *memtype, uint32_t *sdbfs_baddr, uint32_t *blocksize);
+int sysc_get_memsize(void);
 
 #define DIAG_RW_BANK 0
 #define DIAG_RO_BANK 1
