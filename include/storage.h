@@ -38,12 +38,6 @@
 #define EE_RET_CORRPT -3
 #define EE_RET_POSERR -4
 
-#ifdef CONFIG_GENSDBFS
-#define HAS_GENSDBFS 1
-#else
-#define HAS_GENSDBFS 0
-#endif
-
 /* Well-knonw SDB files.  */
 #define SDB_VENDOR	htonll(0x46696c6544617461LL) /* "FileData" */
 #define SDB_DEV_INIT	htonl(0x77722d69) /* wr-i (nit) */

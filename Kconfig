@@ -237,7 +237,7 @@ config SNMP_INIT
 	  This option adds a branch wrpcInitScriptConfigGroup to the SNMP
 
 config SNMP_SDB
-	depends on SNMP && SNMP_SET && GENSDBFS
+	depends on SNMP && SNMP_SET
 	default y
 	boolean "Adds support of generation of SDB via SNMP"
 	help
@@ -302,13 +302,6 @@ config AUX_DIAG
 	help
 	  This option adds support for read/write of aux diag registers and
 	  the diag command.
-
-config GENSDBFS
-  default y
-  boolean "Shell command for SDBFS generation"
-  help
-    This option adds _sdb fs_ command to write empty SDBFS filesystem
-    image in Flash/EEPROM.
 
 config CMD_CALIBRATION_SHOW
 	depends on WR_NODE
