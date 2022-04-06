@@ -21,9 +21,11 @@
 
 #include <stdint.h>
 #include <string.h>
-#include <stdio.h>
 #include <stddef.h>
 
+#include "wrc.h"
+#include "wrc-debug.h"
+#include "pp-printf.h"
 #include "dev/gpio.h"
 #include "dev/bb_spi.h"
 #include "dev/ad951x.h"

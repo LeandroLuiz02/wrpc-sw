@@ -23,8 +23,6 @@
 
 #include <stdint.h>
 
-#include "board.h"
-
 struct gpio_pin;
 
 #define LED_TYPE_SINGLE_COLOR 1

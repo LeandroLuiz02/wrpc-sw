@@ -24,7 +24,6 @@
 
 #include <stdint.h>
 
-#include "board.h"
 #include "dev/gpio.h"
 #include "dev/bb_spi.h"
 
