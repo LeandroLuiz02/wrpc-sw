@@ -10,6 +10,7 @@
 #define __STORAGE_H
 
 #include "sfp.h"
+#include "dev/i2c_eeprom.h"
 
 // calibration parameter definitions. Board-specific.
 #define CAL_MAX_PARAMS 8
