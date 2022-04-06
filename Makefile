@@ -71,8 +71,6 @@ dump-info.o: CFLAGS+=-Ippsi/tools
 	$(CC) -include $(AUTOCONF) -E -P $*.ld.S -o $@
 
 
-CONFIG_LTO=y
-
 cflags-y =	-ffreestanding -include $(AUTOCONF) -Iinclude \
 			-I. -Isoftpll -Iipc
 cflags-y +=	-I$(CURDIR)/pp_printf

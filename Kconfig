@@ -670,6 +670,11 @@ config SPLL_FIFO_LOG
 	  related timing.  The information is shown by tools/wrpc-dump
 	  if present, no change/rebuild of the tool is needed.
 
+config LTO
+	bool
+	default y if ARCH_RISCV
+	default n
+
 choice
 	prompt "Implementation of pp_printf"
 	depends on DEVELOPER
