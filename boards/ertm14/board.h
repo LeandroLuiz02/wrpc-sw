@@ -209,5 +209,7 @@ int ertm14_get_clkab_divider( int freq );
 void ertm14_shell_init(void);
 void ertm14_apply_config(struct ertm14_board_state *cfg,
 	struct ertm14_board_state *mask, int force_all);
+void ertm14_set_pps_out_mode(int mode);
+void ertm14_sync_pulse_cal(void);
 
 #endif /* __BOARD_WRC_H */

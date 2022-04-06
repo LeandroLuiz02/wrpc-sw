@@ -19,6 +19,7 @@
  */
 
 
+#include "pp-printf.h"
 #include "dev/ad951x.h"
 
 // Write to ad951x via SPI

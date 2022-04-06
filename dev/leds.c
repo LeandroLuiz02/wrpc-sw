@@ -21,6 +21,7 @@
 #include <stdint.h>
 #include <errno.h>
 
+#include "dev/syscon.h"
 #include "board.h"
 #include "util.h"
 

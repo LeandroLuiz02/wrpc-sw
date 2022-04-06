@@ -21,6 +21,8 @@
 #include <stdint.h>
 
 #include "board.h"
+#include "wrc-debug.h"
+#include "dev/syscon.h"
 #include "dev/gpio.h"
 #include "dev/74x595.h"
 

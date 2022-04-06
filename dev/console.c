@@ -10,6 +10,7 @@
 #include <stdint.h>
 #include <errno.h>
 
+#include "pp-printf.h"
 #include "board.h"
 #include "dev/simple_uart.h"
 #include "dev/console.h"
@@ -31,6 +32,9 @@ struct console_uart_priv_data
 };
 
 static struct console_uart_priv_data console_uart_priv;
+#ifdef ERTM14_SECONDARY_DEBUG_UART
+static struct console_uart_priv_data console_uart_priv_2nd;
+#endif
 struct console_device console_uart_dev, console_uart_2nd;
 struct console_device* console_devs[BOARD_MAX_CONSOLE_DEVICES];
 static struct console_device console_netconsole_dev;

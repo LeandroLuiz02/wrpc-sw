@@ -21,6 +21,8 @@
 #include <stdint.h>
 #include <stdio.h>
 
+#include "pp-printf.h"
+#include "wrc-debug.h"
 #include "dev/gpio.h"
 #include "dev/bb_spi.h"
 #include "dev/ad9910.h"

@@ -65,6 +65,8 @@
 #include "ertm15_rf_distr.h"
 #include "rf_frame_transceiver.h"
 
+#include "ppsi/ppsi.h"
+
 // allows the eRTM14 board to operate *without* the eRTM15 (no WR support, useful for IPMI testing)
 #undef CONFIG_ERTM14_WITHOUT_ERTM15
 
@@ -465,7 +467,6 @@ int bist_summary( struct bist_stage *bist )
 
 static int ertm_init_complete = 0;
 
-void ertm14_set_pps_out_mode(int mode);
 static void mmc_comm_init(void);
 
 #define LTC6950_ID_VALUE 0x65
@@ -2752,6 +2753,20 @@ int ertm15_update_rf_monitor( void )
 
 static int prev_ptp_servo_state = -1;
 static int prev_ptp_state = -1;
+
+extern struct pp_instance ppi_static;
+
+static int wrc_ptp_get_servo_state(void)
+{
+	struct pp_instance *ppi = &ppi_static;
+	return SRV(ppi)->state;
+}
+
+static int wrc_ptp_get_state(void)
+{
+	struct pp_instance *ppi = &ppi_static;
+	return ppi->state;
+}
 
 int ertm14_update_leds( void )
 {

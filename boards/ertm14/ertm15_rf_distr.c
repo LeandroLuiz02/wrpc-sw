@@ -29,6 +29,7 @@
 #include "dev/gpio.h"
 #include "dev/74x595.h"
 #include "dev/ad7888.h"
+#include "dev/syscon.h"
 #include "ertm15_rf_distr.h"
 
 #ifndef INT32_MAX

@@ -32,8 +32,8 @@
 #include <softpll_ng.h>
 #include "storage.h"
 #include "util.h"
-
-#include <wrc-task.h>
+#include "wrc-debug.h"
+#include "wrc-task.h"
 
 #include <hw/endpoint_regs.h>
 #include <hw/endpoint_mdio.h>

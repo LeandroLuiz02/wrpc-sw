@@ -22,6 +22,7 @@
 
 #include "board.h"
 
+#include "hw/rawmem.h"
 #include "hw/wr_rf_frame_transceiver_regs.h"
 #include "rf_frame_transceiver.h"
 

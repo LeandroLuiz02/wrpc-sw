@@ -21,6 +21,7 @@
 #include <stdint.h>
 
 #include "board.h"
+#include "dev/syscon.h"
 #include "dev/gpio.h"
 #include "dev/bb_spi.h"
 #include "dev/ad7888.h"

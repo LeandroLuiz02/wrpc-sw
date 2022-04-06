@@ -23,6 +23,9 @@
 
 #include <stdint.h>
 
+/* Currently it is the only one supported */
+#define IUART_PLATFORM_BARE_METAL
+
 #ifndef IUART_PLATFORM_LINUX
 #ifndef IUART_PLATFORM_BARE_METAL
 #ifndef IUART_PLATFORM_HOSTED

@@ -1,5 +1,8 @@
 #include <string.h>
 #include "dev/console.h"
+#include "dev/syscon.h"
+#include "dev/simple_uart.h"
+#include "common-uart-link.h"
 
 static uint32_t wrpc_get_ms_tics( struct uart_link* link )
 {

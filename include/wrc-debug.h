@@ -7,6 +7,8 @@
 #ifndef __WRC_DEBUG_H
 #define __WRC_DEBUG_H
 
+#include "pp-printf.h"
+
 #define WRC_DEFINE_TRACE_MSG(subsys_name, trace_func_name) \
     static inline void trace_func_name(const char *fmt, ...)             \
     {                                                                    \

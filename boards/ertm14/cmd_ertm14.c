@@ -234,7 +234,7 @@ static void set_dds_sync_source( struct ertm14_board_state *cfg, struct ertm14_b
 
 }
 
-static void set_pps_mode( char *mode )
+static void set_pps_mode(const char *mode )
 {
     if(!mode)
     {
@@ -334,12 +334,6 @@ static int cmd_ertm(const char *args[])
     } else if (!strcasecmp(args[0], "ccal")) {
         ertm14_sync_pulse_cal(  );
     }
-<<<<<<< HEAD
-
-=======
-
-
->>>>>>> ertm14: improve NCO reset/streamer statistics. Added streamer latency config commands
     ertm14_apply_config( &nstate, &mask, 0 );
     update_config( cstate, &nstate, &mask );
 

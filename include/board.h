@@ -14,9 +14,6 @@
 
 #include <hw/rawmem.h>
 
-// fixme: for eRTM15 only
-#define IUART_PLATFORM_BARE_METAL
-
 #if defined(CONFIG_TARGET_GENERIC_PHY_8BIT) || defined(CONFIG_TARGET_GENERIC_PHY_16BIT)
 #  include "boards/generic/board.h"
 #elif defined(CONFIG_TARGET_WR_SWITCH)

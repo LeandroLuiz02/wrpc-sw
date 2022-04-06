@@ -75,12 +75,8 @@ obj-$(CONFIG_TARGET_ERTM14) += \
 				dev/74x595.o \
 				dev/ad7888.o \
 				dev/ad951x.o \
-				dev/ad9520.o \
 				dev/ad9910.o \
-				dev/clock_monitor.o \
-				dev/iuart.o \
-				dev/ltc6950.o \
-				dev/fine_pulse_generator.o \
+				dev/clock_monitor.o
 
 obj-$(CONFIG_TARGET_PXIE_FMC) += \
 				dev/24aa025.o \

@@ -1,4 +1,5 @@
 #include "board.h"
+#include "pp-printf.h"
 #include "dev/clock_monitor.h"
 
 #include <hw/clock_monitor_regs.h>
