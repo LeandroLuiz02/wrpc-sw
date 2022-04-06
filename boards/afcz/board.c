@@ -1,5 +1,6 @@
 #include "board.h"
 
+#include "wrc-debug.h"
 #include "dev/syscon.h"
 #include "dev/i2c.h"
 #include "dev/gpio.h"
@@ -16,6 +17,7 @@
 #include "hw/si570_if_wb.h"
 
 #include "storage.h"
+#include "wrc.h"
 
 struct wr_si57x_interface_device
 {
@@ -49,17 +51,21 @@ struct pca9554_gpio_device
 };
 
 
-struct {
+static struct {
 	struct gpio_device gpio_aux;
 	struct wr_si57x_interface_device si57x;
 	struct wb_clock_monitor_device clk_mon;
+#if defined(CONFIG_TARGET_AFCZ_V1)
 	struct idt8v_clock_mux_device clk_mux;
 	struct pca9554_gpio_device gpio_rtm_main;
 	struct pca9554_gpio_device gpio_rtm_sfp;
+#endif
 	struct i2c_eeprom_device mac_eeprom;
 	// 2nd endpoint for the B-Train
 	struct wr_endpoint_device ep_btrain;
 } board;
+
+#if defined(CONFIG_TARGET_AFCZ_V1)
 
 static void idt8v_read_regs( struct idt8v_clock_mux_device*dev )
 {
@@ -107,6 +113,7 @@ static void idt8v_configure_io ( struct idt8v_clock_mux_device*dev, int io_index
 
 	dev->regs[ io_index ] = r;
 }
+#endif
 
 
 
@@ -142,6 +149,7 @@ static int si57x_gpio_in(const struct gpio_pin *pin)
 		return (gpsr & SI570_GPSR_SDA ? 1 : 0);
 }
 
+#if defined(CONFIG_TARGET_AFCZ_V1)
 static void tca9548_select_channels( struct i2c_bus *bus, uint8_t tca_address, uint8_t channel_mask )
 {
 	bb_i2c_start( bus );
@@ -149,6 +157,7 @@ static void tca9548_select_channels( struct i2c_bus *bus, uint8_t tca_address, u
 	bb_i2c_put_byte( bus, channel_mask );
 	bb_i2c_stop( bus );
 }
+#endif
 
 static void si57x_read( struct wr_si57x_interface_device *dev, uint8_t addr, uint8_t *data, int count )
 {
@@ -311,6 +320,8 @@ static int si57x_set_frequency( struct wr_si57x_interface_device *dev, uint32_t 
 	return 0;
 }
 
+#if defined(CONFIG_TARGET_AFCZ_V1)
+
 #define PCA9554_REG_IN 0
 #define PCA9554_REG_OUT 1
 #define PCA9554_REG_INVERT 2
@@ -401,6 +412,7 @@ static void pca9554_gpio_init( struct pca9554_gpio_device *dev, struct i2c_bus *
 	dev->gpio.set_dir = pca9554_gpio_set_dir;
 	dev->gpio.set_out = pca9554_gpio_out;
 }
+#endif
 
 static void wr_si57x_interface_init( struct wr_si57x_interface_device *dev, uint32_t base_addr, uint8_t i2c_addr )
 {
@@ -450,7 +462,7 @@ static int calc_apr(int meas_min, int meas_max, int f_center )
 	return ppm_lo < ppm_hi ? ppm_lo : ppm_hi;
 }
 
-static int gen_rnd( )
+static int gen_rnd(void)
 {
 	static const uint32_t lcg_m = 1103515245;
 	static const uint32_t lcg_i = 12345;	
@@ -533,7 +545,7 @@ static void set_main_dac( int value )
 	spll_set_dac( 0, value );
 }
 
-int afcz_check_clocks()
+int afcz_check_clocks(void)
 {
 	//check_vco_freq( AFCZ_CM_CHANNEL_CLK_DMTD, AFCZ_CM_CHANNEL_CLK_RX, set_dmtd_dac );
 	//check_vco_freq( AFCZ_CM_CHANNEL_CLK_REF,  AFCZ_CM_CHANNEL_CLK_RX, set_main_dac );
@@ -551,13 +563,14 @@ int afcz_check_clocks()
 	return 0;
 }
 
-const struct gpio_pin pin_rtm_4sfp_led_orange = { &board.gpio_rtm_main.gpio, 3 };
-const struct gpio_pin pin_rtm_4sfp_i2c_reset_n = { &board.gpio_rtm_main.gpio, 5 };
-const struct gpio_pin pin_rtm_4sfp_i2c_enable_n = { &board.gpio_rtm_main.gpio, 6 };
-const struct gpio_pin pin_rtm_4sfp_i2c_pgood_n = { &board.gpio_rtm_main.gpio, 4 };
+#if defined(CONFIG_TARGET_AFCZ_V1)
+static const struct gpio_pin pin_rtm_4sfp_led_orange = { &board.gpio_rtm_main.gpio, 3 };
+static const struct gpio_pin pin_rtm_4sfp_i2c_reset_n = { &board.gpio_rtm_main.gpio, 5 };
+static const struct gpio_pin pin_rtm_4sfp_i2c_enable_n = { &board.gpio_rtm_main.gpio, 6 };
+static const struct gpio_pin pin_rtm_4sfp_i2c_pgood_n = { &board.gpio_rtm_main.gpio, 4 };
 
 
-const struct gpio_pin pin_rtm_4sfp_sfp_tx_disable = { &board.gpio_rtm_sfp.gpio, 1 };
+static const struct gpio_pin pin_rtm_4sfp_sfp_tx_disable = { &board.gpio_rtm_sfp.gpio, 1 };
 
 static void sfp_setup(void)
 {
@@ -617,6 +630,7 @@ static void sfp_setup(void)
 	}
 
 }
+#endif
 
 #if 0
 static void afczv1_read_persistent_mac(void)
@@ -712,7 +726,7 @@ int wrc_board_early_init()
 	board_dbg("WR Core AFCZ port starting up\n");    
 
 
-	wr_si57x_interface_init( &board.si57x, (void *) BASE_SI57X_INTERFACE, SI57X_I2C_ADDR );
+	wr_si57x_interface_init( &board.si57x, BASE_SI57X_INTERFACE, SI57X_I2C_ADDR );
 	
 #if defined(CONFIG_TARGET_AFCZ_V1)
 	tca9548_select_channels( &board.si57x.master, 0x70, 1 << AFCZ_I2C_MUX_CHANNEL_SI570 );
