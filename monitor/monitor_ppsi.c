@@ -47,31 +47,18 @@
 			&& (proto_ext_info[proto_id].valid == 1))
 
 
-extern struct pp_instance ppi_static;
-extern struct pp_globals *ppg;
 static int prev_gui_description = 0;
 static int gui_description = 1;
 static uint32_t next_update_ticks;
 /* refresh period for _gui_ and _stat_ commands */
 int wrc_ui_refperiod = WRC_MONITOR_REFRESH_PERIOD;
 
-void print_main_description(void);
-void print_main_data(void);
-void print_servo_description(void);
-void print_servo_data(struct pp_instance *ppi);
-void print_aux_data(void);
-int wrc_wr_diags(void);
-
-
 struct proto_ext_info_t {
 	unsigned char valid;
 	char short_ext_name; /* Very short extension name - just one character */	const char *ext_name; /* Extension name */
-
-	time_t lastt;
-	int last_count;
 };
 
-static struct proto_ext_info_t proto_ext_info [] = {
+static const struct proto_ext_info_t proto_ext_info [] = {
 		[PPSI_EXT_NONE] = {
 				.valid = 1,
 				.ext_name = "PTP",
@@ -168,9 +155,7 @@ static const char * const prot_detection_state_name[]={
 static const struct desired_state_t{
 	const char *str_state;
 	int state;
-}
-
-desired_states[] = {
+} desired_states[] = {
 	{ "initializing", PPS_INITIALIZING},
 	{ "faulty",       PPS_FAULTY},
 	{ "disabled",     PPS_DISABLED},
@@ -234,7 +219,7 @@ static char *optimized_pp_time_toString_ps_as_ns(struct pp_time *pptime, char *b
 	return buf;
 }
 
-char * convert_ps_to_str_ns(char *buff, int64_t num)
+static char * convert_ps_to_str_ns(char *buff, int64_t num)
 {
 	int i;
 	int len;
@@ -249,65 +234,7 @@ char * convert_ps_to_str_ns(char *buff, int64_t num)
 	return buff;
 }
 
-int time(void *a)
-{
-    return 1;
-}
-
-void redraw_gui(void)
-{
-	prev_gui_description = 0;
-	next_update_ticks = 0;
-}
-
-
-int wrc_mon_gui(void)
-{
-	static uint32_t last_servo_count;
-	uint32_t now;
-	struct pp_servo *s = SRV(ppg->pp_instances);
-
-	/* print new values only if time elapsed or servo's update_count
-	 * increased */
-	if (prev_gui_description != gui_description) {
-		term_clear();
-		if (gui_description & DESCRIPTION_MAIN) {
-			print_main_description();
-		}
-		if (gui_description & DESCRIPTION_SERVO) {
-			print_servo_description();
-		}
-		next_update_ticks = 0;
-		term_clear_to_end();
-		prev_gui_description = gui_description;
-		return 1;
-	}
-
-	/* update on timeout or servo update */
-	now = timer_get_tics();
-	if (time_before(now, next_update_ticks)
-	    && last_servo_count == s->update_count)
-		return 0;
-
-	next_update_ticks = now + wrc_ui_refperiod;
-	last_servo_count = s->update_count;
-	prev_gui_description = gui_description;
-	gui_description = DESCRIPTION_MAIN;
-	print_main_data();
-
-	/* Print servo */
-	/* FIXME: add support of multiple instances */
-	print_servo_data(ppg->pp_instances);
-	print_aux_data();
-	/* clear colors */
-	pp_printf("\e[m\n");
-	/* clear till the end of a screen */
-	term_clear_to_end();
-
-	return 1;
-}
-
-void print_main_description(void)
+static void print_main_description(void)
 {
 	int i;
 	int ndevs;
@@ -346,7 +273,7 @@ void print_main_description(void)
 	cprintf(C_CYAN, "\n--------------------------- Synchronization status ----------------------------");
 }
 
-void print_main_data(void)
+static void print_main_data(void)
 {
 	struct wrc_port_state state;
 	int tx, rx, rx_err;
@@ -393,9 +320,9 @@ void print_main_data(void)
 		int port_up = ndev->link_state == NETIF_LINK_UP;
 
 		if (port_up) {
-			pcprintf(9, 1, C_GREEN, " %s: ", ndev->name);
+			pcprintf(9, 1, C_GREEN, " %s", ndev->name);
 		} else {
-			pcprintf(9, 1, C_RED, "*%s: ", ndev->name);
+			pcprintf(9, 1, C_RED, "*%s", ndev->name);
 		}
 
 		if (i == 0) /* FIXME: should be independent for each interface */
@@ -571,7 +498,7 @@ void print_main_data(void)
 	return;
 }
 
-void print_aux_data(void)
+static void print_aux_data(void)
 {
 	int n_out, i;
 	struct spll_aux_clock_status aux_stat;
@@ -602,7 +529,7 @@ void print_aux_data(void)
 	return;
 }
 
-void print_servo_description()
+static void print_servo_description(void)
 {
 	pcprintf(18, 1, C_BLUE, "Servo state:\n");
 
@@ -634,14 +561,14 @@ void print_servo_description()
 	}
 }
 
-void print_servo_data(struct pp_instance *ppi)
+static void print_servo_data(struct pp_instance *ppi)
 {
 	wrh_servo_t * wrh_servo;
 	wr_servo_ext_t * wr_servo_ext = NULL;
 	char buf[128];
 	int row_offset;
 	int proto_extension = ppi->extState!= PP_EXSTATE_DISABLE ? ppi->protocol_extension : PPSI_EXT_NONE;
-	struct proto_ext_info_t *pe_info = IS_PROTO_EXT_INFO_AVAILABLE(proto_extension) ? &proto_ext_info[proto_extension] :  &proto_ext_info[0];
+	const struct proto_ext_info_t *pe_info = IS_PROTO_EXT_INFO_AVAILABLE(proto_extension) ? &proto_ext_info[proto_extension] :  &proto_ext_info[0];
 
 	/* --------------------------- Synchronization status ---------------------------- */
 	pprintf(18, 1, "");
@@ -675,16 +602,12 @@ void print_servo_data(struct pp_instance *ppi)
 	  )
 		return;
 
-	if (pe_info->lastt && time(NULL) - pe_info->lastt > 5) {
-		pcprintf(18, 23, C_RED, "--- not updating ---\n");
-	} else {
-		pcprintf(18, 23, C_WHITE, "%s:%s: %s%-15s\n",
-				ppi->cfg.iface_name,
-				    pe_info->ext_name,
-				    ppi->servo->servo_state_name,
-				    ppi->servo->flags & PP_SERVO_FLAG_WAIT_HW ?
-				" (wait for hw)" : "");
-	}
+	pcprintf(18, 23, C_WHITE, "%s:%s: %s%-15s\n",
+		 ppi->cfg.iface_name,
+		 pe_info->ext_name,
+		 ppi->servo->servo_state_name,
+		 ppi->servo->flags & PP_SERVO_FLAG_WAIT_HW ?
+		 " (wait for hw)" : "");
 
 	/* "tracking disabled" is just a testing tool */
 	if (wrh_servo && !wrh_servo->tracking_enabled)
@@ -753,11 +676,6 @@ void print_servo_data(struct pp_instance *ppi)
 
 	 /* Update counter */
 	pcprintf(row_offset, 23, C_WHITE, "%16u times", ppi->servo->update_count);
-	if (ppi->servo->update_count != pe_info->last_count) {
-		pe_info->lastt = time(NULL);
-		pe_info->last_count = ppi->servo->update_count;
-	}
-
 	if (wrh_servo) {
 		/* Master PHY delays TX */
 		pcprintf(33, 26, C_WHITE,"%22s", optimized_pp_time_toString_ps_as_ns(&wr_servo_ext->delta_txm, buf));
@@ -774,86 +692,55 @@ void print_servo_data(struct pp_instance *ppi)
 
 }
 
-#if 0
-
-/*
- * this function can be used to factor out most of the stuff
- * in wrc_wr_diags
- * either this, or make syscon.c wdiags_* functions not depend on a
- * global...
- *
- * FIXME: add wrc_diags_dump to a header!!!
- * FIXME: refactor wdiags_* function in dev/syscon.c so that they
- *  do not write directly to syscon, but to an arbitrary address.
- *  That will clean the code here *enormously*
- */
-int wrc_diags_dump(struct wrc_diags *buf)
+void redraw_gui(void)
 {
-	struct hal_port_state ps;
-	int tx, rx;
-	uint64_t sec;
-	uint32_t nsec;
-	uint32_t aux_stat;
-	int i, temp, n_out;
+	prev_gui_description = 0;
+	next_update_ticks = 0;
+}
 
-	buf->VER = 2;
-	buf->CTRL = 0xcafebabe;
-	/* frame statistics */
-	minic_get_stats(&tx, &rx, NULL);
-	buf->WDIAG_TXFCNT = tx;
-	buf->WDIAG_RXFCNT = rx;
 
-	/* local time */
-	shw_pps_gen_get_time(&sec, &nsec);
-	buf->WDIAG_SEC_MSB = 0xFFFFFFFF & (sec>>32);
-	buf->WDIAG_SEC_LSB = 0xFFFFFFFF &  sec;
-	buf->WDIAG_NS      = nsec;
+int wrc_mon_gui(void)
+{
+	static uint32_t last_servo_count;
+	uint32_t now;
+	struct pp_servo *s = SRV(ppg->pp_instances);
 
-	/* port state (from hal) */
-	wrpc_get_port_state(&ps, NULL);
-	buf->WDIAG_PSTAT  = (ps.state ? WRC_DIAGS_WDIAG_PSTAT_LINK : 0);
-	buf->WDIAG_PSTAT |= (ps.locked ? WRC_DIAGS_WDIAG_PSTAT_LOCKED : 0);
-
-	/* port PTP State (from ppsi) */
-	buf->WDIAG_PTPSTAT = SYSC_WDIAG_PTPSTAT_PTPSTATE_W((uint8_t)ppi->state);
-
-	/* servo state (if slave)s */
-	if(ptp_mode == WRC_MODE_SLAVE) {
-		struct wr_servo_state *ss =
-			&((struct wr_data *)ppi->ext_data)->servo_state;
-		int32_t asym   = (int32_t)(ss->picos_mu-2LL * ss->delta_ms);
-		int wr_mode    = (ss->flags & WR_FLAG_VALID) ? 1 : 0;
-		int servostate =  ss->state;
-		uint64_t mu = ss->picos_mu;
-		uint64_t dms = ss->delta_ms;
-
-		buf->WDIAG_SSTAT   = wr_mode ? WRC_DIAGS_WDIAG_SSTAT_WR_MODE : 0;
-		buf->WDIAG_SSTAT  |= SYSC_WDIAG_SSTAT_SERVOSTATE_W(servostate);
-		buf->WDIAG_MU_MSB  = 0xFFFFFFFF & (mu>>32);
-		buf->WDIAG_MU_LSB  = 0xFFFFFFFF &  mu;
-		buf->WDIAG_DMS_MSB = 0xFFFFFFFF & (dms>>32);
-		buf->WDIAG_DMS_LSB = 0xFFFFFFFF &  dms;
-		buf->WDIAG_ASYM    = asym;
-		buf->WDIAG_CKO     = ss->offset;
-		buf->WDIAG_SETP    = ss->cur_setpoint;
-		buf->WDIAG_UCNT    = ss->update_count;
+	/* print new values only if time elapsed or servo's update_count
+	 * increased */
+	if (prev_gui_description != gui_description) {
+		term_clear();
+		if (gui_description & DESCRIPTION_MAIN) {
+			print_main_description();
+		}
+		if (gui_description & DESCRIPTION_SERVO) {
+			print_servo_description();
+		}
+		next_update_ticks = 0;
+		term_clear_to_end();
+		prev_gui_description = gui_description;
+		return 1;
 	}
-	/* auxiliar channels (if any) */
-	spll_get_num_channels(NULL, &n_out);
-	if (n_out > 8) n_out = 8; /* hardware limit. */
-	aux_stat = 0;
-	for(i = 0; i < n_out; i++) {
-		aux_stat |= (( SPLL_AUX_SLAVE_LOCKED | SPLL_AUX_MONITOR_READY ) & spll_get_aux_status(i).flags) << i;
-	}
-	buf->WDIAG_ASTAT = WRC_DIAGS_WDIAG_ASTAT_AUX_W(aux_stat);
 
-	/* temperature */
-	temp = wrc_temp_get("pcb");
-	buf->WDIAG_TEMP = temp;
+	/* update on timeout or servo update */
+	now = timer_get_tics();
+	if (time_before(now, next_update_ticks)
+	    && last_servo_count == s->update_count)
+		return 0;
 
-	buf->WDIAG_BITSLIDE =
+	next_update_ticks = now + wrc_ui_refperiod;
+	last_servo_count = s->update_count;
+	prev_gui_description = gui_description;
+	gui_description = DESCRIPTION_MAIN;
+	print_main_data();
+
+	/* Print servo */
+	/* FIXME: add support of multiple instances */
+	print_servo_data(ppg->pp_instances);
+	print_aux_data();
+	/* clear colors */
+	pp_printf("\e[m\n");
+	/* clear till the end of a screen */
+	term_clear_to_end();
 
 	return 1;
 }
-
-#endif
