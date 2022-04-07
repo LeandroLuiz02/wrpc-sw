@@ -8,7 +8,7 @@ obj-y += \
 obj-$(CONFIG_WRPC_PPSI) += \
 	lib/events-ptp.o \
 
-obj-$(CONFIG_EMBEDDED_NODE) += lib/task-diags.o
+obj-$(CONFIG_EMBEDDED_NODE) += lib/task-diags.o lib/task-stats.o
 
 obj-$(CONFIG_WR_NODE) += lib/net.o
 
