@@ -6,8 +6,8 @@
  *
  * Released according to the GNU GPL, version 2 or any later version.
  */
-#ifndef __TEMPERATURE_H__
-#define __TEMPERATURE_H__
+#ifndef __SENSORS_H__
+#define __SENSORS_H__
 
 #include <stdint.h>
 
@@ -59,4 +59,4 @@ struct wrc_sensor* wrc_sensor_find_by_name(char *name);
 struct wrc_sensor* wrc_sensor_find_by_id(uint8_t id);
 struct wrc_sensor* wrc_sensor_find_by_type(uint8_t type);
 
-#endif /* __TEMPERATURE_H__ */
+#endif /* __SENSORS_H__ */

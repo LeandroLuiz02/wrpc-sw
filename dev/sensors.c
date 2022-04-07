@@ -144,19 +144,16 @@ static int cmd_sensors(const char *args[])
 {
 	pp_printf("Sensors readout: \n");
 
-	struct wrc_sensor *s = sensors;
-	while( s->flags )
-	{
-		if( s->flags & WRC_SENSOR_VALID )
-		{
-			pp_printf(" - %-20s %-20s : %05d %s\n",
-				sensor_type_string( s->flags ),
-				s->name,
-				s->value,
-				sensor_unit_string( s->flags )
+	struct wrc_sensor *s;
+	for (s = sensors; s->flags; s++) {
+		if (!(s->flags & WRC_SENSOR_VALID))
+			continue;
+		pp_printf(" - %-20s %-20s : %05d %s\n",
+			  sensor_type_string( s->flags ),
+			  s->name,
+			  s->value,
+			  sensor_unit_string( s->flags )
 			);
-		}
-		s++;
 	}
 
 	return 0;
