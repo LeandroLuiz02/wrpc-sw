@@ -15,7 +15,11 @@ const char *const build_date = stats.build_date;
 const char *const build_time = stats.build_time;
 const char *const build_by = stats.build_by;
 
-struct spll_stats stats = {
+/*
+ * On the switch, we export softpll internal status to the ARM cpu, for SNMP.
+ * Thus, we place this structure at a known address in the linker script
+ */
+struct spll_stats stats __attribute__((section(".stats"))) = {
 	.magic = 0x5b1157a7,
 	.ver = SPLL_STATS_VER,
 #ifdef CONFIG_DETERMINISTIC_BINARY
