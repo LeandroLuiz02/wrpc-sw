@@ -33,10 +33,6 @@ struct wrc_shell_cmd {
 #define DEFINE_WRC_COMMAND(_name) \
 	const struct wrc_shell_cmd __wrc_cmd_ ## _name
 
-char *env_get(const char *var);
-int env_set(const char *var, const char *value);
-void env_init(void);
-
 int shell_exec(const char *buf);
 int shell_interactive(void);
 extern int shell_is_interacting;
@@ -44,7 +40,6 @@ extern int shell_is_interacting;
 void shell_boot_script(void);
 void shell_show_build_init(void);
 void shell_register_command( const struct wrc_shell_cmd* cmd );
-void shell_list_cmds(void);
 void shell_register_commands(void);
 void shell_activate_ui_command( int (*callback)(void) );
 
