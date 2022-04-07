@@ -1,20 +1,14 @@
 obj-y += \
 	lib/util.o \
 	lib/wrc-tasks.o \
+	lib/assert.o \
+	lib/usleep.o \
+	lib/event.o
 
 obj-$(CONFIG_WRPC_PPSI) += \
 	lib/events-ptp.o \
 
-obj-$(CONFIG_ARCH_LM32) += \
-	lib/assert.o \
-	lib/usleep.o \
-	lib/event.o
-
-obj-$(CONFIG_ARCH_RISCV) += \
-	lib/assert.o \
-	lib/usleep.o \
-	lib/event.o
-
+obj-$(CONFIG_EMBEDDED_NODE) += lib/task-diags.o
 
 obj-$(CONFIG_WR_NODE) += lib/net.o
 
