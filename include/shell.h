@@ -15,6 +15,12 @@
 extern int wrc_ui_mode;
 extern int wrc_stat_running;
 
+/* refresh period for _gui_ and _stat_ commands */
+extern int wrc_ui_refperiod;
+
+/* internal "last", exported to shell command */
+extern uint32_t wrc_stats_last;
+
 void decode_ip(const char *str, unsigned char *ip);
 char *format_ip(char *s, const unsigned char *ip);
 

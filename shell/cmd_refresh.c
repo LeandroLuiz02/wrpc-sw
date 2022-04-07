@@ -14,8 +14,6 @@
 #include <wrc.h>
 #include "shell.h"
 
-extern int wrc_ui_refperiod;
-
 static int cmd_refresh(const char *args[])
 {
 	int sec;
@@ -29,7 +27,6 @@ static int cmd_refresh(const char *args[])
 	}
 
 	wrc_ui_refperiod = sec*TICS_PER_SECOND;
-	pp_printf("\n");
 	return 0;
 }
 
