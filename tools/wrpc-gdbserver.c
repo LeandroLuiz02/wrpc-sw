@@ -26,12 +26,14 @@
 #include <limits.h>
 
 #include "libdevmap.h"
+#include "vuart_lib.h"
 #include "hw/wrc_cpu_csr.h"
 
 #define TRTL_GDB_PACKET_SIZE_MAX 2048
 
 static int verbose;
 static int swapping;
+static int flag_term;
 
 /**
  * struct trtl_gdb_packet - GDB packet
@@ -50,35 +52,17 @@ struct trtl_gdb_packet {
  * @fd: socket file descriptor
  */
 struct trtl_dbg_port {
+	/* For debug */
 	void *addr;
 	uint8_t cpu;
 	int fd;
+	/* For vuart */
+	struct mapping_desc vuart_map;
 };
 
 typedef int (trtl_gdb_command_t)(struct trtl_dbg_port *dbg,
 				 struct trtl_gdb_packet *out,
 				 struct trtl_gdb_packet *in);
-
-/**
- * Help message
- */
-static void help(void)
-{
-	fputs("\n", stderr);
-	fputs("mockturtle-gdbserver -D 0x<hex-number> -i <number>\n\n",
-	      stderr);
-	fputs("-D   device identificator\n", stderr);
-	fputs("-i   CPU index (default 0)\n", stderr);
-	fputs("-p   GDB port (default 7471)\n", stderr);
-	fputs("-s   32bit endianness swapping (default not active)\n", stderr);
-	fputs("-v   verbose output (add more for more verbosity)\n", stderr);
-	fputs("-h   show this message\n", stderr);
-	fputs("\n", stderr);
-	fputs("The options '-s' should be used when there is an\n", stderr);
-	fputs("endianness conversion to be done to communicate\n", stderr);
-	fputs("with the debug port.\n", stderr);
-	fflush(stderr);
-}
 
 /**
  * Change byte order but only when user asks for it
@@ -93,7 +77,6 @@ static uint32_t __io_swap32(uint32_t val)
 	if (!swapping)
 		return val;
 
-	fputs("Swapping\n", stdout);
 	return ((val >> 24) & 0x000000FF) |
 	       ((val >>  8) & 0x0000FF00) |
 	       ((val <<  8) & 0x00FF0000) |
@@ -339,12 +322,19 @@ static int trtl_gdb_handle_c(struct trtl_dbg_port *dbg,
 
 	trtl_dbg_exec_insn(dbg, 0x00100073); /* ebreak */
 	while (1) {
-		struct pollfd p = {
-				   .fd = dbg->fd,
-				   .events = POLLIN,
-				   .revents = 0,
-		};
 		int ret;
+		struct pollfd p[2];
+
+		/* Dump vuart. */
+		if (flag_term) {
+			while (1) {
+				int rx = wr_vuart_rx(&dbg->vuart_map);
+				if (rx < 0)
+					break;
+				putchar(rx);
+			}
+			fflush(stdout);
+		}
 
 		if (trtl_dbg_in_debug_mode(dbg)) {
 			/*
@@ -359,8 +349,31 @@ static int trtl_gdb_handle_c(struct trtl_dbg_port *dbg,
 			}
 		}
 
-		ret = poll(&p, 1, 1000);
-		if (ret > 0) {
+		p[0].fd = dbg->fd;
+		p[0].events = POLLIN;
+		p[0].revents = 0;
+
+		if (flag_term) {
+			p[1].fd = 0;
+			p[1].events = POLLIN;
+			p[1].revents = 0;
+			ret = poll(p, 2, 100);
+		}
+		else
+			ret = poll(p, 1, 1000);
+
+		if (ret == 0)
+			continue;
+		if (ret < 0)
+			break;
+
+		if (flag_term
+		    && (p[1].revents & POLLIN)) {
+			char c;
+			if (read(0, &c, 1) == 1)
+				wr_vuart_tx(&dbg->vuart_map, c);
+		}
+		if (p[0].revents & POLLIN) {
 			/* GDB wants something from us */
 			ret = trtl_dbg_debug_mode_force_set(dbg);
 			if (ret < 0)
@@ -690,19 +703,25 @@ static int trtl_gdb_handle_s(struct trtl_dbg_port *dbg,
 		return 0;
 	}
 
+	/* Get ra(x1) and pc  */
 	ra = trtl_dbg_read_reg(dbg, 1);
 	pc = trtl_dbg_pc_read_via_ra(dbg);
 
+	/* Read the instruction to be executed (at pc) */
 	trtl_dbg_write_reg(dbg, 1, pc);
 	trtl_dbg_exec_insn(dbg, 0x0000A083) ;/* lw ra,0(ra) */
 	trtl_dbg_exec_nop(dbg);
 	trtl_dbg_exec_nop(dbg);
 	trtl_dbg_exec_nop(dbg);
 	insn = trtl_dbg_read_reg(dbg, 1);
-	trtl_dbg_write_reg(dbg, 1, ra);
 	if (verbose)
 		fprintf(stdout, "execute: %08"PRIx32" at pc=%08"PRIx32,
 			insn, pc);
+
+	/* Restore ra */
+	trtl_dbg_write_reg(dbg, 1, ra);
+
+	/* Execute the instruction */
 	trtl_dbg_exec_insn(dbg, insn);
 	trtl_dbg_exec_nop(dbg);
 	trtl_dbg_exec_nop(dbg);
@@ -711,13 +730,22 @@ static int trtl_gdb_handle_s(struct trtl_dbg_port *dbg,
 		/* Nothing to do, PC is always updated */
 		break;
 	case 0x63: /* branch */
+		/* Read new PC */
 		ra = trtl_dbg_read_reg(dbg, 1);
 		npc = trtl_dbg_pc_read_via_ra(dbg);
 		trtl_dbg_write_reg(dbg, 1, ra);
+		/* In case of no change, the branch has not been taken,
+		   so the PC needs to be updated to the next instruction.
+		   If the branch has been taken, the PC has been updated.
+		   NOTE: it doesn't work in case of conditional jump to the
+		   current instruction.  Maybe decode the instruction
+		   further. */
 		if (npc == pc)
 			trtl_dbg_pc_advance_4(dbg);
 		break;
 	default:
+		/* The instruction has been executed, the pc needs to
+		   be updated */
 		trtl_dbg_pc_advance_4(dbg);
 		break;
 	}
@@ -1060,8 +1088,7 @@ static int trtl_debugger_run(struct trtl_dbg_port *dbg)
 		return -1;
 	}
 
-	fputs("Start receiving messages from GDB", stdout);
-	fflush(stdout);
+	fputs("Start receiving messages from GDB\n", stdout);
 	while (run) {
 		memset(in, 0, sizeof(*in));
 		memset(out, 0, sizeof(*out));
@@ -1100,9 +1127,11 @@ static void wrpc_gdbserver_help(char *prog)
 	mapping_help_str = dev_mapping_help();
 	fprintf(stderr, "%s [options]\n", prog);
 	fprintf(stderr, "%s\n", mapping_help_str);
-	fprintf(stderr, "gdbserver options:\n");
+	fprintf(stderr, "(offset should be 0, address is the wrpc registers base)\n");
+	fprintf(stderr, "wrpc-gdbserver options:\n");
 	fprintf(stderr, " -p PORT       listen on tcp port PORT\n");
 	fprintf(stderr, " -v            verbose\n");
+	fprintf(stderr, " -t            enable terminal\n");
 }
 
 #define MEMPATH_LEN 128
@@ -1124,17 +1153,17 @@ int main(int argc, char *argv[])
 	}
 
 	memset(&dbg, 0, sizeof(dbg));
-	while ((c = getopt(argc, argv, "hp:vs")) != -1) {
+	while ((c = getopt(argc, argv, "hp:vst")) != -1) {
 		switch (c) {
 		case 'h':
 		case '?':
-			help();
+			wrpc_gdbserver_help(argv[0]);
 			exit(EXIT_SUCCESS);
 			break;
 		case 'p':
-			ret = sscanf(optarg, "%d", &gdb_port);
-			if (ret != 1) {
-				help();
+			gdb_port = atoi(optarg);
+			if (gdb_port == 0) {
+				fprintf(stderr, "bad port value\n");
 				exit(EXIT_FAILURE);
 			}
 			break;
@@ -1143,6 +1172,9 @@ int main(int argc, char *argv[])
 			break;
 		case 's':
 			swapping = 1;
+			break;
+		case 't':
+			flag_term = 1;
 			break;
 		}
 	}
@@ -1154,8 +1186,10 @@ int main(int argc, char *argv[])
 		goto out;
 	}
 
-	dbg.addr = (void *)mdesc->base;
+	dbg.addr = (void *)mdesc->base + 0xb00;
 	swapping = mdesc->is_be ^ swapping;
+	dbg.vuart_map.base = (void *)mdesc->base + 0x500;
+	dbg.vuart_map.is_be = swapping;
 
 	sfd = socket(AF_INET, SOCK_STREAM, 0);
 	if (sfd < 0) {

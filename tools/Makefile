@@ -81,7 +81,7 @@ wrpc-diags: wrpc-diags.c
 wrpc-vuart: wrpc-vuart.o vuart_lib.o
 	$(CC) $(CFLAGS) -Werror $^ $(LDFLAGS) -o $@
 
-wrpc-gdbserver: wrpc-gdbserver.c
+wrpc-gdbserver: wrpc-gdbserver.o vuart_lib.o
 	$(CC) $(CFLAGS) -Werror  $^ $(LDFLAGS) -o $@
 
 pfilter-builder: pfilter-builder.c
