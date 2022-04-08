@@ -12,6 +12,7 @@ ALL   += pfilter-builder
 ALL   += mapper
 ALL   += wrpc-vuart
 ALL   += wrpc-gdbserver
+ALL   += wrpc-load
 ALL   += wr-streamers
 ALL   += wrpc-diags
 ALL   += gensdbfs
@@ -83,6 +84,9 @@ wrpc-vuart: wrpc-vuart.o vuart_lib.o
 
 wrpc-gdbserver: wrpc-gdbserver.o vuart_lib.o
 	$(CC) $(CFLAGS) -Werror  $^ $(LDFLAGS) -o $@
+
+wrpc-load: wrpc-load.o
+	$(CC) $(CFLAGS) $^ $(LDFLAGS) -o $@
 
 pfilter-builder: pfilter-builder.c
 	$(CC) $(CFLAGS)  -include ../include/generated/autoconf.h \
