@@ -30,9 +30,7 @@ struct vmebridge_map_args {
 	uint32_t am; /**< VME address modifier to use */
 	uint64_t addr; /**< physical base address */
 };
-#endif
 
-#ifdef SUPPORT_CERN_VMEBRIDGE
 static struct mapping_desc *cern_vmebridge_dev_map(
 		struct mapping_args *map_args, int mapping_length)
 {
@@ -162,11 +160,8 @@ void dev_unmap(struct mapping_desc *desc)
 
 #ifdef SUPPORT_CERN_VMEBRIDGE
 
-#define CERN_VMEBRIDGE_REQUIRED_ARG_NB 2
-#define CERN_VMEBRIDGE 1
-
 static struct option long_options[] = {
-	{"cern-vmebridge", no_argument, 0, CERN_VMEBRIDGE},
+	{"cern-vmebridge", no_argument, 0, 'V'},
 	{"address", required_argument, 0, 'a'},
 	{"offset", required_argument, 0, 'o'},
 	{"data-width", required_argument, 0, 'w'},
@@ -183,7 +178,8 @@ static int cern_vmebridge_match(int argc, char *argv[])
 	int i;
 
 	for (i = 0; i < argc; ++i) {
-		if (!strcmp(argv[i], "--cern-vmebridge")) {
+		if (!strcmp(argv[i], "--cern-vmebridge")
+		    || !strcmp(argv[i], "-V")) {
 			return 1;
 		}
 	}
@@ -209,11 +205,12 @@ static int cern_vmebridge_parse_args(int *argc, char *argv[],
 	/* set default values in case they are not provided*/
 	vme_args->data_width = 32;
 	vme_args->am = 0x39;
+	map_args->offset = 0;
 
-	while ((c = getopt_long(*argc, argv, "w:o:m:a:", long_options,
+	while ((c = getopt_long(*argc, argv, "w:o:m:a:V", long_options,
 				&option_index)) != -1) {
 		switch(c) {
-		case CERN_VMEBRIDGE:
+		case 'V':
 			// nothing to do
 			break;
 		case 'w': /* optional arg */
@@ -227,11 +224,10 @@ static int cern_vmebridge_parse_args(int *argc, char *argv[],
 			       vme_args->data_width == 64) )
 				return -1;
 			break;
-		case 'o': /* mandatory arg */
+		case 'o': /* optional arg */
 			ret = sscanf(optarg, "0x%"SCNx64, &map_args->offset);
 			if (ret != 1)
 				return -1;
-			++arg_count;
 			break;
 		case 'm': /* optional arg */
 			ret = sscanf(optarg, "0x%x",
@@ -253,7 +249,7 @@ static int cern_vmebridge_parse_args(int *argc, char *argv[],
 		}
 	}
 	*argc = nargc;
-	return (arg_count == CERN_VMEBRIDGE_REQUIRED_ARG_NB) ? 0 : -1;
+	return (arg_count == 1) ? 0 : -1;
 }
 #endif
 
@@ -279,6 +275,8 @@ struct mapping_args *dev_parse_mapping_args(int *argc, char *argv[])
 		nargc = *argc;
 		ret = cern_vmebridge_parse_args(&nargc, argv, map_args);
 		if (ret < 0) {
+			fprintf(stderr,
+				"%s: bad value or missing -a ADDR\n", argv[0]);
 			goto out;
 		}
 	}
@@ -309,7 +307,7 @@ struct mapping_args *dev_parse_mapping_args(int *argc, char *argv[])
 				break;
 			}
 		}
-		
+
 		if (arg_count != REQUIRED_ARG_NB) {
 			goto out;
 		}
