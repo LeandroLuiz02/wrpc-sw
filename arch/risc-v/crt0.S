@@ -16,49 +16,47 @@ _start:
 _exception_entry:
     j      trap_entry
 
-.org WRPC_MARK
+	.org WRPC_MARK
+wrpc_mark:
 /* Used by the dumping tool to identify byte ordering */
-.ascii     "WRPC----"
-.int       0x01234567
-.short     0x89ab, 0xcdef
+	.ascii     "WRPC----"
 /* Pointer to structures, for the dumping tool */
 .org WRC_STATIC_PADDR
-    .word  wrc_global
+wrc_global_addr:
+	.word  wrc_global
+	
 #ifdef CONFIG_WRPC_PPSI
-.org PPG_STATIC_PADDR
-    .word  ppg_static
+	.org PPG_STATIC_PADDR
+ppg_static_addr:
+	.word  ppg_static
 #endif
-.org STATS_PADDR
-    .word  stats
+	
+	.org STATS_PADDR
+stats_addr:
+	.word  stats
 
-.org UPTIME_SEC_ADDR
-.global uptime_sec
+	.org UPTIME_SEC_ADDR
+	.global uptime_sec
 uptime_sec:
-    .word  0
+	.word  0
 
-.org VERSION_WRPC_ADDR
-.global version_wrpc
+	.org VERSION_WRPC_ADDR
 version_wrpc:
-    .byte  WRPC_SHMEM_VERSION
+	.byte  WRPC_SHMEM_VERSION
 
-.org VERSION_PPSI_ADDR
-.global version_ppsi
+	.org VERSION_PPSI_ADDR
 version_ppsi:
-    .byte  WRS_PPSI_SHMEM_VERSION
-
-
+	.byte  WRS_PPSI_SHMEM_VERSION
+	.byte 0, 0
+	
+#ifdef CONFIG_WR_NODE_SIM
 /* Pointer to a structure used by testbenches, use only when
  * CONFIG_WR_NODE_SIM is set */
-.org HDL_TESTBENCH_PADDR
-.global hdl_testbench_p
+	.org HDL_TESTBENCH_PADDR
+	.global hdl_testbench_p
 hdl_testbench_p:
-#ifdef CONFIG_WR_NODE_SIM
-    .word  hdl_testbench
-#else
-    .word  0
+	.word  hdl_testbench
 #endif
-
-.org 0x40
 
     .global _reset_handler
     .type   _reset_handler, @function

@@ -6,19 +6,19 @@
 *
 * Released according to the GNU GPL, version 2 or any later version.
 */
-#ifndef __CRT0_H__
-#define __CRT0_H__
+#ifndef __RISCV_CRT0_H__
+#define __RISCV_CRT0_H__
 
 /* offsets for crt0.s */
 #define WRPC_MARK		0x10
-#define WRC_STATIC_PADDR	0x20
+#define WRC_STATIC_PADDR	0x18
 
-#define PPG_STATIC_PADDR	0x28
-#define STATS_PADDR		0x2c
-#define UPTIME_SEC_ADDR		0x30
-#define VERSION_WRPC_ADDR	0x34
-#define VERSION_PPSI_ADDR	0x35
+#define PPG_STATIC_PADDR	0x1c
+#define STATS_PADDR		0x20
+#define UPTIME_SEC_ADDR		0x24
+#define VERSION_WRPC_ADDR	0x28
+#define VERSION_PPSI_ADDR	0x29
 
 #define HDL_TESTBENCH_PADDR	0x38
 
-#endif /* __CRT0_H__ */
+#endif /* __RISCV_CRT0_H__ */

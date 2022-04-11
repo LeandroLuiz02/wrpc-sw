@@ -12,7 +12,6 @@
 
 #include <softpll_ng.h>
 #include <revision.h>
-#include <arch/lm32/crt0.h>
 #include <dev/netif.h>
 #include <lib/ipv4.h>
 #include <wrc_global.h>
@@ -23,6 +22,13 @@
 #include <dump-info.h>
 #include "time_lib.h"
 
+extern const struct dump_info dump_wrpc_info_target[]; /* wrpc-sw/dump-info.c -> bina -> elf */
+extern const struct dump_info dump_wrpc_info_target_v42[]; /* wrpc-sw/dump-info.c -> bina -> elf */
+extern const struct dump_info dump_ppsi_info_target[]; /* wrpc-sw/ppsi/tools/dump_mem_ppsi_wrpc.c -> bina -> elf */
+
+static const struct dump_info *wrpc_info_target;
+static const struct dump_info *ppsi_info_target;
+
 /* We have a problem: ppsi is built for wrpc, so it has ntoh[sl] wrong */
 #undef ntohl
 #undef ntohs
@@ -31,11 +37,47 @@
 #define ntohl(x) __do_not_use
 #define ntohll(x) __do_not_use
 
-#ifdef CONFIG_ARCH_RISCV
-#define HAS_ARCH_RISCV 1
-#else
-#define HAS_ARCH_RISCV 0
-#endif
+#include <arch/risc-v/crt0.h>
+static unsigned riscv_wrpc_mark = WRPC_MARK;
+static unsigned riscv_version_wrpc_addr = VERSION_WRPC_ADDR;
+static unsigned riscv_version_ppsi_addr = VERSION_PPSI_ADDR;
+static unsigned riscv_wrc_static_paddr = WRC_STATIC_PADDR;
+static unsigned riscv_ppg_static_paddr = PPG_STATIC_PADDR;
+static unsigned riscv_stats_paddr = STATS_PADDR;
+#undef WRPC_MARK
+#undef VERSION_WRPC_ADDR
+#undef VERSION_PPSI_ADDR
+#undef WRC_STATIC_PADDR
+#undef PPG_STATIC_PADDR
+#undef STATS_PADDR
+
+#undef UPTIME_SEC_ADDR
+#undef HDL_TESTBENCH_PADDR
+
+#include <arch/lm32/crt0.h>
+static unsigned lm32_wrpc_mark = WRPC_MARK;
+static unsigned lm32_version_wrpc_addr = VERSION_WRPC_ADDR;
+static unsigned lm32_version_ppsi_addr = VERSION_PPSI_ADDR;
+static unsigned lm32_wrc_static_paddr = WRC_STATIC_PADDR;
+static unsigned lm32_ppg_static_paddr = PPG_STATIC_PADDR;
+static unsigned lm32_stats_paddr = STATS_PADDR;
+#undef WRPC_MARK
+#undef VERSION_WRPC_ADDR
+#undef VERSION_PPSI_ADDR
+#undef WRC_STATIC_PADDR
+#undef PPG_STATIC_PADDR
+#undef STATS_PADDR
+
+#undef UPTIME_SEC_ADDR
+#undef HDL_TESTBENCH_PADDR
+
+/* argv[0] */
+static const char *progname;
+
+enum t_img {
+	IMG_UNKNOWN,
+	IMG_LM32,
+	IMG_RISCV};
 
 /* create fancy macro to shorten the switch statements, assign val as a string to p */
 #define ENUM_TO_P_IN_CASE(val, p) \
@@ -62,12 +104,12 @@ void print_str(char *s)
  * This picks items from memory, converting as needed. No ntohl any more.
  * Next, we'll detect the byte order from the code itself.
  */
-long long wrpc_get_64(void *p)
+long long wrpc_get_64(const void *p)
 {
-	uint64_t *p64 = p;
+	const uint64_t *p64 = p;
 	uint64_t result;
 
-	if (HAS_ARCH_RISCV || endian_flag == DUMP_ENDIAN_FLAG) {
+	if (endian_flag == DUMP_ENDIAN_FLAG) {
 		return *p64;
 	}
 	result = __bswap_32((uint32_t)*p64);
@@ -77,37 +119,37 @@ long long wrpc_get_64(void *p)
 }
 
 /* printf complains for i/l mismatch, so get i32 and l32 separately */
-long wrpc_get_l32(void *p)
+long wrpc_get_l32(const void *p)
 {
-	uint32_t *p32 = p;
+	const uint32_t *p32 = p;
 
-	if (HAS_ARCH_RISCV || endian_flag == DUMP_ENDIAN_FLAG)
+	if (endian_flag == DUMP_ENDIAN_FLAG)
 		return *p32;
 	return __bswap_32(*p32);
 }
 
-int wrpc_get_i32(void *p)
+int wrpc_get_i32(const void *p)
 {
 	return wrpc_get_l32(p);
 }
 
-int wrpc_get_16(void *p)
+int wrpc_get_16(const void *p)
 {
-	uint16_t *p16 = p;
+	const uint16_t *p16 = p;
 
-	if (HAS_ARCH_RISCV || endian_flag == DUMP_ENDIAN_FLAG)
+	if (endian_flag == DUMP_ENDIAN_FLAG)
 		return *p16;
 	return __bswap_16(*p16);
 }
 
-uint8_t wrpc_get_8(void *p)
+uint8_t wrpc_get_8(const void *p)
 {
-	uint8_t *p8 = p;
+	const uint8_t *p8 = p;
 
 	return *p8;
 }
 
-void dump_one_field(void *addr, struct dump_info *info, char *info_prefix)
+void dump_one_field(void *addr, const struct dump_info *info, char *info_prefix)
 {
 	void *p = addr + wrpc_get_i32(&info->offset);
 	char format[16];
@@ -378,12 +420,12 @@ void dump_one_field(void *addr, struct dump_info *info, char *info_prefix)
 	}
 }
 
-struct dump_info * find_s_name(char *s_name)
+const struct dump_info * find_s_name(char *s_name)
 {
-	struct dump_info *p;
+	const struct dump_info *p;
 
 	/* scan WRPC's structures */
-	p = dump_wrpc_info_target;
+	p = wrpc_info_target;
 	for (; strcmp(p->name, "end"); p++)
 		if (!strcmp(p->name, s_name)) {
 			/* structure name found */
@@ -391,12 +433,13 @@ struct dump_info * find_s_name(char *s_name)
 		}
 
 	/* scan PPSI's structures */
-	p = dump_ppsi_info_target;
-	for (; strcmp(p->name, "end"); p++)
-		if (!strcmp(p->name, s_name)) {
-			/* structure name found */
-			return p;
-		}
+	p = ppsi_info_target;
+	if (p)
+		for (; strcmp(p->name, "end"); p++)
+			if (!strcmp(p->name, s_name)) {
+				/* structure name found */
+				return p;
+			}
 
 	/* not found */
 	return NULL;
@@ -404,7 +447,7 @@ struct dump_info * find_s_name(char *s_name)
 
 void dump_many_fields(void *addr, char *name, char *prefix)
 {
-	struct dump_info *p;
+	const struct dump_info *p;
 
 	p = find_s_name(name);
 
@@ -421,7 +464,7 @@ void dump_many_fields(void *addr, char *name, char *prefix)
 
 unsigned long wrpc_get_pointer(void *base, char *s_name, char *f_name)
 {
-	struct dump_info *p;
+	const struct dump_info *p;
 	int offset;
 
 	p = find_s_name(s_name);
@@ -445,7 +488,7 @@ unsigned long wrpc_get_pointer(void *base, char *s_name, char *f_name)
 /* get an offset of a field in a structure */
 unsigned long wrpc_get_offset(char *s_name, char *f_name)
 {
-	struct dump_info *p;
+	const struct dump_info *p;
 	int offset;
 
 	p = find_s_name(s_name);
@@ -468,7 +511,7 @@ unsigned long wrpc_get_offset(char *s_name, char *f_name)
 
 unsigned long wrpc_get_struct_size(char *s_name)
 {
-	struct dump_info *p;
+	const struct dump_info *p;
 
 	p = find_s_name(s_name);
 
@@ -485,8 +528,6 @@ void print_version(void)
 {
 	fprintf(stderr, "Built in wrpc-sw repo ver:%s, by %s on %s %s\n",
 		__GIT_VER__, __GIT_USR__, __TIME__, __DATE__);
-	fprintf(stderr, "Support for %s architecture.\n",
-		HAS_ARCH_RISCV ? "RISC-V" : "LM32");
 	fprintf(stderr, "Supported WRPC structures version %d\n",
 		WRPC_SHMEM_VERSION);
 	fprintf(stderr, "Supported PPSI structures version %d\n",
@@ -669,7 +710,7 @@ void dump_mem_wrpc_sfp(void *mapaddr, unsigned long wrc_global_off)
 		/* sfp_dom not found */
 		return;
 	}
-	
+
 	diag_mon_off = wrpc_get_offset("shw_sfp_header",
 					"diagnostic_monitoring_type");
 	diag_supported = wrpc_get_l32(mapaddr + sfp_header_off + diag_mon_off)
@@ -715,7 +756,7 @@ void dump_mem_wrpc_global(void *mapaddr, unsigned long wrc_global_off)
 	}
 
 	dump_many_fields(mapaddr + wrc_global_off, "wrc_global", "wrc_global");
-	
+
 	tmp_off = wrpc_get_pointer(mapaddr + wrc_global_off, "wrc_global",
 				   "link_status");
 	if (tmp_off) {
@@ -777,102 +818,37 @@ void dump_mem_wrpc_global(void *mapaddr, unsigned long wrc_global_off)
 	}
 }
 
-/* all of these are 0 by default */
-unsigned long fifo_off, ppg_off, stats_off, wrc_global_off;
-
-/* Use:  wrs_dump_memory <file> <hex-offset> <name> */
-int main(int argc, char **argv)
+static int dump_lm32(void *mapaddr, const char *dumpname, long unsigned offset)
 {
-	int fd;
-	void *mapaddr;
-	unsigned long offset;
-	struct stat st;
-	char *dumpname = "";
-	char c;
+	/* all of these are 0 by default */
+	unsigned long ppg_off = 0, stats_off = 0, wrc_global_off = 0;
 	uint8_t version_wrpc, version_ppsi;
-
-	if (argc != 4 && argc != 2) {
-		fprintf(stderr, "%s: use \"%s <file> <offset> <name>\n",
-			argv[0], argv[0]);
-		fprintf(stderr,
-			"\"name\" is one of pll, fifo, ppg, ppi, servo_state"
-			" or ds for data-sets. \"ds\" gets a ppg offset\n");
-		fprintf(stderr, "But with a new binary, just pass <file>\n\n");
-		print_version();
-		exit(1);
-	}
-
-	fd = open(argv[1], O_RDONLY | O_SYNC);
-	if (fd < 0) {
-		fprintf(stderr, "%s: %s: %s\n",
-			argv[0], argv[1], strerror(errno));
-		exit(1);
-	}
-	if (fstat(fd, &st) < 0) {
-		fprintf(stderr, "%s: stat(%s): %s\n",
-			argv[0], argv[1], strerror(errno));
-		exit(1);
-	}
-	if (!S_ISREG(st.st_mode)) { /* FIXME: support memory */
-		fprintf(stderr, "%s: %s not a regular file\n",
-			argv[0], argv[1]);
-		exit(1);
-	}
-
-	if (st.st_size > 256 * 1024) /* support /sys/..../resource0 */
-		st.st_size = 256 * 1024;
-
-	if (argc == 4 && sscanf(argv[2], "%lx%c", &offset, &c) != 1) {
-		fprintf(stderr, "%s: \"%s\" not a hex offset\n", argv[0],
-			argv[2]);
-		exit(1);
-	}
-	mapaddr = mmap(0, st.st_size, PROT_READ | PROT_WRITE,
-		       MAP_FILE | MAP_PRIVATE, fd, 0);
-	if (mapaddr == MAP_FAILED) {
-		fprintf(stderr, "%s: mmap(%s): %s\n",
-			argv[0], argv[1], strerror(errno));
-		exit(1);
-	}
-	printf("map at %p size 0x%zx\n", mapaddr, st.st_size);
-	/* In case we have a "new" binary file, use such information */
-	if (!strncmp(mapaddr + WRPC_MARK, "CPRW", 4))
-		setenv("WRPC_SPEC", "yes", 1);
-
-	/* If the dump file needs "spec" byte order, fix it all */
-	if (getenv("WRPC_SPEC")) {
-		uint32_t *p = mapaddr;
-		int i;
-
-		for (i = 0; i < st.st_size / 4; i++, p++)
-			*p = __bswap_32(*p);
-	}
-
-	if (argc == 4)
-		dumpname = argv[3];
 
 	/* If we have a new binary file, pick the pointers
 	 * Magic numbers are taken from crt0.S or disassembly of wrc.bin */
-	if (!strncmp(mapaddr + WRPC_MARK, "WRPC----", 8)) {
-		ppg_off = wrpc_get_l32(mapaddr + PPG_STATIC_PADDR);
-		stats_off = wrpc_get_l32(mapaddr + STATS_PADDR);
-		wrc_global_off = wrpc_get_l32(mapaddr + WRC_STATIC_PADDR);
+	if (!strncmp(mapaddr + lm32_wrpc_mark, "WRPC----", 8)) {
+		ppg_off = wrpc_get_l32(mapaddr + lm32_ppg_static_paddr);
+		stats_off = wrpc_get_l32(mapaddr + lm32_stats_paddr);
+		wrc_global_off = wrpc_get_l32(mapaddr + lm32_wrc_static_paddr);
 	}
 
 	/* Check the version of wrpc and ppsi structures */
-	version_wrpc = wrpc_get_8(mapaddr + VERSION_WRPC_ADDR);
-	version_ppsi = wrpc_get_8(mapaddr + VERSION_PPSI_ADDR);
-	if (version_wrpc != WRPC_SHMEM_VERSION) {
+	version_wrpc = wrpc_get_8(mapaddr + lm32_version_wrpc_addr);
+	version_ppsi = wrpc_get_8(mapaddr + lm32_version_ppsi_addr);
+	if (version_wrpc != WRPC_SHMEM_VERSION_42) {
 		printf("Unsupported version of WRPC structures! Expected %d, "
-		       "but read %d\n", WRPC_SHMEM_VERSION, version_wrpc);
-		exit(1);
+		       "but read %d\n", WRPC_SHMEM_VERSION_42, version_wrpc);
+		return -1;
 	}
+	wrpc_info_target = dump_wrpc_info_target_v42;
+
 	if (version_ppsi != WRS_PPSI_SHMEM_VERSION) {
 		printf("Unsupported version of PPSI structures! Expected %d, "
 		       "but read %d\n", WRS_PPSI_SHMEM_VERSION, version_ppsi);
-		exit(1);
+		ppsi_info_target = NULL;
 	}
-
+	else
+		ppsi_info_target = dump_ppsi_info_target;
 
 	if (!strcmp(dumpname, "wrc_global"))
 		wrc_global_off = offset;
@@ -892,5 +868,238 @@ int main(int argc, char **argv)
 		dump_mem_ppsi_wrpc(mapaddr, ppg_off);
 	}
 
-	exit(0);
+	return 0;
+}
+
+static int dump_riscv(void *mapaddr, const char *dumpname, long unsigned offset)
+{
+	/* all of these are 0 by default */
+	unsigned long ppg_off = 0, stats_off = 0, wrc_global_off = 0;
+	uint8_t version_wrpc, version_ppsi;
+
+	/* If we have a new binary file, pick the pointers
+	 * Magic numbers are taken from crt0.S or disassembly of wrc.bin */
+	if (!strncmp(mapaddr + riscv_wrpc_mark, "WRPC----", 8)) {
+		endian_flag = DUMP_ENDIAN_FLAG;
+		ppg_off = wrpc_get_l32(mapaddr + riscv_ppg_static_paddr);
+		stats_off = wrpc_get_l32(mapaddr + riscv_stats_paddr);
+		wrc_global_off = wrpc_get_l32(mapaddr + riscv_wrc_static_paddr);
+	}
+
+	/* Check the version of wrpc and ppsi structures */
+	version_wrpc = wrpc_get_8(mapaddr + riscv_version_wrpc_addr);
+	version_ppsi = wrpc_get_8(mapaddr + riscv_version_ppsi_addr);
+	if (version_wrpc != WRPC_SHMEM_VERSION) {
+		printf("Unsupported version of WRPC structures! Expected %d, "
+		       "but read %d\n", WRPC_SHMEM_VERSION, version_wrpc);
+		return -1;
+	}
+	wrpc_info_target = dump_wrpc_info_target;
+
+	if (version_ppsi != WRS_PPSI_SHMEM_VERSION) {
+		printf("Unsupported version of PPSI structures! Expected %d, "
+		       "but read %d\n", WRS_PPSI_SHMEM_VERSION, version_ppsi);
+		ppsi_info_target = NULL;
+	}
+	else
+		ppsi_info_target = dump_ppsi_info_target;
+
+	if (!strcmp(dumpname, "wrc_global"))
+		wrc_global_off = offset;
+	if (wrc_global_off) {
+		dump_mem_wrpc_global(mapaddr, wrc_global_off);
+	}
+
+	if (!strcmp(dumpname, "stats"))
+		stats_off = offset;
+	if (stats_off) {
+		printf("stats at 0x%lx\n", stats_off);
+		dump_many_fields(mapaddr + stats_off, "stats", "stats");
+	}
+	if (!strcmp(dumpname, "ppg"))
+		ppg_off = offset;
+	if (ppg_off) {
+		dump_mem_ppsi_wrpc(mapaddr, ppg_off);
+	}
+
+	return 0;
+}
+
+static void *map_image(const char *filename, unsigned *size)
+{
+	int fd;
+	void *mapaddr;
+	struct stat st;
+
+	fd = open(filename, O_RDONLY | O_SYNC);
+	if (fd < 0) {
+		fprintf(stderr, "%s: cannot open %s: %s\n",
+			progname, filename, strerror(errno));
+		return NULL;
+	}
+	if (fstat(fd, &st) < 0) {
+		fprintf(stderr, "%s: stat(%s): %s\n",
+			progname, filename, strerror(errno));
+		return NULL;
+	}
+	if (!S_ISREG(st.st_mode)) { /* FIXME: support memory */
+		fprintf(stderr, "%s: %s not a regular file\n",
+			progname, filename);
+		return NULL;
+	}
+
+	if (st.st_size > 256 * 1024) /* support /sys/..../resource0 */
+		*size = 256 * 1024;
+	else
+		*size = st.st_size;
+
+	mapaddr = mmap(0, *size, PROT_READ | PROT_WRITE,
+		       MAP_FILE | MAP_PRIVATE, fd, 0);
+	if (mapaddr == MAP_FAILED) {
+		fprintf(stderr, "%s: mmap(%s): %s\n",
+			progname, filename, strerror(errno));
+		return NULL;
+	}
+	printf("map at %p size 0x%x\n", mapaddr, *size);
+	return mapaddr;
+}
+
+static void print_help(void)
+{
+	printf("%s: use \"%s [OPTIONS] <file> [<offset> <name>]\n",
+	       progname, progname);
+	printf("\"name\" is one of pll, fifo, ppg, ppi, servo_state"
+	       " or ds for data-sets. \"ds\" gets a ppg offset\n");
+	printf("But with a new binary, just pass <file>\n\n");
+	printf("Options are:\n");
+	printf("-h     print this help\n");
+	printf("-V     print versions\n");
+	printf("-s     swap words [automatic by default]\n");
+}
+
+
+/* Use:  wrs_dump_memory <file> <hex-offset> <name> */
+int main(int argc, char **argv)
+{
+	void *mapaddr;
+	unsigned long offset;
+	unsigned size;
+	const char *filename;
+	char *dumpname;
+	int c;
+	enum t_img img;
+	int flag_swap;
+	int ret;
+
+	progname = argv[0];
+	img = IMG_UNKNOWN;
+	flag_swap = 0;
+
+	while ((c = getopt(argc, argv, "Vhsi:")) != -1) {
+		switch (c) {
+		case 'V':
+			print_version();
+			return 0;
+		case 'h':
+			print_help();
+			return 0;
+		case 's':
+			flag_swap = 1;
+			break;
+		case 'i':
+			if (!strcmp(optarg, "lm32"))
+				img = IMG_LM32;
+			else if (!strcmp(optarg, "riscv"))
+				img = IMG_RISCV;
+			else {
+				fprintf(stderr,
+					"%s: bad value for -i, try -h\n",
+					progname);
+				return 2;
+			}
+			break;
+		default:
+			fprintf(stderr, "%s: bad option, try -h\n", progname);
+			return 2;
+		}
+	}
+
+	if (optind != argc -1 && optind != argc - 3) {
+		fprintf(stderr, "%s: bad number of arguments, try -h\n",
+			progname);
+		return 2;
+	}
+
+	filename = argv[optind];
+
+	if (optind == argc - 3) {
+		char *e;
+
+		offset = strtoul (argv[optind + 1], &e, 0);
+		if (*e != 0) {
+			fprintf(stderr, "%s: \"%s\" not a hex offset\n",
+				progname, argv[optind + 1]);
+			exit(1);
+		}
+		dumpname = argv[optind + 2];
+	}
+	else {
+		offset = 0;
+		dumpname = "";
+	}
+
+	mapaddr = map_image(filename, &size);
+	if (mapaddr == NULL)
+		return 1;
+
+	/* Try to guess image.  */
+	if (img == IMG_UNKNOWN || img == IMG_LM32) {
+		if (!strncmp(mapaddr + lm32_wrpc_mark, "CPRW", 4)) {
+			if (img == IMG_UNKNOWN)
+				printf("%s: lm32 (swapped) image detected\n",
+				       filename);
+			img = IMG_LM32;
+			flag_swap = 1;
+		}
+		else if (!strncmp(mapaddr + lm32_wrpc_mark, "WRPC", 4)) {
+			if (img == IMG_UNKNOWN)
+				printf("%s: lm32 image detected\n",
+				       filename);
+			img = IMG_LM32;
+			flag_swap = 0;
+		}
+	}
+	if (img == IMG_UNKNOWN || img == IMG_RISCV) {
+		if (!strncmp(mapaddr + riscv_wrpc_mark, "CPRW", 4)) {
+			img = IMG_RISCV;
+			flag_swap = 1;
+		}
+		else if (!strncmp(mapaddr + riscv_wrpc_mark, "WRPC", 4)) {
+			img = IMG_RISCV;
+			flag_swap = 0;
+		}
+	}
+	if (img == IMG_UNKNOWN) {
+		fprintf(stderr, "%s: image not recognized\n", progname);
+		return 3;
+	}
+
+	/* If the dump file needs "spec" byte order, fix it all */
+	if (flag_swap || getenv("WRPC_SPEC")) {
+		uint32_t *p = mapaddr;
+		int i;
+
+		for (i = 0; i < size / 4; i++, p++)
+			*p = __bswap_32(*p);
+	}
+
+	if (img == IMG_LM32)
+		ret = dump_lm32(mapaddr, dumpname, offset);
+	else
+		ret = dump_riscv(mapaddr, dumpname, offset);
+
+	if (ret < 0)
+		return 1;
+	else
+		return 0;
 }

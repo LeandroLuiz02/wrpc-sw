@@ -6,8 +6,8 @@
 *
 * Released according to the GNU GPL, version 2 or any later version.
 */
-#ifndef __CRT0_H__
-#define __CRT0_H__
+#ifndef __LM32_CRT0_H__
+#define __LM32_CRT0_H__
 
 /* offsets for crt0.s */
 #define WRPC_MARK		0x80
@@ -21,4 +21,4 @@
 
 #define HDL_TESTBENCH_PADDR	0xbc
 
-#endif /* __CRT0_H__ */
+#endif /* __LM32_CRT0_H__ */

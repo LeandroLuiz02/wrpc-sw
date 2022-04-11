@@ -100,11 +100,15 @@ ertm-serial: ertm-serial.c ertm14-uart-link.o
 		$^ $(LDFLAGS) -o $@
 
 # combine structures back to the object file
-dump-info-host.o: ../dump-info.o ../dump_mem_ppsi_wrpc.o
+dump-wrpc-info-host.bin: ../dump-info.o
 	$(CROSS_COMPILE)objcopy --only-section=.data.dump_wrpc_info \
-		-O binary ../dump-info.o dump-wrpc-info-host.bin
+		-O binary $< $@
+
+dump-ppsi-info-host.bin: ../dump_mem_ppsi_wrpc.o
 	$(CROSS_COMPILE)objcopy --only-section=.data.dump_ppsi_info \
-		-O binary ../dump_mem_ppsi_wrpc.o dump-ppsi-info-host.bin
+		-O binary $< $@
+
+dump-info-host.o: dump-wrpc-info-host.bin dump-ppsi-info-host.bin
 	$(AS) makebin.S -o $@
 
 ../dump-info.o: ../dump-info.c
