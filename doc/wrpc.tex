@@ -1815,8 +1815,8 @@ the procedure to read the WRPC memory is different. The read can be done by
 using the \texttt{spec-cl} tool with parameteres \texttt{-r} (perform read)
 and \texttt{-i} (use RISC-V architecture):
 \begin{lstlisting}
-   <path_to_spec-sw>/tools/spec-cl -i -r dump_file.bin
-   ./tools/wrpc-dump dump_file.bin
+   <path\_to\_spec-sw>/tools/spec-cl -i -r dump\_file.bin
+   ./tools/wrpc-dump dump\_file.bin
 \end{lstlisting}
 
 \texttt{spec-cl} tool can be found in the \texttt{spec-sw} repo. Be aware
@@ -1910,7 +1910,7 @@ when any task runs longer than any run before since reset
 (or \texttt{ps reset}) and when it runs longer than a specified value
 in miliseconds.
 For this please use command ``\texttt{ps max <msecs>}'', where
-\texttt{<msecs>} is a number of miliseconds triggering printouts.
+\texttt{<msecs>} is a number of milliseconds triggering printouts.
 \begin{lstlisting}
 wrc# ps max 10
 task temperature, run for 11 ms
