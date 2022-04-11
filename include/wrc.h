@@ -33,8 +33,6 @@
 /* Don't use abs from the library */
 #define abs(x) ((x >= 0) ? x : -x)
 
-#undef offsetof
-#define offsetof(TYPE, MEMBER) ((long) &((TYPE *)0)->MEMBER)
 #undef ARRAY_SIZE
 #define ARRAY_SIZE(arr) (sizeof(arr) / sizeof((arr)[0]))
 
