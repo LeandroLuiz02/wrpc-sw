@@ -240,7 +240,7 @@ static void print_main_description(void)
 	int ndevs;
 
 	pcprintf(1, 1, C_BLUE, "%s WR PTP Core Sync Monitor %s",
-		wrc_global.wrc_hw_name, build_revision);
+		 wrc_global_link.wrc_hw_name, build_revision);
 	cprintf(C_MAGENTA, "\nEsc or q = exit; r = redraw GUI");
 
 	cprintf(C_BLUE, "\n\nTAI Time:%22sUTC offset:", "");

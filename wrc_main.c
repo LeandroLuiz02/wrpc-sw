@@ -77,7 +77,7 @@ struct wrc_global_link wrc_global_link = {
 	.ip_status = IP_TRAINING,
 };
 
-struct wrc_global wrc_global = {
+const struct wrc_global wrc_global = {
 	.magic = WRC_G_MAGIC,
 	.version = WRC_G_VERSION,
 	.link_status = &wrc_global_link,
@@ -111,7 +111,7 @@ static void wrc_initialize(void)
 	wdiags_init();
 
 	pp_printf("WR Core: starting up...\n");
-	get_hw_name(wrc_global.wrc_hw_name);
+	get_hw_name(wrc_global_link.wrc_hw_name);
 
 #ifndef BOARD_HAS_CUSTOM_NETWORK_INIT
 	net_rst();

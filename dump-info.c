@@ -17,7 +17,6 @@ struct dump_info  dump_wrpc_info[] = {
 	DUMP_HEADER("wrc_global"),
 	DUMP_FIELD(uint32_t, magic),
 	DUMP_FIELD(uint32_t, version),
-	DUMP_FIELD_SIZE(char, wrc_hw_name, HW_NAME_LENGTH),
 	DUMP_FIELD(pointer, link_status),
 	DUMP_FIELD(int, task_list_max),
 	DUMP_FIELD(pointer, task_list),
@@ -32,6 +31,7 @@ struct dump_info  dump_wrpc_info[] = {
 #define DUMP_STRUCT struct wrc_global_link
 	DUMP_HEADER("wrc_global_link"),
 	DUMP_FIELD(uint32_t, version),
+	DUMP_FIELD_SIZE(char, wrc_hw_name, HW_NAME_LENGTH),
 	DUMP_FIELD(link_up_status, link_up),
 	DUMP_FIELD(int, vlan),
 	DUMP_FIELD(ip_addr_status, ip_status),

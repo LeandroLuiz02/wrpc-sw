@@ -437,7 +437,7 @@ static const uint8_t oid_wrpcShellCmdReturnCode[] =    {4,0};
 	 OIDs */
 /* wrpcVersionGroup */
 static const struct snmp_oid oid_array_wrpcVersionGroup[] = {
-	OID_FIELD_VAR(   oid_wrpcVersionHwType,      get_p,        NO_SET,   ASN_OCTET_STR, (void *)&wrc_global.wrc_hw_name),
+	OID_FIELD_VAR(   oid_wrpcVersionHwType,      get_p,        NO_SET,   ASN_OCTET_STR, (void *)&wrc_global_link.wrc_hw_name),
 	OID_FIELD_VAR(   oid_wrpcVersionSwVersion,   get_pp,       NO_SET,   ASN_OCTET_STR, (void *)&build_revision),
 	OID_FIELD_VAR(   oid_wrpcVersionSwBuildBy,   get_pp,       NO_SET,   ASN_OCTET_STR, (void *)&build_by),
 	OID_FIELD_VAR(   oid_wrpcVersionSwBuildDate, get_p,        NO_SET,   ASN_OCTET_STR, (void *)&snmp_build_date),
