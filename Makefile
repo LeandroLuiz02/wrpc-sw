@@ -60,11 +60,9 @@ obj-$(CONFIG_TARGET_WR_SWITCH) += ipc/minipc-mem-server.o ipc/rt_ipc.o
 
 # add search path but only for dump_mem_ppsi_wrpc.c
 vpath dump_mem_ppsi_wrpc.c ppsi/tools
-obj-$(CONFIG_WRPC_PPSI) += dump-info.o
-obj-$(CONFIG_WRPC_PPSI) += dump_mem_ppsi_wrpc.o
-dump_mem_ppsi_wrpc.o: CFLAGS+=-Itools
+dump_mem_ppsi_wrpc.o: CFLAGS+=-Itools -fno-lto
 # for include dump-info_ppsi.h
-dump-info.o: CFLAGS+=-Ippsi/tools
+dump-info.o: CFLAGS+=-Ippsi/tools -fno-lto
 
 # our linker script is preprocessed, so have a rule here
 %.ld: %.ld.S $(AUTOCONF) .config
