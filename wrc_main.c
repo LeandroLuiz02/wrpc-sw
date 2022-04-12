@@ -26,7 +26,6 @@
 #include <dev/i2c.h>
 #include <storage.h>
 #include <softpll_ng.h>
-#include <dev/onewire.h>
 #include <dev/pps_gen.h>
 #include <shell.h>
 #include <lib/ipv4.h>

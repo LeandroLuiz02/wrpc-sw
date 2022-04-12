@@ -17,7 +17,6 @@
 #include <softpll_ng.h>
 #include <dev/syscon.h>
 #include <dev/pps_gen.h>
-#include <dev/onewire.h>
 #include <dev/endpoint.h>
 #include <dev/netif.h>
 #include <dev/wdiags.h>
