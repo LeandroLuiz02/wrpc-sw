@@ -11,6 +11,7 @@
 #include "dev/syscon.h"
 #include "storage.h"
 #include <dev/flash.h>
+#include "util.h"
 
 /*
  * args[1] - where to write sdbfs image (0 - Flash, 1 - I2C EEPROM,

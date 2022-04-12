@@ -8,6 +8,7 @@
  * Released according to the GNU GPL, version 2 or any later version.
  */
 #include <stdint.h>
+#include <stddef.h>
 #include <libwr/hal_shmem.h>
 #include <libwr/shmem.h>
 #include <wrc_ptp.h>

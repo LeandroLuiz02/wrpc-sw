@@ -1,6 +1,5 @@
 
 /* Though freestanding, some minimal headers are expected to exist */
-#include <stdlib.h>
 #include <stdint.h>
 #include <string.h>
 #include <errno.h>

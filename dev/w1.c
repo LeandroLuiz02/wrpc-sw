@@ -4,7 +4,7 @@
  */
 #include <string.h>
 #include <dev/w1.h>
-#include <unistd.h>
+#include "dev/syscon.h"
 
 static const struct w1_ops *ops = &wrpc_w1_ops; /* local shorter name */
 

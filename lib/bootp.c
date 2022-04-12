@@ -8,6 +8,7 @@
  */
 #include <string.h>
 #include <wrc.h>
+#include "endianness.h"
 #include "dev/endpoint.h"
 
 #include "ipv4.h"

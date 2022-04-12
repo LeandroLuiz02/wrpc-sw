@@ -9,6 +9,7 @@
 #include <wrc.h>
 #include <string.h>
 
+#include "endianness.h"
 #include "dev/endpoint.h"
 #include "ipv4.h"
 #include "ptpd_netif.h"

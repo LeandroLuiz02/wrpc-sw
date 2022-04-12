@@ -77,10 +77,8 @@ cflags-$(CONFIG_ARCH_LM32)  +=  -Iinclude/std
 cflags-$(CONFIG_ARCH_RISCV) +=  -Iinclude/std
 
 cflags-$(CONFIG_WRPC_PPSI) += \
-	-include include/ppsi-wrappers.h \
 	-I$(PPSI)/arch-wrpc \
-	-I$(PPSI)/proto-ext-whiterabbit \
-	-Iboards/spec
+	-I$(PPSI)/proto-ext-whiterabbit
 
 # in order to build tools/wrpc-dump, we need these flags, even for wrs builds
 cflags-y += \

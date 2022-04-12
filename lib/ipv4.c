@@ -15,6 +15,7 @@
 #include "dev/pps_gen.h"
 #include "dev/netif.h"
 #include "hw/etherbone-config.h"
+#include "endianness.h"
 #include "wrc_ptp.h"
 #include "wrc_global.h"
 

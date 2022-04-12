@@ -10,6 +10,9 @@
 #include <arpa/inet.h>
 
 #else
+
+#include <stdint.h>
+
 # if defined CONFIG_ARCH_RISCV
 #  define __ENDIANNESS_SWAP 1
 # elif defined CONFIG_ARCH_LM32

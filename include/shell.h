@@ -6,6 +6,8 @@
 #ifndef __SHELL_H
 #define __SHELL_H
 
+#include <stdint.h>
+
 #define UI_SHELL_MODE 0
 #define UI_GUI_MODE 1
 

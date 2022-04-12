@@ -9,7 +9,7 @@
 
 #include <errno.h>
 #include <string.h>
-
+#include "endianness.h"
 #include "dev/syscon.h"
 #include "pp-printf.h"
 #include "dev/gpio.h"

@@ -13,7 +13,8 @@
  */
 
 #include <string.h>
-
+#include <stdint.h>
+#include "endianness.h"
 #include "wrc.h"
 #include "revision.h"
 #include "ptpd_netif.h"
