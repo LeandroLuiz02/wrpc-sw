@@ -13,7 +13,6 @@
 #include <errno.h>
 
 int wrc_stat_running;
-extern uint32_t wrc_stats_last;
 
 static int cmd_stat(const char *args[])
 {

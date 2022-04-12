@@ -87,55 +87,6 @@ struct wrc_sensor* wrc_sensor_find_by_type(uint8_t type)
 }
 
 
-#if 0
-extern int wrc_temp_format(char *buffer, int len)
-{
-	struct wrc_onetemp *p;
-	int l = 0, i = 0;
-	int32_t t;
-
-	for (p = wrc_temp_getnext(NULL); p; p = wrc_temp_getnext(p), i++) {
-		if (l + 16 > len) {
-			l += sprintf(buffer + l, " ENOSPC");
-			return l;
-		}
-		t = p->t;
-		l += sprintf(buffer + l, "%s%s:", i ? " " : "", p->name);
-		if (t == TEMP_INVALID) {
-			l += sprintf(buffer + l, "INVALID");
-			continue;
-		}
-		if (t < 0) {
-			t = -(signed)t;
-			l += sprintf(buffer + l, "-");
-		}
-		l += sprintf(buffer + l,"%d.%04d", t >> 16,
-			     ((t & 0xffff) * 10 * 1000 >> 16));
-	}
-	return l;
-}
-
-/*
- * The task
- */
-void wrc_temp_init(void)
-{
-}
-
-int wrc_temp_refresh(void)
-{
-#if 0
-	struct wrc_temp *ta;
-	int ret = 0;
-
-	for (ta = __temp_begin; ta < __temp_end; ta++)
-		ret += ta->read(ta);
-	return (ret > 0);
-#endif
-}
-
-#endif
-
 /*
  * The shell command
  */

@@ -15,7 +15,7 @@
 #include "ppsi/ppsi.h"
 #include "wrpc.h"
 #include "dev/wdiags.h"
-#include "sensors.h"
+#include "dev/temperature.h"
 #include "softpll/softpll_ng.h"
 #include "dev/netif.h"
 #include "dev/pps_gen.h"

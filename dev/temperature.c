@@ -9,11 +9,12 @@
 
 #include <wrc.h>
 #include <string.h>
-#include <temperature.h>
+#include <dev/temperature.h>
 #include <shell.h>
 
 
 struct wrc_temp_group temp_sensors[WRC_MAX_TEMPERATURES];
+
 /*
  * Library functions
  */
@@ -24,7 +25,7 @@ uint32_t wrc_temp_get(char *name)
 	int i;
 
 	if (!name)
-	    return TEMP_INVALID;
+		return TEMP_INVALID;
 
 	/* get search all temperature groups */
 	for (i = 0; i < WRC_MAX_TEMPERATURES; i++) {
@@ -100,17 +101,15 @@ extern int wrc_temp_format(char *buffer, int len)
 
 int wrc_temp_register(struct wrc_temp_group *new_temp_sensor)
 {
-	struct wrc_temp_group *tmp;
 	int i;
 
 	for (i = 0; i < WRC_MAX_TEMPERATURES; i++) {
-		tmp = &temp_sensors[i];
-		if (tmp->used) {
+		struct wrc_temp_group *grp = &temp_sensors[i];
+		if (grp->t) {
 			/* slot used in the list */
 			continue;
 		}
-		pp_printf("register temp sensor at %d\n", i);
-		*tmp = *new_temp_sensor;
+		*grp = *new_temp_sensor;
 
 		return 1;
 	}
@@ -123,15 +122,17 @@ int wrc_temp_register(struct wrc_temp_group *new_temp_sensor)
  */
 int wrc_temp_refresh(void)
 {
-	struct wrc_temp_group *tmp;
 	int i;
 	int ret = 0;
 
 	for (i = 0; i < WRC_MAX_TEMPERATURES; i++) {
-		tmp = &temp_sensors[i];
-		if (tmp->used) {
-			ret += tmp->read(tmp);
-		}
+		struct wrc_temp_group *grp = &temp_sensors[i];
+		struct wrc_temp_sensor *sensor;
+
+		if (!grp->t)
+			continue;
+		for (sensor = grp->t; sensor->name; sensor++)
+			ret += grp->read(sensor);
 	}
 
 	return (ret > 0);

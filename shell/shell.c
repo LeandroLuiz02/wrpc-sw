@@ -21,6 +21,7 @@
 #include "dev/temp-fake.h"
 #include "dev/temp-w1.h"
 #include "dev/w1.h"
+#include "dev/temperature.h"
 
 #include "shell.h"
 #include "storage.h"

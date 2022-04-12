@@ -12,12 +12,12 @@
 
 #include <inttypes.h>
 #include "wrc-task.h"
-#include "sensors.h"
 #include "wrpc.h"
 #include "softpll/softpll_ng.h"
 #include "dev/endpoint.h"
 #include "dev/netif.h"
 #include "dev/pps_gen.h"
+#include "dev/temperature.h"
 #include "wrc_global.h"
 #include "shell.h"
 
