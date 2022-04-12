@@ -39,7 +39,8 @@ void ptpd_netif_set_phase_transition(uint32_t phase)
 	int i;
 
 	for (i=0; i< ARRAY_SIZE(socks); ++i) {
-		socks[i]->phase_transition = phase;
+		if (socks[i])
+			socks[i]->phase_transition = phase;
 	}
 }
 
@@ -319,9 +320,7 @@ int net_bh_poll(void)
 	uint16_t size, port;
 	uint16_t ethtype, tag;
 
-	recvd =
-	    minic_rx_frame(&hdr, buffer, sizeof(buffer),
-			   &hwts);
+	recvd = minic_rx_frame(&hdr, buffer, sizeof(buffer), &hwts);
 
 	if (recvd <= 0)		/* No data received? */
 		return 0;
