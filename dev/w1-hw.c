@@ -72,4 +72,6 @@ void wrpc_w1_init(void)
 			    ((CLK_DIV_NOR & SOCKIT_OWM_CDR_N_MSK) |
 			     ((CLK_DIV_OVD << SOCKIT_OWM_CDR_O_OFST) &
 			      SOCKIT_OWM_CDR_O_MSK)));
+
+	wrpc_w1_bus.detail = ONEWIRE_PORT;
 }

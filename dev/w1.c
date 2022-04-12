@@ -91,8 +91,6 @@ int w1_scan_bus(struct w1_bus *bus)
 	struct w1_dev *d;
 	int i;
 
-	memset(bus->devs, 0, sizeof(bus->devs));
-
 	if (!ops->reset)
 		return 0; /* no devices */
 	for (i = 0, cmask = 0; i < W1_MAX_DEVICES; i++) {

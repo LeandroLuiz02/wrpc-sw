@@ -129,7 +129,6 @@ static void wrc_initialize(void)
 	if (HAS_W1) {
 		/* initialize w1 bus */
 		wrpc_w1_init();
-		wrpc_w1_bus.detail = ONEWIRE_PORT;
 		w1_scan_bus(&wrpc_w1_bus);
 
 		/* initialize w1 temp sensor */
