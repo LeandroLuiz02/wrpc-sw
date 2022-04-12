@@ -107,6 +107,7 @@ config TEMP_HIGH_THRESHOLD
 config TEMP_HIGH_RAPPEL
 	int
 	default 60
+
 config PLL_VERBOSE
 	boolean
 	default y if TARGET_WR_SWITCH
@@ -472,6 +473,13 @@ config TEMP_SENSORS
 	  Temperatures are can be reported by SNMP, syslog or wrpc-dump.
 	  Please note that temperature sensor type has to be selected as well
 	  (like w1)
+
+config GENERIC_SENSORS
+       depends on WR_NODE
+       boolean "Add support for generic sensors"
+       default n
+       help
+         Include generic (temperature, current, voltage) sensors.
 
 config W1
 	depends on EMBEDDED_NODE

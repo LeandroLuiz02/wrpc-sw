@@ -88,6 +88,12 @@
 #define HAS_LATENCY_PROBE 0
 #endif
 
+#ifdef CONFIG_GENERIC_SENSORS
+#define HAS_GENERIC_SENSORS 1
+#else
+#define HAS_GENERIC_SENSORS 0
+#endif
+
 static char cmd_buf[SH_MAX_LINE_LEN + 1];
 static int cmd_pos = 0, cmd_len = 0;
 static int state = SH_PROMPT;
@@ -453,7 +459,8 @@ void shell_register_commands(void)
 		REGISTER_WRC_COMMAND(syslog);
 	if (HAS_TEMP_SENSORS)
 		REGISTER_WRC_COMMAND(temp);
-	REGISTER_WRC_COMMAND(sensors);
+	if (HAS_GENERIC_SENSORS)
+		REGISTER_WRC_COMMAND(sensors);
 	REGISTER_WRC_COMMAND(time);
 	REGISTER_WRC_COMMAND(uptime);
 	REGISTER_WRC_COMMAND(ver);

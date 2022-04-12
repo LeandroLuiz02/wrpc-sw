@@ -13,6 +13,8 @@
 #include <shell.h>
 
 
+#ifdef CONFIG_GENERIC_SENSORS
+
 static struct wrc_sensor *sensors = NULL;
 
 const char* sensor_type_string( uint8_t flags )
@@ -116,3 +118,4 @@ DEFINE_WRC_COMMAND(sensors) = {
 	.exec = cmd_sensors,
 };
 
+#endif /* CONFIG_GENERIC_SENSORS */
