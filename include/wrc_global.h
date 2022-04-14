@@ -13,7 +13,7 @@ struct wrc_global_link {
 	char wrc_hw_name[HW_NAME_LENGTH];
 	uint16_t vlan;
 	unsigned char link_up;
-	enum ip_status ip_status;
+	enum ip_status_t ip_state;
 	uint8_t ip_addr[INET_ALEN];
 	uint8_t mac_addr[ETH_ALEN];
 };
@@ -37,5 +37,6 @@ extern const struct wrc_global wrc_global;
 
 #define link_status wrc_global_link.link_up
 #define wrc_vlan_number wrc_global_link.vlan
+#define ip_status wrc_global_link.ip_state
 
 #endif

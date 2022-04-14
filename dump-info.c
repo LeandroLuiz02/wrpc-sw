@@ -34,7 +34,7 @@ struct dump_info  dump_wrpc_info[] = {
 	DUMP_FIELD_SIZE(char, wrc_hw_name, HW_NAME_LENGTH),
 	DUMP_FIELD(link_up_status, link_up),
 	DUMP_FIELD(uint16_t, vlan),
-	DUMP_FIELD(ip_addr_status, ip_status),
+	DUMP_FIELD(ip_addr_status, ip_state),
 	DUMP_FIELD(ip_address, ip_addr),
 	DUMP_FIELD_SIZE(bina, mac_addr, ETH_ALEN),
 
