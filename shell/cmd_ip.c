@@ -56,15 +56,16 @@ static int cmd_ip(const char *args[])
 	}
 
 	format_ip(buf, ip);
+	pp_printf("IP-address: ");
 	switch (ip_status) {
 	case IP_TRAINING:
-		pp_printf("IP-address: in training\n");
+		pp_printf("in training\n");
 		break;
 	case IP_OK_BOOTP:
-		pp_printf("IP-address: %s (from bootp)\n", buf);
+		pp_printf("%s (bootp)\n", buf);
 		break;
 	case IP_OK_STATIC:
-		pp_printf("IP-address: %s (static assignment)\n", buf);
+		pp_printf("%s (static)\n", buf);
 		break;
 	}
 	return 0;
