@@ -88,7 +88,9 @@ const struct wrc_global wrc_global = {
 	.temp_group_list = temp_sensors,
 #endif
 	.softpll = &softpll,
+#ifdef CONFIG_SPLL_FIFO_LOG
 	.pll_fifo = fifo_log,
+#endif
 #ifdef CONFIG_CMD_CONFIG
 	.config = _binary__config_bin_start,
 #endif

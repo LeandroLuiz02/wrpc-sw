@@ -24,7 +24,7 @@
   #define HAS_FIFO_LOG 1
 #else
   #define HAS_FIFO_LOG 0
-  extern struct spll_fifo_log *fifo_log;
+  extern struct spll_fifo_log fifo_log[];
 #endif
 
 int spll_n_chan_ref, spll_n_chan_out;
