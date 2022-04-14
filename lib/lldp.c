@@ -194,7 +194,7 @@ static void lldp_add_tlv(int tlv_type) {
 		if (!HAS_VLANS)
 			break;
 		/* D.2.1 IEEE802.1Q-2014 or F.2 IEEE802.1AB-2005 */
-		if (!*wrc_vlan_number) {
+		if (!wrc_vlan_number) {
 			/* no VLAN, break */
 			break;
 		}
@@ -210,9 +210,9 @@ static void lldp_add_tlv(int tlv_type) {
 		lldpdu[lldpdu_len + TLV_OS_OUI8021_OFF + 2] = OUI8021 & 0xff;
 		lldpdu[lldpdu_len + TLV_OS_SUBTYPE_OFF] = TLV_VLANID_SUBTYPE;
 		lldpdu[lldpdu_len + TLV_OS_VLAN_OFF] =
-						(*wrc_vlan_number >> 8) & 0xff;
+						(wrc_vlan_number >> 8) & 0xff;
 		lldpdu[lldpdu_len + TLV_OS_VLAN_OFF + 1] =
-						*wrc_vlan_number & 0xff;
+						wrc_vlan_number & 0xff;
 		break;
 	case USER_DEF:
 		/* TODO define WR TLV */
@@ -283,7 +283,7 @@ int lldp_poll(void)
 
 	/* Update only when IP or MAC changed */
 	if (memcmp(new_mac, old_mac, ETH_ALEN)
-	    || (old_vlan != *wrc_vlan_number)
+	    || (old_vlan != wrc_vlan_number)
 	    || (HAS_IP && (*ip_status != IP_TRAINING)
 		&& memcmp(new_ipWR, old_ipWR, IPLEN))
 	    ) {
@@ -292,7 +292,7 @@ int lldp_poll(void)
 		/* copy new MAC nad IP */
 		memcpy(old_mac, new_mac, ETH_ALEN);
 		memcpy(old_ipWR, new_ipWR, IPLEN);
-		old_vlan = *wrc_vlan_number;
+		old_vlan = wrc_vlan_number;
 	}
 
 	ptpd_netif_sendto(lldp_socket, &addr, lldpdu, lldpdu_len, 0);

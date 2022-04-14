@@ -21,6 +21,7 @@
 #include <shell.h>
 #include <dev/endpoint.h>
 #include <hw/endpoint_regs.h>
+#include "wrc_global.h"
 
 
 static const uint8_t pfilter_rules_novlan[] =
@@ -44,7 +45,7 @@ void ep_pfilter_init_default(struct wr_endpoint_device *dev)
 		latency_ethtype = 0x88f7; /* reuse PTPv2 type: turn into NOP */
 
 	/* If vlan, use rule-set 1, else rule-set 0 */
-	if (*wrc_vlan_number == 0) {
+	if (wrc_vlan_number == 0) {
 		vini = pfilter_rules_novlan;
 		vend = vini + ARRAY_SIZE(pfilter_rules_novlan);
 	}
@@ -87,9 +88,9 @@ void ep_pfilter_init_default(struct wr_endpoint_device *dev)
                 else if (((l >> 13) & 0xffff) == 0x0aaa
                     && ((l >> 7) & 0x1f) == 7) {
                         mac_dbg("fixing VLAN number in rule: use %i\n",
-                                        *wrc_vlan_number);
+                                        wrc_vlan_number);
                         l &= ~(0xffff << 13);
-                        l |= *wrc_vlan_number << 13;
+                        l |= wrc_vlan_number << 13;
                 }
 
                 cmd_word = l | ((uint64_t)h << 32);
