@@ -27,8 +27,8 @@
   extern struct spll_fifo_log fifo_log[];
 #endif
 
-int spll_n_chan_ref, spll_n_chan_out;
-int spll_ljd_present = 0;
+unsigned char spll_n_chan_ref, spll_n_chan_out;
+unsigned char spll_ljd_present = 0;
 
 #define MAIN_CHANNEL (spll_n_chan_ref)
 
