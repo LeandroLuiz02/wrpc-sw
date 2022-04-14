@@ -100,9 +100,6 @@ int rtipc_init(void);
 void rts_update(void);
 void rtipc_action(void);
 
-/* div64.c, lifted from the linux kernel through pp_printf or ppsi */
-extern uint32_t __div64_32(uint64_t *n, uint32_t base);
-
 int wrc_is_timing_up(void);
 
 

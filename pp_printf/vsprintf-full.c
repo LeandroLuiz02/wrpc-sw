@@ -17,6 +17,7 @@
 
 /* BEGIN OF HACKS */
 #include <pp-printf.h>
+#include "util.h"
 
 #define CONFIG_PRINTF_64BIT
 /* <linux/types.h> -- but if we typedef we get redefined type when hosted */
@@ -35,7 +36,6 @@
 
 #define NUMBER_TYPE uint64_t
 #define SIGNED_NUMBER_TYPE int64_t
-extern uint32_t __div64_32(uint64_t *n, uint32_t base);
 
 /* The unnecessary pointer compare is there
  * to check for type safety (n must be 64bit)
