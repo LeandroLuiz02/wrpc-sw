@@ -305,7 +305,7 @@ void spll_very_init()
 void spll_init(int mode, int slave_ref_channel, int flags)
 {
 	static const char * const modes[] = { "", "grandmaster", "freemaster", "slave", "disabled" };
-	volatile int dummy;
+	int dummy;
 	int i;
 
 	struct softpll_state *s = (struct softpll_state *) &softpll;
