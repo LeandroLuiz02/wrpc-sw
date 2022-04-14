@@ -304,7 +304,7 @@ void spll_very_init()
 
 void spll_init(int mode, int slave_ref_channel, int flags)
 {
-	static const char *modes[] = { "", "grandmaster", "freemaster", "slave", "disabled" };
+	static const char * const modes[] = { "", "grandmaster", "freemaster", "slave", "disabled" };
 	volatile int dummy;
 	int i;
 
@@ -312,7 +312,6 @@ void spll_init(int mode, int slave_ref_channel, int flags)
 
 	disable_irq();
 
-	
 	uint32_t csr = SPLL->CSR;
 
 	spll_n_chan_ref = SPLL_CSR_N_REF_R(csr);

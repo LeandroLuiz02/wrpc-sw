@@ -202,6 +202,7 @@ static char *string(char *buf, char *s, int field_width, int precision, int flag
 }
 
 
+#if 0
 /*
  * Show a '%p' thing.  A kernel extension is that the '%p' is followed
  * by an extra set of alphanumeric characters that are extended format
@@ -224,6 +225,7 @@ static char *pointer(const char *fmt, char *buf, void *ptr, int field_width, int
 	plong = (intptr_t)ptr;
 	return number(buf, plong, 16, field_width, precision, flags);
 }
+#endif
 
 /**
  * vsprintf - Format a string and place it in a buffer
@@ -257,9 +259,6 @@ int pp_vsprintf(char *buf, const char *fmt, va_list args)
 				/* 'z' support added 23/7/1999 S.H.    */
 				/* 'z' changed to 'Z' --davidm 1/25/99 */
 				/* 't' added for ptrdiff_t */
-
-	/* avoid error that pointer is not used */
-	(void) pointer;
 
 	str = buf;
 
