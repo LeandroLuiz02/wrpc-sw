@@ -42,7 +42,8 @@ struct ertm_status {
 	struct ertm_connection connection;
 	struct ertm_state *state;
 	struct uart_link link;
-	uint32_t reserved[64];
+	int lock;
+	uint32_t reserved[63];
 };
 
 static int ertm_voltage_ids[] = {
@@ -78,3 +79,8 @@ static const int ertm_ntemperatures =
 extern int ertm_get_board_config(struct ertm_status *st, struct ertm14_board_state *bs);
 extern char *ertm_find_usb_port(void);
 extern char *ertm_usb_by_function(char *func);
+
+/* big global lock */
+extern int ertm_open_lock_file(struct ertm_status *st);
+extern int ertm_mutex_acquire(struct ertm_status *st);
+extern int ertm_mutex_release(struct ertm_status *st);
