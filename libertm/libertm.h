@@ -74,6 +74,11 @@ enum ertm_connector {
 #define ERTM_LOREF_MIN_CH	ERTM_COMMON_RF_OUT_MIN_ID
 #define ERTM_LOREF_MAX_CH	ERTM_COMMON_RF_OUT_MAX_ID
 
+/* front panel LEMO connector is actually the last channel (number 15)
+ * available in the CLKA/B connector
+ */
+#define ERTM14_CLKAB_OUT_FRONT_PANEL	ERTM_COMMON_CLKAB_OUT_FRONT_PANEL
+
 /* sync states of DDS and CLKA/B channels */
 
 #define	ERTM_SYNC_STATE_RESTART      ERTM_COMMON_CLK_SYNC_STATE_RESTART

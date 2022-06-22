@@ -114,7 +114,7 @@ extern unsigned char *BASE_EP;
 #define ERTM14_CLKAB_OUT_MIN_ID	ERTM_COMMON_CLKAB_OUT_MIN_ID
 #define ERTM14_CLKAB_OUT_MAX_ID ERTM_COMMON_CLKAB_OUT_MAX_ID
 
-#define ERTM14_CLKAB_OUT_FRONT_PANEL 15
+#define ERTM14_CLKAB_OUT_FRONT_PANEL	ERTM_COMMON_CLKAB_OUT_FRONT_PANEL
 
 // clock monitor core channels (see ertm14_top.vhd for assignment to the clock monitor core)
 #define ERTM14_CMON_CLK_SYS 0       /* system clock */
