@@ -168,7 +168,7 @@ int ep_enable(struct wr_endpoint_device* dev, int enabled, int autoneg)
 int ep_link_up(struct wr_endpoint_device* dev, uint16_t * lpa)
 {
 	uint16_t flags = MDIO_MSR_LSTATUS;
-	volatile uint16_t msr;
+	uint16_t msr;
 
 	if (dev->flags & EP_DEV_AUTONEG_ENABLED)
 		flags |= MDIO_MSR_ANEGCOMPLETE;
