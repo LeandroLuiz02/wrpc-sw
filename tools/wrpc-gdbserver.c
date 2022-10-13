@@ -241,8 +241,7 @@ static int dbg_debug_mode_force_set(struct dbg_port *dbg)
  *
  * Return: the register content
  */
-static uint32_t dbg_read_reg(struct dbg_port *dbg,
-				  int reg)
+static uint32_t dbg_read_reg(struct dbg_port *dbg, int reg)
 {
 	dbg_exec_reg_to_mbx(dbg, reg);
 	dbg_exec_nop(dbg);
@@ -454,9 +453,11 @@ static int gdb_handle_G(struct dbg_port *dbg,
 		}
 	}
 
+	/* Register 32 is pc.  */
 	dbg_write_reg(dbg, 1, ntohl(regs[32]));
 	dbg_pc_write_via_ra(dbg);
-	for (i = 0; i < 32; ++i)
+
+	for (i = 1; i < 32; ++i)
 		dbg_write_reg(dbg, i, ntohl(regs[i]));
 	out->size = snprintf(out->data, GDB_PACKET_SIZE_MAX,
 			     "OK");
@@ -676,6 +677,56 @@ static int gdb_handle_qm(struct dbg_port *dbg,
 	return 0;
 }
 
+static int gdb_handle_qRcmd(struct dbg_port *dbg,
+			      struct gdb_packet *out,
+			      struct gdb_packet *in)
+{
+	char buf[GDB_PACKET_SIZE_MAX / 2];
+	unsigned len;
+
+	/* Decode hex input (convert to bytes). 6 is the prefix 'qRcmd,' */
+	for (len = 0; len < (in->size - 6) / 2; len++) {
+		unsigned val;
+		int ret;
+
+		ret = sscanf(in->data + 6 + len * 2, "%02x", &val);
+		if (ret != 1) {
+			out->size = 0;
+			return 0;
+		}
+		buf[len] = val;
+	}
+	buf[len] = 0;
+
+	if (strcmp(buf, "help") == 0) {
+		strcpy(buf, "wrpc help\n");
+	}
+	else if (strcmp(buf, "csr") == 0) {
+		uint32_t ra;
+		uint32_t mepc, mstatus, mcause;
+		ra = dbg_read_reg(dbg, 1);
+		dbg_exec_insn(dbg, 0x341020f3); /* csrr ra,mepc */
+		mepc = dbg_read_reg(dbg, 1);
+		dbg_exec_insn(dbg, 0x342020f3); /* csrr ra,mcause */
+		mcause = dbg_read_reg(dbg, 1);
+		dbg_exec_insn(dbg, 0x300020f3); /* csrr ra,mstatus */
+		mstatus = dbg_read_reg(dbg, 1);
+		dbg_write_reg(dbg, 1, ra);
+		snprintf(buf, sizeof(buf),
+			 "mepc:    %08x\nmcause:  %08x\nmstatus: %08x\n",
+			 mepc, mcause, mstatus);
+	}
+	else {
+		strcpy(buf,"unhandled mon command, try 'mon help'\n");
+	}
+
+	/* Encode to hex.  */
+	for (len = 0; buf[len]; len++)
+		sprintf(out->data + len * 2, "%02x", buf[len]);
+	out->size = len * 2;
+	return 0;
+}
+
 static int gdb_handle_q(struct dbg_port *dbg,
 			     struct gdb_packet *out,
 			     struct gdb_packet *in)
@@ -684,6 +735,8 @@ static int gdb_handle_q(struct dbg_port *dbg,
 		return gdb_handle_q_supported(dbg, out, in);
 	else if (strncmp(in->data, "qm", 2) == 0)
 		return gdb_handle_qm(dbg, out, in);
+	else if (strncmp(in->data, "qRcmd,", 6) == 0)
+		return gdb_handle_qRcmd(dbg, out, in);
 	out->size = 0;
 
 	return 0;
