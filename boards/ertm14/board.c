@@ -40,10 +40,10 @@
 #include "dev/74x595.h"
 #include "dev/netif.h"
 #include "dev/leds.h"
+#include "dev/wdiags.h"
 
 #include "hw/wrc_diags_regs.h"
 #include "revision.h"
-
 
 /* FIXME: this is the 127th (re)(non)(un)definition of the ntohl macros
  * in the entire wrpc-sw codebase. This is insane and as non-portable
@@ -386,6 +386,12 @@ struct ertm14_mmc_link
 static struct ertm14_mmc_link mmc14_link;
 static struct ertm14_mmc_link mmc15_link;
 
+/* Non-hw implementation of the diagnostic registers. The eRTM is a
+   special board in the sense that it has no externally accessibe memory map -
+   therefore it's pointless to keep dedicated hardware diagnostic registers. We
+   just keep a structure reflecting the diag register layout in the RAM below. */
+
+static struct wrc_diags wrc_diags_nonhw;
 
 static void mmc_show_version_info( const char *brdname, struct ertm14_mmc_state *st );
 static void streamers_init(void);
@@ -1195,14 +1201,14 @@ void get_fpga_info(uint8_t *bi)
 		info[i] = htonl(regs[i]);
 }
 	
-static void get_wrc_diags(struct WRC_DIAGS_WB *diags)
+static void get_wrc_diags(struct wrc_diags *diags)
 {
 	uint32_t *word = (void *)diags;
 	int i;
 	int n = sizeof(*diags)/sizeof(uint32_t);
 
-	memset(diags, 0xa5, sizeof(*diags));
-	wrc_diags_dump(diags);
+	memcpy(diags, &wrc_diags_nonhw, sizeof(struct wrc_diags ));
+
 	for (i = 0; i < n; i++)
 		word[i] = htonl(word[i]);
 }
@@ -1289,7 +1295,7 @@ static void subscribe_nco(struct ertm14_nco_reset *nco)
 static int ertm_process_psnmp(struct uart_packet *rx_pkt, struct uart_packet *tx_pkt)
 {
 	struct ertm14_board_state *bs;
-	struct WRC_DIAGS_WB *diags;
+	struct wrc_diags *diags;
 	struct ertm14_nco_reset *nco;
 	struct wrc_sensor *sensors;
 	uint8_t opcode = rx_pkt->payload[0];
@@ -1329,7 +1335,7 @@ static int ertm_process_psnmp(struct uart_packet *rx_pkt, struct uart_packet *tx
 		get_sim_board_config(bs);
 		break;
 	case ertm14_get_wrc_diags:
-		diags = (struct WRC_DIAGS_WB *)&tx_pkt->payload[0];
+		diags = (struct wrc_diags *)&tx_pkt->payload[0];
 		get_wrc_diags(diags);
 		break;
 	case ertm14_get_wrc_nco:
@@ -2460,6 +2466,8 @@ int wrc_board_early_init()
     int i;
 
     bist_init( ertm_bist );
+
+    wdiags_set_base_address( &wrc_diags_nonhw );
 
     wrc_register_sensors( ertm_sensors );
 
