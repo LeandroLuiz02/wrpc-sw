@@ -33,6 +33,7 @@
 #include <dev/rxts_calibrator.h>
 #include <dev/flash.h>
 #include <dev/gpio.h>
+#include <dev/wdiags.h>
 
 #include <wrc_ptp.h>
 #include <system_checks.h>
@@ -81,6 +82,8 @@ static void wrc_initialize(void)
 	netif_init();
 
 	wrc_board_early_init();
+
+	wdiags_init();
 
 	pp_printf("WR Core: starting up...\n");
 	get_hw_name(wrc_hw_name);

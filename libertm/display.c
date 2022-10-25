@@ -1,3 +1,6 @@
+#define __STDC_FORMAT_MACROS
+
+#include <inttypes.h>
 #include <math.h>
 #include <stdio.h>
 
@@ -97,7 +100,17 @@ void display_wrc_diags(struct ertm_wr_status *diags)
 	printf(fmt, "Phase setpoint (setp) [ps]", diags->WDIAG_SETP);
 	printf(fmt, "Update counter (ucnt)", diags->WDIAG_UCNT);
 	printf(fmt, "Board temperature [C degree]", diags->WDIAG_TEMP);
-	
+	printf(fmt, "PHY Bitslide [bits]", diags->WDIAG_BITSLIDE);
+	printf(fmt, "PHY RX errors", diags->WDIAG_RX_ERR_CNT);
+	printf(fmt, "Servo uptime [msb of seconds]", diags->WDIAG_SERVO_UPTIME_MSB);
+	printf(fmt, "Servo uptime [lsb of seconds]", diags->WDIAG_SERVO_UPTIME_LSB);
+	printf(fmt, "Servo restart count", diags->WDIAG_SERVO_RESTART_COUNT);
+	printf(fmt, "Link Delay Model delta_Rx_M [ps]", diags->WDIAG_DELTA_RX_M);
+	printf(fmt, "Link Delay Model delta_Rx_S [ps]", diags->WDIAG_DELTA_RX_S);
+	printf(fmt, "Link Delay Model delta_Tx_M [ps]", diags->WDIAG_DELTA_TX_M);
+	printf(fmt, "Link Delay Model delta_Tx_S [ps]", diags->WDIAG_DELTA_TX_S);
+	printf(fmt, "SoftPLL Helper DAC value [0-65535]", diags->WDIAG_SPLL_HY);
+	printf(fmt, "SoftPLL Main DAC value [0-65535]", diags->WDIAG_SPLL_MY);
 }
 
 /* pulled from wrpc_diags.c */
@@ -230,6 +243,7 @@ static void print_board_temp(uint32_t val)
 void display_wrc_diags_cooked(struct ertm_wr_status *diags)
 {
 	char fmt[] = "%-20s\t0x%08x\n";
+	char human[] = "%-20s\t0x%08x (%7d)\n";
 
 	printf(fmt, "Version register", diags->VER);
 	printf(fmt, "Ctrl", diags->CTRL);
@@ -246,7 +260,18 @@ void display_wrc_diags_cooked(struct ertm_wr_status *diags)
 	print_clock_offset(diags->WDIAG_CKO);
 	print_phase_setpoint(diags->WDIAG_SETP);                                     
 	print_update_counter(diags->WDIAG_UCNT);
-	print_board_temp(diags->WDIAG_TEMP);                                     
+	print_board_temp(diags->WDIAG_TEMP);
+	printf(fmt, "PHY Bitslide [bits]", diags->WDIAG_BITSLIDE);
+	printf(fmt, "PHY RX errors", diags->WDIAG_RX_ERR_CNT);
+	printf(fmt, "Servo uptime [msb of seconds]", diags->WDIAG_SERVO_UPTIME_MSB);
+	printf(fmt, "Servo uptime [lsb of seconds]", diags->WDIAG_SERVO_UPTIME_LSB);
+	printf(fmt, "Servo restart count", diags->WDIAG_SERVO_RESTART_COUNT);
+	printf(fmt, "Link Delay Model delta_Rx_M [ps]", diags->WDIAG_DELTA_RX_M);
+	printf(fmt, "Link Delay Model delta_Rx_S [ps]", diags->WDIAG_DELTA_RX_S);
+	printf(fmt, "Link Delay Model delta_Tx_M [ps]", diags->WDIAG_DELTA_TX_M);
+	printf(fmt, "Link Delay Model delta_Tx_S [ps]", diags->WDIAG_DELTA_TX_S);
+	printf(human, "SoftPLL Helper DAC value [0-65535]", diags->WDIAG_SPLL_HY, diags->WDIAG_SPLL_HY);
+	printf(human, "SoftPLL Main DAC value [0-65535]", diags->WDIAG_SPLL_MY, diags->WDIAG_SPLL_MY);
 }
 
 static const char *source_name(int sync_source)
