@@ -24,9 +24,13 @@
 /* Declare those functions as inline (and not as macro) so that they have
    an address (but only once).  */
 
-#define ntohll htonll
 #define ntohl  htonl
 #define ntohs  htons
+
+#ifndef __PPSI_LIB_H__
+/* ppsi/lib.h also declares htonll.  */
+
+#define ntohll htonll
 
 static inline uint64_t htonll(uint64_t hostllong)
 {
@@ -36,6 +40,7 @@ static inline uint64_t htonll(uint64_t hostllong)
 	return hostllong;
 #endif
 }
+#endif
 
 static inline uint32_t htonl(uint32_t hostlong)
 {
