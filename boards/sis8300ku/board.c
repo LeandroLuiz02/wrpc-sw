@@ -2,13 +2,16 @@
 #include "dev/bb_spi.h"
 #include "dev/spi_flash.h"
 #include "dev/syscon.h"
+#include "dev/endpoint.h"
+#include "dev/netif.h"
 #include "softpll_ng.h"
 #include "storage.h"
 #include <wrc-event.h>
+#include "wrc-debug.h"
 
 static uint8_t board_mac_addr[6];
 
-extern  uint32_t sdbfs_default_bin[] = 
+const uint32_t sdbfs_default_bin[] =
 {
 	#include "sdbfs-image.h"
 };
@@ -42,9 +45,6 @@ static void sis83k_read_persistent_mac( uint8_t *mac )
 
 int wrc_board_early_init()
 {
-	int memtype;
-	uint32_t sdbfs_entry;
-
 	/*
 	 * declare GPIO pins and configure their directions for bit-banging SPI
 	 * limit SPI speed to 10MHz by setting bit_delay = CPU_CLOCK / 10^6
@@ -110,7 +110,7 @@ int wrc_board_early_init()
 
 
 
-static int sis83k_handle_event( int event )
+static void sis83k_handle_event( int event )
 {
 	if ( event == WRC_EVENT_LINK_DOWN )
 	{
