@@ -14,14 +14,14 @@
  */
 
 /* Fixed base addresses */
-#define BASE_MINIC	0x20000
-#define BASE_EP		0x20100
-#define BASE_SOFTPLL 	0x20200
-#define BASE_PPS_GEN 	0x20300
-#define BASE_SYSCON	0x20400
-#define BASE_UART	0x20500
-#define BASE_ONEWIRE	0x20600
-#define BASE_ETHERBONE_CFG	0x28000
+#define BASE_MINIC	0x000
+#define BASE_EP		0x100
+#define BASE_SOFTPLL 	0x200
+#define BASE_PPS_GEN 	0x300
+#define BASE_SYSCON	0x400
+#define BASE_UART	0x500
+#define BASE_ONEWIRE	0x600
+#define BASE_ETHERBONE_CFG	0x8000
 
 /* Board-specific parameters */
 #define TICS_PER_SECOND 1000
