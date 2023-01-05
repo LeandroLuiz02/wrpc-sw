@@ -17,6 +17,7 @@
 #include <dev/minic.h>
 #include "storage.h"
 #include "shell.h"
+#include "ppsi/lib.h"
 
 #include <hw/endpoint_regs.h>
 #include <hw/endpoint_mdio.h>

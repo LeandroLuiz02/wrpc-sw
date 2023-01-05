@@ -14,6 +14,7 @@
 
 #include <string.h>
 #include <stdint.h>
+#include "ppsi/lib.h"
 #include "endianness.h"
 #include "wrc.h"
 #include "revision.h"

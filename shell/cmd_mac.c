@@ -14,6 +14,7 @@
 #include "shell.h"
 #include "storage.h"
 #include "dev/endpoint.h"
+#include "ppsi/lib.h"
 
 
 static int cmd_mac(const char *args[])
