@@ -361,7 +361,6 @@ static int ertm14_monitor_ui(void)
     if( !tmo_expired( &ertm14_mon_timer ))
         return 0;
 
-    uint32_t ret;
     uint32_t rx_count, rx_lat_min, rx_lat_max, rx_match, rx_late, rx_timeout;
 
     tmo_restart( &ertm14_mon_timer );
@@ -371,12 +370,12 @@ static int ertm14_monitor_ui(void)
 	cprintf(C_BLUE, "eRTM14/15 Board Monitor");
 	cprintf(C_MAGENTA, "\nEsc = exit\n\n");
 
-    ret = diag_read_word(8, DIAG_RO_BANK, &rx_count);
-    ret = diag_read_word(4, DIAG_RO_BANK, &rx_lat_max);
-    ret = diag_read_word(5, DIAG_RO_BANK, &rx_lat_min);
-    ret = diag_read_word(20, DIAG_RO_BANK, &rx_match);
-    ret = diag_read_word(22, DIAG_RO_BANK, &rx_late);
-    ret = diag_read_word(24, DIAG_RO_BANK, &rx_timeout);
+    diag_read_word(8, DIAG_RO_BANK, &rx_count);
+    diag_read_word(4, DIAG_RO_BANK, &rx_lat_max);
+    diag_read_word(5, DIAG_RO_BANK, &rx_lat_min);
+    diag_read_word(20, DIAG_RO_BANK, &rx_match);
+    diag_read_word(22, DIAG_RO_BANK, &rx_late);
+    diag_read_word(24, DIAG_RO_BANK, &rx_timeout);
 
     struct ertm14_board_state *st = ertm14_get_current_state();
 

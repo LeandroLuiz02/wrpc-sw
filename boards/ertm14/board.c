@@ -23,6 +23,8 @@
 #include <string.h>
 #include <stddef.h>
 
+#include "ppsi/lib.h"
+
 #include "wrc.h"
 #include "wrc-debug.h"
 #include "pp-printf.h"
@@ -684,8 +686,6 @@ static int ertm14_dds_sync_init(void)
 
     int i;
 
-    int need_overwrite = 0;
-
     // retrieve calibration delays on DDS IOUPDATE and CLKAB SYNC lines from the calibration stored in eeprom
     for( i = 0; i < n_params; i++ )
     {
@@ -699,7 +699,6 @@ static int ertm14_dds_sync_init(void)
             val = params[i].default_value_ps;
             storage_set_calibration_parameter( params[i].id, val );
             board_dbg("Sync Unit channel '%s': delay not found in calibration file, using default = %d ps\n", params[i].name, val );
-            need_overwrite = 1;
         }
         board.dds_sync_delays[ params[i].channel ] = val;
     }
@@ -1236,21 +1235,16 @@ static void get_wrc_nco(struct ertm14_nco_reset *nco)
 static void subscribe_nco(struct ertm14_nco_reset *nco)
 {
 	struct ertm14_dds_state *dds;
-	char *lo = "lo";
-	char *ref = "ref";
-	char *ddss;
 
 	nco_to_host_order(nco);
 
 	switch (nco->connector) {
 	case ERTM14_DDS_SYNC_LO:
 		dds = &ertm14_current_state->lo;
-		ddss = lo;
 		event_post(WRC_ERTM14_EVENT_LO_RECONFIGURED);
 		break;
 	case ERTM14_DDS_SYNC_REF:
 		dds = &ertm14_current_state->ref;
-		ddss = ref;
 		event_post(WRC_ERTM14_EVENT_REF_RECONFIGURED);
 		break;
 	default:
