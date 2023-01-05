@@ -37,8 +37,10 @@
   rc = (raw) & 0xfffffff;		  \
   fc = (raw >> 28) & 0xf;
 
+/* Exported for snmp.  */
 struct wr_minic minic;
-int ver_supported;
+
+static unsigned char ver_supported;
 
 
 static inline void minic_writel(uint32_t reg, uint32_t data)
