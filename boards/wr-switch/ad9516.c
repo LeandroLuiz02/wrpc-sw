@@ -238,7 +238,7 @@ int ad9516_init(int scb_version, int ljd_present)
 
 	/* Set R divider value depending on Low-Jitter Daughterboard presence */
 	if (ljd_present)
-		ad9516_load_regset(spi_base, ad9516_ref_ljd, ARRAY_SIZE(ad9516_ref_tcxo), 1);
+		ad9516_load_regset(spi_base, ad9516_ref_ljd, ARRAY_SIZE(ad9516_ref_ljd), 1);
 	else
 		ad9516_load_regset(spi_base, ad9516_ref_tcxo, ARRAY_SIZE(ad9516_ref_tcxo), 1);
 	ad9516_wait_lock(spi_base);
