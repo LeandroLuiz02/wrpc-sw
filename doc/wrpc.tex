@@ -2136,9 +2136,8 @@ the build of WRPC.
 
   \code{mac set <mac>} & sets the MAC address of WRPC \\
 
-  \code{mode gm|master|slave} & (legacy) sets WRPC to operate as Grandmaster
-    clock (requires external 10MHz and 1-PPS reference), Master or Slave.
-    After setting the mode, \texttt{ptp start} must be re-issued \\
+  \code{mode gm|master|slave} & (legacy) is now an alias of the \texttt{ptp}
+    command \\
 
   \code{netconsole} & prints peer's MAC, IP and port number used by
     the netconsole; to enable \code{netconsole} command
@@ -2198,6 +2197,10 @@ the build of WRPC.
   \code{ptp gm|master|slave} & sets WRPC to operate as Grandmaster clock
     (requires external 10MHz and 1-PPS reference), Master or Slave. After
     setting the mode, \texttt{ptp start} must be re-issued \\
+
+  \code{ptp abscal} & sets WRPC for absolute calibration.  You need special
+    hardware for this process, which is described in
+    \url{https://ohwr.org/project/wr-calibration/wikis/home} \\
 
   \code{ptp <prio1|prio2|domain|class}\\\code{|accuracy|allan|tsource> <val>}
                 & sets various parametes of PTP. For details see below.
