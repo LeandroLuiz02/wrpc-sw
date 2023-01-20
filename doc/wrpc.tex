@@ -558,7 +558,7 @@ $ sudo tools/spec-fwloader \
 <your_location>/wr-cores/syn/spec_ref_design/spec_wr_ref_top.bin
 \end{lstlisting}
 
-If everything went right up to this moment you have your board running the FPGA 
+If everything went right up to this moment you have your board running the FPGA
 bitstream with the WR PTP Core. If you need to load your own \texttt{wrc.bin}
 compiled in section \ref{Software compilation}, you can use the
 \texttt{spec-cl} tool:
@@ -786,7 +786,7 @@ current vlan: 0 (0x0)
 executing:  ptp stop
 PTP stop
 executing:  sfp match
-AXGE-3454-0531  
+AXGE-3454-0531
 SFP matched, dTx=180750 dRx=148326 alpha=-73685416
 executing:  mode slave
 PTP stop
@@ -1433,7 +1433,7 @@ situations:\\
 	When the WR servo is in \textit{track phase} state after loosing
         synchronization, the node sends ``\textit{45}\texttt{-th re-track after}
         \textit{23.456} \texttt{s}''. The time reported is the amount of time
-        during which the node has not been synchronized since previous synchronization. 
+        during which the node has not been synchronized since previous synchronization.
         The seconth and
         thirth re-sync are reported as \texttt{2-th} and \texttt{3-th}, to make you
         smile. At the \texttt{4-th} you should stop smiling and be concerned.\\
@@ -1471,7 +1471,7 @@ section \ref{sec:wrpc_hdl} for information about the WR PTP Core interfaces.}
 \label{wrpc-diags}
 
 A direct access to synchronization status of the WR PTP Core is possible via WB registers.
-Such access can be used by the application-specific logic or by any software running on the 
+Such access can be used by the application-specific logic or by any software running on the
 host machine, provided the PCIe/VME bridge is instantiated in your design and
 lets you access the WR PTP Core external Wishbone Slave interface (see
 \ref{sec:hdl_wrpc}. Every reference design contains appropriate bridge, so you
@@ -1530,7 +1530,7 @@ be executed as follows:
 \begin{lstlisting}
 cfc-774-cbt:wrcdiag[00] > diags
 servo status:		Track phase
-Port status:		Link up, PLL locked, 
+Port status:		Link up, PLL locked,
 PTP state:		PPS slave
 Aux state:		ch0:enabled
 TX frame count:		1593970
@@ -1556,7 +1556,7 @@ temp:			47.3750 C
 \end{lstlisting}
 
 The commands that are available from the interactive prompt can be also executed directly
-from the host's shell prompt and via ssh. Both cases can be useful when writing shell 
+from the host's shell prompt and via ssh. Both cases can be useful when writing shell
 scripts using the tool. To call one of the commands from the host shell prompt,
 use \texttt{echo cmd | wrpc-diags} format. For example, to execute
 \texttt{diags} command for SPEC:
@@ -1598,7 +1598,7 @@ configuration of the WR Streamers.\\
 
 The \texttt{wr-streamers} tool is self documented in the sense that a help
 \texttt{h} command lists you all the currently supported commands, and to get
-detailed information for a given command, one can type \texttt{h cmd}. 
+detailed information for a given command, one can type \texttt{h cmd}.
 
 To use the \texttt{wr-streamers} tool interactively, call the tool with appropriate
 parameters, depending on your hardware type. For example for a SPEC board at
@@ -1646,7 +1646,7 @@ Frames  [number]: tx =   1558137 rx =   1558137 lost=         0 (lost blocks =0)
 \end{lstlisting}
 
 The commands that are available from the interactive prompt can be also executed directly
-from the host's shell prompt and via ssh. Both cases can be useful when writing shell 
+from the host's shell prompt and via ssh. Both cases can be useful when writing shell
 scripts using the tool. To call one of the commands from the host shell prompt, use
 \texttt{echo cmd | wr-streamers}. For example, to execute \texttt{stats} command for SPEC:
 \begin{lstlisting}
@@ -1715,7 +1715,7 @@ When trying to diagnose software issues, especially lockup situations,
 it may be useful to look at the current values or critical variables
 within \textit{wrpc-sw}/\textit{ppsi}.
 
-To this aim, you can pass a memory image (dump of RAM content) of \textit{wrpc} to 
+To this aim, you can pass a memory image (dump of RAM content) of \textit{wrpc} to
 \texttt{tools/wrpc-dump}.
 The tool will print information for softpll, ppsi data structures,
 ptp data sets and version information.
@@ -2037,294 +2037,452 @@ tools used to build and run it, you can write at our forums
 Please note that some commands are available only when enabled in Kconfig during
 the build of WRPC.
 
-\footnotesize
-\renewcommand\arraystretch{1.5}
-\begin{longtable}{  p{7.5cm}  p{7cm} }
+\renewcommand{\descriptionlabel}[1]{\texttt{#1}}
 
-  \code{calibration} & (legacy) tries to read t2/4 phase transition value from
-    the Flash/EEPROM (in WR Master or GrandMaster mode), or executes the t24p
-    calibration procedure and stores its result to the Flash/EEPROM (in WR 
-    Slave mode) \\
+\begin{description}
+\item[calibration] (legacy)
 
-  \code{config} & prints the dot-config file used to build this instance of
-    WRPC and ppsi. It is an optional command, enabled at build time by
-    \texttt{CONFIG\_CMD\_CONFIG}. \\
+  Tries to read t2/4 phase transition value from
+  the Flash/EEPROM (in WR Master or GrandMaster mode), or executes the t24p
+  calibration procedure and stores its result to the Flash/EEPROM (in WR
+  Slave mode).
 
-  \code{daclog off} &\\
-  \code{daclog <ipaddr> <macaddr>} & sends the \textit{DAC} output and input to
+\item[config] \mbox{}
+
+  Prints the dot-config file used to build this instance of
+  WRPC and ppsi. It is an optional command, enabled at build time by
+  \texttt{CONFIG\_CMD\_CONFIG}.
+
+\item[daclog off]
+\item[daclog <ipaddr> <macaddr>] \mbox{}
+
+  Sends the \textit{DAC} output and input to
   the \textit{VCXO} main oscillator via UDP packets to port 1050 on
   a host defined with \code{<ipaddr>} and \code{<macaddr>}.
-  It is an optional command, enabled at build time by \texttt{CONFIG\_DACLOG}. \\
+  It is an optional command, enabled at build time by \texttt{CONFIG\_DACLOG}.
 
-  \code{delays}& \\
-  \code{delays <tx> <rx>} & gets or sets the constant delays in frame
-    transmission, only available if \texttt{CONFIG\_CMD\_LL}. Delays are
-    expressed in picoseconds. This command changes rx and tx deltas for
-    the currently matched SFP and both, \code{delta\_rxm} and \code{delta\_txm}.
-    For master mode, command has to be executed before the peer enters
-    CALIBRATED state. Otherwise it makes no effect on slave side. For slave mode,
-    if the command is executed before CALIBRATED is reached, then both slave
-    deltas are changed \code{delta\_rxs} (with added bitslide) and
-    \code{delta\_txs}. After the state CALIBRATED is reached, at every
-    executrion of \code{delays} command both master deltas (\code{delta\_rxm}
-    and \code{delta\_txm}) are be updated in realtime.
-    If the SFP match is performed (e.g. link restart) the \code{delays} command
-    has to be executed once more. \\
+\item[delays]
+\item[delays <tx> <rx>] \mbox{}
 
-  \code{devmem <addr>} &  \\
-  \code{devmem <addr> <value>} & reads or writes a 32-bit word from memory
-    and/or FPGA registers. Only available if \texttt{CONFIG\_CMD\_LL} is
-    set. \\
+  Gets or sets the constant delays in frame
+  transmission, only available if \texttt{CONFIG\_CMD\_LL}. Delays are
+  expressed in picoseconds. This command changes rx and tx deltas for
+  the currently matched SFP and both, \code{delta\_rxm} and \code{delta\_txm}.
+  For master mode, command has to be executed before the peer enters
+  CALIBRATED state. Otherwise it makes no effect on slave side. For slave mode,
+  if the command is executed before CALIBRATED is reached, then both slave
+  deltas are changed \code{delta\_rxs} (with added bitslide) and
+  \code{delta\_txs}. After the state CALIBRATED is reached, at every
+  executrion of \code{delays} command both master deltas (\code{delta\_rxm}
+  and \code{delta\_txm}) are be updated in realtime.
+  If the SFP match is performed (e.g. link restart) the \code{delays} command
+  has to be executed once more.
 
-  \code{diag} & diagnostics for auxiliary user registers in HDL. Only available
-    if \texttt{CONFIG\_AUX\_DIAG}.\\
+\item[devmem <addr>]
+\item[devmem <addr> <value>] \mbox{}
 
-  \code{diag ro <reg\_no>} & reads register <reg\_no> from read-only bank.\\
+  Reads or writes a 32-bit word from memory
+  and/or FPGA registers. Only available if \texttt{CONFIG\_CMD\_LL} is set.
 
-  \code{diag rw <reg\_no>} & reads register <reg\_no> from read-write bank.\\
+\item[diag] \mbox{}
 
-  \code{diag w <reg\_no>} & writes register <reg\_no> to read-write bank. \\
+  Handle diagnostics for auxiliary user registers in HDL. Only available
+  if \texttt{CONFIG\_AUX\_DIAG}.
 
-  \code{faketemp} &  \\
-  \code{faketemp <T1> <T2> <T3>} & reads or sets the three fake temperatures,
-    used to test the temperature/syslog mechanism. Available if
-    \texttt{CONFIG\_FAKE\_TEMPERATURES} is set. \\
+\item[diag ro <reg\_no>] \mbox{}
 
-  \code{gui} & starts GUI WRPC monitor \\
+  Reads register <reg\_no> from read-only bank.
 
-  \code{help} & lists available commands in this instance of the WRPC \\
+\item[diag rw <reg\_no>] \mbox{}
 
-  \code{init add <cmd>}\hypertarget{cmd init add}{} & adds shell command at
-    the end of the initialization script \\
+  Reads register <reg\_no> from read-write bank.
 
-  \code{init boot} & executes the script stored in Flash/EEPROM (the same
-    action is done automatically when WRPC starts after resetting the soft-core
-    processor) \\
+\item[diag w <reg\_no>] \mbox{}
 
-  \code{init erase} & erases the initialization script in Flash/EEPROM  \\
+  Writes register <reg\_no> to read-write bank.
 
-  \code{init show} & prints all commands from the script stored in
-    Flash/EEPROM \\
+\item[faketemp]
+\item[faketemp <T1> <T2> <T3>] \mbox{}
 
-  \code{ip get} & \\
-  \code{ip set <ip>} & reports or sets the IPv4 address of the WRPC (only
-    available if \texttt{CONFIG\_IP} is set at build time \\
+  Reads or sets the three fake temperatures,
+  used to test the temperature/syslog mechanism. Available if
+  \texttt{CONFIG\_FAKE\_TEMPERATURES} is set.
 
-  \code{leapsec} & \\
-  \code{leapsec get} & get number of leap seconds from PTP and from the system \\
+\item[gui] \mbox{}
 
-  \code{leapsec set <num>} & get number of leap seconds for PTP. This settings
-    make sense only for GM mode \\
+  Starts GUI WRPC monitor.
 
-  \code{ltest} & \\
-  \code{ltest fake <nsecs>} & fakes delay to trigger latency failures (for
-    testing). \\
+\item[help] \mbox{}
 
-  \code{ltest <secs> <msecs>} & reads or sets the latency-test sending
-    interval. See \ref{Latency Test}. Available if
-    \texttt{CONFIG\_LATENCY\_PROBE} is set. \\
+  Lists available shell commands in this instance of the WRPC.
 
-  \code{ltest quiet} & disables sending latency messages to Syslog. \\
+\item[init add <cmd>] \mbox{}
 
-  \code{ltest verbose} & enables sending latency messages to Syslog. \\
+  \hypertarget{cmd init add}{}
+  Adds shell command at the end of the initialization script.
 
-  \code{mac getp} & reads the persistent MAC address stored in Flash/EEPROM \\
+\item[init boot] \mbox{}
 
-  \code{mac get} & prints WRPC's MAC address \\
+  Executes the script stored in Flash/EEPROM (the same
+  action is done automatically when WRPC starts after resetting the soft-core
+  processor).
 
-  \code{mac setp <mac>} & stores the persistent MAC address in Flash/EEPROM \\
+\item[init erase] \mbox{}
 
-  \code{mac set <mac>} & sets the MAC address of WRPC \\
+  Erases the initialization script in Flash/EEPROM.
 
-  \code{mode gm|master|slave} & (legacy) is now an alias of the \texttt{ptp}
-    command \\
+\item[init show] \mbox{}
 
-  \code{netconsole} & prints peer's MAC, IP and port number used by
-    the netconsole; to enable \code{netconsole} command
-    \texttt{CONFIG\_CMD\_NETCONSOLE} has to be set in the dot-config; for more
-    information about netconsole please refer to the section \ref{Netconsole}\\
+  Prints all commands from the script stored in Flash/EEPROM.
 
-  \code{netconsole <MAC> <IP> <PORT>} & sets peer's MAC, IP and port number for
-    the netconsole \\
+\item[ip get]
+\item[ip set <ip>] \mbox{}
 
-  \code{netconsole wait} & let the netconsole to wait for communication from
-    peer; netconsole will transmit when the next netconsole's packet arrives to
-    WRPC \\
+  Reports or sets the IPv4 address of the WRPC (only available if
+  \texttt{CONFIG\_IP} is set at build time.
 
-  \code{netconsole disable} & disable netconsole until enabled manually \\
+\item[leapsec]
+\item[leapsec get] \mbox{}
 
-  \code{pll cl <channel>} & checks if SoftPLL is locked for the channel \\
+  Get number of leap seconds from PTP and from the system.
 
-  \code{pll gdac <index>} & gets dac's value \\
-
-  \code{pll gps <channel>} & gets current and target phase shift for the
-    channel \\
-
-  \code{pll init <mode> <ref\_channel> <align\_pps>} & manually runs
-    \texttt{spll\_init()} function to initialize SoftPll  \\
-
-  \code{pll sdac <index> <val>} & sets the dac \\
-
-  \code{pll sps <channel> <picoseconds>} & sets phase shift for the channel \\
-
-  \code{pll start <channel>} & starts SoftPLL for the channel \\
-
-  \code{pll stop <channel>} & stops SoftPLL for the channel \\
-
-  \code{pps} & check status of a PPS generation independent of PPSI state \\
-
-  \code{pps force <on|off>} & enable/disable PPS generation independent of
-    PPSI state. It is usefull mostly for testing purposes \\
-
-  \code{ps} & prints the list of running tasks (processes) in the CPU. For
-    each task you get the number of iterations, the maximum execution time
-    (measured with the monotonic clock) and the CPU time consumed (using
-    the RT clock) since boot or last reset of values \\
-
-  \code{ps reset} & zeroes the profiling information reported by the \code{ps}
-    command \\
-
-  \code{ps max <msecs>} & starts printing all tasks executing longer than
-    a given number of miliseconds. Additionally, it triggers printing messages
-    if particular task runs longer than ever before. Passing ``\code{0}'' as
-    a parameter stops the further printouts. \\
+\item[leapsec set <num>] \mbox{}
 
-  \code{ptp <e2e|p2p>} & selects PTP delay mechanism: end-to-end or peer-to-peer.
-    If configured, you can set \texttt{p2p} mode. Alternatively you can use also
-    aliases: \texttt{delay} (instead of \texttt{e2e}) or \texttt{pdelay}
-    (instead of \texttt{p2p}).\\
+  Set number of leap seconds for PTP. This settings make sense only
+  for GM mode.
 
-  \code{ptp gm|master|slave} & sets WRPC to operate as Grandmaster clock
-    (requires external 10MHz and 1-PPS reference), Master or Slave. After
-    setting the mode, \texttt{ptp start} must be re-issued \\
+\item[ltest]
+\item[ltest fake <nsecs>] \mbox{}
 
-  \code{ptp abscal} & sets WRPC for absolute calibration.  You need special
-    hardware for this process, which is described in
-    \url{https://ohwr.org/project/wr-calibration/wikis/home} \\
+  Fakes delay to trigger latency failures (for testing).
 
-  \code{ptp <prio1|prio2|domain|class}\\\code{|accuracy|allan|tsource> <val>}
-                & sets various parametes of PTP. For details see below.
-                Use these subcommands with caution. Setting the mode with
-                \texttt{ptp} command may affect the already set parameters using
-                \texttt{ptp} subcommands listed below.
-                Consider using \texttt{ptp master} and \texttt{ptp start} 
-                before using mentioned subcommands.\\
-  \code{ptp prio1 <0-255>}    & sets \textit{priority 1} used by PTP \\
-  \code{ptp prio2 <0-255>}    & sets \textit{priority 2} used by PTP \\
-  \code{ptp domain <0-255>}   & sets \textit{domain numbner} used by PTP \\
-  \code{ptp class <1-255>}    & sets \textit{clock class} used by PTP \\
-  \code{ptp accuracy <1-255>} & sets \textit{clock accuracy} used by PTP \\
-  \code{ptp allan <0-65535>}  & sets \textit{clock allan variance} used by PTP \\
-  \code{ptp tsource <0-255>}  & sets \textit{time source} used by PTP \\
+\item[ltest <secs> <msecs>] \mbox{}
 
-  \code{ptp start} & starts WR PTP daemon \\
+  Reads or sets the latency-test sending interval. See \ref{Latency Test}.
+  Available if \texttt{CONFIG\_LATENCY\_PROBE} is set.
 
-  \code{ptp stop} & stops WR PTP daemon \\
+\item[ltest quiet] \mbox{}
 
-  \code{ptp <cmd> <cmd> ...} & you can concatenate several of the above
-    subcommands in a single \texttt{ptp} command. With no arguments,
-    the command reports the current values.\\
+  Disables sending latency messages to Syslog.
 
-  \code{ptrack <enable|disable>} & print status, enable or disable phase tracking.
-    Useful for demos.\\
+\item[ltest verbose] \mbox{}
 
-  \code{refresh} & changes the update time period of the gui and stat commands.
-    Default period is 1 second. If you set the period to 0, the log message is
-    only generated one time. \\
+  Enables sending latency messages to Syslog.
 
-  \code{sdb} & prints devices connected to the Wishbone bus inside WRPC \\
-  \code{sdb fs <memtype> <baseadr> <param>}\hypertarget{cmd sdb fs}{} & creates
-    SDBFS image under
-    specified \code{<baseadr>} in selected storage depending on \code{<memtype>}
-    ({\bf 0} - Flash, {\bf 1} - I2C EEPROM, {\bf 2} - 1-Wire EEPROM). The meaning
-    of last parameter \code{<param>} depends on the type of selected storage. It
-    is either the sector size in kilobytes (for Flash) or I2C chip address (for
-    I2C EEPROM). Command \code{sdb} is available if \texttt{CONFIG\_GENSDBFS}
-    is set.\\
+\item[mac getp] \mbox{}
 
-  \code{sdb fs 0} & creates SDBFS image in Flash memory. Base address and sector
-    size are taken from HDL Syscon registers for SPEC/SVEC boards. If you want
-    to use it for custom board, base address and sector size must be specified
-    as VHDL generic parameters of the WR PTP Core. Command \code{sdb} is
-    available if \texttt{CONFIG\_GENSDBFS} is set.\\
+  Reads the persistent MAC address stored in Flash/EEPROM.
 
-  \code{sdb fse <memtype> <baseadr> <param>}\hypertarget{cmd sdb fse}{} &
-    erases SDBFS image under
-    specified \code{<baseadr>} from selected storage depending on
-    \code{<memtype>} ({\bf 0} - Flash, {\bf 1} - I2C EEPROM, {\bf 2} - 1-Wire
-    EEPROM). The meaning of last parameter \code{<param>} depends on the type
-    of selected storage. It is either the sector size in kilobytes (for Flash)
-    or I2C chip address (for I2C EEPROM). Command \code{sdb} is available
-    if \texttt{CONFIG\_GENSDBFS} is set.\\
+\item[mac get] \mbox{}
 
-  \code{sdb fse 0} & erases SDBFS image from Flash memory. Base address and sector
-    size are taken from HDL Syscon registers for SPEC/SVEC boards. If you want
-    to use it for custom board, base address and sector size must be specified
-    as VHDL generic parameters of the WR PTP Core. Command \code{sdb} is
-    available if \texttt{CONFIG\_GENSDBFS} is set.\\
+  Prints WRPC's MAC address.
 
-  \code{sfp add <PN> <deltaTx> <deltaRx> <alphaH> <alphaL>} & stores calibration
-    parameters for SFP to a file in Flash/EEPROM. \code{<alphaL>} is the 9 lower
-    decimal digits of alpha value, \code{<alphaH>} are the 9 higher decimal
-    digits. For negative alpha values only \code{<alphaH>} is negative. \\
+\item[mac setp <mac>] \mbox{}
 
-  \code{sfp erase} & erases the SFP database stored in the Flash/EEPROM \\
+  Stores the persistent MAC address in Flash/EEPROM.
 
-  \code{sfp match} & prints the ID of a currently used SFP transceiver and
-    tries to load the calibration parameters for it \\
+\item[mac set <mac>] \mbox{}
 
-  \code{sfp show} & prints all SFP transceivers stored in database \\
+  Sets the MAC address of WRPC.
 
-  \code{stat <on|off>} & without parameter, toggles reporting of loggable
-    statistics. You can pass \texttt{on} or \texttt{off} as argument as an
-    alternative to toggling \\
+\item[mode gm|master|slave] (legacy) \mbox{}
 
-  \code{stat bts} & prints bitslide value for established WR Link, needed by
-    the calibration procedure \\
+  This command is now an alias of the \texttt{ptp} command.
 
-  \code{syslog off} &  \\
-  \code{syslog <ipaddr> <macaddr>} & disables or sets your \textit{syslog}
-    server. See \ref{Syslog}. Available if \texttt{CONFIG\_SYSLOG} is set. \\
+\item[netconsole] \mbox{}
 
-  \code{temp} & reports current temperatures. \\
+  Prints peer's MAC, IP and port number used by the netconsole; to
+  enable \code{netconsole} command \texttt{CONFIG\_CMD\_NETCONSOLE}
+  has to be set in the dot-config; for more information about
+  netconsole please refer to the section \ref{Netconsole}.
 
-  \code{time} & prints current time from WRPC \\
+\item[netconsole <MAC> <IP> <PORT>] \mbox{}
 
-  \code{time raw} &  prints current time in a raw format (seconds, nanoseconds) \\
+  Sets peer's MAC, IP and port number for the netconsole.
 
-  \code{time setnsec <nsec>} & sets only nanoseconds of the WRPC time \\
+\item[netconsole wait] \mbox{}
 
-  \code{time setsec <sec>} & sets only seconds of the WRPC time (useful for
-    setting time in GrandMaster mode, when nanoseconds counter is aligned to
-    external 1-PPS and 10 MHz) \\
+  Let the netconsole to wait for communication from peer; netconsole
+  will transmit when the next netconsole's packet arrives to WRPC.
 
-  \code{time set <sec> <nsec>} & sets WRPC time \\
+\item[netconsole disable] \mbox{}
 
-  \code{verbose <digits>} & sets PPSi verbosity. See the PPSi manual about the
-    meaning of the digits (hint: \texttt{verbose 1111} is a good first bet to
-    see how the PTP system is working)  \\
+  Disable netconsole until enabled manually.
 
-  \code{ver} & prints which version of wrpc is running  \\
+\item[pll cl <channel>] \mbox{}
 
-  \code{vlan} &  \\
-  \code{vlan set <n>} & reports or sets the active vlan used for
-    sending/receiving network frames. The command exists only if
-    \texttt{CONFIG\_VLAN} is set.\\
+  Checks if SoftPLL is locked for the channel.
 
-  \code{vlan off} & disables vlans. Available if \texttt{CONFIG\_VLAN} is
-    set. \\
+\item[pll gdac <index>] \mbox{}
 
-  \code{w1} & lists onewire devices on the bus \\
+  Gets dac's value.
 
-  \code{w1w <offset> <byte> [<byte> ...]}&  \\
+\item[pll gps <channel>] \mbox{}
 
-  \code{w1r <offset> <len>} & if \texttt{CONFIG\_W1} is set and a OneWire
-    EEPROM exists, write and read data. For writing, \texttt{byte} values are
-    decimal \\
+  Gets current and target phase shift for the channel.
 
-\end{longtable}
-\renewcommand\arraystretch{1}
+\item[pll init <mode> <ref\_channel> <align\_pps>] \mbox{}
 
+  Manually runs \texttt{spll\_init()} function to initialize SoftPll.
+
+\item[pll sdac <index> <val>] \mbox{}
+
+  Sets the dac.
+
+\item[pll sps <channel> <picoseconds>] \mbox{}
+
+  Sets phase shift for the channel.
+
+\item[pll start <channel>] \mbox{}
+
+  Starts SoftPLL for the channel.
+
+\item[pll stop <channel>] \mbox{}
+
+  Stops SoftPLL for the channel.
+
+\item[pps] \mbox{}
+
+  Check status of a PPS generation independent of PPSI state.
+
+\item[pps force <on|off>] \mbox{}
+
+  Enable/disable PPS generation independent of PPSI state. It is
+  usefull mostly for testing purposes.
+
+\item[ps] \mbox{}
+
+  Prints the list of running tasks (processes) in the CPU. For each
+  task you get the number of iterations, the maximum execution time
+  (measured with the monotonic clock) and the CPU time consumed (using
+  the RT clock) since boot or last reset of values.
+
+\item[ps reset] \mbox{}
+
+  Zeroes the profiling information reported by the \code{ps} command.
+
+\item[ps max <msecs>] \mbox{}
+
+  Starts printing all tasks executing longer than a given number of
+  miliseconds. Additionally, it triggers printing messages if
+  particular task runs longer than ever before. Passing ``\code{0}''
+  as a parameter stops the further printouts.
+
+\item[ptp <e2e|p2p>] \mbox{}
+
+  Selects PTP delay mechanism: end-to-end or peer-to-peer.  If
+  configured, you can set \texttt{p2p} mode. Alternatively you can use
+  also aliases: \texttt{delay} (instead of \texttt{e2e}) or
+  \texttt{pdelay} (instead of \texttt{p2p}).
+
+\item[ptp gm|master|slave] \mbox{}
+
+  Sets WRPC to operate as Grandmaster clock (requires external 10MHz
+  and 1-PPS reference), Master or Slave. After setting the mode,
+  \texttt{ptp start} must be re-issued.
+
+\item[ptp abscal] \mbox{}
+
+  Sets WRPC for absolute calibration.  You need special hardware for
+  this process, which is described in
+  \url{https://ohwr.org/project/wr-calibration/wikis/home}.
+
+\item[ptp <prio1|prio2|domain|class|accuracy|allan|tsource> <val>] \mbox{}
+
+  Sets various parametes of PTP. For details see below.  Use these
+  subcommands with caution. Setting the mode with \texttt{ptp} command
+  may affect the already set parameters using \texttt{ptp} subcommands
+  listed below.  Consider using \texttt{ptp master} and \texttt{ptp start}
+  before using mentioned subcommands.
+
+\item[ptp prio1 <0-255>] \mbox{}
+
+  Sets \textit{priority 1} used by PTP.
+
+\item[ptp prio2 <0-255>] \mbox{}
+
+  Sets \textit{priority 2} used by PTP.
+
+\item[ptp domain <0-255>] \mbox{}
+
+  Sets \textit{domain numbner} used by PTP.
+\item[ptp class <1-255>] \mbox{}
+
+  Sets \textit{clock class} used by PTP.
+
+\item[ptp accuracy <1-255>] \mbox{}
+
+  Sets \textit{clock accuracy} used by PTP.
+
+\item[ptp allan <0-65535>] \mbox{}
+
+  Sets \textit{clock allan variance} used by PTP.
+
+\item[ptp tsource <0-255>] \mbox{}
+
+  Sets \textit{time source} used by PTP.
+
+\item[ptp start] \mbox{}
+
+  Starts WR PTP daemon.
+
+\item[ptp stop] \mbox{}
+
+  Stops WR PTP daemon.
+
+\item[ptp <cmd> <cmd> ...] \mbox{}
+
+  You can concatenate several of the above subcommands in a single
+  \texttt{ptp} command. With no arguments, the command reports the
+  current values.
+
+\item[ptrack <enable|disable>] \mbox{}
+
+  Print status, enable or disable phase tracking. Useful for demos.
+
+\item[refresh] \mbox{}
+
+  Changes the update time period of the gui and stat commands.
+  Default period is 1 second. If you set the period to 0, the log
+  message is only generated one time.
+
+\item[sdb] \mbox{}
+
+  Prints devices connected to the Wishbone bus inside WRPC.
+
+\item[sdb fs <device> <baseadr> <param>] \mbox{}
+
+  \hypertarget{cmd sdb fs}{} Creates SDBFS image under specified
+  \code{<baseadr>} in selected storage depending on \code{<device>}
+  ({\bf 0} - Flash, {\bf 1} - I2C EEPROM, {\bf 2} - 1-Wire
+  EEPROM). The meaning of last parameter \code{<param>} depends on the
+  type of selected storage. It is either the sector size in kilobytes
+  (for Flash) or I2C chip address (for I2C EEPROM). Command \code{sdb}
+  is available if \texttt{CONFIG\_GENSDBFS} is set.
+
+\item[sdb fs 0] \mbox{}
+
+  Creates SDBFS image in Flash memory. Base address and sector size
+  are taken from HDL Syscon registers for SPEC/SVEC boards. If you
+  want to use it for custom board, base address and sector size must
+  be specified as VHDL generic parameters of the WR PTP Core. Command
+  \code{sdb} is available if \texttt{CONFIG\_GENSDBFS} is set.
+
+\item[sdb fse <device> <baseadr> <param>] \mbox{}
+
+  \hypertarget{cmd sdb fse}{} Erases SDBFS image under specified
+  \code{<baseadr>} from selected storage depending on \code{<device>}
+  ({\bf 0} - Flash, {\bf 1} - I2C EEPROM, {\bf 2} - 1-Wire
+  EEPROM). The meaning of last parameter \code{<param>} depends on the
+  type of selected storage. It is either the sector size in kilobytes
+  (for Flash) or I2C chip address (for I2C EEPROM). Command \code{sdb}
+  is available if \texttt{CONFIG\_GENSDBFS} is set.
+
+\item[sdb fse 0] \mbox{}
+
+  Erases SDBFS image from Flash memory. Base address and sector size
+  are taken from HDL Syscon registers for SPEC/SVEC boards. If you
+  want to use it for custom board, base address and sector size must
+  be specified as VHDL generic parameters of the WR PTP Core. Command
+  \code{sdb} is available if \texttt{CONFIG\_GENSDBFS} is set.
+
+\item[sfp add <PN> <deltaTx> <deltaRx> <alphaH> <alphaL>] \mbox{}
+
+  Stores calibration parameters for SFP to a file in
+  Flash/EEPROM. \code{<alphaL>} is the 9 lower decimal digits of alpha
+  value, \code{<alphaH>} are the 9 higher decimal digits. For negative
+  alpha values only \code{<alphaH>} is negative.
+
+\item[sfp erase] \mbox{}
+
+  Erases the SFP database stored in the Flash/EEPROM.
+
+\item[sfp match] \mbox{}
+
+  Prints the ID of a currently used SFP transceiver and tries to load
+  the calibration parameters for it.
+
+\item[sfp show] \mbox{}
+
+  Prints all SFP transceivers stored in database.
+
+\item[stat <on|off>] \mbox{}
+
+  Without parameter, toggles reporting of loggable statistics. You can
+  pass \texttt{on} or \texttt{off} as argument as an alternative to
+  toggling.
+
+\item[stat bts] \mbox{}
+
+  Prints bitslide value for established WR Link, needed by the
+  calibration procedure.
+
+\item[syslog off]
+
+\item[syslog <ipaddr> <macaddr>] \mbox{}
+
+  Disables or sets your \textit{syslog} server. See
+  \ref{Syslog}. Available if \texttt{CONFIG\_SYSLOG} is set.
+
+\item[temp] \mbox{}
+
+  Reports current temperatures.
+
+\item[time] \mbox{}
+
+  Prints current time from WRPC.
+
+\item[time raw] \mbox{}
+
+  Prints current time in a raw format (seconds, nanoseconds).
+
+\item[time setnsec <nsec>] \mbox{}
+
+  Sets only nanoseconds of the WRPC time.
+
+\item[time setsec <sec>] \mbox{}
+
+  Sets only seconds of the WRPC time (useful for setting time in
+  GrandMaster mode, when nanoseconds counter is aligned to external
+  1-PPS and 10 MHz).
+
+\item[time set <sec> <nsec>] \mbox{}
+
+  Sets WRPC time.
+
+\item[verbose <digits>] \mbox{}
+
+  Sets PPSi verbosity. See the PPSi manual about the meaning of the
+  digits (hint: \texttt{verbose 1111} is a good first bet to see how
+  the PTP system is working).
+
+\item[ver] \mbox{}
+
+  Prints which version of wrpc is running.
+
+\item[vlan] \mbox{}
+
+\item[vlan set <n>] \mbox{}
+
+  Reports or sets the active vlan used for sending/receiving network
+  frames. The command exists only if \texttt{CONFIG\_VLAN} is set.
+
+\item[vlan off] \mbox{}
+
+  Disables vlans. Available if \texttt{CONFIG\_VLAN} is set.
+
+\item[w1] \mbox{}
+
+  Lists onewire devices on the bus.
+
+\item[w1w <offset> <byte> [<byte> ...]] \mbox{}
+
+\item[w1r <offset> <len>] \mbox{}
+
+  If \texttt{CONFIG\_W1} is set and a OneWire EEPROM exists, write and
+  read data. For writing, \texttt{byte} values are decimal.
+
+\end{description}
 
 
 % ##########################################################################
@@ -2371,7 +2529,7 @@ the build of WRPC.
   \code{Master-slave delay:} & Estimated one-way (master to slave) link
     delay ($delay_{MS}$)\\
 
-  \code{Master PHY delays:} & Transmission/reception delays of WR 
+  \code{Master PHY delays:} & Transmission/reception delays of WR
     Master's hardware ($\Delta_{TXM}, \Delta_{RXM}$)\\
 
   \code{Slave PHY delays:} & Transmission/reception delays of WR Slave's
@@ -2446,7 +2604,7 @@ WRPC release, you can simply program your Flash with \textit{spec\_top.mcs}
 provided with the release binaries using for example Xilinx ISE Impact tool.
 This \textit{mcs} file already includes both SDBFS image and FPGA bitstream.
 
-In the case when you want to run a custom gateware or you have a custom hardware, you can 
+In the case when you want to run a custom gateware or you have a custom hardware, you can
 download a standalone SDBFS image:
 \begin{lstlisting}
 $ wget https://ohwr.org/project/wr-cores/uploads/9dad995e74a3d49b472b8654833be01a/\
