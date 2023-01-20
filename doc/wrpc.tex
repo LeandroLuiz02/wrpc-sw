@@ -2490,68 +2490,67 @@ the build of WRPC.
 \section{WRPC GUI elements}
 \label{WRPC GUI elements}
 
-\footnotesize
-\renewcommand\arraystretch{1.5}
-\begin{longtable}{  p{4.5cm}  p{10cm} }
+\renewcommand{\descriptionlabel}[1]{\texttt{#1}}
 
-  \code{TAI Time:} & Current state of device's local clock \\
+\begin{description}
 
-  \code{RX:} / \code{TX:} & Rx/Tx packets counters\\
+\item[TAI Time:] Current state of device's local clock
 
-  \code{IPv4:} & IP address; also whether it is statically configured or
-    acquired via BOOTP (and the status of BOOTP) \\
+\item[RX, TX:] Rx/Tx packets counters
 
-  \code{mode:} & Operation mode of the WR PTP Core - \code{<WR Master,
-    WR Slave>}\\
+\item[IPv4:] IP address; also whether it is statically configured or
+    acquired via BOOTP (and the status of BOOTP)
 
-  \code{<Locked, NoLock>} & SoftPLL lock state\\
+\item[mode:] Operation mode of the WR PTP Core - \code{<WR Master,
+    WR Slave>}
 
-  \code{<Calibrated, Uncalibrated>} & Status of PHY calibration; not used
-    anymore\\
+\item[<Locked, NoLock>:] SoftPLL lock state
 
-  \code{PTP status:} & Current state of PTP state machine\\
+\item[<Calibrated, Uncalibrated>:] Status of PHY calibration; not used
+    anymore
 
-  \code{Servo state:} & Current state of WR servo state machine -
-    \code{<Uninitialized, SYNC\_SEC, SYNC\_NSEC, SYNC\_PHASE, TRACK\_PHASE>}\\
+\item[PTP status:] Current state of PTP state machine
 
-  \code{Phase tracking:} & Is phase tracking enabled when WR Slave is
-    synchronized to WR Master - \code{<ON, OFF>}\\
+\item[Servo state:] Current state of WR servo state machine -
+    \code{<Uninitialized, SYNC\_SEC, SYNC\_NSEC, SYNC\_PHASE, TRACK\_PHASE>}
 
-  \code{Aux clock <N> status:} & Statuses of AUX clocks; one status line per
-    available AUX clock; can contain <enabled> and <locked> \\
+\item[Phase tracking:] Is phase tracking enabled when WR Slave is
+    synchronized to WR Master - \code{<ON, OFF>}
+
+\item[Aux clock <N> status:] Statuses of AUX clocks; one status line per
+    available AUX clock; can contain <enabled> and <locked>
 
 %   \code{Synchronization source:} & network interface name from which WR
 % daemon gets synchronization - \code{<wru1>}\\
 
-  \code{Round-trip time (mu):} & Round-trip delay in picoseconds
-    ($delay_{MM}$)($delay_{MM}$)\\
+\item[Round-trip time (mu):] Round-trip delay in picoseconds ($delay_{MM}$)
 
-  \code{Master-slave delay:} & Estimated one-way (master to slave) link
-    delay ($delay_{MS}$)\\
+\item[Master-slave delay:] Estimated one-way (master to slave) link
+    delay ($delay_{MS}$)
 
-  \code{Master PHY delays:} & Transmission/reception delays of WR
-    Master's hardware ($\Delta_{TXM}, \Delta_{RXM}$)\\
+\item[Master PHY delays:] Transmission/reception delays of WR
+    Master's hardware ($\Delta_{TXM}, \Delta_{RXM}$)
 
-  \code{Slave PHY delays:} & Transmission/reception delays of WR Slave's
-    hardware ($\Delta_{TXS}, \Delta_{RXS}$)\\
+\item[Slave PHY delays:] Transmission/reception delays of WR Slave's
+    hardware ($\Delta_{TXS}, \Delta_{RXS}$)
 
-  \code{Total link asymmetry:} & WR link asymmetry calculated as
-    $delay_{MM} - 2 \cdot delay_{MS}$\\
+\item[Total link asymmetry:] WR link asymmetry calculated as
+    $delay_{MM} - 2 \cdot delay_{MS}$
 
-  \code{Cable rtt delay:} & Round-trip fiber latency\\
+\item[Cable rtt delay:] Round-trip fiber latency
 
-  \code{Clock offset:} & Slave to Master offset calculated by PTP daemon
-  ($ offset_{MS} $)\\
+\item[Clock offset:] Slave to Master offset calculated by PTP daemon
+  ($ offset_{MS} $)
 
-  \code{Phase setpoint:} & Current Slave's clock phase shift value\\
+\item[Phase setpoint:] Current Slave's clock phase shift value
 
-  \code{Skew:} & The difference between current and previous estimated
-    one-way link delay\\
+\item[Skew:] The difference between current and previous estimated
+    one-way link delay
 
-  \code{Update counter:} & The value of a counter incremented every time
-    the WR servo is updated\\
+\item[Update counter:] The value of a counter incremented every time
+    the WR servo is updated
 
-\end{longtable}
+\end{description}
 \renewcommand\arraystretch{1}
 
 
