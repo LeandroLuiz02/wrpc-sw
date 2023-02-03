@@ -67,8 +67,8 @@
 #define MDIO_DBG0_GTX_TXUSRPLL_LOCKED (1 << 4)
 #define MDIO_DBG0_RESET_RX_DONE (1 << 5)
 
-#define MDIO_DBG1 (19<<2)
-#define MDIO_DBG0 (18<<2)
+#define MDIO_DBG1 (19<<2)  /* Now lpc_phy_ctrl */
+#define MDIO_DBG0 (18<<2)  /* Now lpc_phy_stat */
 
 #define TX_SETUP_STATE_START 0
 #define TX_SETUP_STATE_RESET_PCS 1
@@ -229,7 +229,8 @@ static int tx_fsm_update(void)
 
     case TX_SETUP_STATE_MEASURE_PHASE:
     {
-        int phase, enabled; //, p2;
+        int32_t phase;
+        int enabled; //, p2;
         int rv = spll_read_ptracker(0, &phase, &enabled);
 
 
@@ -338,8 +339,8 @@ static int rx_fsm_update(void)
 	struct wrc_port_rx_setup_state* fsm = &rx_state;
 	struct wrc_port_tx_setup_state* fsm_tx = &tx_state;
 
-	int early_link_up = ep_pcs_read(&wrc_endpoint_dev, MDIO_DBG0) & MDIO_DBG0_LINK_UP;
-
+	unsigned lpc_stat = ep_pcs_read(&wrc_endpoint_dev, MDIO_DBG0);
+	int early_link_up =  lpc_stat & MDIO_DBG0_LINK_UP;
 
 	if( fsm_tx->state != TX_SETUP_DONE )
 	{
@@ -443,13 +444,11 @@ static int rx_fsm_update(void)
 
             int rx_up = dbg0 & MDIO_DBG0_LINK_UP;
 			int rx_aligned = dbg0 & MDIO_DBG0_LINK_ALIGNED;
-   			int rx_comma_pos = (dbg0 >> 7) & 0x7f;
-            int rx_comma_valid = (dbg0 >> 7) & 0x80 ? 1 : 0;
+			int rx_comma_pos = (dbg0 >> 7) & 0x7f;
+	    int rx_comma_valid = (dbg0 >> 7) & 0x80 ? 1 : 0;
 
 			if ( rx_up && rx_aligned && rx_comma_valid && (rx_comma_pos == DEFAULT_COMMA_POS) )
 			{
-    			uint16_t dbg0 = ep_pcs_read(&wrc_endpoint_dev,  MDIO_DBG0);
-       			int rx_comma_pos = (dbg0 >> 7) & 0x7f;
 				ep_pcs_write(&wrc_endpoint_dev,  MDIO_DBG1, MDIO_DBG1_RX_ENABLE | MDIO_DBG1_TX_ENABLE | MDIO_DBG1_DMTD_SOURCE_RXRECCLK | MDIO_DBG1_COMMA_TARGET_POS(DEFAULT_COMMA_POS) );
 				ep_pcs_write(&wrc_endpoint_dev,  MDIO_REG_MCR, MDIO_MCR_SPEED1000_MASK | MDIO_MCR_FULLDPLX_MASK | MDIO_MCR_ANENABLE | MDIO_MCR_ANRESTART  );
 				phy_dbg("RX calibration complete (after %d attempts) comma @ %d taps.\n", fsm->attempts, rx_comma_pos );
@@ -496,7 +495,7 @@ int phy_calibration_poll(void)
 {
     tx_fsm_update();
     rx_fsm_update();
-    return 0;
+    return 1;
 }
 
 
