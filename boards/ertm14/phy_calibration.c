@@ -113,9 +113,9 @@ struct wrc_port_tx_setup_state
 
 struct wrc_port_rx_setup_state
 {
-	int cpos_stat[20];
-	int state;
-	int attempts;
+    int cpos_stat[20];
+    int state;
+    int attempts;
     int prev_link_up;
     timeout_t link_timeout;
     timeout_t stabilize_timeout;
@@ -336,159 +336,156 @@ static void rx_fsm_init(struct wrc_port_rx_setup_state* fsm)
 
 static int rx_fsm_update(void)
 {
-	struct wrc_port_rx_setup_state* fsm = &rx_state;
-	struct wrc_port_tx_setup_state* fsm_tx = &tx_state;
+    struct wrc_port_rx_setup_state* fsm = &rx_state;
+    struct wrc_port_tx_setup_state* fsm_tx = &tx_state;
 
-	unsigned lpc_stat = ep_pcs_read(&wrc_endpoint_dev, MDIO_DBG0);
-	int early_link_up =  lpc_stat & MDIO_DBG0_LINK_UP;
+    unsigned lpc_stat = ep_pcs_read(&wrc_endpoint_dev, MDIO_DBG0);
+    int early_link_up =  lpc_stat & MDIO_DBG0_LINK_UP;
 
-	if( fsm_tx->state != TX_SETUP_DONE )
-	{
-		fsm->state = RX_SETUP_STATE_INIT;
-		return 0;
+    if( fsm_tx->state != TX_SETUP_DONE )
+    {
+	fsm->state = RX_SETUP_STATE_INIT;
+	return 0;
+    }
+
+    switch( fsm->state )
+    {
+    case RX_SETUP_STATE_INIT:
+    {
+	ep_pcs_write(&wrc_endpoint_dev,  MDIO_DBG1, MDIO_DBG1_TX_ENABLE | MDIO_DBG1_DMTD_SOURCE_RXRECCLK | MDIO_DBG1_COMMA_TARGET_POS(DEFAULT_COMMA_POS) );
+
+	if (early_link_up) {
+	    if ( fsm_tx->state == TX_SETUP_DONE )
+	    {
+		phy_dbg("RX calibration started.\n");
+
+		fsm->state = RX_SETUP_STATE_RESET_PCS;
+	    }
 	}
 
-    	switch( fsm->state )
+	fsm->attempts = 0;
+
+	break;
+    }
+
+    case RX_SETUP_STATE_RESET_PCS:
+    {
+	if (early_link_up)
 	{
-		case RX_SETUP_STATE_INIT:
-		{
-			ep_pcs_write(&wrc_endpoint_dev,  MDIO_DBG1, MDIO_DBG1_TX_ENABLE | MDIO_DBG1_DMTD_SOURCE_RXRECCLK | MDIO_DBG1_COMMA_TARGET_POS(DEFAULT_COMMA_POS) );
+	    fsm->state = RX_SETUP_STATE_WAIT_LOCK;
 
-			if (early_link_up) {
-				if ( fsm_tx->state == TX_SETUP_DONE )
-				{
-					phy_dbg("RX calibration started.\n");
+	    ep_pcs_write(&wrc_endpoint_dev,  MDIO_DBG1, MDIO_DBG1_RESET_RX | MDIO_DBG1_TX_ENABLE | MDIO_DBG1_DMTD_SOURCE_RXRECCLK | MDIO_DBG1_COMMA_TARGET_POS(DEFAULT_COMMA_POS)  );
+	    usleep(1);
+	    ep_pcs_write(&wrc_endpoint_dev,  MDIO_DBG1, MDIO_DBG1_TX_ENABLE | MDIO_DBG1_DMTD_SOURCE_RXRECCLK | MDIO_DBG1_COMMA_TARGET_POS(DEFAULT_COMMA_POS)  );
+	    usleep(10000);
+	    fsm->attempts++;
 
-					fsm->state = RX_SETUP_STATE_RESET_PCS;
-				}
-			}
+	    tmo_init(&fsm->link_timeout, FSM_EARLY_LINK_UP_TIMEOUT_MS);
+	}
 
-			fsm->attempts = 0;
+	break;
+    }
 
-			break;
-		}
+    case RX_SETUP_STATE_WAIT_LOCK:
+    {
+	uint16_t dbg0 = ep_pcs_read(&wrc_endpoint_dev,  MDIO_DBG0);
 
-		case RX_SETUP_STATE_RESET_PCS:
-		{
-			if (early_link_up)
-            {
-				fsm->state = RX_SETUP_STATE_WAIT_LOCK;
+	int rx_up = dbg0 & MDIO_DBG0_LINK_UP;
+	int rx_aligned = dbg0 & MDIO_DBG0_LINK_ALIGNED;
 
-				ep_pcs_write(&wrc_endpoint_dev,  MDIO_DBG1, MDIO_DBG1_RESET_RX | MDIO_DBG1_TX_ENABLE | MDIO_DBG1_DMTD_SOURCE_RXRECCLK | MDIO_DBG1_COMMA_TARGET_POS(DEFAULT_COMMA_POS)  );
-				usleep(1);
-				ep_pcs_write(&wrc_endpoint_dev,  MDIO_DBG1, MDIO_DBG1_TX_ENABLE | MDIO_DBG1_DMTD_SOURCE_RXRECCLK | MDIO_DBG1_COMMA_TARGET_POS(DEFAULT_COMMA_POS)  );
-                usleep(10000);
-				fsm->attempts++;
-
-                tmo_init(&fsm->link_timeout, FSM_EARLY_LINK_UP_TIMEOUT_MS);
-			}
-
-			break;
-		}
-
-		case RX_SETUP_STATE_WAIT_LOCK:
-		{
-			uint16_t dbg0 = ep_pcs_read(&wrc_endpoint_dev,  MDIO_DBG0);
-
-			int rx_up = dbg0 & MDIO_DBG0_LINK_UP;
-			int rx_aligned = dbg0 & MDIO_DBG0_LINK_ALIGNED;
-
-			if ( tmo_expired(&fsm->link_timeout) && !rx_up) {
-				fsm->state = RX_SETUP_STATE_INIT;
-			}
-			else
-			{
-				if ( !rx_up )
-					return 0;
+	if ( tmo_expired(&fsm->link_timeout) && !rx_up) {
+	    fsm->state = RX_SETUP_STATE_INIT;
+	}
+	else
+	{
+	    if ( !rx_up )
+		return 0;
 
 //                fsm->cpos_stat[rx_comma_pos]++;
 
-                if( rx_aligned )
-				{
+	    if( rx_aligned )
+	    {
 
-                    # if 0
-                       int i;
+# if 0
+		int i;
 
-                    {
-                        	dbg0 = ep_pcs_read( MDIO_DBG0);
-
-			                rx_up = dbg0 & MDIO_DBG0_LINK_UP;
-			                rx_aligned = dbg0 & MDIO_DBG0_LINK_ALIGNED;
-
-   			rx_comma_pos = (dbg0 >> 7) & 0x7f;
-            rx_comma_valid = (dbg0 >> 7) & 0x80 ? 1 : 0;
-                        pp_printf("Dbg0 %x up %d algn %d cpos %d cvalid %d\n", dbg0, rx_up, rx_aligned, rx_comma_pos, rx_comma_valid );
-          				usleep(100000);
-
-                    }
-                    usleep(100000);
-
-                    #endif
-
-     				fsm->state = RX_SETUP_VALIDATE;
-                    tmo_init( &fsm->stabilize_timeout, FSM_STABILIZE_TIMEOUT_MS );
-				} else {
-					fsm->state = RX_SETUP_STATE_RESET_PCS;
-				}
-			}
-			break;
-		}
-
-		case RX_SETUP_VALIDATE:
 		{
-            if( !tmo_expired( &fsm->stabilize_timeout ))
-                return 0;
+		    dbg0 = ep_pcs_read( MDIO_DBG0);
 
-			uint16_t dbg0 = ep_pcs_read(&wrc_endpoint_dev,  MDIO_DBG0);
+		    rx_up = dbg0 & MDIO_DBG0_LINK_UP;
+		    rx_aligned = dbg0 & MDIO_DBG0_LINK_ALIGNED;
 
+		    rx_comma_pos = (dbg0 >> 7) & 0x7f;
+		    rx_comma_valid = (dbg0 >> 7) & 0x80 ? 1 : 0;
+		    pp_printf("Dbg0 %x up %d algn %d cpos %d cvalid %d\n", dbg0, rx_up, rx_aligned, rx_comma_pos, rx_comma_valid );
+		    usleep(100000);
 
-            int rx_up = dbg0 & MDIO_DBG0_LINK_UP;
-			int rx_aligned = dbg0 & MDIO_DBG0_LINK_ALIGNED;
-			int rx_comma_pos = (dbg0 >> 7) & 0x7f;
-	    int rx_comma_valid = (dbg0 >> 7) & 0x80 ? 1 : 0;
-
-			if ( rx_up && rx_aligned && rx_comma_valid && (rx_comma_pos == DEFAULT_COMMA_POS) )
-			{
-				ep_pcs_write(&wrc_endpoint_dev,  MDIO_DBG1, MDIO_DBG1_RX_ENABLE | MDIO_DBG1_TX_ENABLE | MDIO_DBG1_DMTD_SOURCE_RXRECCLK | MDIO_DBG1_COMMA_TARGET_POS(DEFAULT_COMMA_POS) );
-				ep_pcs_write(&wrc_endpoint_dev,  MDIO_REG_MCR, MDIO_MCR_SPEED1000_MASK | MDIO_MCR_FULLDPLX_MASK | MDIO_MCR_ANENABLE | MDIO_MCR_ANRESTART  );
-				phy_dbg("RX calibration complete (after %d attempts) comma @ %d taps.\n", fsm->attempts, rx_comma_pos );
-				spll_enable_ptracker( 0, 0 );
-                spll_set_ptracker_average_samples( 0, PTRACKER_AVERAGE_SAMPLES );
-
-       			fsm->state = RX_SETUP_DONE;
-
-			} else {
-                phy_dbg("weird, can't stabilize link. Retrying [%d %d %d %d]\n", rx_up, rx_aligned, rx_comma_valid, rx_comma_pos );
-                fsm->state = RX_SETUP_STATE_RESET_PCS;
-            }
-
-			break;
 		}
+		usleep(100000);
+
+#endif
+
+		fsm->state = RX_SETUP_VALIDATE;
+		tmo_init( &fsm->stabilize_timeout, FSM_STABILIZE_TIMEOUT_MS );
+	    } else {
+		fsm->state = RX_SETUP_STATE_RESET_PCS;
+	    }
+	}
+	break;
+    }
+
+    case RX_SETUP_VALIDATE:
+    {
+	if( !tmo_expired( &fsm->stabilize_timeout ))
+	    return 0;
+
+	uint16_t dbg0 = ep_pcs_read(&wrc_endpoint_dev,  MDIO_DBG0);
 
 
+	int rx_up = dbg0 & MDIO_DBG0_LINK_UP;
+	int rx_aligned = dbg0 & MDIO_DBG0_LINK_ALIGNED;
+	int rx_comma_pos = (dbg0 >> 7) & 0x7f;
+	int rx_comma_valid = (dbg0 >> 7) & 0x80 ? 1 : 0;
 
-		case RX_SETUP_DONE:
-		{
-			uint16_t dbg0 = ep_pcs_read(&wrc_endpoint_dev,  MDIO_DBG0);
-            int link_up = ep_link_up(&wrc_endpoint_dev, NULL);
+	if ( rx_up && rx_aligned && rx_comma_valid && (rx_comma_pos == DEFAULT_COMMA_POS) )
+	{
+	    ep_pcs_write(&wrc_endpoint_dev,  MDIO_DBG1, MDIO_DBG1_RX_ENABLE | MDIO_DBG1_TX_ENABLE | MDIO_DBG1_DMTD_SOURCE_RXRECCLK | MDIO_DBG1_COMMA_TARGET_POS(DEFAULT_COMMA_POS) );
+	    ep_pcs_write(&wrc_endpoint_dev,  MDIO_REG_MCR, MDIO_MCR_SPEED1000_MASK | MDIO_MCR_FULLDPLX_MASK | MDIO_MCR_ANENABLE | MDIO_MCR_ANRESTART  );
+	    phy_dbg("RX calibration complete (after %d attempts) comma @ %d taps.\n", fsm->attempts, rx_comma_pos );
+	    spll_enable_ptracker( 0, 0 );
+	    spll_set_ptracker_average_samples( 0, PTRACKER_AVERAGE_SAMPLES );
 
+	    fsm->state = RX_SETUP_DONE;
 
-			if( ! (dbg0 & MDIO_DBG0_LINK_UP ) /*|| ( ( fsm->prev_link_up && !link_up ) )*/ )
-			{
-				phy_dbg("port went down, need RX recalibration.\n");
-				fsm->state = RX_SETUP_STATE_INIT;
-                fsm->prev_link_up = link_up;
-				return 0;
-			}
-
-            fsm->prev_link_up = link_up;
-			return 1;
-			break;
-		}
+	} else {
+	    phy_dbg("weird, can't stabilize link. Retrying [%d %d %d %d]\n", rx_up, rx_aligned, rx_comma_valid, rx_comma_pos );
+	    fsm->state = RX_SETUP_STATE_RESET_PCS;
 	}
 
+	break;
+    }
 
-	return 0;
+    case RX_SETUP_DONE:
+    {
+	uint16_t dbg0 = ep_pcs_read(&wrc_endpoint_dev,  MDIO_DBG0);
+	int link_up = ep_link_up(&wrc_endpoint_dev, NULL);
+
+
+	if( ! (dbg0 & MDIO_DBG0_LINK_UP ) /*|| ( ( fsm->prev_link_up && !link_up ) )*/ )
+	{
+	    phy_dbg("port went down, need RX recalibration.\n");
+	    fsm->state = RX_SETUP_STATE_INIT;
+	    fsm->prev_link_up = link_up;
+	    return 0;
+	}
+
+	fsm->prev_link_up = link_up;
+	return 1;
+	break;
+    }
+    }
+
+    return 0;
 }
 
 int phy_calibration_poll(void)
@@ -504,11 +501,11 @@ void phy_calibration_init(void)
 {
     phy_dbg("LPDC: Initializing PHY calibrator...\n");
     ep_pcs_write(&wrc_endpoint_dev, MDIO_REG_MCR, MDIO_MCR_PDOWN);	/* reset the PHY */
-	timer_delay_ms(200);
-	ep_pcs_write(&wrc_endpoint_dev, MDIO_REG_MCR, MDIO_MCR_RESET);	/* reset the PHY */
-	ep_pcs_write(&wrc_endpoint_dev, MDIO_REG_MCR, 0);	/* reset the PHY */
+    timer_delay_ms(200);
+    ep_pcs_write(&wrc_endpoint_dev, MDIO_REG_MCR, MDIO_MCR_RESET);	/* reset the PHY */
+    ep_pcs_write(&wrc_endpoint_dev, MDIO_REG_MCR, 0);	/* reset the PHY */
 
- 	spll_init( SPLL_MODE_FREE_RUNNING_MASTER, 0, 0 );
+    spll_init( SPLL_MODE_FREE_RUNNING_MASTER, 0, 0 );
     spll_set_ptracker_average_samples( 0, 10 );
 
     tx_fsm_init(&tx_state);
