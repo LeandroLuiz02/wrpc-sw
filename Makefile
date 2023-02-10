@@ -114,6 +114,9 @@ export pfilter-y
 sdbfsimg-y	:=	include/generated/sdbfs-default.h
 export sdbfsimg-y
 
+sdbfs_swap_bytes-$(CONFIG_ARCH_LM32) =
+sdbfs_swap_bytes-$(CONFIG_ARCH_RISCV) = -e
+
 all:
 
 include boards/boards.mk

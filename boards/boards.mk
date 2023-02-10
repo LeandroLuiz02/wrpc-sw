@@ -13,10 +13,10 @@ boards/ertm14/sdbfs-custom-image.o: boards/ertm14/sdbfs-custom-image.h
 boards/wr2rf-vme/sdbfs-custom-image.o: boards/wr2rf-vme/sdbfs-custom-image.h
 
 boards/ertm14/sdbfs-custom-image.h: boards/ertm14/sdbfs tools
-	./tools/gensdbfs -c boards/ertm14/sdbfs-custom-image.h boards/ertm14/sdbfs boards/ertm14/sdbfs-custom-image.bin
+	./tools/gensdbfs $(sdbfs_swap_bytes-y) -c boards/ertm14/sdbfs-custom-image.h boards/ertm14/sdbfs boards/ertm14/sdbfs-custom-image.bin
 
 boards/wr2rf-vme/sdbfs-custom-image.h: boards/wr2rf-vme/sdbfs tools
-	./tools/gensdbfs -c boards/wr2rf-vme/sdbfs-custom-image.h boards/wr2rf-vme/sdbfs boards/wr2rf-vme/sdbfs-custom-image.bin
+	./tools/gensdbfs $(sdbfs_swap_bytes-y) -c boards/wr2rf-vme/sdbfs-custom-image.h boards/wr2rf-vme/sdbfs boards/wr2rf-vme/sdbfs-custom-image.bin
 
 boards-clean:
 	rm -f boards/*/*.o

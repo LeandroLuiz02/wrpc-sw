@@ -4,9 +4,6 @@
 obj-$(CONFIG_ARCH_LM32) += 	dev/simple_uart.o dev/console.o
 obj-$(CONFIG_ARCH_RISCV) += 	dev/simple_uart.o dev/console.o
 
-sdbfs_swap_bytes-$(CONFIG_ARCH_LM32) =
-sdbfs_swap_bytes-$(CONFIG_ARCH_RISCV) = -e
-
 obj-$(CONFIG_EMBEDDED_NODE) += \
 	dev/endpoint.o \
 	dev/ep_pfilter.o \
