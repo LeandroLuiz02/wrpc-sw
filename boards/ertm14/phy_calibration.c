@@ -369,11 +369,17 @@ static int rx_fsm_update(void)
     {
 	if (early_link_up)
 	{
+	    const unsigned ctrl = MDIO_LPC_CTRL_TX_ENABLE
+	      | MDIO_LPC_CTRL_DMTD_SOURCE_RXRECCLK
+	      | MDIO_LPC_CTRL_COMMA_TARGET_POS(DEFAULT_COMMA_POS);
+
 	    fsm->state = RX_SETUP_STATE_WAIT_LOCK;
 
-	    ep_pcs_write(&wrc_endpoint_dev,  MDIO_LPC_CTRL, MDIO_LPC_CTRL_RESET_RX | MDIO_LPC_CTRL_TX_ENABLE | MDIO_LPC_CTRL_DMTD_SOURCE_RXRECCLK | MDIO_LPC_CTRL_COMMA_TARGET_POS(DEFAULT_COMMA_POS)  );
+	    ep_pcs_write(&wrc_endpoint_dev, MDIO_LPC_CTRL,
+			 MDIO_LPC_CTRL_RESET_RX | ctrl);
 	    usleep(1);
-	    ep_pcs_write(&wrc_endpoint_dev,  MDIO_LPC_CTRL, MDIO_LPC_CTRL_TX_ENABLE | MDIO_LPC_CTRL_DMTD_SOURCE_RXRECCLK | MDIO_LPC_CTRL_COMMA_TARGET_POS(DEFAULT_COMMA_POS)  );
+	    ep_pcs_write(&wrc_endpoint_dev, MDIO_LPC_CTRL, ctrl);
+
 	    usleep(10000);
 	    fsm->attempts++;
 
