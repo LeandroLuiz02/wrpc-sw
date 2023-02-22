@@ -63,7 +63,7 @@ int wrc_board_early_init()
 		&pin_sysc_spi_miso,
 		&pin_sysc_spi_sclk, 0 );
 
-	spi_flash_create( &wrc_flash_dev, &spi_wrc_flash, 16384, 0x600000 );
+    spi_flash_create( &wrc_flash_dev, &spi_wrc_flash, 16384, 0x600000 );
 
     bb_i2c_create( &i2c_mac_bus[0], &pin_sysc_fmc_scl, &pin_sysc_fmc_sda );
     bb_i2c_init( &i2c_mac_bus[0] );
@@ -94,18 +94,18 @@ int wrc_board_early_init()
     storage_mount( &wrc_storage_dev );
 
     /* reset the networking part of the WRCore and start the WR Endpoint */
-   	net_rst();
+    net_rst();
 
     ep_init( &wrc_endpoint_dev, (void *) BASE_EP );
     ep_set_mac_addr( &wrc_endpoint_dev, board_mac_addr );
 
-	netif_register_device( "wru0", "default", &wrc_endpoint_dev );
+    netif_register_device( "wru0", "default", &wrc_endpoint_dev );
 
-	/* Sleep for 1s to make sure WRS v4.2 always realizes that
-	 * the link is down */
-	timer_delay_ms(200);
-	ep_enable( &wrc_endpoint_dev, 1, 1);
-	timer_delay_ms(200);
+    /* Sleep for 1s to make sure WRS v4.2 always realizes that
+     * the link is down */
+    timer_delay_ms(200);
+    ep_enable( &wrc_endpoint_dev, 1, 1);
+    timer_delay_ms(200);
 
     return 0;
 }
