@@ -337,7 +337,7 @@ static int rx_fsm_update(void)
     struct wrc_port_tx_setup_state* fsm_tx = &tx_state;
 
     unsigned lpc_stat = ep_pcs_read(&wrc_endpoint_dev, MDIO_LPC_STAT);
-    int early_link_up =  lpc_stat & MDIO_LPC_STAT_LINK_UP;
+    int rx_up =  lpc_stat & MDIO_LPC_STAT_LINK_UP;
 
     if( fsm_tx->state != TX_SETUP_DONE )
     {
@@ -351,7 +351,7 @@ static int rx_fsm_update(void)
     {
 	ep_pcs_write(&wrc_endpoint_dev,  MDIO_LPC_CTRL, MDIO_LPC_CTRL_TX_ENABLE | MDIO_LPC_CTRL_DMTD_SOURCE_RXRECCLK | MDIO_LPC_CTRL_COMMA_TARGET_POS(DEFAULT_COMMA_POS) );
 
-	if (early_link_up) {
+	if (rx_up) {
 	    if ( fsm_tx->state == TX_SETUP_DONE )
 	    {
 		phy_dbg("RX calibration started.\n");
@@ -367,7 +367,7 @@ static int rx_fsm_update(void)
 
     case RX_SETUP_STATE_RESET_PCS:
     {
-	if (early_link_up)
+	if (rx_up)
 	{
 	    const unsigned ctrl = MDIO_LPC_CTRL_TX_ENABLE
 	      | MDIO_LPC_CTRL_DMTD_SOURCE_RXRECCLK
@@ -391,9 +391,6 @@ static int rx_fsm_update(void)
 
     case RX_SETUP_STATE_WAIT_LOCK:
     {
-	uint16_t lpc_stat = ep_pcs_read(&wrc_endpoint_dev,  MDIO_LPC_STAT);
-
-	int rx_up = lpc_stat & MDIO_LPC_STAT_LINK_UP;
 	int rx_aligned = lpc_stat & MDIO_LPC_STAT_LINK_ALIGNED;
 
 	if ( tmo_expired(&fsm->link_timeout) && !rx_up) {
@@ -442,10 +439,6 @@ static int rx_fsm_update(void)
 	if( !tmo_expired( &fsm->stabilize_timeout ))
 	    return 0;
 
-	uint16_t lpc_stat = ep_pcs_read(&wrc_endpoint_dev,  MDIO_LPC_STAT);
-
-
-	int rx_up = lpc_stat & MDIO_LPC_STAT_LINK_UP;
 	int rx_aligned = lpc_stat & MDIO_LPC_STAT_LINK_ALIGNED;
 	int rx_comma_pos = (lpc_stat >> 7) & 0x7f;
 	int rx_comma_valid = (lpc_stat >> 7) & 0x80 ? 1 : 0;
@@ -470,11 +463,9 @@ static int rx_fsm_update(void)
 
     case RX_SETUP_DONE:
     {
-	uint16_t lpc_stat = ep_pcs_read(&wrc_endpoint_dev,  MDIO_LPC_STAT);
 	int link_up = ep_link_up(&wrc_endpoint_dev, NULL);
 
-
-	if( ! (lpc_stat & MDIO_LPC_STAT_LINK_UP ) /*|| ( ( fsm->prev_link_up && !link_up ) )*/ )
+	if( !rx_up /*|| ( ( fsm->prev_link_up && !link_up ) )*/ )
 	{
 	    phy_dbg("port went down, need RX recalibration.\n");
 	    fsm->state = RX_SETUP_STATE_INIT;
