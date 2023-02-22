@@ -59,20 +59,6 @@ static inline void minic_txword(int type, uint16_t word)
 			MINIC_TX_FIFO_TYPE_W(type) | MINIC_TX_FIFO_DAT_W(word));
 }
 
-static inline void minic_rxword(int *type, uint16_t *data, int *empty,
-		int *full)
-{
-	uint32_t rx;
-
-	rx = minic_readl(MINIC_REG_RX_FIFO);
-	*type = MINIC_RX_FIFO_TYPE_R(rx);
-	*data = (uint16_t) MINIC_RX_FIFO_DAT_R(rx);
-	if (empty)
-		*empty = (rx & MINIC_RX_FIFO_EMPTY) ? 1 : 0;
-	if (full)
-		*full  = (rx & MINIC_RX_FIFO_FULL)  ? 1 : 0;
-}
-
 void minic_init()
 {
 	uint32_t mcr;
@@ -117,7 +103,7 @@ int minic_rx_frame(struct wr_ethhdr *hdr, uint8_t * payload, uint32_t buf_size,
 {
 	uint32_t hdr_size, payload_size;
 	uint32_t raw_ts;
-	int rx_empty, rx_full, rx_type;
+	int rx_empty, rx_type;
 	uint16_t rx_data;
 	uint16_t *ptr16_hdr, *ptr16_payload;
 	uint32_t oob_cnt;
@@ -142,8 +128,23 @@ int minic_rx_frame(struct wr_ethhdr *hdr, uint8_t * payload, uint32_t buf_size,
 	raw_ts  = 0;
 	oob_hdr = RXOOB_TS_INCORRECT;
 
+#ifdef RX_DUMP
+	pp_printf("RX:");
+#endif
+
 	do {
-		minic_rxword(&rx_type, &rx_data, &rx_empty, &rx_full);
+		uint32_t rx;
+
+		rx = minic_readl(MINIC_REG_RX_FIFO);
+#ifdef RX_DUMP
+		if ((rx >> 16) == 0)
+			pp_printf(" %04x", (unsigned)rx);
+		else
+			pp_printf(" %08x", (unsigned)rx);
+#endif
+		rx_type = MINIC_RX_FIFO_TYPE_R(rx);
+		rx_data = (uint16_t) MINIC_RX_FIFO_DAT_R(rx);
+		rx_empty = (rx & MINIC_RX_FIFO_EMPTY) ? 1 : 0;
 
 		if (rx_type == WRF_DATA && hdr_size < ETH_HEADER_SIZE) {
 			/* reading header */
@@ -170,7 +171,7 @@ int minic_rx_frame(struct wr_ethhdr *hdr, uint8_t * payload, uint32_t buf_size,
 			if (RX_STATUS_ERROR(rx_data))
 			{
 				pp_printf("Warning: Minic received erroneous "
-						"frame\n");
+					  "frame, %x\n", rx_data);
 				got_rx_error = 1;
 			}
 
@@ -193,9 +194,12 @@ int minic_rx_frame(struct wr_ethhdr *hdr, uint8_t * payload, uint32_t buf_size,
 	} while (!rx_empty);
 
 
+#ifdef RX_DUMP
+	pp_printf("\n");
+#endif
 	/* Receive OOB, if it's there */
 
-	
+
 
 	if (oob_cnt == 0 || oob_cnt > RX_OOB_SIZE) {
 		/* in WRPC we expect every Rx frame to contain a valid OOB.
@@ -261,26 +265,39 @@ int minic_tx_frame(struct wr_ethhdr_vlan *hdr, uint8_t *payload, uint32_t size,
 
 	if (size + hsize < 60)
 		size = 60 - hsize;
-	pwords = ((size + 1) >> 1);
+	pwords = size >> 1;
 
 	/* First we write status word (empty status for Tx) */
 	minic_txword(WRF_STATUS, 0);
 
+#ifdef TX_DUMP
+	pp_printf("TX:");
+#endif
 	/* Write the header of the frame */
 	ptr = (uint16_t *)hdr;
-	for (i = 0; i < hwords; ++i)
+	for (i = 0; i < hwords; ++i) {
+#ifdef TX_DUMP
+		pp_printf(" %04x", htons(ptr[i]));
+#endif
 		minic_txword(WRF_DATA, htons(ptr[i]));
+	}
 
 	/* Write the payload without the last word (which can be one byte) */
 	ptr = (uint16_t *)payload;
-	for (i = 0; i < pwords-1; ++i)
+	for (i = 0; i < pwords; ++i) {
+#ifdef TX_DUMP
+		pp_printf(" %04x", htons(ptr[i]));
+#endif
 		minic_txword(WRF_DATA, htons(ptr[i]));
+	}
 
 	/* Write last word of the payload (which can be one byte) */
-	if (size % 2 == 0)
-		minic_txword(WRF_DATA, htons(ptr[i]));
-	else
+	if (size & 1)
 		minic_txword(WRF_BYTESEL, htons(ptr[i]));
+
+#ifdef TX_DUMP
+	pp_printf("\n");
+#endif
 
 	/* Write also OOB if needed */
 	if (hwts) {
@@ -350,7 +367,7 @@ int minic_tx_frame(struct wr_ethhdr_vlan *hdr, uint8_t *payload, uint32_t size,
 		hwts->sec = sec;
 		hwts->ahead = 0;
 		hwts->nsec = counter_r * (REF_CLOCK_PERIOD_PS / 1000);
-		
+
 		minic.tx_count++;
         }
 
