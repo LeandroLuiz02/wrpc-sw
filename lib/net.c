@@ -295,10 +295,7 @@ int ptpd_netif_sendto(struct wrpc_socket * sock, struct wr_sockaddr *to, void *d
 		    s->bind_addr.udpport,
 		    data_length);
 
-	rval =
-	    minic_tx_frame(&hdr, (uint8_t *) data,
-			   data_length, &hwts);
-
+	rval = minic_tx_frame(&hdr, (uint8_t *) data, data_length, &hwts);
 
 	if (tx_timestamp) {
 		tx_timestamp->sec = hwts.sec;
