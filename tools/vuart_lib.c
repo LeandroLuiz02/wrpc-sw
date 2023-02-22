@@ -5,6 +5,7 @@
 #include <string.h>
 #include "vuart_lib.h"
 #include <hw/wb_uart.h>
+#include <stdio.h>
 
 /**
  * It receives a single byte
@@ -13,9 +14,33 @@
  *
  */
 
+static uint32_t io_readl(volatile void *addr)
+{
+#ifdef WR2RF
+	/* A 16b VME bus with special circuitery to get an atomic 32b value */
+	uint32_t l, h, res;
+	l = *(volatile uint16_t *)(addr + 0);
+	h = *(volatile uint16_t *)(addr + 2);
+	res = (l << 16) | h;
+	return res;
+#else
+	return *(volatile uint32_t *)addr;
+#endif
+}
+
+static void io_writel(volatile void *addr, uint32_t val)
+{
+#ifdef WR2RF
+	*(volatile uint16_t *)(addr + 2) = val & 0xffff;
+	*(volatile uint16_t *)(addr + 0) = val >> 16;
+#else
+	*(volatile uint32_t *)addr = val;
+#endif
+}
+
 static uint32_t vuart_readl(struct mapping_desc *vuart, int reg)
 {
-	uint32_t r = *(volatile uint32_t *)( vuart->base + reg );
+	uint32_t r = io_readl(vuart->base + reg);
 
 	if(vuart->is_be)
 		return ntohl(r);
@@ -29,7 +54,7 @@ static void vuart_writel(struct mapping_desc *vuart, uint32_t value, int reg)
 	if(vuart->is_be)
 		value = htonl(value);
 
-	*(volatile uint32_t *)( vuart->base + reg ) = value;
+	io_writel(vuart->base + reg, value);
 }
 
 int wr_vuart_rx(struct mapping_desc *vuart)

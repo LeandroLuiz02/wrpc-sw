@@ -83,6 +83,29 @@ static uint32_t __io_swap32(uint32_t val)
 	       ((val << 24) & 0xFF000000);
 }
 
+static uint32_t io_readl(char *addr)
+{
+#ifdef WR2RF
+	uint32_t l, h, res;
+	l = *(volatile uint16_t *)(addr + 0);
+	h = *(volatile uint16_t *)(addr + 2);
+	res = (l << 16) | h;
+	return res;
+#else
+	return *(volatile uint32_t *)addr;
+#endif
+}
+
+static void io_writel(char *addr, uint32_t val)
+{
+#ifdef WR2RF
+	*(volatile uint16_t *)(addr + 2) = val & 0xffff;
+	*(volatile uint16_t *)(addr + 0) = val >> 16;
+#else
+	*(volatile uint32_t *)addr = val;
+#endif
+}
+
 /**
  * Read value from the Debug Port
  */
@@ -91,7 +114,7 @@ static uint32_t dbg_readl(struct dbg_port *dbg, uint32_t reg)
 	char *addr = dbg->addr;
 	uint32_t res;
 
-	res = __io_swap32(*((volatile uint32_t *)(addr + reg)));
+	res = __io_swap32(io_readl(addr + reg));
 
 	if (verbose > 2)
 		printf("dbg_readl @%02x -> %08x\n", reg, res);
@@ -109,7 +132,7 @@ static void dbg_writel(struct dbg_port *dbg,
 
 	if (verbose > 2)
 		printf("dbg_writel @%02x <- %08x\n", reg, val);
-	*((volatile uint32_t *)(addr + reg)) = __io_swap32(val);
+	io_writel(addr + reg, __io_swap32(val));
 }
 
 /**
