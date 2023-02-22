@@ -97,7 +97,6 @@ struct wrc_port_tx_setup_state
 {
     int state;
     int cnt;
-    int attempts;
     int cal_saved_phase;
     int cal_saved_phase_valid;
     int cal_file_updated;
@@ -126,7 +125,6 @@ static struct wrc_port_rx_setup_state rx_state;
 
 static void tx_fsm_init(struct wrc_port_tx_setup_state *fsm)
 {
-    fsm->attempts = 0;
     fsm->state = TX_SETUP_STATE_START;
     fsm->expected_phase = 0;
     fsm->expected_phase_valid = 0;
@@ -212,7 +210,6 @@ static int tx_fsm_update(void)
         uint32_t lpc_stat = ep_pcs_read(&wrc_endpoint_dev, MDIO_LPC_STAT);
         if (lpc_stat & MDIO_LPC_STAT_RESET_TX_DONE)
         {
-            fsm->attempts++;
             fsm->state = TX_SETUP_STATE_MEASURE_PHASE;
             usleep(10000);
             spll_set_ptracker_average_samples( 0, 10 );
