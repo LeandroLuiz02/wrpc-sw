@@ -19,6 +19,8 @@
 #define	ertm14_get_sensors		0x20
 #define	ertm14_get_version_info		0x21
 #define	ertm14_get_fpga_info		0x22
+#define	ertm14_get_streamers_diags	0x23
+#define	ertm14_reset_streamers_stats	0x24
 
 static struct ertm14_protocol_op {
 	int8_t	opcode;
@@ -83,6 +85,13 @@ static struct ertm14_protocol_op {
 	.offset2 = 0,
 	.length2 = sizeof(struct wrc_diags),
     },
+	{
+	.opcode = ertm14_get_streamers_diags,
+	.offset1 = 1,
+	.length1 = 0,
+	.offset2 = 0,
+	.length2 = sizeof(struct WR_STREAMERS_WB),
+    },
     {
 	.opcode = ertm14_get_wrc_nco,
 	.offset1 = 1,
@@ -102,6 +111,13 @@ static struct ertm14_protocol_op {
 	.offset1 = 1,
 	.length1 = 1,
 	.offset2 = 1,
+	.length2 = 0,
+    },
+	{
+	.opcode = ertm14_reset_streamers_stats,
+	.offset1 = 0,
+	.length1 = 0,
+	.offset2 = 0,
 	.length2 = 0,
     },
     {

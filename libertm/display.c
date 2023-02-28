@@ -274,6 +274,71 @@ void display_wrc_diags_cooked(struct ertm_wr_status *diags)
 	printf(human, "SoftPLL Main DAC value [0-65535]", diags->WDIAG_SPLL_MY, diags->WDIAG_SPLL_MY);
 }
 
+void display_streamer_diags_cooked(struct ertm_streamer_status *diags)
+{
+	char fmt[] = "%-20s\t0x%08x\n";
+	char human[] = "%-20s\t0x%08x (%7d)\n";
+
+	printf(fmt, "Version register", diags->VER);
+	printf(fmt, "SSCR1", diags->SSCR1);
+	printf(fmt, "SSCR2", diags->SSCR2);
+	printf(fmt, "SSCR3", diags->SSCR3);
+
+	printf(fmt, "TX_CFG0", diags->TX_CFG0);
+	printf(fmt, "TX_CFG1", diags->TX_CFG1);
+	printf(fmt, "TX_CFG2", diags->TX_CFG2);
+	printf(fmt, "TX_CFG3", diags->TX_CFG3);
+	printf(fmt, "TX_CFG4", diags->TX_CFG4);
+	printf(fmt, "TX_CFG5", diags->TX_CFG5);
+
+	printf(fmt, "RX_CFG0", diags->RX_CFG0);
+	printf(fmt, "RX_CFG1", diags->RX_CFG1);
+	printf(fmt, "RX_CFG2", diags->RX_CFG2);
+	printf(fmt, "RX_CFG3", diags->RX_CFG3);
+	printf(fmt, "RX_CFG4", diags->RX_CFG4);
+	printf(fmt, "RX_CFG5", diags->RX_CFG5);
+	printf(fmt, "RX_CFG6", diags->RX_CFG6);
+
+	double max_lat = WR_STREAMERS_RX_STAT0_RX_LATENCY_MAX_R(diags->RX_STAT0);
+	max_lat = (max_lat * 8) / 1000.0;
+
+	double min_lat = WR_STREAMERS_RX_STAT1_RX_LATENCY_MIN_R(diags->RX_STAT1);
+	min_lat = (min_lat * 8) / 1000.0;
+
+	int overflow = (WR_STREAMERS_SSCR1_RX_LATENCY_ACC_OVERFLOW & diags->SSCR1) ? 1 : 0;
+
+	// put it all together
+	uint64_t acc_lat = (((uint64_t)diags->RX_STAT11) << 32) | diags->RX_STAT10;
+	uint64_t cnt_lat = (((uint64_t)diags->RX_STAT13) << 32) | diags->RX_STAT12;
+
+	if (cnt_lat > 0)
+	{
+		double avg_lat = (((double)acc_lat) * 8 / 1000) / (double)cnt_lat;
+		printf("Latency [us]    : min=%15g max=%15g avg =%15g "
+			   "(overflow    =%d)\n",
+			   min_lat, max_lat, avg_lat, overflow);
+	}
+	else
+		printf("No frames received, so no latency stats...\n");
+
+	printf("Frames  [number]:\n"
+		   " - tx      = %15" PRIu64 "\n"
+		   " - rx      = %15" PRIu64 "\n"
+		   " - lost    = %15" PRIu64 " (lost blocks =%" PRIu64 ")\n",
+		   (((uint64_t)diags->TX_STAT3) << 32) | diags->TX_STAT2,
+		   (((uint64_t)diags->RX_STAT5) << 32) | diags->RX_STAT4,
+		   (((uint64_t)diags->RX_STAT7) << 32) | diags->RX_STAT6,
+		   (((uint64_t)diags->RX_STAT9) << 32) | diags->RX_STAT8);
+
+	printf("Fixed latency frames [number]:\n"
+		   " - match   = %15"PRIu64"\n"
+		   " - late    = %15"PRIu64"\n"
+		   " - timeout = %15"PRIu64"\n",
+		   (((uint64_t)diags->RX_STAT20) << 32) | diags->RX_STAT20,
+		   (((uint64_t)diags->RX_STAT16) << 32) | diags->RX_STAT16,
+		   (((uint64_t)diags->RX_STAT18) << 32) | diags->RX_STAT18);
+}
+
 static const char *source_name(int sync_source)
 {
 	switch (sync_source) {

@@ -458,6 +458,19 @@ static void diags_to_host(struct wrc_diags *diags, struct wrc_diags *host)
 	for (i = 0; i < ndiags; i++)
 		dst[i] = ntohl(src[i]);
 }
+
+static void streamer_diags_to_host(struct WR_STREAMERS_WB *diags, struct WR_STREAMERS_WB *host)
+{
+	int i;
+	int ndiags = sizeof(*diags) / sizeof(uint32_t);
+	uint32_t *src = (uint32_t *)diags;
+	uint32_t *dst = (uint32_t *)host;
+
+	for (i = 0; i < ndiags; i++)
+		dst[i] = ntohl(src[i]);
+}
+
+
 /* here, bs **can** (and should) be st->state->board_state */
 int ertm_get_board_config(struct ertm_status *st, struct ertm14_board_state *bs)
 {
@@ -487,6 +500,23 @@ int ertm_get_wr_diags(struct ertm_status *st, struct wrc_diags *wrc_diags)
 
 	return 0;
 }
+
+int ertm_get_streamer_diags(struct ertm_status *st, struct WR_STREAMERS_WB *streamer_diags)
+{
+	int res;
+
+	struct uart_link *link = &st->link;
+	struct WR_STREAMERS_WB d, *diags = &d;
+
+	res = ertm_proto_cycle(link, ertm14_get_streamers_diags, NULL, diags);
+	if (res < 0)
+		return res;
+
+	streamer_diags_to_host(diags, streamer_diags);
+
+	return 0;
+}
+
 
 void bytes_to_64_mac(uint64_t *mac, uint8_t src[])
 {
@@ -1102,7 +1132,7 @@ void nco_to_network_order(struct ertm_nco_reset *nco)
 	nco->connector		= htonl(nco->connector);
 };
 
-int ertm_nco_reset_get_status(struct ertm_status *handle, struct ertm_nco_reset status[2])
+int ertm_nco_reset_get_status(struct ertm_status *handle, struct ertm_nco_reset status[])
 {
 	struct uart_link *link = &handle->link;
 	struct ertm14_board_state *bs = &handle->state->board_state;
@@ -1135,7 +1165,7 @@ int ertm_nco_reset_subscribe(struct ertm_status *handle,
 	}
 	if ((res = get_dds(bs, connector, &dds)) != 0)
 		return res;
-		
+
 	if (!((mode == ERTM14_SYNC_SOURCE_NONE) ||
 		(mode == ERTM14_SYNC_SOURCE_RF_TRIGGER) ||
 		(mode == ERTM14_SYNC_SOURCE_PPS))) {
@@ -1175,6 +1205,26 @@ int ertm_wr_diags(struct ertm_status *handle, struct ertm_wr_status *status)
 {
 	struct wrc_diags *s = (struct wrc_diags *)status;
 	return ertm_get_wr_diags(handle, s);
+}
+
+int ertm_streamer_diags(struct ertm_status *handle, struct ertm_streamer_status *status)
+{
+	struct WR_STREAMERS_WB *s = (struct WR_STREAMERS_WB *)status;
+	return ertm_get_streamer_diags(handle, s);
+}
+
+int ertm_reset_streamer_diags(struct ertm_status *handle )
+{
+	struct uart_link *link;
+
+	if (bad_handle(handle))
+		return -ERTM_BAD_HANDLE;
+
+	/* do a call to ptp start/stop */
+	link = &handle->link;
+	int dummy;
+
+	return ertm_proto_cycle(link, ertm14_reset_streamers_stats, &dummy, NULL);
 }
 
 int ertm_wr_status(struct ertm_status *handle, int *link_up, int *is_locked)
