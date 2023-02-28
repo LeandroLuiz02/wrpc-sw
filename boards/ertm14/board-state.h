@@ -240,7 +240,4 @@ struct ertm14_version_info {
 			firmware_metadata;
 };
 
-/* FIXME: this is not the best place for this declaration */
-int wrc_diags_dump(struct wrc_diags *buf);
-
 #endif /*  __BOARD_STATE_ERTM14_H */
