@@ -536,6 +536,10 @@ class ErtmTest(cmd.Cmd):
             return
         self.lib.ertm_wr_enable(self.handle, mode)
 
+    def do_force_measure_channels_power(self, args ):
+        "forces an immediate measurement of REF/LO output power. WARNING, will squelch the signals for ~0.5 second!"
+        self.lib.ertm_force_measure_channels_power(self.handle)
+
     def do_reset_streamer_diags(self, args):
         "resets WR (NCO) streamer diagnostic counters."
         self.lib.ertm_reset_streamer_diags(self.handle)
@@ -643,6 +647,7 @@ class ErtmTest(cmd.Cmd):
     do_bi = do_board_info
     do_nco = do_nco_status
     do_snco = do_subscribe_nco_reset
+    do_fpm = do_force_measure_channels_power
 
     do_gp = do_get_power
     do_gcp = do_get_channel_power
