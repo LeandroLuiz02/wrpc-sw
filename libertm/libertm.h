@@ -399,6 +399,7 @@ int ertm_get_channel_power(struct ertm_status *handle,
 		enum ertm_connector connector, int channel, double *power);		/* power per channel in dBm */
 int ertm_get_channel_power_all(struct ertm_status *handle,
 		enum ertm_connector connector, uint32_t valid_mask, double *power);	/* powers in dBm */
+int ertm_force_measure_channels_power( struct ertm_status *handle );
 int ertm_dds_set_level_adjust(struct ertm_status *handle,
 		enum ertm_connector connector, double level);			/* level in [0,1] */
 int ertm_dds_get_level_adjust(struct ertm_status *handle,

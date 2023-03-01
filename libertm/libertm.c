@@ -943,11 +943,21 @@ struct ertm14_board_state *get_board_state(struct ertm_status *st)
 	return bs;
 }
 
+static int32_t signext32( uint32_t in, int bit )
+{
+	uint32_t mask = ~ ((1<<bit)-1);
+	printf("MASK %x\n", mask);
+	if( in & (1<<bit) )
+		return in | mask;
+	else
+		return in;
+}
+
 static double amp_power_to_dBm(uint32_t amp_power)
 {
 	/* register values are in mBm, *not* mdBm;
 	 * hence the *10/1000.0 factor */
-	return amp_power / 100.0;
+	return (signext32( amp_power & 0x7fffffff, 30 ) ) / 100.0;
 }
 
 int ertm_get_power(struct ertm_status *handle,
@@ -967,7 +977,11 @@ int ertm_get_power(struct ertm_status *handle,
 	}
 
 	update_board_config(handle, bs);
-	*power = amp_power_to_dBm(dds->amp_power);
+
+	if( !( dds->amp_power & ERTM_FLAGS_DDS_POWER_VALID_MASK ) )
+		return -EBUSY;
+
+	*power = amp_power_to_dBm(dds->amp_power );
 	return 0;
 }
 
@@ -1010,7 +1024,11 @@ int ertm_get_channel_power_all(struct ertm_status *handle,
 	update_board_config(handle, bs);
 	for (i = ERTM_LOREF_MIN_CH; i <= ERTM_LOREF_MAX_CH; i++) {
 		if (valid_mask & (1<<i))
+		{
+			if( ! (dds->out_power[i] & ERTM_FLAGS_DDS_POWER_VALID_MASK) )
+				return -EBUSY;
 		    power[i] = amp_power_to_dBm(dds->out_power[i]);
+		}
 	}
 	return 0;
 }
@@ -1303,4 +1321,18 @@ int ertm_get_streamers_latency_timeout(struct ertm_status *handle,
 	*latency_cycles = bs->streamers_latency_cycles;
 	*timeout_cycles = bs->streamers_timeout_cycles;
 	return 0;
+}
+
+int ertm_force_measure_channels_power( struct ertm_status *handle )
+{
+	struct uart_link *link;
+
+	if (bad_handle(handle))
+		return -ERTM_BAD_HANDLE;
+
+	/* do a call to ptp start/stop */
+	link = &handle->link;
+	int dummy;
+
+	return ertm_proto_cycle(link, ertm14_force_measure_channels_power, &dummy, NULL);
 }
