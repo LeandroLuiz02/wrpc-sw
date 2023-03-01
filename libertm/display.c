@@ -19,10 +19,32 @@ static double ampl_factor_to_float(uint8_t ampl_factor)
 {
 	return ampl_factor/256.0;
 }
+
+static int32_t signext32( uint32_t in, int bit )
+{
+	uint32_t mask = ~ ((1<<bit)-1);
+	if( in & (1<<bit) )
+		return in | mask;
+	else
+		return in;
+}
+
+// fixme: I hate handling C strings. Can't we just rewrite this f***ing library in C++?
+static void amp_power_to_string(uint32_t amp_power, char *str, int maxlen )
+{
+	/* register values are in mBm, *not* mdBm;
+	 * hence the *10/1000.0 factor */
+	if( ! (amp_power & ERTM_FLAGS_DDS_POWER_VALID_MASK ))
+		snprintf( str, maxlen, "invalid");
+	else
+		snprintf(str, maxlen, "%5.3f dBm", (signext32( amp_power & 0x7fffffff, 30 ) ) / 100.0 );
+}
+
 void display_dds_state(struct ertm14_dds_state *dds1,
 			struct ertm14_dds_state *dds2)
 {
 	int i;
+	char tmp[1024];
 
 	printf("LO ftw: %08x (%7.3fMHz)%7c", dds1->ftw, (1000.0 * dds1->ftw) / (1L<<32), ' ');
 	printf(" | ");
@@ -32,20 +54,24 @@ void display_dds_state(struct ertm14_dds_state *dds1,
 	printf(" | ");
 	printf("REF level adjust: %6.4f (%3d/256)%3c", ampl_factor_to_float(dds2->ampl_factor), dds2->ampl_factor, ' ');
 	printf("\n");
-	printf("LO pll_out_power: %5.3f dBm%9c",  dds1->amp_power/100.0, ' ');	/* register in mBm, not mdBm! */
+	amp_power_to_string( dds1->amp_power, tmp, sizeof(tmp) );
+	printf("LO pll_out_power: %s%9c",  tmp, ' ');	/* register in mBm, not mdBm! */
 	printf(" | ");
-	printf("REF pll_out_power: %5.3f dBm%9c",  dds2->amp_power/100.0, ' ');	/* ditto */
+	amp_power_to_string( dds2->amp_power, tmp, sizeof(tmp) );
+	printf("REF pll_out_power: %s%9c",  tmp, ' ');	/* ditto */
 	printf("\n");
 	printf("LO sync_state: %4s%17c", ertm_sync_states[dds1->sync_state].label, ' ');
 	printf(" | ");
 	printf("REF sync_state: %4s%17c", ertm_sync_states[dds2->sync_state].label, ' ');
 	printf("\n");
 	for (i = ERTM14_RF_OUT_MIN_ID; i <= ERTM14_RF_OUT_MAX_ID; i++) {
-		printf("LO%02d:   pow: %5.3f dBm  st:%-8s",
-		    i, dds1->out_power[i]/100.0, state_literal[dds1->out_state[i]]);
+		amp_power_to_string( dds1->out_power[i], tmp, sizeof(tmp) );
+		printf("LO%02d:   pow: %-15s st:%-8s",
+		    i, tmp, state_literal[dds1->out_state[i]]);
 		printf(" | ");
-		printf("REF%02d: pow: %5.3f dBm  st:%-8s",
-		    i, dds2->out_power[i]/100.0, state_literal[dds2->out_state[i]]);
+		amp_power_to_string( dds2->out_power[i], tmp, sizeof(tmp) );
+		printf("REF%02d: pow: %-15s st:%-8s",
+		    i, tmp, state_literal[dds2->out_state[i]]);
 		printf("\n");
 	}
 }
