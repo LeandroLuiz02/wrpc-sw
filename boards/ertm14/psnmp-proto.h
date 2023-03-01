@@ -21,6 +21,7 @@
 #define	ertm14_get_fpga_info		0x22
 #define	ertm14_get_streamers_diags	0x23
 #define	ertm14_reset_streamers_stats	0x24
+#define	ertm14_force_measure_channels_power	0x25
 
 static struct ertm14_protocol_op {
 	int8_t	opcode;
@@ -115,12 +116,19 @@ static struct ertm14_protocol_op {
     },
 	{
 	.opcode = ertm14_reset_streamers_stats,
-	.offset1 = 0,
-	.length1 = 0,
+	.offset1 = 1,
+	.length1 = 1,
 	.offset2 = 0,
 	.length2 = 0,
     },
-    {
+	{
+	.opcode = ertm14_force_measure_channels_power,
+	.offset1 = 1,
+	.length1 = 1,
+	.offset2 = 0,
+	.length2 = 0,
+    },
+	{
 	.opcode = -1,
     },
 };

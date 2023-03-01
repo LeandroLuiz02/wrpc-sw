@@ -501,6 +501,7 @@ int bist_summary( struct bist_stage *bist )
 static int ertm_init_complete = 0;
 
 void ertm14_set_pps_out_mode(int mode);
+void ertm15_force_rf_power_measurement(void);
 static void mmc_comm_init(void);
 
 #define LTC6950_ID_VALUE 0x65
@@ -1405,9 +1406,12 @@ static int ertm_process_psnmp(struct uart_packet *rx_pkt, struct uart_packet *tx
 		streamer_diags = (struct WR_STREAMERS_WB *)&tx_pkt->payload[0];
 		get_streamers_diags(streamer_diags);
 		break;
-        case ertm14_reset_streamers_stats:
-                streamers_reset_rx_stats();
-                break;
+    case ertm14_reset_streamers_stats:
+        streamers_reset_rx_stats();
+        break;
+    case ertm14_force_measure_channels_power:
+        ertm15_force_rf_power_measurement();
+        break;
 	case ertm14_get_wrc_nco:
 		nco = (struct ertm14_nco_reset *)&tx_pkt->payload[op->offset2];
 		get_wrc_nco(nco);
@@ -2328,7 +2332,7 @@ int ertm14_low_level_init(void)
             &pin_pwrmon_adc_din,
             &pin_pwrmon_adc_dout,
             &pin_pwrmon_adc_sclk,
-            100 );
+            5 );
 
         ad7888_create( &board.pwrmon_adc, &board.spi_ad7888 );
 
@@ -2830,26 +2834,54 @@ void ertm15_init_rf_monitor( void )
     tmo_init( &rfmon_timeout, 2000 );
 }
 
+void ertm15_force_rf_power_measurement( void )
+{
+    struct ertm14_board_state *bstate = ertm14_get_current_state();
+
+    int i;
+
+    for( i = ERTM14_RF_OUT_MIN_ID; i <= ERTM14_RF_OUT_MAX_ID; i++ )
+    {
+        bstate->lo.out_power[i] = 0;
+        bstate->ref.out_power[i] = 0;
+    }
+
+    bstate->lo.amp_power = 0;
+    bstate->ref.amp_power = 0;
+
+    ertm15_rf_distr_measure_power_restart( &board.rf_distr, 1 );
+}
+
 int ertm15_update_rf_monitor( void )
 {
-    if( tmo_expired( &rfmon_timeout ) )
+    if( ertm15_rf_distr_is_pwrmon_idle( &board.rf_distr ) )
     {
-        tmo_restart(&rfmon_timeout);
-        ertm15_rf_distr_measure_power ( &board.rf_distr );
-
         struct ertm14_board_state *bstate = ertm14_get_current_state();
 
         int i;
 
         for( i = ERTM14_RF_OUT_MIN_ID; i <= ERTM14_RF_OUT_MAX_ID; i++ )
         {
-            bstate->lo.out_power[i] = board.rf_distr.pwr_lo_ch[i];
-            bstate->ref.out_power[i] = board.rf_distr.pwr_ref_ch[i];
+            bstate->lo.out_power[i] = board.rf_distr.pwr_lo_ch[i] | ERTM_FLAGS_DDS_POWER_VALID_MASK;
+            bstate->ref.out_power[i] = board.rf_distr.pwr_ref_ch[i] | ERTM_FLAGS_DDS_POWER_VALID_MASK;
         }
 
-        bstate->lo.amp_power = board.rf_distr.pwr_lo_in;
-        bstate->ref.amp_power = board.rf_distr.pwr_ref_in;
+        bstate->lo.amp_power = board.rf_distr.pwr_lo_in | ERTM_FLAGS_DDS_POWER_VALID_MASK;
+        bstate->ref.amp_power = board.rf_distr.pwr_ref_in | ERTM_FLAGS_DDS_POWER_VALID_MASK;
     }
+
+    if( tmo_expired( &rfmon_timeout ) )
+    {
+     //   pp_printf("TmoExp st %d ch %d\n",board.rf_distr.pwr_meas_state, board.rf_distr.pwr_meas_channel);
+        if( ertm15_rf_distr_is_pwrmon_idle( &board.rf_distr ) )
+        {
+            // pp_printf("PwrMonRst\n");
+            tmo_restart( &rfmon_timeout );
+            ertm15_rf_distr_measure_power_restart( &board.rf_distr, 0 );
+        }
+    }
+
+    ertm15_rf_distr_pwrmon_update( &board.rf_distr );
 
     return 0;
 }
@@ -2859,7 +2891,6 @@ static int prev_ptp_state = -1;
 
 int ertm14_update_leds( void )
 {
-
     /* White Rabbit Servo */
     enum {
         WR_UNINITIALIZED = 0,
@@ -2912,6 +2943,7 @@ int ertm14_update_leds( void )
 
 
     leds_update();
+
     return 0;
 }
 
