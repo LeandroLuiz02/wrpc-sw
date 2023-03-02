@@ -43,8 +43,8 @@ SECTIONS
     /* Initialized data segment                                           */
     /*--------------------------------------------------------------------*/
 
-    /* Start of initialized data segment */
-    . = ALIGN(4);
+    /* Start of initialized data segment (.data is aligned to 8). */
+    . = ALIGN(8);
      _fdata = .;
 
     /* data: Writable data */
