@@ -27,7 +27,7 @@ void decode_ip(const char *str, unsigned char *ip);
 char *format_ip(char *s, const unsigned char *ip);
 
 struct wrc_shell_cmd {
-	char *name;
+	const char *name;
 	int (*exec) (const char *args[]);
 };
 

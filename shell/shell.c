@@ -134,7 +134,7 @@ static void esc(char code)
 
 static int _shell_exec(void)
 {
-	char *tokptr[SH_MAX_ARGS + 1];
+	const char *tokptr[SH_MAX_ARGS + 1];
 	const struct wrc_shell_cmd *p;
 	int n = 0, i = 0, rv;
 
@@ -144,13 +144,19 @@ static int _shell_exec(void)
 		if (n >= SH_MAX_ARGS)
 			break;
 
-		while (cmd_buf[i] == ' ' && cmd_buf[i])
+		/* Skip spaces at the start and before an argument.
+		   Replace them with a null byte to mark end of string. */
+		while (cmd_buf[i] == ' ')
 			cmd_buf[i++] = 0;
 
+		/* End of line. */
 		if (!cmd_buf[i])
 			break;
 
+		/* New argument. */
 		tokptr[n++] = &cmd_buf[i];
+
+		/* Skip it. */
 		while (cmd_buf[i] != ' ' && cmd_buf[i])
 			i++;
 
@@ -168,7 +174,7 @@ static int _shell_exec(void)
 	{
 		p = cmds[i];
 		if (!strcasecmp(p->name, tokptr[0])) {
-			rv = p->exec((const char **)(tokptr + 1));
+			rv = p->exec(tokptr + 1);
 			if (rv < 0)
 				pp_printf("Command \"%s\": error %d\n",
 					p->name, rv);
