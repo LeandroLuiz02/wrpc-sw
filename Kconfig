@@ -41,7 +41,7 @@ config TARGET_WR_SWITCH
 	help
 	  Builds the rt_cpu.bin, for the WR Switch FPGA
 
-config TARGET_AFCZ_V2
+config TARGET_AFCZ_V1
 	bool "AFCZ FMC Carrier (V1)"
 	help
 	  AFCZ FMC Carrier version 1 (Zynq Ultrascale+)
