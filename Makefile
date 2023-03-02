@@ -245,7 +245,7 @@ distclean: clean
 	rm -f $(addprefix *,$(MAKEALL_COPY_LIST))
 	$(MAKE) -C $(PPSI) distclean
 
-%.o:		%.c
+%.o: %.c
 	${CC} $(CFLAGS) $(PTPD_CFLAGS) $(INCLUDE_DIR) $(LIB_DIR) -c $< -o $@
 
 liblinux:
