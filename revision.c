@@ -14,7 +14,13 @@
  * On the switch, we export softpll internal status to the ARM cpu, for SNMP.
  * Thus, we place this structure at a known address in the linker script
  */
-struct spll_stats stats __attribute__((section(".stats"))) = {
+#if CONFIG_ARCH_IS_WRS
+#define STATS_SECTION __attribute__((section(".stats")))
+#else
+#define STATS_SECTION
+#endif
+
+struct spll_stats stats STATS_SECTION = {
 	.magic = 0x5b1157a7,
 	.ver = SPLL_STATS_VER,
 #ifdef CONFIG_DETERMINISTIC_BINARY
