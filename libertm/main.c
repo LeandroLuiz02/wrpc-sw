@@ -34,6 +34,7 @@ int main(int argc, char *argv[])
 {
 	static char usb[] = "/dev/ttyUSB2";
 	struct ertm_status *handle = ertm_init(NULL);
+	int attempt;
 
 	if (handle == NULL) {
 		fprintf(stderr, "could not open %s\n", usb);
@@ -77,7 +78,7 @@ int main(int argc, char *argv[])
 
 	printf("---------:  check force power measurement -------------------------\n");
 
-	for( int attempt = 0; attempt < 5; attempt++ )
+	for( attempt = 0; attempt < 5; attempt++ )
 	{
 		int ok = 0;
 		ertm_force_measure_channels_power( handle );
