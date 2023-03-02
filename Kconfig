@@ -23,6 +23,13 @@ config RISCV_COMP_INSTR
 	help
 	  Use compressed instructions for RISCV. This changes the compiler flags at build time.
 
+config DATASIZE
+        int "Data copy size to support cpu reset"
+	depends on ARCH_RISCV
+	default 0
+	help
+	  Maximum size of data segment, 0 to disable, 2048 should be ok.
+
 choice
 	prompt "Target Platform"
 

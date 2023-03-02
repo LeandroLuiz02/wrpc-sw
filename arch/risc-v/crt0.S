@@ -79,4 +79,16 @@ _entry:
 #endif
     bltu   t0, t1, 1b
 
+#if CONFIG_DATASIZE != 0
+# Copy RAM
+    la     t0, _fdata   # Dest
+    la     t1, _edata   # Max address
+    la     t2, _datacopy  # Src
+1:  lw     t3, 0(t2)
+    sw     t3, 0(t0)
+    addi   t0, t0, 4
+    addi   t2, t2, 4
+    bltu   t0, t1, 1b
+#endif
+	
     call   main

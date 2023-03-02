@@ -5,7 +5,10 @@ MEMORY
 {
     ram :
 	ORIGIN = 0x00000000,
-	LENGTH = CONFIG_RAMSIZE - CONFIG_STACKSIZE
+	LENGTH = CONFIG_RAMSIZE - CONFIG_STACKSIZE - CONFIG_DATASIZE
+    datacopy :
+        ORIGIN = CONFIG_RAMSIZE - CONFIG_STACKSIZE - CONFIG_DATASIZE
+	LENGTH = CONFIG_DATASIZE
     stack :
 	ORIGIN = CONFIG_RAMSIZE - CONFIG_STACKSIZE
 	LENGTH = CONFIG_STACKSIZE
@@ -16,10 +19,6 @@ SECTIONS
     /*--------------------------------------------------------------------*/
     /* Code and read-only segment                                         */
     /*--------------------------------------------------------------------*/
-
-    /* Begining of code and text segment */
-    . = 0;
-    _ftext = .;
 
     /* text: Program code section */
     .text :
@@ -40,10 +39,6 @@ SECTIONS
 	*(.gnu.linkonce.r.*)
     } > ram
 
-    /* End of code and read-only segment */
-    PROVIDE( etext = . );
-    _etext = .;
-
     /*--------------------------------------------------------------------*/
     /* Initialized data segment                                           */
     /*--------------------------------------------------------------------*/
@@ -54,15 +49,14 @@ SECTIONS
 
     /* data: Writable data */
     .data :
+#if CONFIG_DATASIZE != 0
+	AT (ORIGIN(datacopy))
+#endif
     {
 	*(.data)
 	*(.data.*)
 	*(.gnu.linkonce.d.*)
     } > ram
-
-    /* End of initialized data segment */
-    PROVIDE( edata = . );
-    _edata = .;
 
     /* Have _gp point to middle of sdata/sbss to maximize displacement range */
     . = ALIGN(4);
@@ -74,8 +68,10 @@ SECTIONS
 	*(.sdata)
 	*(.sdata.*)
 	*(.gnu.linkonce.s.*)
-	. = ALIGN(4);
     } > ram
+
+    . = ALIGN(4);
+    _edata = .;
 
     /*--------------------------------------------------------------------*/
     /* Uninitialized data segment                                         */
@@ -94,7 +90,6 @@ SECTIONS
     } > ram
 
     /* bss: Uninitialized writeable data section */
-    . = .;
     _bss_start = .;
     .bss :
     {
@@ -104,6 +99,10 @@ SECTIONS
 	*(COMMON)
     } > ram
 
+#if CONFIG_DATASIZE != 0
+    _datacopy = ORIGIN(datacopy);
+#endif
+	
     /* End of RAM for checking stack overflows */
     PROVIDE(_endram = ORIGIN(stack));
 
