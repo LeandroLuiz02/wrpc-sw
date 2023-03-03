@@ -13,21 +13,19 @@
 #include "ipv4.h"
 #include "syslog.h"
 /* syslog: a tx-only socket: no queue is there */
-static struct wrpc_socket __static_syslog_socket = {
-	.queue.buff = NULL,
-	.queue.size = 0,
-};
+static DECLARE_WRPC_SOCKET(syslog_socket, 0);
 static struct wrpc_socket *syslog_socket;
 
 static struct wr_udp_addr syslog_addr;
-unsigned char syslog_mac[6];
+static unsigned char syslog_mac[6];
 
 static uint32_t tics, tics_zero;
 
 void syslog_init(void)
 {
-	syslog_socket = ptpd_netif_create_socket(&__static_syslog_socket, NULL,
-					       PTPD_SOCK_UDP, 514 /* time */);
+	syslog_socket = ptpd_netif_create_socket
+	  (GET_WRPC_SOCKET(syslog_socket), LEN_WRPC_SOCKET(syslog_socket),
+	   NULL, PTPD_SOCK_UDP, 514 /* syslog */);
 	syslog_addr.sport = syslog_addr.dport = htons(514);
 	tics_zero = timer_get_tics();
 }
@@ -112,7 +110,7 @@ int syslog_poll(void)
 	static uint32_t next_temp_report, next_temp_check;
 
 	/* for servo-state (accesses ppsi  internal variables */
-	extern struct pp_globals *ppg;
+	extern struct pp_globals * const ppg;
 	struct pp_instance *ppi = ppg->pp_instances;
 	struct pp_servo *s;
 	wrh_servo_t * wr_servo;

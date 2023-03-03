@@ -4,16 +4,11 @@
 #include <shell.h>
 #include <lib/ipv4.h>
 
-
 /* a tx-only socket: no queue is there */
-static struct wrpc_socket __static_daclog_socket = {
-	.queue.buff = NULL,
-	.queue.size = 0,
-};
+static DECLARE_WRPC_SOCKET(daclog_socket, 0);
 static struct wrpc_socket *daclog_socket;
 static struct wr_udp_addr daclog_addr;
-unsigned char daclog_mac[6];
-
+static unsigned char daclog_mac[6];
 
 /* alternate between two buffers */
 #define BSIZE 512
@@ -23,12 +18,11 @@ struct daclog_buf {
 };
 
 static struct daclog_buf buffers[2];
-static int  ready[2];
+static unsigned char ready[2];
 
-void spll_log_dac(int y);
 void spll_log_dac(int y)
 {
-	static int bindex, bcount;
+	static unsigned short bindex, bcount;
 
 	buffers[bindex].data[bcount++] = y;
 	if (bcount == BSIZE) {
@@ -41,12 +35,13 @@ void spll_log_dac(int y)
 
 void daclog_init(void)
 {
-	daclog_socket = ptpd_netif_create_socket(&__static_daclog_socket, NULL,
-						 PTPD_SOCK_UDP, 1050);
+	daclog_socket = ptpd_netif_create_socket
+	  (GET_WRPC_SOCKET(daclog_socket), LEN_WRPC_SOCKET(daclog_socket),
+	   NULL, PTPD_SOCK_UDP, 1050);
 	daclog_addr.sport = daclog_addr.dport = htons(1050);
 }
 
-static int configured;
+static unsigned char configured;
 
 int daclog_poll(void)
 {

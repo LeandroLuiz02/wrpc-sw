@@ -22,27 +22,15 @@
 #define myIP      wrc_global_link.ip_addr
 
 /* bootp: bigger buffer, UDP based */
-static uint8_t __bootp_queue[512];
-static struct wrpc_socket __static_bootp_socket = {
-	.queue.buff = __bootp_queue,
-	.queue.size = sizeof(__bootp_queue),
-};
+static DECLARE_WRPC_SOCKET(bootp_socket, 512);
 static struct wrpc_socket *bootp_socket;
 
 /* ICMP: smaller buffer */
-static uint8_t __icmp_queue[128];
-static struct wrpc_socket __static_icmp_socket = {
-	.queue.buff = __icmp_queue,
-	.queue.size = sizeof(__icmp_queue),
-};
+static DECLARE_WRPC_SOCKET(icmp_socket, 128);
 static struct wrpc_socket *icmp_socket;
 
 /* RDATE: even smaller buffer -- but we require 86. 96 is "even". */
-static uint8_t __rdate_queue[96];
-static struct wrpc_socket __static_rdate_socket = {
-	.queue.buff = __rdate_queue,
-	.queue.size = sizeof(__rdate_queue),
-};
+static DECLARE_WRPC_SOCKET(rdate_socket, 96);
 static struct wrpc_socket *rdate_socket;
 
 /* syslog is selected by Kconfig, so we have weak aliases here */
@@ -72,18 +60,21 @@ void ipv4_init(void)
 	struct wr_sockaddr saddr;
 
 	/* Bootp: use UDP engine activated by function arguments  */
-	bootp_socket = ptpd_netif_create_socket(&__static_bootp_socket, NULL,
-						PTPD_SOCK_UDP, 68 /* bootpc */);
+	bootp_socket = ptpd_netif_create_socket
+	  (GET_WRPC_SOCKET(bootp_socket), LEN_WRPC_SOCKET(bootp_socket),
+	   NULL, PTPD_SOCK_UDP, 68 /* bootpc */);
 
 	/* time (rdate): UDP */
-	rdate_socket = ptpd_netif_create_socket(&__static_rdate_socket, NULL,
-					       PTPD_SOCK_UDP, 37 /* time */);
+	rdate_socket = ptpd_netif_create_socket
+	  (GET_WRPC_SOCKET(rdate_socket), LEN_WRPC_SOCKET(rdate_socket),
+	   NULL, PTPD_SOCK_UDP, 37 /* time */);
 
 	/* ICMP: specify raw (not UDP), with IPV4 ethtype */
 	memset(&saddr, 0, sizeof(saddr));
 	saddr.ethertype = htons(0x0800);
-	icmp_socket = ptpd_netif_create_socket(&__static_icmp_socket, &saddr,
-					       PTPD_SOCK_RAW_ETHERNET, 0);
+	icmp_socket = ptpd_netif_create_socket
+	  (GET_WRPC_SOCKET(icmp_socket), LEN_WRPC_SOCKET(icmp_socket),
+	   &saddr, PTPD_SOCK_RAW_ETHERNET, 0);
 
 	syslog_init();
 }

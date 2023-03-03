@@ -37,7 +37,7 @@ struct wr_sockaddr {
 struct sockq {
 	uint16_t head, tail, avail, size;
 	uint16_t n;
-	uint8_t *buff;
+	uint8_t buff[];
 };
 
 struct wrpc_socket {
@@ -49,6 +49,15 @@ struct wrpc_socket {
 	uint32_t dmtd_phase;
 	struct sockq queue;
 };
+
+#define DECLARE_WRPC_SOCKET(NAME,LEN) \
+  struct { \
+    struct wrpc_socket socket; \
+    uint8_t buff[LEN]; \
+  } NAME##_sockbuf
+
+#define GET_WRPC_SOCKET(NAME) &NAME##_sockbuf.socket
+#define LEN_WRPC_SOCKET(NAME) sizeof(NAME##_sockbuf.buff)
 
 struct wr_timestamp {
 
@@ -73,6 +82,7 @@ struct wr_timestamp {
 // Creates UDP or Ethernet RAW socket (determined by sock_type) bound
 // to bind_addr.
 struct wrpc_socket *ptpd_netif_create_socket(struct wrpc_socket *s,
+					     unsigned len,
 					     struct wr_sockaddr * bind_addr,
 					     int udp_or_raw, int udpport);
 

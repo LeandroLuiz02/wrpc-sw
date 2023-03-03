@@ -278,11 +278,7 @@ static const char snmp_build_date[] = __DATE__ " " __TIME__;
 static uint8_t snmp_version;
 
 
-static uint8_t __snmp_queue[256];
-static struct wrpc_socket __static_snmp_socket = {
-	.queue.buff = __snmp_queue,
-	.queue.size = sizeof(__snmp_queue),
-};
+static DECLARE_WRPC_SOCKET(snmp_socket, 256);
 static struct wrpc_socket *snmp_socket;
 
 
@@ -617,8 +613,9 @@ void snmp_init(void)
 	uint32_t aux_diag_ver;
 
 	/* Use UDP engine activated by function arguments  */
-	snmp_socket = ptpd_netif_create_socket(&__static_snmp_socket, NULL,
-						PTPD_SOCK_UDP, 161 /* snmp */);
+	snmp_socket = ptpd_netif_create_socket
+	  (GET_WRPC_SOCKET(snmp_socket), LEN_WRPC_SOCKET(snmp_socket),
+	   NULL, PTPD_SOCK_UDP, 161 /* snmp */);
 	if (SNMP_AUX_DIAG_ENABLED) {
 		/* Fix ID and version of aux diag registers by values read from FPGA */
 		diag_read_info(&aux_diag_id, &aux_diag_ver, &aux_diag_reg_rw_num,

@@ -32,11 +32,7 @@ static uint8_t lldpdu[LLDP_MAX_PKT_LEN];
 static uint16_t lldpdu_len;
 
 /* tx-only socket */
-static struct wrpc_socket __static_lldp_socket = {
-	.queue.buff = NULL,
-	.queue.size = 0,
-};
-
+static DECLARE_WRPC_SOCKET(lldp_socket, 0);
 static struct wrpc_socket *lldp_socket;
 static struct wr_sockaddr addr;
 
@@ -254,8 +250,9 @@ void lldp_init(void)
 	memset(&saddr, 0x0, sizeof(saddr));
 	saddr.ethertype = htons(LLDP_ETH_TYP);
 
-	lldp_socket = ptpd_netif_create_socket(&__static_lldp_socket, &saddr,
-					       PTPD_SOCK_RAW_ETHERNET, 0);
+	lldp_socket = ptpd_netif_create_socket
+	  (GET_WRPC_SOCKET(lldp_socket), LEN_WRPC_SOCKET(lldp_socket),
+	   &saddr, PTPD_SOCK_RAW_ETHERNET, 0);
 
 	memset(&addr, 0x0, sizeof(struct wr_sockaddr));
 	memcpy(addr.mac, LLDP_MCAST_MAC, 6);

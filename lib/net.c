@@ -47,6 +47,7 @@ void ptpd_netif_set_phase_transition(uint32_t phase)
 
 
 struct wrpc_socket *ptpd_netif_create_socket(struct wrpc_socket *sock,
+					     unsigned len,
 					     struct wr_sockaddr * bind_addr,
 					     int udp_or_raw, int udpport)
 {
@@ -87,7 +88,7 @@ struct wrpc_socket *ptpd_netif_create_socket(struct wrpc_socket *sock,
 
 	/*packet queue */
 	sock->queue.head = sock->queue.tail = 0;
-	sock->queue.avail = sock->queue.size;
+	sock->queue.avail = sock->queue.size = len;
 	sock->queue.n = 0;
 
 	return sock;

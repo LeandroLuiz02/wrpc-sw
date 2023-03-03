@@ -15,11 +15,7 @@
 #include "ptpd_netif.h"
 #include "wrc_global.h"
 
-static uint8_t __arp_queue[128];
-static struct wrpc_socket __static_arp_socket = {
-	.queue.buff = __arp_queue,
-	.queue.size = sizeof(__arp_queue),
-};
+static DECLARE_WRPC_SOCKET(arp_socket, 128);
 static struct wrpc_socket *arp_socket;
 
 #define ARP_HTYPE	0
@@ -42,8 +38,9 @@ void arp_init(void)
 	memset(&saddr.mac, 0xFF, 6);	/* Broadcast */
 	saddr.ethertype = htons(0x0806);	/* ARP */
 
-	arp_socket = ptpd_netif_create_socket(&__static_arp_socket, &saddr,
-					      PTPD_SOCK_RAW_ETHERNET, 0);
+	arp_socket = ptpd_netif_create_socket
+	  (GET_WRPC_SOCKET(arp_socket), LEN_WRPC_SOCKET(arp_socket),
+	   &saddr, PTPD_SOCK_RAW_ETHERNET, 0);
 }
 
 static int process_arp(uint8_t * buf, int len)

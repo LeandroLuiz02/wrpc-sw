@@ -11,11 +11,13 @@
 #include <errno.h>
 #include <wrc.h>
 
+#include "ppsi/lib.h"
 #include <lib/ipv4.h>
 #include <netconsole.h>
 #include <shell.h>
 
-static void print_netconsole_status(void) {
+static void print_netconsole_status(void)
+{
 	char buf[20];
 
 	/* print netconsole's status */

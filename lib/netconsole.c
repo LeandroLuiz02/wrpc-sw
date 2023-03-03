@@ -6,9 +6,10 @@
  *
  * Released according to the GNU GPL, version 2 or any later version.
  */
-#include <wrc.h>
-//#include <wrpc.h>
 #include <string.h>
+#include <wrc.h>
+#include <wrpc.h>
+#include "wrc_global.h"
 
 #include "ipv4.h"
 #include "ptpd_netif.h"
@@ -21,12 +22,7 @@
 #define NETCONSOLE_DEF_VAL NETCONSOLE_DISABLED
 #endif
 
-static uint8_t __netconsole_queue[152];
-static struct wrpc_socket __static_netconsole_socket = {
-	.queue.buff = __netconsole_queue,
-	.queue.size = sizeof(__netconsole_queue),
-};
-
+static DECLARE_WRPC_SOCKET(netconsole_socket, 152);
 static struct wrpc_socket *netconsole_socket;
 static unsigned char *cmd_rx_p = NULL;
 /* net headers + cmd len */
@@ -39,9 +35,9 @@ struct wr_udp_addr netconsole_udp_addr;
 /* init for netconsole task */
 void netconsole_init(void)
 {
-	netconsole_socket = ptpd_netif_create_socket(
-					&__static_netconsole_socket, NULL,
-					PTPD_SOCK_UDP, NETCONSOLE_PORT);
+	netconsole_socket = ptpd_netif_create_socket
+	  (GET_WRPC_SOCKET(netconsole_socket), LEN_WRPC_SOCKET(netconsole_socket),
+	   NULL, PTPD_SOCK_UDP, NETCONSOLE_PORT);
 }
 
 int netconsole_read_byte(void)
@@ -114,7 +110,7 @@ int netconsole_poll(void)
 {
 	int len;
 
-	if (*ip_status == IP_TRAINING
+	if (ip_status == IP_TRAINING
 	    || netconsole_status == NETCONSOLE_DISABLED) {
 		/* can't do netconsole w/o an address...
 		 * or netconsole disabled */
