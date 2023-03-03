@@ -62,7 +62,7 @@ int wrc_log_stats(void)
 	wrc_stats_last = s->update_count;
 
 	shw_pps_gen_get_time(&sec, &nsec);
-	wrpc_get_port_state(&state, NULL);
+	wrpc_get_port_state(&state);
 	minic_get_stats(&tx, &rx, &rx_err);
 
 	pp_printf("lnk:%d rx:%d tx:%d ", (wrc_global_link.link_up == NETIF_LINK_UP), rx, tx);

@@ -372,7 +372,7 @@ static void print_main_data(void)
 		}
 
 		/* FIXME: should be independent for each interface */
-		wrpc_get_port_state(&state, NULL);
+		wrpc_get_port_state(&state);
 
 		if (state.locked)
 			pcprintf(14, 9, C_GREEN, "Lock");

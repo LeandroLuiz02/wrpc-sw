@@ -64,9 +64,6 @@ struct wrpc_socket *ptpd_netif_create_socket(struct wrpc_socket *sock,
 		return NULL;
 	}
 
-	if (wrpc_get_port_state(&pstate, "wr0" /* unused */) < 0)
-		return NULL;
-
 	/* copy and complete the bind information. If MAC is 0 use unicast */
 	memset(&sock->bind_addr, 0, sizeof(struct wr_sockaddr));
 	if (bind_addr)
@@ -84,6 +81,7 @@ struct wrpc_socket *ptpd_netif_create_socket(struct wrpc_socket *sock,
 	/*get mac from endpoint */
 	ep_get_mac_addr(&wrc_endpoint_dev, sock->local_mac);
 
+	wrpc_get_port_state(&pstate);
 	sock->phase_transition = pstate.t2_phase_transition;
 	sock->dmtd_phase = pstate.phase_val;
 

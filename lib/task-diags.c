@@ -60,7 +60,7 @@ int wrc_wr_diags(void)
 	wdiags_write_time(sec, nsec);
 
 	/* port state */
-	wrpc_get_port_state(&ps, NULL);
+	wrpc_get_port_state(&ps);
 	wdiags_write_port_state((wrc_global_link.link_up == NETIF_LINK_UP), (ps.locked ? 1 : 0));
 
 	/* port PTP State (from ppsi)

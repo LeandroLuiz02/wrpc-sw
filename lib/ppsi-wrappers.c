@@ -21,8 +21,6 @@
 
 #include <board.h>
 
-void *ppsi_head;
-
 /* Following code from ptp-noposix/libposix/freestanding-wrapper.c */
 
 static int read_phase_val(struct wrc_port_state *port)
@@ -42,7 +40,7 @@ static int read_phase_val(struct wrc_port_state *port)
 
 extern uint32_t cal_phase_transition;
 
-int wrpc_get_port_state(struct wrc_port_state *port, const char *port_name)
+void wrpc_get_port_state(struct wrc_port_state *port)
 {
 	/* fill deltas */
 	port->calib.delta_tx_ps = sfp_info.sfp_params.dTx;
@@ -57,8 +55,6 @@ int wrpc_get_port_state(struct wrc_port_state *port, const char *port_name)
 	port->t2_phase_transition = cal_phase_transition;
 	port->t4_phase_transition = cal_phase_transition;
 	ep_get_mac_addr(&wrc_endpoint_dev, port->hw_addr);
-
-	return 0;
 }
 
 /* dummy function, no shmem locks (no even shmem) are implemented in wrpc */

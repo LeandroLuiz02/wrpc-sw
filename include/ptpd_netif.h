@@ -11,17 +11,11 @@
 #ifndef __PTPD_NETIF_H
 #define __PTPD_NETIF_H
 
-#include <stdio.h>
-#include <board.h>
-//#include <inttypes.h>
+#include <stddef.h>
+#include <inttypes.h>
 
 #define PTPD_SOCK_UDP		0 /* wrong name, it should be "WRPC" */
 #define PTPD_SOCK_RAW_ETHERNET 	1 /* but used in ppsi, which I won't change */
-
-// GCC-specific
-#ifndef PACKED
-#  define PACKED __attribute__((packed))
-#endif
 
 #define PHYS_PORT_ANY			(0xffff)
 
@@ -56,7 +50,7 @@ struct wrpc_socket {
 	struct sockq queue;
 };
 
-PACKED struct wr_timestamp {
+struct wr_timestamp {
 
 	// Seconds
 	int64_t sec;
@@ -110,7 +104,6 @@ void ptpd_netif_linearize_rx_timestamp(struct wr_timestamp *ts,
 void ptpd_netif_set_phase_transition(uint32_t phase);
 
 struct wrc_port_state;
-int wrpc_get_port_state(struct wrc_port_state *port,
-			const char *port_name /* unused */);
+void wrpc_get_port_state(struct wrc_port_state *port);
 
 #endif /* __PTPD_NETIF_H */
