@@ -43,10 +43,6 @@ SECTIONS
     /* Initialized data segment                                           */
     /*--------------------------------------------------------------------*/
 
-    /* Start of initialized data segment (.data is aligned to 8). */
-    . = ALIGN(8);
-     _fdata = .;
-
     /* data: Writable data */
     .data :
 #if CONFIG_DATASIZE != 0
@@ -70,16 +66,14 @@ SECTIONS
 	*(.gnu.linkonce.s.*)
     } > ram
 
+    /* Bounds of data segment.  Be sure the end is aligned.  */
+    _fdata = ADDR(.data);
     . = ALIGN(4);
     _edata = .;
 
     /*--------------------------------------------------------------------*/
     /* Uninitialized data segment                                         */
     /*--------------------------------------------------------------------*/
-
-    /* Start of uninitialized data segment */
-    . = ALIGN(4);
-    _fbss = .;
 
     /* Writable uninitialized small data segment */
     .sbss :
@@ -90,7 +84,6 @@ SECTIONS
     } > ram
 
     /* bss: Uninitialized writeable data section */
-    _bss_start = .;
     .bss :
     {
 	*(.bss)
@@ -98,6 +91,11 @@ SECTIONS
 	*(.gnu.linkonce.b.*)
 	*(COMMON)
     } > ram
+
+    /* Bounds of bss segment. */
+    _fbss = ADDR(.sbss);
+    . = ALIGN(4);
+    _end = .;
 
 #if CONFIG_DATASIZE != 0
     _datacopy = ORIGIN(datacopy);
@@ -108,5 +106,4 @@ SECTIONS
 
     /* First location in stack is highest address in STACK */
     PROVIDE(_fstack = ORIGIN(stack) + LENGTH(stack));
-    PROVIDE(_end = .);
 }
