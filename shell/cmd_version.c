@@ -35,13 +35,14 @@ static int cmd_ver(const char *args[])
 {
 	int hwram = sysc_get_memsize();
 
-	pp_printf("WR Core build: %s" SUPPORT "\n", stats.commit_id);
+	pp_printf("WR Core build: %s" SUPPORT "\n", build_id.commit_id);
 	 /* may be empty if build with CONFIG_DETERMINISTIC_BINARY */
 	if (DETERMINISTIC_BINARY)
 		pp_printf("Deterministic binary build\n");
 	else
 		pp_printf("Built: %s %s by %s\n",
-			  stats.build_date, stats.build_time, stats.build_by);
+			  build_id.build_date, build_id.build_time,
+			  build_id.build_by);
 	pp_printf("Built for %s, %d kB RAM, stack is %d bytes\n", ARCH_STRING,
 		  CONFIG_RAMSIZE / 1024, CONFIG_STACKSIZE);
 	/* hardware reports memory size, with a 16kB granularity */

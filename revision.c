@@ -22,19 +22,22 @@
 
 struct spll_stats stats STATS_SECTION = {
 	.magic = 0x5b1157a7,
-	.ver = SPLL_STATS_VER,
+	.ver = SPLL_STATS_VER
+};
+
+const struct spll_build_id build_id STATS_SECTION = {
 #ifdef CONFIG_DETERMINISTIC_BINARY
 	.build_date = "",
 	.build_time = "",
 	.build_by = "",
 #else
 	.build_date = __DATE__,
-	.build_date[sizeof(stats.build_date) - 1] = 0,
+	.build_date[sizeof(build_id.build_date) - 1] = 0,
 	.build_time = __TIME__,
-	.build_time[sizeof(stats.build_time) - 1] = 0,
+	.build_time[sizeof(build_id.build_time) - 1] = 0,
 	.build_by = __GIT_USR__,
-	.build_by[sizeof(stats.build_by) - 1] = 0,
+	.build_by[sizeof(build_id.build_by) - 1] = 0,
 #endif
 	.commit_id = __GIT_VER__,
-	.commit_id[sizeof(stats.commit_id) - 1] = 0,
+	.commit_id[sizeof(build_id.commit_id) - 1] = 0,
 };

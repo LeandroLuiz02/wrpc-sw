@@ -76,6 +76,9 @@ struct spll_stats {
 	int H_y, M_y;
 	int del_cnt;
 	int start_cnt;
+};
+
+struct spll_build_id {
 	char commit_id[32];
 	char build_date[16];
 	char build_time[16];
@@ -83,6 +86,7 @@ struct spll_stats {
 };
 
 extern struct spll_stats stats;
+extern const struct spll_build_id build_id;
 
 #endif /* __SOFTPLL_EXPORT_H */
 

@@ -142,8 +142,8 @@ static void lldp_add_tlv(int tlv_type) {
 		pdu_p += strnlen(wrc_global_link.wrc_hw_name, HW_NAME_LENGTH - 1);
 		strcpy((char *)(pdu_p), ": ");
 		pdu_p += 2; /* length of ": " */
-		strncpy((char *)(pdu_p), stats.commit_id, 32);
-		pdu_p += strnlen(stats.commit_id, 32);
+		strncpy((char *)(pdu_p), build_id.commit_id, 32);
+		pdu_p += strnlen(build_id.commit_id, 32);
 		tlv_len = (uint8_t)(pdu_p - &lldpdu[lldpdu_len + LLDP_HEADER]);
 		lldp_header_tlv(tlv_type, tlv_len);
 

@@ -129,11 +129,12 @@ struct dump_info  dump_wrpc_info[] = {
 	DUMP_FIELD(int, M_y),
 	DUMP_FIELD(int, del_cnt),
 	DUMP_FIELD(int, start_cnt),
+#if CONFIG_ARCH_IS_WRS
 	DUMP_FIELD_SIZE(char, commit_id, 32),
 	DUMP_FIELD_SIZE(char, build_date, 16),
 	DUMP_FIELD_SIZE(char, build_time, 16),
 	DUMP_FIELD_SIZE(char, build_by, 32),
-
+#endif
 
 #undef DUMP_STRUCT
 #define DUMP_STRUCT struct sfp_info
