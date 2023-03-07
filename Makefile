@@ -1,6 +1,9 @@
 # Tomasz Wlostowski for CERN, 2011,2012
 -include $(CURDIR)/.config
 
+# Set to 'n' to disable LTO, makes debugging much easier
+# CONFIG_LTO=n
+
 # use a cross compiler depending on architecture
 CROSS_COMPILE_LM32 ?= lm32-elf-
 CROSS_COMPILE_RISCV ?= riscv32-elf-
