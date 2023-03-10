@@ -996,7 +996,6 @@ static int get_servo(uint8_t *buf, struct snmp_oid *obj)
 	struct pp_servo *ppsi_servo;
 	struct wr_servo_ext *wr_servo_ext;
 	struct wrh_servo_t *wrh_servo = NULL;
-	struct wr_data *wr_d;
 
 	ppsi_servo = ppi_static.servo;
 
@@ -1012,11 +1011,14 @@ static int get_servo(uint8_t *buf, struct snmp_oid *obj)
 	default:
 		break;
 	}
+#if CONFIG_HAS_EXT_WR
 	if (ppi_static.protocol_extension == PPSI_EXT_WR && ppi_static.extState == PP_EXSTATE_ACTIVE) {
-		wr_d         = (struct wr_data *) ppi_static.ext_data;
+		struct wr_data *wr_d = (struct wr_data *) ppi_static.ext_data;
 		wr_servo_ext = &wr_d->servo_ext;
 		wrh_servo    = &wr_d->servo;
-	} else if ((int) obj->p == (int)SERVO_STATEN) {
+	} else
+#endif
+	  if ((int) obj->p == (int)SERVO_STATEN) {
 		wr_servo_ext = NULL;
 	} else 	{
 		/* non WR return 0's */
@@ -1033,6 +1035,7 @@ static int get_servo(uint8_t *buf, struct snmp_oid *obj)
 		return get_value(buf, obj->asn, &tmp_uint32);
 	case (int)SERVO_SKEW:
 		return get_i32sat(buf, obj->asn, &wrh_servo->skew_ps);
+#if CONFIG_HAS_EXT_WR
 	case (int)SERVO_RTT:
 		tmp_uint64 = pp_time_to_picos(&wr_servo_ext->rawDelayMM);
 		return get_value(buf, obj->asn, &tmp_uint64);
@@ -1048,6 +1051,7 @@ static int get_servo(uint8_t *buf, struct snmp_oid *obj)
 	case (int)SERVO_DELTA_RX_S:
 		tmp_uint32 = pp_time_to_picos(&wr_servo_ext->delta_rxs);
 		return get_value(buf, obj->asn, &tmp_uint32);
+#endif
 	case (int)SERVO_N_ERR_STATE:
 		tmp_uint32 = wrh_servo->n_err_state;
 		return get_value(buf, obj->asn, &tmp_uint32);

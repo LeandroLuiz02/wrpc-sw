@@ -12,7 +12,8 @@
 #include <dev/w1.h>
 #include <ppsi/ppsi.h>
 #include <wrpc.h>
-#include <wr-api.h>
+#include "proto-ext-whiterabbit/wr-api.h"
+#include "proto-ext-l1sync/l1e-api.h"
 #include <dev/minic.h>
 #include <softpll_ng.h>
 #include <dev/syscon.h>
@@ -105,7 +106,7 @@ static const char * const pp_instance_state_to_name[] = {
 #define EMPTY_EXTENSION_STATE_NAME "          "
 
 #if CONFIG_HAS_EXT_L1SYNC
-static char * l1e_instance_extension_state[]={
+static const char * const l1e_instance_extension_state[]={
 		[__L1SYNC_MISSING   ] = "INVALID   ",
 		[L1SYNC_DISABLED    ] = "DISABLED  ",
 		[L1SYNC_IDLE        ] = "IDLE      ",
@@ -457,14 +458,12 @@ static void print_main_data(void)
 			case PPSI_EXT_L1S :
 			{
 				portDS_t *portDS;
+				l1e_ext_portDS_t *extPortDS;
 
 				extension_state_name = getStateAsString(l1e_instance_extension_state, - 1); // Default value
-				if ((portDS = wrs_shm_follow(ppsi_head, ppi->portDS))) {
-					l1e_ext_portDS_t *extPortDS;
-
-					if ((extPortDS = wrs_shm_follow(ppsi_head, portDS->ext_dsport))) {
+				if (portDS) {
+					if ((extPortDS = portDS->ext_dsport))
 							extension_state_name = getStateAsString(l1e_instance_extension_state, extPortDS->basic.L1SyncState);
-					}
 				}
 				break;
 			}
@@ -563,7 +562,6 @@ static void print_servo_description(void)
 static void print_servo_data(struct pp_instance *ppi)
 {
 	wrh_servo_t * wrh_servo;
-	wr_servo_ext_t * wr_servo_ext = NULL;
 	char buf[128];
 	int row_offset;
 	int proto_extension = ppi->extState!= PP_EXSTATE_DISABLE ? ppi->protocol_extension : PPSI_EXT_NONE;
@@ -582,10 +580,12 @@ static void print_servo_data(struct pp_instance *ppi)
 	/* should print servio description */
 	gui_description |= DESCRIPTION_SERVO;
 
-
+#if CONFIG_HAS_EXT_WR
+	wr_servo_ext_t * wr_servo_ext = NULL;
 	if (wrh_servo) {
 		wr_servo_ext = &((struct wr_data *)wrh_servo)->servo_ext;
 	}
+#endif
 
 	/* should print WR servio description */
 	gui_description |= wrh_servo ? DESCRIPTION_WR_SERVO : 0;
@@ -593,12 +593,9 @@ static void print_servo_data(struct pp_instance *ppi)
 	/* Avoid printing new data if change in description is expected.
 	 * This avoids extra redraw of data values */
 	if(prev_gui_description
-		!= (gui_description 
-		    & (DESCRIPTION_MAIN
-		       | DESCRIPTION_SERVO
-		       | DESCRIPTION_WR_SERVO)
-		   )
-	  )
+	   != (gui_description & (DESCRIPTION_MAIN
+				  | DESCRIPTION_SERVO
+				  | DESCRIPTION_WR_SERVO)))
 		return;
 
 	pcprintf(18, 23, C_WHITE, "%s:%s: %s%-15s\n",
@@ -622,9 +619,11 @@ static void print_servo_data(struct pp_instance *ppi)
 	/*delayMS */
 	pcprintf(22, 20, C_WHITE,"%24s", optimized_pp_time_toString_ps_as_ns(&ppi->servo->delayMS, buf));	
 	{
-		struct pp_time *delayMM = wr_servo_ext ?
-				&wr_servo_ext->rawDelayMM :
-				&ppi->servo->delayMM;
+		struct pp_time *delayMM = &ppi->servo->delayMM;
+#if CONFIG_HAS_EXT_WR
+		if (wr_servo_ext)
+			delayMM = &wr_servo_ext->rawDelayMM;
+#endif
 		/* delayMM */
 		pcprintf(23, 20, C_WHITE,"%24s", optimized_pp_time_toString_ps_as_ns(delayMM, buf));
 	}
@@ -675,6 +674,7 @@ static void print_servo_data(struct pp_instance *ppi)
 
 	 /* Update counter */
 	pcprintf(row_offset, 23, C_WHITE, "%16u times", ppi->servo->update_count);
+#if CONFIG_HAS_EXT_WR
 	if (wrh_servo) {
 		/* Master PHY delays TX */
 		pcprintf(33, 26, C_WHITE,"%22s", optimized_pp_time_toString_ps_as_ns(&wr_servo_ext->delta_txm, buf));
@@ -688,7 +688,7 @@ static void print_servo_data(struct pp_instance *ppi)
 		/* print and clear till the end of a line */
 		cprintf(C_WHITE,"%22s\e[K", optimized_pp_time_toString_ps_as_ns(&wr_servo_ext->delta_rxs, buf));
 	}
-
+#endif
 }
 
 void redraw_gui(void)

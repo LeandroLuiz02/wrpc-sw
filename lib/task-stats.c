@@ -36,7 +36,6 @@ int wrc_log_stats(void)
 	int i;
 	struct pp_servo *s = SRV(ppg->pp_instances);
 	wrh_servo_t * wrh_servo;
-	wr_servo_ext_t * wr_servo_ext = NULL;
 
 
 	/* stats update condition for Slave mode */
@@ -86,18 +85,18 @@ int wrc_log_stats(void)
 	wrh_servo = (ppi_static.protocol_extension == PPSI_EXT_WR && ppi_static.extState == PP_EXSTATE_ACTIVE) ?
 			(wrh_servo_t*) ppi_static.ext_data : NULL;
 
-	if (wrh_servo) {
-		wr_servo_ext = &((struct wr_data *)wrh_servo)->servo_ext;
-	}
-
 	if (ptp_mode == WRC_MODE_SLAVE) {
-		struct pp_time crtt;
+#if CONFIG_HAS_EXT_WR
+		wr_servo_ext_t * wr_servo_ext =
+			&((struct wr_data *)wrh_servo)->servo_ext;
 
 		/* RTT */
 		pp_printf("mu:%Ld ", pp_time_to_picos(&wr_servo_ext->rawDelayMM));
+#endif
 
 		pp_printf("dms:%Ld ", pp_time_to_picos(&s->delayMS));
 
+#if CONFIG_HAS_EXT_WR
 		pp_printf("dtxm:%d drxm:%d ",
 			  (int) pp_time_to_picos(&wr_servo_ext->delta_txm),
 			  (int) pp_time_to_picos(&wr_servo_ext->delta_rxm));
@@ -106,7 +105,7 @@ int wrc_log_stats(void)
 			  (int) pp_time_to_picos(&wr_servo_ext->delta_rxs));
 		pp_printf("asym:%Ld ", interval_to_picos(ppi_static.portDS->delayAsymmetry));
 
-		crtt = wr_servo_ext->rawDelayMM;
+		struct pp_time crtt = wr_servo_ext->rawDelayMM;
 		pp_time_sub(&crtt, &wr_servo_ext->delta_txm);
 		pp_time_sub(&crtt, &wr_servo_ext->delta_rxm);
 		pp_time_sub(&crtt, &wr_servo_ext->delta_txs);
@@ -114,6 +113,7 @@ int wrc_log_stats(void)
 
 		/* Cable RTT */
 		pp_printf("crtt:%Ld ", pp_time_to_picos(&crtt));
+#endif
 		/* Clock offset */
 		pp_printf("cko:%d ", (int) pp_time_to_picos(&s->offsetFromMaster));
 		pp_printf("setp:%d ", (int) wrh_servo->cur_setpoint_ps);

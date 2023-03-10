@@ -82,7 +82,7 @@ int wrc_wr_diags(void)
 	/* servo state (if slave)s */
 	if (ptp_mode == WRC_MODE_SLAVE) {
 		struct pp_servo *s = SRV(ppg->pp_instances);
-		struct wr_servo_ext *wr_servo_ext = NULL;
+		
 		struct wrh_servo_t *wrh_servo = NULL;
 		int32_t asym;
 		int wr_mode;
@@ -96,8 +96,11 @@ int wrc_wr_diags(void)
 			    (wrh_servo_t*) ppi_static.ext_data : NULL;
 
 		if (wrh_servo) {
-			wr_servo_ext = &((struct wr_data *)wrh_servo)->servo_ext;
+#if CONFIG_HAS_EXT_WR
+			struct wr_servo_ext *wr_servo_ext =
+				&((struct wr_data *)wrh_servo)->servo_ext;
 			mu = pp_time_to_picos(&wr_servo_ext->rawDelayMM),
+#endif
 			cur_setpoint_ps = wrh_servo->cur_setpoint_ps;
 		}
 
