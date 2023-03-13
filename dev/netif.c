@@ -30,7 +30,7 @@ struct wr_endpoint_device* netif_get_default_endpoint(void)
     return netif_devs[0].ep;
 }
 
-int netif_register_device( const char *name, const char* desc, struct wr_endpoint_device* ep )
+int netif_register_device(const char *name, struct wr_endpoint_device* ep)
 {
     if( netif_n_count >= WRC_NETIF_MAX_DEVICES )
         return -1;
@@ -40,7 +40,6 @@ int netif_register_device( const char *name, const char* desc, struct wr_endpoin
 
     ndev->name = name;
     ndev->ep = ep;
-    ndev->desc= desc;
     ndev->rx_packets = 0;
     ndev->tx_packets = 0;
     ndev->link_state = NETIF_LINK_DOWN;

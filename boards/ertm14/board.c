@@ -2501,15 +2501,14 @@ int wrc_board_early_init()
     /* reset the networking part of the WRCore and start the WR Endpoint */
     ep_init( &wrc_endpoint_dev, (void *) BASE_EP );
     ep_set_mac_addr( &wrc_endpoint_dev, ertm14_mac );
+    netif_register_device( "wru0", &wrc_endpoint_dev );
 
-	netif_register_device( "wru0", "default", &wrc_endpoint_dev );
+    /* Sleep for 1s to make sure WRS v4.2 always realizes that
+     * the link is down */
 
-	/* Sleep for 1s to make sure WRS v4.2 always realizes that
-	 * the link is down */
-
-	timer_delay_ms(200);
-	ep_enable( &wrc_endpoint_dev, 1, 1);
-	timer_delay_ms(200);
+    timer_delay_ms(200);
+    ep_enable( &wrc_endpoint_dev, 1, 1);
+    timer_delay_ms(200);
     bist_summary( ertm_bist );
 
     return ll;
