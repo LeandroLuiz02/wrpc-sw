@@ -226,7 +226,7 @@ int shell_interactive()
 		if (c < 0)
 			return 0;
 
-		if (c == 27 || ((current_key & ESCAPE_FLAG) && c == 91))
+		if (c == 27 || ((current_key & ESCAPE_FLAG) && c == '['))
 			current_key = ESCAPE_FLAG;
 		else
 			current_key |= c;
