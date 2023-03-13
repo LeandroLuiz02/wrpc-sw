@@ -284,7 +284,6 @@ static void print_port(unsigned i)
 	int port_up = ndev->link_state == NETIF_LINK_UP;
 	int tx, rx, rx_err;
 	char buf[20];
-	uint8_t mac[ETH_ALEN];
 
 	if (port_up) {
 		pcprintf(9, 1, C_GREEN, " %s", ndev->name);
@@ -292,12 +291,12 @@ static void print_port(unsigned i)
 		pcprintf(9, 1, C_RED, "*%s", ndev->name);
 	}
 
+	format_mac(buf, ndev->ep->mac_addr);
+	pcprintf(9, 8, C_MAGENTA, "%s", buf);
+
 	if (i != 0) /* FIXME: should be independent for each interface */
 		return;
 
-	ep_get_mac_addr(&wrc_endpoint_dev, mac);
-	format_mac(buf, mac);
-	pcprintf(9, 8, C_MAGENTA, "%s", buf);
 	if (HAS_IP && port_up) {
 		uint8_t ip[INET_ALEN];
 
