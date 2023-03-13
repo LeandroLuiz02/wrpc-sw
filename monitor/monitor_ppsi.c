@@ -47,8 +47,8 @@
 			&& (proto_ext_info[proto_id].valid == 1))
 
 
-static int prev_gui_description = 0;
-static int gui_description = 1;
+static uint8_t prev_gui_description = 0;
+static uint8_t gui_description = 1;
 static uint32_t next_update_ticks;
 /* refresh period for _gui_ and _stat_ commands */
 int wrc_ui_refperiod = WRC_MONITOR_REFRESH_PERIOD;
@@ -90,20 +90,20 @@ static const struct proto_ext_info_t proto_ext_info [] = {
 static const char * const pp_instance_state_to_name[] = {
 	/* from ppsi/include/ppsi/ieee1588_types.h, enum pp_std_states */
 	/* PPS_END_OF_TABLE = 0 */
-	[PPS_END_OF_TABLE] =      "EOT       ",
-	[PPS_INITIALIZING] =      "INITING   ",
-	[PPS_FAULTY] =            "FAULTY    ",
-	[PPS_DISABLED] =          "DISABLED  ",
-	[PPS_LISTENING] =         "LISTENING ",
-	[PPS_PRE_MASTER] =        "PRE_MASTER",
-	[PPS_MASTER] =            "MASTER    ",
-	[PPS_PASSIVE] =           "PASSIVE   ",
-	[PPS_UNCALIBRATED] =      "UNCALIBRAT",
-	[PPS_SLAVE] =             "SLAVE     ",
+	[PPS_END_OF_TABLE] =      "EOT      ",
+	[PPS_INITIALIZING] =      "INITING  ",
+	[PPS_FAULTY] =            "FAULTY   ",
+	[PPS_DISABLED] =          "DISABLED ",
+	[PPS_LISTENING] =         "LISTENING",
+	[PPS_PRE_MASTER] =        "PREMASTER",
+	[PPS_MASTER] =            "MASTER   ",
+	[PPS_PASSIVE] =           "PASSIVE  ",
+	[PPS_UNCALIBRATED] =      "UNCALIBR ",
+	[PPS_SLAVE] =             "SLAVE    ",
 	NULL
 	};
 
-#define EMPTY_EXTENSION_STATE_NAME "          "
+#define EMPTY_EXTENSION_STATE_NAME      "          "
 
 #if CONFIG_HAS_EXT_L1SYNC
 static const char * const l1e_instance_extension_state[]={
@@ -112,7 +112,7 @@ static const char * const l1e_instance_extension_state[]={
 		[L1SYNC_IDLE        ] = "IDLE      ",
 		[L1SYNC_LINK_ALIVE  ] = "LINK ALIVE",
 		[L1SYNC_CONFIG_MATCH] = "CFG MATCH ",
-		[L1SYNC_UP          ] = "UP        ",
+		[L1SYNC_UP          ] = "L1 SYNC UP",
 		NULL
 };
 #define L1S_INSTANCE_EXTENSION_STATE_MAX (sizeof (l1e_instance_extension_state)/sizeof(char *))
@@ -152,22 +152,6 @@ static const char * const prot_detection_state_name[]={
 		"EXT_OFF" /* Protocol not detected */
 };
 
-static const struct desired_state_t{
-	const char *str_state;
-	int state;
-} desired_states[] = {
-	{ "initializing", PPS_INITIALIZING},
-	{ "faulty",       PPS_FAULTY},
-	{ "disabled",     PPS_DISABLED},
-	{ "listening",    PPS_LISTENING},
-	{ "pre-master",   PPS_PRE_MASTER},
-	{ "master",       PPS_MASTER},
-	{ "passive",      PPS_PASSIVE},
-	{ "uncalibrated", PPS_UNCALIBRATED},
-	{ "slave",        PPS_SLAVE},
-	{}
-};
-
 static inline char * timeToString_ps_as_ns(struct pp_time *time, char *buf)
 {
 	if (!is_incorrect(time)) {
@@ -197,7 +181,7 @@ static inline int extensionStateColor(struct pp_instance *ppi)
 static const char *getStateAsString(const char * const p[], int index)
 {
 	int i, len;
-	static const char errMsg[] = "?????????????????????";
+	static const char errMsg[] = "???????????";
 
 	len = strlen(p[0]);
 	for (i = 0; ; i++) {
@@ -239,7 +223,7 @@ static void print_main_description(void)
 	int i;
 	int ndevs;
 
-	pcprintf(1, 1, C_BLUE, "%s WR PTP Core Sync Monitor %s",
+	pcprintf(1, 1, C_BLUE, "%s WRPC Monitor %s",
 		 wrc_global_link.wrc_hw_name, build_id.commit_id);
 	cprintf(C_MAGENTA, "\nEsc or q = exit; r = redraw GUI");
 
@@ -250,48 +234,39 @@ static void print_main_description(void)
 	ndevs = netif_get_device_count();
 
 	/*show_ports */
-	cprintf(C_CYAN, "------+-------------------+-------------------------+---------+---------+-----\n");
-	pp_printf(      "Iface |        MAC        |       IP (source)       |    RX   |    TX   | VLAN\n");
-	pp_printf(      "------+-------------------+-------------------------+---------+---------+-----\n");
+	cprintf(C_CYAN, "-----+-------------------+-------------------------+---------+---------+-----\n");
+	pp_printf(      " Itf |        MAC        |       IP (source)       |    RX   |    TX   | VLAN\n");
+	pp_printf(      "-----+-------------------+-------------------------+---------+---------+-----\n");
 
 	for (i = 0 ; i < ndevs; i++) {
 		/* reuse the string above, strings between "|" will be overwritten anyway */
-		pp_printf("Iface |        MAC        |       IP (source)       |    RX   |    TX   | VLAN\n");
+		pp_printf("Itf  |        MAC        |       IP (source)       |    RX   |    TX   | VLAN\n");
 	}
 
-	pp_printf("\n----- HAL ---|---------------- PPSI -------------------------------------------------\n");
-	pp_printf(  " Iface| Freq |    Config    | MAC of peer port  |    PTP/EXT/PDETECT States    | Pro \n");
-	pp_printf(  "------+------+--------------+-------------------+------------------------------+-----\n");
+	pp_printf("\n---- HAL --|------------- PPSI ------------------------------------------------\n");
+	pp_printf(  " Itf | Frq |  Config   | MAC of peer port  |    PTP/EXT/PDETECT States   | Pro \n");
+	pp_printf(  "-----+-----+-----------+-------------------+-----------------------------+-----\n");
 	for (i = 0 ; i < ndevs; i++) {
 		/* reuse the string above, strings between "|" will be overwritten anyway */
-		pp_printf(" Iface| Freq |    Config    | MAC of peer port  |    PTP/EXT/PDETECT States    | Pro \n");
+		pp_printf(" Itf | Frq |  Config   | MAC of peer port  |    PTP/EXT/PDETECT States   | Pro \n");
 	}
 
-	cprintf(C_BLUE, "Pro - Protocol mapping: V-Ethernet over "
-			"VLAN; U-UDP; R-Ethernet\n");
-	
+	cprintf(C_BLUE, "Pro(tocol): R-RawEth, V-VLAN, U-UDP\n");
+
 	cprintf(C_CYAN, "\n--------------------------- Synchronization status ----------------------------");
 }
 
-static void print_main_data(void)
+static void print_time_pll(void)
 {
-	struct wrc_port_state state;
-	int tx, rx, rx_err;
 	int leap_sec, tmp;
 	uint64_t sec;
 	uint32_t nsec;
-	char buf[20];
-	uint8_t mac[ETH_ALEN];
-	int ndevs;
-	int i;
 
-	const char *pll_locking_state_name;
 	shw_pps_gen_get_time(&sec, &nsec);
 
 	/* TAI Time */
 	pcprintf(4, 11, C_WHITE, "%s", format_time(sec, TIME_FORMAT_SORTED));
 
-	
 	/* UTC offset */
 	wrc_ptp_get_leapsec(&leap_sec , &tmp /* dummy */);
 	pprintf(4, 44, "%d", leap_sec);
@@ -300,13 +275,159 @@ static void print_main_data(void)
 	pprintf(5, 11, getStateAsString(timing_mode_state, WRPC_ARCH_G(ppg)->timingMode));
 
 	/* PLL locking state */
-	if (spll_check_lock(0))
-		pll_locking_state_name = "Locked ";
-	else {
-		pll_locking_state_name = "Locking";
-	}
-	pprintf(5, 44, "%s", pll_locking_state_name);
+	pprintf(5, 44, "Lock%s", spll_check_lock(0) ? "ed " : "ing");
+}
 
+static void print_port(unsigned i)
+{
+	struct wrc_netif_device *ndev = netif_get_device(i);
+	int port_up = ndev->link_state == NETIF_LINK_UP;
+	int tx, rx, rx_err;
+	char buf[20];
+	uint8_t mac[ETH_ALEN];
+
+	if (port_up) {
+		pcprintf(9, 1, C_GREEN, " %s", ndev->name);
+	} else {
+		pcprintf(9, 1, C_RED, "*%s", ndev->name);
+	}
+
+	if (i != 0) /* FIXME: should be independent for each interface */
+		return;
+
+	ep_get_mac_addr(&wrc_endpoint_dev, mac);
+	format_mac(buf, mac);
+	pcprintf(9, 8, C_MAGENTA, "%s", buf);
+	if (HAS_IP && port_up) {
+		uint8_t ip[INET_ALEN];
+
+		getIP(ip);
+		format_ip(buf, ip);
+		switch (ip_status) {
+		case IP_TRAINING:
+			pcprintf(9, 28, C_RED,   "BOOTP running          ");
+			break;
+		case IP_OK_BOOTP:
+			pcprintf(9, 28, C_GREEN, "%16s(BOOTP)", buf);
+			break;
+		case IP_OK_STATIC:
+			pcprintf(9, 28, C_GREEN, "%15s(static)", buf);
+			break;
+		}
+	} else
+		pcprintf(9, 28, C_GREEN, "                       ");
+
+	minic_get_stats(&tx, &rx, &rx_err);
+	pcprintf(9, 54, C_MAGENTA, "%7d", rx);
+	pprintf(9, 64, "%7d", tx);
+	pprintf(9, 74, "%4d", wrc_vlan_number);
+}
+
+static void print_state(unsigned i)
+{
+	struct wrc_netif_device *ndev = netif_get_device(i);
+	int port_up = ndev->link_state == NETIF_LINK_UP;
+	struct wrc_port_state state;
+	int color;
+
+	if (port_up) {
+		pcprintf(14, 1, C_GREEN, " %s", ndev->name);
+	} else {
+		pcprintf(14, 1, C_RED,   "*%s", ndev->name);
+	}
+
+	/* FIXME: should be independent for each interface */
+	wrpc_get_port_state(&state);
+
+	pcprintf(14, 8, C_GREEN, state.locked ? "Lck" : "   ");
+
+/* ----------------------------------------------------------------------------------------------------------------------- */
+	/*
+	 * Actually, what is interesting is the PTP state.
+	 * For this lookup, the port in ppsi shmem
+	 */
+	/* Assume one instance per port */
+	/* FIXME: add support of more ports */
+//		for (j = 0; j < ppg->nlinks; j++) {
+	{
+		const char* str_config;
+		/* so far support only for one instance */
+		struct pp_instance *ppi_pt = ppg->pp_instances;
+		int proto_extension = ppi_pt->protocol_extension;
+		const struct proto_ext_info_t *pe_info = IS_PROTO_EXT_INFO_AVAILABLE(proto_extension) ? &proto_ext_info[proto_extension] :  &proto_ext_info[0] ;
+		unsigned char *p = ppi_pt->activePeer;
+		const char * extension_state_name = EMPTY_EXTENSION_STATE_NAME;
+		char proto;
+		char mac_buf[20];
+
+		// Evaluate the instance configuration
+		if (is_slaveOnly(ppg->defaultDS)) {
+			str_config = "slaveOnly";
+		} else if (is_externalPortConfigurationEnabled(ppg->defaultDS)) {
+			str_config = getStateAsString(pp_instance_state_to_name, ppi_pt->externalPortConfigurationPortDS.desiredState);
+		} else if (is_masterOnly(ppi_pt->portDS)) {
+			str_config = "mastrOnly";
+		} else {
+			str_config = "auto";
+		}
+		pcprintf(14, 14, C_WHITE, "%-10s", str_config);
+
+		/* peer not implemented */
+		pprintf(14, 26, format_mac(mac_buf, p));
+
+		pcprintf(14, 46, C_GREEN, "%s/", getStateAsString(pp_instance_state_to_name, ppi_pt->state));
+		/* print extension state */
+		switch (ppi_pt->protocol_extension) {
+#if CONFIG_HAS_EXT_WR
+		case PPSI_EXT_WR :
+		{
+			portDS_t *portDS = portDS;
+			struct wr_dsport *extPortDS = portDS->ext_dsport;
+
+			extension_state_name = getStateAsString(wr_instance_extension_state, extPortDS->state);
+			break;
+		}
+#endif
+#if CONFIG_HAS_EXT_L1SYNC
+		case PPSI_EXT_L1S :
+		{
+			portDS_t *portDS = ppi_pt->portDS;
+			l1e_ext_portDS_t *extPortDS = portDS->ext_dsport;
+
+			extension_state_name = getStateAsString(l1e_instance_extension_state, extPortDS->basic.L1SyncState);
+			break;
+		}
+#endif
+		}
+		pp_printf("%s/%s", extension_state_name, getStateAsString(prot_detection_state_name, ppi_pt->pdstate));
+
+		/* proto */
+		switch (ppi_pt->proto) {
+		case PPSI_PROTO_RAW:
+			proto = 'R';
+			break;
+		case PPSI_PROTO_UDP:
+			proto = 'U';
+			break;
+		case PPSI_PROTO_VLAN:
+			proto = 'V';
+			break;
+		default:
+			proto = '?';
+		}
+
+		pcprintf(14, 76, C_WHITE, "%c", proto);
+		color = extensionStateColor(ppi_pt);
+		cprintf(color, "-%c", pe_info->short_ext_name);
+	}
+}
+
+static void print_main_data(void)
+{
+	int ndevs;
+	int i;
+
+	print_time_pll();
 	ndevs = netif_get_device_count();
 
 	/* show_ports
@@ -315,185 +436,16 @@ static void print_main_data(void)
 	------+-------------------+-------------------------+---------+---------+-----
 	*/
 
-	for (i = 0 ; i < ndevs; i++) {
-		struct wrc_netif_device *ndev = netif_get_device(i);
-		int port_up = ndev->link_state == NETIF_LINK_UP;
+	for (i = 0 ; i < ndevs; i++)
+		print_port(i);
 
-		if (port_up) {
-			pcprintf(9, 1, C_GREEN, " %s", ndev->name);
-		} else {
-			pcprintf(9, 1, C_RED, "*%s", ndev->name);
-		}
-
-		if (i == 0) /* FIXME: should be independent for each interface */
-		{
-			ep_get_mac_addr(&wrc_endpoint_dev, mac);
-			format_mac(buf, mac);
-			pcprintf(9, 9, C_MAGENTA, "%s", buf);
-			if (HAS_IP && port_up) {
-				uint8_t ip[INET_ALEN];
-
-				getIP(ip);
-				format_ip(buf, ip);
-				switch (ip_status) {
-				case IP_TRAINING:
-					pcprintf(9, 29, C_RED,   "BOOTP running          ");
-					break;
-				case IP_OK_BOOTP:
-					pcprintf(9, 29, C_GREEN, "%16s(BOOTP)", buf);
-					break;
-				case IP_OK_STATIC:
-					pcprintf(9, 29, C_GREEN, "%15s(static)", buf);
-					break;
-				}
-			} else
-				pcprintf(9, 29, C_GREEN, "                       ");
-
-			minic_get_stats(&tx, &rx, &rx_err);
-			pcprintf(9, 55, C_MAGENTA, "%7d", rx);
-			pprintf(9, 65, "%7d", tx);
-			pprintf(9, 75, "%4d", wrc_vlan_number);
-		}
-
-	}
-	/* 
+	/*
 	----- HAL ---|---------------- PPSI -------------------------------------------------
-	 Iface| Freq |    Config    | MAC of peer port  |    PTP/EXT/PDETECT States    | Pro 
+	 Iface| Freq |    Config    | MAC of peer port  |    PTP/EXT/PDETECT States    | Pro
 	------+------+--------------+-------------------+------------------------------+----- */
 
-	for (i = 0 ; i < ndevs; i++) {
-		struct wrc_netif_device *ndev = netif_get_device(i);
-		int port_up = ndev->link_state == NETIF_LINK_UP;
-		int color;
-
-		if (port_up) {
-			pcprintf(14, 1, C_GREEN, " %s: ", ndev->name);
-		} else {
-			pcprintf(14, 1, C_RED,   "*%s: ", ndev->name);
-		}
-
-		/* FIXME: should be independent for each interface */
-		wrpc_get_port_state(&state);
-
-		if (state.locked)
-			pcprintf(14, 9, C_GREEN, "Lock");
-		else
-			pcprintf(14, 9, C_RED,   "    ");
-
-		
-/* ----------------------------------------------------------------------------------------------------------------------- */
-		/*
-		 * Actually, what is interesting is the PTP state.
-		 * For this lookup, the port in ppsi shmem
-		 */
-		/* Assume one instance per port */
-		/* FIXME: add support of more ports */
-//		for (j = 0; j < ppg->nlinks; j++) {
-			{
-			char str_config[15];
-			/* so far support only for one instance */
-			struct pp_instance *ppi_pt = ppg->pp_instances;
-			int proto_extension = ppi_pt->protocol_extension;
-			const struct proto_ext_info_t *pe_info = IS_PROTO_EXT_INFO_AVAILABLE(proto_extension) ? &proto_ext_info[proto_extension] :  &proto_ext_info[0] ;
-			unsigned char *p = ppi_pt->activePeer;
-			const char * extension_state_name = EMPTY_EXTENSION_STATE_NAME;
-			char proto;
-			char mac_buf[20];
-
-#if 0 /* FIXME: only one instance so far */
-			if (strcmp(if_name,
-					ppi->cfg.iface_name)) {
-				/* Instance not for this interface
-				    * skip */
-				continue;
-			}
-#endif
-			// Evaluate the instance configuration
-			strcpy(str_config,"unknown");
-			if (is_slaveOnly(ppg->defaultDS)) {
-				strncpy(str_config, "slaveOnly", sizeof(str_config) - 1);
-			} else {
-				if (is_externalPortConfigurationEnabled(ppg->defaultDS)) {
-					int s = 0;
-					for (s = 0; s < sizeof(desired_states) / sizeof(struct desired_state_t); s++) {
-						if (desired_states[s].state == ppi_pt->externalPortConfigurationPortDS.desiredState) {
-							strncpy(str_config, desired_states[s].str_state, sizeof(str_config) - 1);
-							break;
-						}
-					}
-
-				} else {
-					if (is_masterOnly(ppi_pt->portDS)) {
-						strncpy(str_config, "masterOnly", sizeof(str_config) - 1);
-					} else {
-						strncpy(str_config, "auto", sizeof(str_config) - 1);
-					}
-				}
-			}
-			str_config[sizeof(str_config) - 1] = 0; // Force the string to be well terminated
-			pcprintf(14, 16, C_WHITE, "%-12s", str_config);
-
-			/* peer not implemented */
-			pprintf(14, 31, format_mac(mac_buf, p));
-
-			pcprintf(14, 51, C_GREEN, "%s/", getStateAsString(pp_instance_state_to_name, ppi_pt->state));
-			/* print extension state */
-			switch (ppi_pt->protocol_extension) {
-#if CONFIG_HAS_EXT_WR
-			case PPSI_EXT_WR :
-			{
-				portDS_t *portDS = ppi_pt->portDS;
-				struct wr_dsport *extPortDS;
-
-				extension_state_name = getStateAsString(wr_instance_extension_state, - 1); // Default value
-
-				if (portDS) {
-					if ((extPortDS = portDS->ext_dsport))
-						extension_state_name = getStateAsString(wr_instance_extension_state, extPortDS->state);
-				}
-				break;
-			}
-#endif
-#if CONFIG_HAS_EXT_L1SYNC
-			case PPSI_EXT_L1S :
-			{
-				portDS_t *portDS = ppi_pt->portDS;
-				l1e_ext_portDS_t *extPortDS;
-
-				extension_state_name = getStateAsString(l1e_instance_extension_state, - 1); // Default value
-				if (portDS) {
-					if ((extPortDS = portDS->ext_dsport))
-							extension_state_name = getStateAsString(l1e_instance_extension_state, extPortDS->basic.L1SyncState);
-				}
-				break;
-			}
-#endif
-			}
-			pp_printf("%s/%s", extension_state_name, getStateAsString(prot_detection_state_name, ppi_pt->pdstate));
-
-			/* proto */
-			switch (ppi_pt->proto) {
-			case PPSI_PROTO_RAW:
-				proto = 'R';
-				break;
-			case PPSI_PROTO_UDP:
-				proto = 'U';
-				break;
-			case PPSI_PROTO_VLAN:
-				proto = 'V';
-				break;
-			default:
-				proto = '?';
-			}
-
-			pcprintf(14, 82, C_WHITE, "%c", proto);
-			color = extensionStateColor(ppi_pt);
-			cprintf(color, "-%c", pe_info->short_ext_name);
-		}
-/* ----------------------------------------------------------------------------------------------------------------------- */
-	}
-
-	return;
+	for (i = 0 ; i < ndevs; i++)
+		print_state(i);
 }
 
 static void print_aux_data(void)
@@ -589,7 +541,7 @@ static void print_servo_data(struct pp_instance *ppi)
 
 	/* should print WR servio description */
 	gui_description |= wrh_servo ? DESCRIPTION_WR_SERVO : 0;
-	
+
 	/* Avoid printing new data if change in description is expected.
 	 * This avoids extra redraw of data values */
 	if(prev_gui_description
@@ -610,14 +562,14 @@ static void print_servo_data(struct pp_instance *ppi)
 		cprintf(C_RED, "Tracking forcibly disabled\n");
 	else
 		pp_printf("\e[K"); /* clear till the end of a line */
-		
+
 
 	/* +- Timing parameters --------------------------------------------------------- */
 
 	pcprintf(21, 20, C_WHITE, "%19s nsec", interval_to_string(ppg->currentDS->meanDelay));
 
 	/*delayMS */
-	pcprintf(22, 20, C_WHITE,"%24s", optimized_pp_time_toString_ps_as_ns(&ppi->servo->delayMS, buf));	
+	pcprintf(22, 20, C_WHITE,"%24s", optimized_pp_time_toString_ps_as_ns(&ppi->servo->delayMS, buf));
 	{
 		struct pp_time *delayMM = &ppi->servo->delayMM;
 #if CONFIG_HAS_EXT_WR
