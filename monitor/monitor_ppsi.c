@@ -457,7 +457,7 @@ static void print_main_data(void)
 #if CONFIG_HAS_EXT_L1SYNC
 			case PPSI_EXT_L1S :
 			{
-				portDS_t *portDS;
+				portDS_t *portDS = ppi_pt->portDS;
 				l1e_ext_portDS_t *extPortDS;
 
 				extension_state_name = getStateAsString(l1e_instance_extension_state, - 1); // Default value
