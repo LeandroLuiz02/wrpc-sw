@@ -37,7 +37,7 @@ struct wrc_shell_cmd {
 
 int shell_exec(const char *buf);
 int shell_interactive(void);
-extern int shell_is_interacting;
+extern unsigned char shell_is_interacting;
 
 void shell_boot_script(void);
 void shell_show_build_init(void);

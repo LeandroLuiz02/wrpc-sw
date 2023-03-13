@@ -36,7 +36,7 @@
 #define SH_EXEC 2
 #define SH_EXEC_UI 3
 
-#define ESCAPE_FLAG 0x10000
+#define ESCAPE_FLAG 0x100
 
 #define KEY_LEFT (ESCAPE_FLAG | 68)
 #define KEY_RIGHT (ESCAPE_FLAG | 67)
@@ -96,13 +96,13 @@
 
 static char cmd_buf[SH_MAX_LINE_LEN + 1];
 static int cmd_pos = 0, cmd_len = 0;
-static int state = SH_PROMPT;
-static int current_key = 0;
+static unsigned char state = SH_PROMPT;
+static uint16_t current_key = 0;
 
 static const struct wrc_shell_cmd *cmds[ SHELL_MAX_COMMANDS ];
 static int n_cmds = 0;
 
-int shell_is_interacting;
+unsigned char shell_is_interacting;
 int (*shell_ui_callback)(void);
 
 static int insert(char c)

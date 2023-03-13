@@ -79,7 +79,7 @@ void ipv4_init(void)
 	syslog_init();
 }
 
-static int bootp_retry = 0;
+static uint16_t bootp_retry = 0;
 static uint32_t bootp_tics;
 
 /* receive bootp through the UDP mechanism */
