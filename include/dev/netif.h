@@ -22,8 +22,6 @@ struct wrc_netif_device
     const char* name;
     struct wr_endpoint_device* ep;
     int link_state;
-    int rx_packets;
-    int tx_packets;
 };
 
 struct wr_endpoint_device* netif_get_default_endpoint(void);

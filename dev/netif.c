@@ -40,8 +40,6 @@ int netif_register_device(const char *name, struct wr_endpoint_device* ep)
 
     ndev->name = name;
     ndev->ep = ep;
-    ndev->rx_packets = 0;
-    ndev->tx_packets = 0;
     ndev->link_state = NETIF_LINK_DOWN;
 
     dev_dbg("Registered network interface %s @ %p\n", ndev->name, ndev->ep->base );
