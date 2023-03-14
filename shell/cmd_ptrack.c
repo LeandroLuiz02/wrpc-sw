@@ -13,7 +13,7 @@
 #include "shell.h"
 #ifdef CONFIG_WRPC_PPSI
 #  include <ppsi/ppsi.h>
-#  include "wr-api.h"
+#  include "proto-ext-whiterabbit/wr-api.h"
 #else
 #  include "ptpd.h"
 #endif
