@@ -9,7 +9,7 @@
 
 #include <string.h>
 #include "ipv4.h"
-#include "ptpd_netif.h"
+#include "net.h"
 
 void fill_udp(uint8_t * buf, int len, struct wr_udp_addr *uaddr)
 {
@@ -69,9 +69,8 @@ void fill_udp(uint8_t * buf, int len, struct wr_udp_addr *uaddr)
 	memcpy(buf + IP_SOURCE, &uaddr->saddr, 4);
 	memcpy(buf + IP_DEST, &uaddr->daddr, 4);
 
-	sum =
-	    ipv4_checksum((unsigned short *)(buf + IP_VERSION),
-			  (IP_END - IP_VERSION) / 2);
+	sum = ipv4_checksum((unsigned short *)(buf + IP_VERSION),
+			    (IP_END - IP_VERSION) / 2);
 	buf[IP_CHECKSUM + 0] = sum >> 8;
 	buf[IP_CHECKSUM + 1] = sum & 0xff;
 

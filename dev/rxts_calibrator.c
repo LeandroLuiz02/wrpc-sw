@@ -15,7 +15,7 @@
 #include "softpll_ng.h"
 #include "wrc_ptp.h"
 #include "storage.h"
-#include "ptpd_netif.h"
+#include "net.h"
 
 #include "dev/syscon.h"
 #include "dev/endpoint.h"

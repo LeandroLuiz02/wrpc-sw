@@ -8,7 +8,7 @@
  */
 #include <wrc.h>
 #include <wrpc.h>
-#include <ptpd_netif.h>
+#include <net.h>
 #include <shell.h>
 #include "ipv4.h"
 #include <dev/endpoint.h> /* get_mac_addr() */

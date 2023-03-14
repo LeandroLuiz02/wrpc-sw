@@ -7,7 +7,7 @@
 #define IPV4_H
 
 #include <inttypes.h>
-#include "ptpd_netif.h" /* for sockaddr in prototype */
+#include "net.h" /* for sockaddr in prototype */
 
 #undef IP_TOS /* These two are defined by arpa/inet.h, and will conflict */
 #undef IP_TTL /* when we build for the host */

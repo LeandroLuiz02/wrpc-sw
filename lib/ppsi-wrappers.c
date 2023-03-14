@@ -15,7 +15,7 @@
 #include <dev/syscon.h>
 #include <dev/endpoint.h>
 #include <softpll_ng.h>
-#include <ptpd_netif.h>
+#include "net.h"
 
 #include <sfp.h>
 

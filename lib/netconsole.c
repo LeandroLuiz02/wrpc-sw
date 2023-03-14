@@ -12,7 +12,7 @@
 #include "wrc_global.h"
 
 #include "ipv4.h"
-#include "ptpd_netif.h"
+#include "net.h"
 #include "shell.h"
 #include "netconsole.h"
 

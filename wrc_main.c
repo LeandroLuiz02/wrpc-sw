@@ -22,7 +22,7 @@
 #include <dev/gpio.h>
 #include <dev/simple_uart.h>
 #include <dev/netif.h>
-#include <ptpd_netif.h>
+#include "net.h"
 #include <dev/i2c.h>
 #include <storage.h>
 #include <softpll_ng.h>

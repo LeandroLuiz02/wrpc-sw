@@ -9,7 +9,7 @@
 #include <string.h>
 
 #include "ipv4.h"
-#include "ptpd_netif.h"
+#include "net.h"
 
 #define IP_VERSION	0
 #define IP_TOS		(IP_VERSION+1)

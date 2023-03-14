@@ -16,7 +16,7 @@
 #include <wrpc.h>
 #include "wrc.h"
 #include "wrc_global.h"
-#include "ptpd_netif.h"
+#include "net.h"
 
 #include "board.h"
 #include "dev/pps_gen.h"

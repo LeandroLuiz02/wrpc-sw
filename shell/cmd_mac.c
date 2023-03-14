@@ -13,7 +13,7 @@
 
 #include "shell.h"
 #include "storage.h"
-#include "ptpd_netif.h"
+#include "net.h"
 #include "dev/endpoint.h"
 #include "ppsi/lib.h"
 

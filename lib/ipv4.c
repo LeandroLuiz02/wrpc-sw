@@ -11,7 +11,7 @@
 
 #include "dev/endpoint.h"
 #include "ipv4.h"
-#include "ptpd_netif.h"
+#include "net.h"
 #include "dev/pps_gen.h"
 #include "dev/netif.h"
 #include "hw/etherbone-config.h"

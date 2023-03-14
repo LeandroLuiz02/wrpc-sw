@@ -11,7 +11,7 @@
 #include <net/if_arp.h>
 #include "include/types.h" /* with "types.h" I might get the standard one... */
 #include "dev/endpoint.h"
-#include "ptpd_netif.h"
+#include "net.h"
 #include "dev/minic.h"
 #include "hw/pps_gen_regs.h"
 

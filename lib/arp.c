@@ -12,7 +12,7 @@
 #include "endianness.h"
 #include "dev/endpoint.h"
 #include "ipv4.h"
-#include "ptpd_netif.h"
+#include "net.h"
 #include "wrc_global.h"
 
 static DECLARE_WRPC_SOCKET(arp_socket, 128);

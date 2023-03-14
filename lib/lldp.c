@@ -18,7 +18,7 @@
 #include "endianness.h"
 #include "wrc.h"
 #include "revision.h"
-#include "ptpd_netif.h"
+#include "net.h"
 #include "lldp.h"
 #include "dev/endpoint.h"
 #include "ipv4.h"
