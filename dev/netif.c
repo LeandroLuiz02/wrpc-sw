@@ -19,7 +19,7 @@
     #define WRC_NETIF_MAX_DEVICES 2
 #endif
 
-static int netif_n_count = 0;
+static unsigned char netif_n_count = 0;
 static struct wrc_netif_device netif_devs[WRC_NETIF_MAX_DEVICES];
 
 struct wr_endpoint_device* netif_get_default_endpoint(void)

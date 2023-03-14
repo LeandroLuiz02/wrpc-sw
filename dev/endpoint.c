@@ -45,23 +45,6 @@ void ep_pcs_write(struct wr_endpoint_device *dev, int location, int value)
 	while (( ep_read(dev, EP_REG_MDIO_ASR) & EP_MDIO_ASR_READY) == 0) ;
 }
 
-
-void ep_get_mac_addr(struct wr_endpoint_device *dev, uint8_t *dev_addr)
-{
-	uint32_t macl = ep_read(dev, EP_REG_MACL);
-	uint32_t mach = ep_read(dev, EP_REG_MACH);
-	dev_addr[5] = (macl & 0x000000ff);
-	dev_addr[4] = (macl & 0x0000ff00) >> 8;
-	dev_addr[3] = (macl & 0x00ff0000) >> 16;
-	dev_addr[2] = (macl & 0xff000000) >> 24;
-	dev_addr[1] = (mach & 0x000000ff);
-	dev_addr[0] = (mach & 0x0000ff00) >> 8;
-
-	/* save the MAC addr for wrpc-dump */
-	memcpy(wrc_global_link.mac_addr, dev_addr, ETH_ALEN);
-}
-
-
 void ep_set_mac_addr(struct wr_endpoint_device* dev, uint8_t *addr)
 {
 	char buf[20] __attribute__((unused));

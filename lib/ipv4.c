@@ -89,8 +89,7 @@ static int bootp_poll(void)
 	uint8_t buf[400];
 	int len, ret = 0;
 
-	len = ptpd_netif_recvfrom(bootp_socket, &addr,
-				  buf, sizeof(buf), NULL);
+	len = ptpd_netif_recvfrom(bootp_socket, &addr, buf, sizeof(buf), NULL);
 
 	if (ip_status != IP_TRAINING)
 		return 0;
@@ -116,8 +115,7 @@ static int icmp_poll(void)
 	uint8_t buf[128];
 	int len;
 
-	len = ptpd_netif_recvfrom(icmp_socket, &addr,
-				  buf, sizeof(buf), NULL);
+	len = ptpd_netif_recvfrom(icmp_socket, &addr, buf, sizeof(buf), NULL);
 	if (len <= 0)
 		return 0;
 	if (ip_status == IP_TRAINING)
@@ -140,8 +138,7 @@ static int rdate_poll(void)
 	uint8_t buf[32];
 	int len;
 
-	len = ptpd_netif_recvfrom(rdate_socket, &addr,
-				  buf, sizeof(buf), NULL);
+	len = ptpd_netif_recvfrom(rdate_socket, &addr, buf, sizeof(buf), NULL);
 	if (len <= 0)
 		return 0;
 

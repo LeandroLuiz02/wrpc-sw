@@ -27,12 +27,14 @@
 
 static struct wrpc_socket *socks[NET_MAX_SOCKETS];
 
-//#define net_verbose pp_printf
-int ptpd_netif_get_hw_addr(struct wrpc_socket *sock, mac_addr_t *mac)
+void copy_eth_addr(mac_addr_t dest, const mac_addr_t src)
 {
-	ep_get_mac_addr(&wrc_endpoint_dev, (uint8_t *) mac);
+	memcpy (dest, src, ETH_ALEN);
+}
 
-	return 0;
+void ptpd_netif_get_hw_addr(struct wrpc_socket *sock, mac_addr_t mac)
+{
+	copy_eth_addr (mac, wrc_endpoint_dev.mac_addr);
 }
 
 void ptpd_netif_set_phase_transition(uint32_t phase)
@@ -80,7 +82,7 @@ struct wrpc_socket *ptpd_netif_create_socket(struct wrpc_socket *sock,
 		    udpport, i);
 
 	/*get mac from endpoint */
-	ep_get_mac_addr(&wrc_endpoint_dev, sock->local_mac);
+	copy_eth_addr (sock->local_mac, wrc_endpoint_dev.mac_addr);
 
 	wrpc_get_port_state(&pstate);
 	sock->phase_transition = pstate.t2_phase_transition;

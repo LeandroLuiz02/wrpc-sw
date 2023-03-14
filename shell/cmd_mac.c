@@ -13,6 +13,7 @@
 
 #include "shell.h"
 #include "storage.h"
+#include "ptpd_netif.h"
 #include "dev/endpoint.h"
 #include "ppsi/lib.h"
 
@@ -25,7 +26,7 @@ static int cmd_mac(const char *args[])
 
 	if (!args[0] || !strcasecmp(args[0], "get")) {
 		/* get current MAC */
-		ep_get_mac_addr(&wrc_endpoint_dev, mac);
+		copy_eth_addr(mac, wrc_endpoint_dev.mac_addr);
 	} else if (!strcasecmp(args[0], "getp")) {
 		/* get persistent MAC */
 		decode_port(args[1], &port);

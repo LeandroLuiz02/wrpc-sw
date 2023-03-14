@@ -47,12 +47,11 @@ static void fill_mac(uint8_t *tlv, int type)
 {
 	*tlv = type;
 	/* write MAC after subtype byte */
-	ep_get_mac_addr(&wrc_endpoint_dev, tlv + LLDP_SUBTYPE);
+	copy_eth_addr(tlv + LLDP_SUBTYPE, wrc_endpoint_dev.mac_addr);
 }
 
-static void lldp_add_tlv(int tlv_type) {
-
-	uint8_t mac[6];
+static void lldp_add_tlv(int tlv_type)
+{
 	unsigned char ipWR[4];
 	int tlv_len = 0;
 
@@ -119,8 +118,7 @@ static void lldp_add_tlv(int tlv_type) {
 			       (char *)buf);
 		} else {
 			/* NOTE: no subtype */
-			ep_get_mac_addr(&wrc_endpoint_dev, mac);
-			format_mac(buf, mac);
+			format_mac(buf, wrc_endpoint_dev.mac_addr);
 			tlv_len = 17;
 			strncpy((char *)(lldpdu + lldpdu_len + LLDP_HEADER),
 			       (char *)buf, tlv_len);
@@ -265,7 +263,7 @@ int lldp_poll(void)
 	static uint32_t lldp_next_run_ticks;
 	uint8_t new_ipWR[4];
 	static uint8_t old_ipWR[4];
-	uint8_t new_mac[ETH_ALEN];
+	const uint8_t *new_mac;
 	static uint8_t old_mac[ETH_ALEN];
 	static uint16_t old_vlan;
 
@@ -278,7 +276,7 @@ int lldp_poll(void)
 		return 0;
 	}
 
-	ep_get_mac_addr(&wrc_endpoint_dev, new_mac);
+	new_mac = wrc_endpoint_dev.mac_addr;
 	if (HAS_IP) {
 		getIP(new_ipWR);
 	}
@@ -287,12 +285,11 @@ int lldp_poll(void)
 	if (memcmp(new_mac, old_mac, ETH_ALEN)
 	    || (old_vlan != wrc_vlan_number)
 	    || (HAS_IP && (ip_status != IP_TRAINING)
-		&& memcmp(new_ipWR, old_ipWR, IPLEN))
-	    ) {
+		&& memcmp(new_ipWR, old_ipWR, IPLEN))) {
 		/* update LLDP info */
 		lldp_update();
 		/* copy new MAC nad IP */
-		memcpy(old_mac, new_mac, ETH_ALEN);
+		copy_eth_addr(old_mac, new_mac);
 		memcpy(old_ipWR, new_ipWR, IPLEN);
 		old_vlan = wrc_vlan_number;
 	}

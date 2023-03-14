@@ -49,11 +49,11 @@
 
 static struct i2c_bus i2c_mac_bus[2];
 static struct m24aa025_device i2c_mac_dev[2];
-static uint8_t board_mac_addr[6];
 
-int wrc_board_early_init()
+int wrc_board_early_init(void)
 {
-    static int32_t flash_entry_points[64];
+    int32_t flash_entry_points[64];
+    uint8_t board_mac_addr[6];
     int i;
 
     /* initialize SPI flash */
@@ -69,10 +69,6 @@ int wrc_board_early_init()
     bb_i2c_init( &i2c_mac_bus[0] );
 
     m24aa025_init( &i2c_mac_dev[0], &i2c_mac_bus[0], 0x50 );
-
-    /* FIXME: for some reason, ep_get_mac_addr does not retrieve
-     * the herein stored value. This addresses this quirk
-     */
 
     uint8_t *mac = board_mac_addr;
     m24aa025_read_mac( &i2c_mac_dev[0], mac );
@@ -96,7 +92,7 @@ int wrc_board_early_init()
     /* reset the networking part of the WRCore and start the WR Endpoint */
     net_rst();
 
-    ep_init( &wrc_endpoint_dev, (void *) BASE_EP );
+    ep_init(&wrc_endpoint_dev, (void *) BASE_EP);
     ep_set_mac_addr( &wrc_endpoint_dev, board_mac_addr );
     netif_register_device( "wru0", &wrc_endpoint_dev );
 

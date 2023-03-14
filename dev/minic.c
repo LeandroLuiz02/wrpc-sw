@@ -59,7 +59,7 @@ static inline void minic_txword(int type, uint16_t word)
 			MINIC_TX_FIFO_TYPE_W(type) | MINIC_TX_FIFO_DAT_W(word));
 }
 
-void minic_init()
+void minic_init(void)
 {
 	uint32_t mcr;
 

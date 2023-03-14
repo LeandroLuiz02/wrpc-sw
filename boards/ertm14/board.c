@@ -1137,7 +1137,7 @@ void get_version_info(struct ertm14_version_info *bi)
 	memcpy(&bi->ertm15_serial, &ertm15_board_info.board_serial_number,
 			     sizeof(ertm15_board_info.board_serial_number));
 	/* FIXME: no mac2? */
-	ep_get_mac_addr(&wrc_endpoint_dev, &bi->ertm14_mac1_bytes[0]);
+	copy_eth_addr(bi->ertm14_mac1_bytes, wrc_endpoint_dev.mac_addr);
 	/* FIXME: wrpc_sw_version makes no sense here */
 	strncpy(bi->wrpc_sw_commit_id, stats.commit_id, sizeof(bi->wrpc_sw_commit_id));
 	strncpy(bi->wrpc_sw_build_date, stats.build_date, sizeof(bi->wrpc_sw_build_date));
@@ -2035,9 +2035,7 @@ int ertm14_init_mac_eeprom(void)
     m24aa025_init( &board.m24_mac_ids[0], &board.i2c_mac_addr, 0x50 );
     m24aa025_init( &board.m24_mac_ids[1], &board.i2c_mac_addr, 0x51 );
 
-    /* FIXME: for some reason, ep_get_mac_addr does not retrieve
-     * the herein stored value. This addresses this quirk
-     */
+    /* Read the mac address. */
     uint8_t *mac = ertm14_mac;
     int err = m24aa025_read_mac( &board.m24_mac_ids[0], mac );
 

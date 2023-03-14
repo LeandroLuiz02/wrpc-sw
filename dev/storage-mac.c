@@ -23,18 +23,9 @@ int storage_get_persistent_mac(int portnum, uint8_t *mac)
 {
 	int ret = 0;
 
-	// fixme: we should mock entire storage in a host process, not put
-	// such compile-time ifs() in target code
-	if (IS_HOST_PROCESS) {
-		/* we don't have sdb working, so get the real eth address */
-		ep_get_mac_addr(&wrc_endpoint_dev, mac);
-		return 0;
-	}
-
 	if (sdbfs_open_id(&wrc_sdbfs, SDB_VENDOR, SDB_DEV_MAC) < 0)
 		ret =-1;
-	else
-        {
+	else {
 		ret = sdbfs_fread(&wrc_sdbfs, 0, mac, 6);
 		sdbfs_close(&wrc_sdbfs);
         }

@@ -54,7 +54,7 @@ void wrpc_get_port_state(struct wrc_port_state *port)
 	port->clock_period  = REF_CLOCK_PERIOD_PS;
 	port->t2_phase_transition = cal_phase_transition;
 	port->t4_phase_transition = cal_phase_transition;
-	ep_get_mac_addr(&wrc_endpoint_dev, port->hw_addr);
+	copy_eth_addr(port->hw_addr, wrc_endpoint_dev.mac_addr);
 }
 
 /* dummy function, no shmem locks (no even shmem) are implemented in wrpc */

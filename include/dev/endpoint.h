@@ -42,7 +42,6 @@ static inline uint32_t ep_read( struct wr_endpoint_device* dev, uint32_t addr)
 
 void ep_init(struct wr_endpoint_device* dev, void *base_addr);
 void ep_set_mac_addr(struct wr_endpoint_device* dev, uint8_t *addr);
-void ep_get_mac_addr(struct wr_endpoint_device* dev,uint8_t *addr);
 int ep_is_mac_addr_set(struct wr_endpoint_device* dev);
 int ep_enable(struct wr_endpoint_device* dev, int enabled, int autoneg);
 int ep_link_up(struct wr_endpoint_device* dev, uint16_t * lpa);

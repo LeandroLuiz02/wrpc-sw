@@ -79,6 +79,9 @@ struct wr_timestamp {
 	int correct;
 };
 
+/* Copy a mac address (wrapper around memcpy). */
+void copy_eth_addr(mac_addr_t dest, const mac_addr_t src);
+
 // Creates UDP or Ethernet RAW socket (determined by sock_type) bound
 // to bind_addr.
 struct wrpc_socket *ptpd_netif_create_socket(struct wrpc_socket *s,
@@ -103,9 +106,9 @@ int ptpd_netif_recvfrom(struct wrpc_socket *sock, struct wr_sockaddr *from, void
 			size_t data_length, struct wr_timestamp *rx_timestamp);
 
 // Closes the socket.
-int ptpd_netif_close_socket(struct wrpc_socket * sock);
+int ptpd_netif_close_socket(struct wrpc_socket *sock);
 
-int ptpd_netif_get_hw_addr(struct wrpc_socket * sock, mac_addr_t * mac);
+void ptpd_netif_get_hw_addr(struct wrpc_socket *sock, mac_addr_t mac);
 
 void ptpd_netif_linearize_rx_timestamp(struct wr_timestamp *ts,
 				       int32_t dmtd_phase,

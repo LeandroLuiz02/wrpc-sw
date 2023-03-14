@@ -100,7 +100,7 @@ int syslog_poll(void)
 {
 	char buf[256];
 	char b[32];
-	unsigned char mac[6];
+	const unsigned char *mac;
 	unsigned char ip[4];
 	static uint32_t down_tics;
 	int len = 0;
@@ -133,7 +133,7 @@ int syslog_poll(void)
 	if (!tics) {
 		/* first time ever, or new syslog server */
 		tics = now - 1;
-		ep_get_mac_addr(&wrc_endpoint_dev, mac);
+		mac = wrc_endpoint_dev.mac_addr;
 		len = syslog_header(buf, SYSLOG_DEFAULT_LEVEL, ip);
 		len += pp_sprintf(buf + len, "(%s) Node up "
 				 "since %i seconds", format_mac(b, mac),

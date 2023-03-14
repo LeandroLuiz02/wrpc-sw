@@ -75,7 +75,7 @@ static int process_arp(uint8_t * buf, int len)
 	buf[ARP_OPER + 0] = 0;
 	buf[ARP_OPER + 1] = 2;
 	// my MAC+IP
-	ep_get_mac_addr(&wrc_endpoint_dev, buf + ARP_SHA);
+	copy_eth_addr(buf + ARP_SHA, wrc_endpoint_dev.mac_addr);
 	memcpy(buf + ARP_SPA, myIP, 4);
 	// his MAC+IP
 	memcpy(buf + ARP_THA, hisMAC, 6);

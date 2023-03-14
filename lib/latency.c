@@ -89,10 +89,9 @@ static void latency_report(struct wr_timestamp *lat)
 	int i;
 
 	if (!nextj) {
-		unsigned char mac[6];
+		const unsigned char *mac[6] = wrc_endpoint_dev.mac_addr;
 
 		/* first time; pick a time in the future */
-		ep_get_mac_addr(&wrc_endpoint_dev, mac);
 		nextj = jiffies + TICS_PER_SECOND * (10 + (mac[5] % 60));
 		pp_printf("%s: first sending at %li\n", __func__, nextj);
 	}

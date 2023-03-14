@@ -41,7 +41,7 @@ int prepare_bootp(struct wr_sockaddr *addr, uint8_t * buf, int retry)
 	buf[BOOTP_HOPS] = 0;
 
 	/* A unique identifier for the request !!! FIXME */
-	ep_get_mac_addr(&wrc_endpoint_dev, buf + BOOTP_XID);
+	copy_eth_addr(buf + BOOTP_XID, wrc_endpoint_dev.mac_addr);
 	buf[BOOTP_XID + 0] ^= buf[BOOTP_XID + 4];
 	buf[BOOTP_XID + 1] ^= buf[BOOTP_XID + 5];
 	buf[BOOTP_XID + 2] ^= (retry >> 8) & 0xFF;
@@ -57,7 +57,7 @@ int prepare_bootp(struct wr_sockaddr *addr, uint8_t * buf, int retry)
 	memset(buf + BOOTP_GIADDR, 0, 4);
 
 	memset(buf + BOOTP_CHADDR, 0, 16);
-	ep_get_mac_addr(&wrc_endpoint_dev, buf + BOOTP_CHADDR);	/* own MAC address */
+	copy_eth_addr(buf + BOOTP_CHADDR, wrc_endpoint_dev.mac_addr);	/* own MAC address */
 
 	memset(buf + BOOTP_SNAME, 0, 64);	/* desired BOOTP server */
 	memset(buf + BOOTP_FILE, 0, 128);	/* desired BOOTP file */
@@ -72,17 +72,14 @@ int prepare_bootp(struct wr_sockaddr *addr, uint8_t * buf, int retry)
 	fill_udp(buf, BOOTP_END, &uaddr);
 
 	/* and fix destination before sending it */
-	memset(addr->mac, 0xFF, 6);
+	memset(addr->mac, 0xFF, ETH_ALEN);
 	// pp_printf("Sending BOOTP request...\n");
 	return BOOTP_END;
 }
 
 int process_bootp(uint8_t * buf, int len)
 {
-	uint8_t mac[6];
 	uint8_t ip[4];
-
-	ep_get_mac_addr(&wrc_endpoint_dev, mac);
 
 	if (len != BOOTP_END)
 		return 0;
@@ -90,7 +87,7 @@ int process_bootp(uint8_t * buf, int len)
 	if (buf[UDP_SPORT] != 0 || buf[UDP_SPORT + 1] != 67)
 		return 0;
 
-	if (memcmp(buf + BOOTP_CHADDR, mac, 6))
+	if (memcmp(buf + BOOTP_CHADDR, wrc_endpoint_dev.mac_addr, ETH_ALEN))
 		return 0;
 
 	ip_status = IP_OK_BOOTP;
