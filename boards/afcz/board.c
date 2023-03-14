@@ -412,7 +412,6 @@ static void pca9554_gpio_init( struct pca9554_gpio_device *dev, struct i2c_bus *
 	dev->gpio.set_dir = pca9554_gpio_set_dir;
 	dev->gpio.set_out = pca9554_gpio_out;
 }
-#endif
 
 static void wr_si57x_interface_init( struct wr_si57x_interface_device *dev, uint32_t base_addr, uint8_t i2c_addr )
 {
@@ -541,7 +540,6 @@ static void set_dmtd_dac( int value )
 
 static void set_main_dac( int value )
 {
-	//pp_printf("smaind %d\n", value );
 	spll_set_dac( 0, value );
 }
 
@@ -726,7 +724,7 @@ int wrc_board_early_init()
 	board_dbg("WR Core AFCZ port starting up\n");    
 
 
-	wr_si57x_interface_init( &board.si57x, BASE_SI57X_INTERFACE, SI57X_I2C_ADDR );
+	wr_si57x_interface_init( &board.si57x, (void *) BASE_SI57X_INTERFACE, SI57X_I2C_ADDR );
 	
 #if defined(CONFIG_TARGET_AFCZ_V1)
 	tca9548_select_channels( &board.si57x.master, 0x70, 1 << AFCZ_I2C_MUX_CHANNEL_SI570 );

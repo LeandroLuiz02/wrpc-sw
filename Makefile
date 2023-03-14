@@ -160,7 +160,7 @@ OUTPUT-$(CONFIG_TARGET_WR_SWITCH) = rt_cpu
 OUTPUT := $(OUTPUT-y)
 
 GIT_VER = $(shell git describe --always --dirty | sed  's;^wr-switch-sw-;;')
-GIT_USR = $(shell git config --get user.name)
+GIT_USR = $(shell git config --get-all user.name)
 export GIT_VER
 export GIT_USR
 
@@ -170,7 +170,7 @@ GIT_USR = $(shell whoami)@$(shell hostname)
 endif
 
 all: tools $(OUTPUT).elf $(arch-files-y)
-# all: libertm
+all: libertm
 
 .PRECIOUS: %.elf %.bin
 .PHONY: all tools clean gitmodules extest liblinux
@@ -235,7 +235,6 @@ clean: boards-clean
 		$(LDS) \
 		$(OUTPUT).bin rules-*.bin \
 		$(OUTPUT).bram $(OUTPUT).vhd $(OUTPUT).mif $(OUTPUT)_disasm.S
-	rm -f dump-info.o dump_mem_ppsi_wrpc.o
 	$(MAKE) -C $(PPSI) clean
 	$(MAKE) -C tools clean
 	$(MAKE) -C liblinux clean
@@ -248,7 +247,7 @@ distclean: clean
 	rm -f $(addprefix *,$(MAKEALL_COPY_LIST))
 	$(MAKE) -C $(PPSI) distclean
 
-%.o: %.c
+%.o:		%.c
 	${CC} $(CFLAGS) $(PTPD_CFLAGS) $(INCLUDE_DIR) $(LIB_DIR) -c $< -o $@
 
 liblinux:

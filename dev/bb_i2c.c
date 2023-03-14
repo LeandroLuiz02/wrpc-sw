@@ -7,14 +7,14 @@
  *
  * Released according to the GNU GPL, version 2 or any later version.
  */
-#include <errno.h>
-
 #include "types.h"
 #include "board.h"
 #include "dev/syscon.h"
 #include "dev/bb_i2c.h"
 #include "dev/gpio.h"
 #include "pp-printf.h"
+
+#include <errno.h>
 
 void bb_i2c_delay(uint32_t delay)
 {
@@ -101,8 +101,8 @@ void bb_i2c_get_byte(const struct i2c_bus *bus, uint8_t *data, int last)
 }
 
 void bb_i2c_create(struct i2c_bus *bus,
-		   const struct gpio_pin *pin_scl,
-		   const struct gpio_pin *pin_sda )
+		    const struct gpio_pin *pin_scl,
+		    const struct gpio_pin *pin_sda )
 {
 	bus->pin_scl = pin_scl;
 	bus->pin_sda = pin_sda;
@@ -127,13 +127,13 @@ int bb_i2c_devprobe(const struct i2c_bus *bus, uint8_t i2c_addr)
 
 void bb_i2c_scan(const struct i2c_bus *bus)
 {
-	int i;
+    int i;
 
 	pp_printf("Scan\n");
 	for (i=0; i<0x80; i++) {
-		bb_i2c_start(bus);
+    	 bb_i2c_start(bus);
 		if (!bb_i2c_put_byte(bus, i<<1))
 			pp_printf("found : %x\n", i);
-		bb_i2c_stop(bus);
-	}
+     	bb_i2c_stop(bus);
+    }
 }

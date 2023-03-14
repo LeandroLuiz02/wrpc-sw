@@ -158,6 +158,8 @@ static void wrc_initialize(void)
 	wrc_tasks_accounting_init();
 }
 
+int link_status;
+
 static int is_link_up(void)
 {
 	return link_status == NETIF_LINK_UP;
@@ -247,6 +249,8 @@ static void create_tasks(void)
 	wrc_task_create( "ptp_bmc", NULL, wrc_ptp_bmc_update);
 	wrc_task_create( "shell+gui", shell_boot_script, ui_update );
 	wrc_task_create( "spll-bh", NULL, spll_update );
+
+	wrc_task_create( "ptp-events", wrc_dispatch_ptp_events_init, wrc_dispatch_ptp_events_poll );
 
 	if (HAS_TEMP_SENSORS)
 		wrc_task_create("temperature", NULL, wrc_temp_refresh);

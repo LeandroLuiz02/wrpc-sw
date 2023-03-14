@@ -112,9 +112,9 @@ struct wrc_port_tx_setup_state
 
 struct wrc_port_rx_setup_state
 {
-    int cpos_stat[20];
-    int state;
-    int attempts;
+	int cpos_stat[20];
+	int state;
+	int attempts;
     int prev_link_up;
     timeout_t link_timeout;
     timeout_t stabilize_timeout;
@@ -173,9 +173,9 @@ static int tx_fsm_update(void)
     case TX_SETUP_STATE_RESET_PCS:
     {
         uint32_t lpc_ctrl =  MDIO_LPC_CTRL_RESET_TX | MDIO_LPC_CTRL_RESET_RX | MDIO_LPC_CTRL_DMTD_SOURCE_TXOUTCLK | MDIO_LPC_CTRL_GTX_QPLL_RESET | MDIO_LPC_CTRL_GTX_TXUSRPLL_RESET;
-
+        
         spll_enable_ptracker(0, 0);
-
+        
         // reset the QPLL
         ep_pcs_write(&wrc_endpoint_dev, MDIO_LPC_CTRL, lpc_ctrl );
         lpc_ctrl &= ~MDIO_LPC_CTRL_GTX_QPLL_RESET;
@@ -186,7 +186,7 @@ static int tx_fsm_update(void)
         int lock_cycles=0;
         while( !( ep_pcs_read(&wrc_endpoint_dev, MDIO_LPC_STAT) & MDIO_LPC_STAT_GTX_QPLL_LOCKED ) )
             lock_cycles++;
-
+        
 
 
 //        pp_printf("QPLL OK [%d]\n", lock_cycles);
@@ -251,7 +251,7 @@ static int tx_fsm_update(void)
                     fsm->tollerance = LPDC_FINE_PHASE_TOLLERANCE_PS;
 
                     phy_dbg("LPDC: Using the previous phase setpoint as the target with tollerance = %d ps\n", fsm->tollerance );
-                    //	fsm->cal_saved_phase);
+                //	fsm->cal_saved_phase);
                 } else {
                     fsm->expected_phase = (LPDC_COARSE_PHASE_MAX_PS + LPDC_COARSE_PHASE_MIN_PS) / 2;
                     fsm->tollerance = (LPDC_COARSE_PHASE_MAX_PS - LPDC_COARSE_PHASE_MIN_PS) / 2;
@@ -268,7 +268,7 @@ static int tx_fsm_update(void)
             fsm->expected_phase_valid = 1;
         }
 
-
+        
         int phase_min = fsm->expected_phase - fsm->tollerance;
         int phase_max = fsm->expected_phase + fsm->tollerance;
 
@@ -325,161 +325,162 @@ static int tx_fsm_update(void)
 
 static void rx_fsm_init(struct wrc_port_rx_setup_state* fsm)
 {
-    fsm->attempts = 0;
-    fsm->state = RX_SETUP_STATE_INIT;
+	fsm->attempts = 0;
+	fsm->state = RX_SETUP_STATE_INIT;
     fsm->prev_link_up = 0;
     memset(fsm->cpos_stat, 0, sizeof(fsm->cpos_stat ));
 }
 
 static int rx_fsm_update(void)
 {
-    struct wrc_port_rx_setup_state* fsm = &rx_state;
-    struct wrc_port_tx_setup_state* fsm_tx = &tx_state;
+	struct wrc_port_rx_setup_state* fsm = &rx_state;
+	struct wrc_port_tx_setup_state* fsm_tx = &tx_state;
 
     unsigned lpc_stat = ep_pcs_read(&wrc_endpoint_dev, MDIO_LPC_STAT);
     int rx_up =  lpc_stat & MDIO_LPC_STAT_LINK_UP;
 
-    if( fsm_tx->state != TX_SETUP_DONE )
-    {
-	fsm->state = RX_SETUP_STATE_INIT;
-	return 0;
-    }
-
-    switch( fsm->state )
-    {
-    case RX_SETUP_STATE_INIT:
-    {
-	ep_pcs_write(&wrc_endpoint_dev,  MDIO_LPC_CTRL, MDIO_LPC_CTRL_TX_ENABLE | MDIO_LPC_CTRL_DMTD_SOURCE_RXRECCLK | MDIO_LPC_CTRL_COMMA_TARGET_POS(DEFAULT_COMMA_POS) );
-
-	if (rx_up) {
-	    if ( fsm_tx->state == TX_SETUP_DONE )
-	    {
-		phy_dbg("RX calibration started.\n");
-
-		fsm->state = RX_SETUP_STATE_RESET_PCS;
-	    }
+	if( fsm_tx->state != TX_SETUP_DONE )
+	{
+		fsm->state = RX_SETUP_STATE_INIT;
+		return 0;
 	}
 
-	fsm->attempts = 0;
-
-	break;
-    }
-
-    case RX_SETUP_STATE_RESET_PCS:
-    {
-	if (rx_up)
+    	switch( fsm->state )
 	{
+		case RX_SETUP_STATE_INIT:
+		{
+	ep_pcs_write(&wrc_endpoint_dev,  MDIO_LPC_CTRL, MDIO_LPC_CTRL_TX_ENABLE | MDIO_LPC_CTRL_DMTD_SOURCE_RXRECCLK | MDIO_LPC_CTRL_COMMA_TARGET_POS(DEFAULT_COMMA_POS) );
+			
+	if (rx_up) {
+				if ( fsm_tx->state == TX_SETUP_DONE )
+				{
+					phy_dbg("RX calibration started.\n");
+	
+					fsm->state = RX_SETUP_STATE_RESET_PCS;
+				}
+			}
+
+			fsm->attempts = 0;
+
+			break;
+		}
+
+		case RX_SETUP_STATE_RESET_PCS:
+		{
+	if (rx_up)
+            {
 	    const unsigned ctrl = MDIO_LPC_CTRL_TX_ENABLE
 	      | MDIO_LPC_CTRL_DMTD_SOURCE_RXRECCLK
 	      | MDIO_LPC_CTRL_COMMA_TARGET_POS(DEFAULT_COMMA_POS);
 
-	    fsm->state = RX_SETUP_STATE_WAIT_LOCK;
+				fsm->state = RX_SETUP_STATE_WAIT_LOCK;
 
 	    ep_pcs_write(&wrc_endpoint_dev, MDIO_LPC_CTRL,
 			 MDIO_LPC_CTRL_RESET_RX | ctrl);
-	    usleep(1);
+				usleep(1);
 	    ep_pcs_write(&wrc_endpoint_dev, MDIO_LPC_CTRL, ctrl);
 
-	    usleep(10000);
-	    fsm->attempts++;
+                usleep(10000);
+				fsm->attempts++;
 
-	    tmo_init(&fsm->link_timeout, FSM_EARLY_LINK_UP_TIMEOUT_MS);
-	}
+                tmo_init(&fsm->link_timeout, FSM_EARLY_LINK_UP_TIMEOUT_MS);
+			}
 
-	break;
-    }
+			break;
+		}
 
-    case RX_SETUP_STATE_WAIT_LOCK:
-    {
+		case RX_SETUP_STATE_WAIT_LOCK:
+		{
 	int rx_aligned = lpc_stat & MDIO_LPC_STAT_LINK_ALIGNED;
 
-	if ( tmo_expired(&fsm->link_timeout) && !rx_up) {
-	    fsm->state = RX_SETUP_STATE_INIT;
-	}
-	else
-	{
-	    if ( !rx_up )
-		return 0;
+			if ( tmo_expired(&fsm->link_timeout) && !rx_up) {
+				fsm->state = RX_SETUP_STATE_INIT;
+            }
+            else 
+            {
+				if ( !rx_up )
+					return 0;
 
 //                fsm->cpos_stat[rx_comma_pos]++;
+                
+                if( rx_aligned )
+				{
+                    
+                    # if 0
+                       int i;
 
-	    if( rx_aligned )
-	    {
-
-# if 0
-		int i;
-
-		{
+                    {
 		    lpc_stat = ep_pcs_read( MDIO_LPC_STAT);
 
 		    rx_up = lpc_stat & MDIO_LPC_STAT_LINK_UP;
 		    rx_aligned = lpc_stat & MDIO_LPC_STAT_LINK_ALIGNED;
-
+            
 		    rx_comma_pos = (lpc_stat >> 7) & 0x7f;
 		    rx_comma_valid = (lpc_stat >> 7) & 0x80 ? 1 : 0;
 		    pp_printf("Lpc_Stat %x up %d algn %d cpos %d cvalid %d\n", lpc_stat, rx_up, rx_aligned, rx_comma_pos, rx_comma_valid );
-		    usleep(100000);
+          				usleep(100000);
 
+                    }
+                    usleep(100000);
+
+                    #endif
+
+     				fsm->state = RX_SETUP_VALIDATE;
+                    tmo_init( &fsm->stabilize_timeout, FSM_STABILIZE_TIMEOUT_MS );
+				} else {
+					fsm->state = RX_SETUP_STATE_RESET_PCS;
+				}
+			}
+			break;
 		}
-		usleep(100000);
 
-#endif
-
-		fsm->state = RX_SETUP_VALIDATE;
-		tmo_init( &fsm->stabilize_timeout, FSM_STABILIZE_TIMEOUT_MS );
-	    } else {
-		fsm->state = RX_SETUP_STATE_RESET_PCS;
-	    }
-	}
-	break;
-    }
-
-    case RX_SETUP_VALIDATE:
-    {
-	if( !tmo_expired( &fsm->stabilize_timeout ))
-	    return 0;
-
+		case RX_SETUP_VALIDATE:
+		{
+            if( !tmo_expired( &fsm->stabilize_timeout ))
+                return 0;
+                
 	int rx_aligned = lpc_stat & MDIO_LPC_STAT_LINK_ALIGNED;
 	int rx_comma_pos = (lpc_stat >> 7) & 0x7f;
 	int rx_comma_valid = (lpc_stat >> 7) & 0x80 ? 1 : 0;
 
-	if ( rx_up && rx_aligned && rx_comma_valid && (rx_comma_pos == DEFAULT_COMMA_POS) )
-	{
+			if ( rx_up && rx_aligned && rx_comma_valid && (rx_comma_pos == DEFAULT_COMMA_POS) )
+			{
 	    ep_pcs_write(&wrc_endpoint_dev,  MDIO_LPC_CTRL, MDIO_LPC_CTRL_RX_ENABLE | MDIO_LPC_CTRL_TX_ENABLE | MDIO_LPC_CTRL_DMTD_SOURCE_RXRECCLK | MDIO_LPC_CTRL_COMMA_TARGET_POS(DEFAULT_COMMA_POS) );
-	    ep_pcs_write(&wrc_endpoint_dev,  MDIO_REG_MCR, MDIO_MCR_SPEED1000_MASK | MDIO_MCR_FULLDPLX_MASK | MDIO_MCR_ANENABLE | MDIO_MCR_ANRESTART  );
-	    phy_dbg("RX calibration complete (after %d attempts) comma @ %d taps.\n", fsm->attempts, rx_comma_pos );
-	    spll_enable_ptracker( 0, 0 );
-	    spll_set_ptracker_average_samples( 0, PTRACKER_AVERAGE_SAMPLES );
+				ep_pcs_write(&wrc_endpoint_dev,  MDIO_REG_MCR, MDIO_MCR_SPEED1000_MASK | MDIO_MCR_FULLDPLX_MASK | MDIO_MCR_ANENABLE | MDIO_MCR_ANRESTART  );
+				phy_dbg("RX calibration complete (after %d attempts) comma @ %d taps.\n", fsm->attempts, rx_comma_pos );
+				spll_enable_ptracker( 0, 0 );
+                spll_set_ptracker_average_samples( 0, PTRACKER_AVERAGE_SAMPLES );
 
-	    fsm->state = RX_SETUP_DONE;
+       			fsm->state = RX_SETUP_DONE;
 
-	} else {
-	    phy_dbg("weird, can't stabilize link. Retrying [%d %d %d %d]\n", rx_up, rx_aligned, rx_comma_valid, rx_comma_pos );
-	    fsm->state = RX_SETUP_STATE_RESET_PCS;
-	}
+			} else {
+                phy_dbg("weird, can't stabilize link. Retrying [%d %d %d %d]\n", rx_up, rx_aligned, rx_comma_valid, rx_comma_pos );
+                fsm->state = RX_SETUP_STATE_RESET_PCS;
+            }
 
-	break;
-    }
+			break;
+		}
 
-    case RX_SETUP_DONE:
-    {
-	int link_up = ep_link_up(&wrc_endpoint_dev, NULL);
+		case RX_SETUP_DONE:
+		{
+            int link_up = ep_link_up(&wrc_endpoint_dev, NULL);
 
 	if( !rx_up /*|| ( ( fsm->prev_link_up && !link_up ) )*/ )
-	{
-	    phy_dbg("port went down, need RX recalibration.\n");
-	    fsm->state = RX_SETUP_STATE_INIT;
-	    fsm->prev_link_up = link_up;
-	    return 0;
+			{
+				phy_dbg("port went down, need RX recalibration.\n");
+				fsm->state = RX_SETUP_STATE_INIT;
+                fsm->prev_link_up = link_up;
+				return 0;
+			}
+
+            fsm->prev_link_up = link_up;
+			return 1;
+			break;
+		}
 	}
 
-	fsm->prev_link_up = link_up;
-	return 1;
-	break;
-    }
-    }
 
-    return 0;
+	return 0;
 }
 
 int phy_calibration_poll(void)
@@ -495,11 +496,11 @@ void phy_calibration_init(void)
 {
     phy_dbg("LPDC: Initializing PHY calibrator...\n");
     ep_pcs_write(&wrc_endpoint_dev, MDIO_REG_MCR, MDIO_MCR_PDOWN);	/* reset the PHY */
-    timer_delay_ms(200);
-    ep_pcs_write(&wrc_endpoint_dev, MDIO_REG_MCR, MDIO_MCR_RESET);	/* reset the PHY */
-    ep_pcs_write(&wrc_endpoint_dev, MDIO_REG_MCR, 0);	/* reset the PHY */
+	timer_delay_ms(200);
+	ep_pcs_write(&wrc_endpoint_dev, MDIO_REG_MCR, MDIO_MCR_RESET);	/* reset the PHY */
+	ep_pcs_write(&wrc_endpoint_dev, MDIO_REG_MCR, 0);	/* reset the PHY */
 
-    spll_init( SPLL_MODE_FREE_RUNNING_MASTER, 0, 0 );
+ 	spll_init( SPLL_MODE_FREE_RUNNING_MASTER, 0, 0 );
     spll_set_ptracker_average_samples( 0, 10 );
 
     tx_fsm_init(&tx_state);

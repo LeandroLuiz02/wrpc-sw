@@ -375,6 +375,10 @@ void streamers_reset_rx_stats(void);
 int mmc_link_request_state(struct ertm14_mmc_link *link);
 int mmc_link_poll_state(struct ertm14_mmc_link *link, struct ertm14_mmc_state *state, int blocking);
 
+int wrc_ptp_get_servo_state( void );
+int wrc_ptp_get_state( void );
+
+
 uint32_t bswap32(uint32_t v)
 {
     uint32_t rv = 0;
@@ -469,6 +473,8 @@ int bist_summary( struct bist_stage *bist )
 
 static int ertm_init_complete = 0;
 
+void ertm14_set_pps_out_mode(int mode);
+void ertm15_force_rf_power_measurement(void);
 static void mmc_comm_init(void);
 
 #define LTC6950_ID_VALUE 0x65
@@ -478,7 +484,7 @@ static int wait_ertm15_presence(void)
     board_dbg("Waiting for the eRTM15 to power up...\n");
 
     led_action( &board.leds.sync, LED_COLOR_1 | LED_COLOR_2, LED_BLINK );
-
+    
     timeout_t e15_powerup_timeout;
     timeout_t e15_rx_timeout;
 
@@ -508,8 +514,8 @@ static int wait_ertm15_presence(void)
 
             if( flags & ERTM_FLAGS_POWERED_ON )
             {
-                return 1;
-            }
+    return 1;
+}
         }
     }
 
@@ -612,10 +618,10 @@ static void ertm14_spll_setup(void)
     // disable 2nd stage for DOT050 and Morion OCXO
     if ( board.mode & ERTM14_MODE_WITHOUT_ERTM15 )
         gs->n_stages = 1;
-
+    
     if ( board.mode & ERTM14_MODE_OCXO_10MHZ )
         gs->n_stages = 1;
-
+        
 #if 0
     gs->n_stages = 1;
 
@@ -668,7 +674,7 @@ static int ertm14_switch_sys_clock( int use_sys_from_pll )
     return 0;
 }
 
-
+    
 static int ertm14_dds_sync_init(void)
 {
     const int n_params = 4;
@@ -686,6 +692,8 @@ static int ertm14_dds_sync_init(void)
 
     int i;
 
+    int need_overwrite = 0;
+
     // retrieve calibration delays on DDS IOUPDATE and CLKAB SYNC lines from the calibration stored in eeprom
     for( i = 0; i < n_params; i++ )
     {
@@ -699,12 +707,13 @@ static int ertm14_dds_sync_init(void)
             val = params[i].default_value_ps;
             storage_set_calibration_parameter( params[i].id, val );
             board_dbg("Sync Unit channel '%s': delay not found in calibration file, using default = %d ps\n", params[i].name, val );
+            need_overwrite = 1;
         }
         board.dds_sync_delays[ params[i].channel ] = val;
     }
 
 // Sync_in: continuous waveform, use external delay line (inside AD9910)
-
+    
     // produce a continuous sync clock for the DDSes
     fine_pulse_gen_setup_channel ( &board.dds_sync_dev, ERTM14_DDS_SYNC_LO, 1, board.dds_sync_delays[ERTM14_DDS_SYNC_LO], 0, FINE_PULSE_GEN_CONTINUOUS );
     fine_pulse_gen_setup_channel ( &board.dds_sync_dev, ERTM14_DDS_SYNC_REF, 1, board.dds_sync_delays[ERTM14_DDS_SYNC_REF], 0, FINE_PULSE_GEN_CONTINUOUS );
@@ -719,7 +728,7 @@ static int ertm14_dds_sync_init(void)
     // LTC6953 EZS_SRQ (SYNC) pulse: positive polarity, trigger on PPS, pulse width > 1ms
     fine_pulse_gen_setup_channel ( &board.dds_sync_dev, ERTM14_PLL_SYNC_CLKA, 1, board.dds_sync_delays[ERTM14_PLL_SYNC_CLKA], 1000, 0 );
     fine_pulse_gen_setup_channel ( &board.dds_sync_dev, ERTM14_PLL_SYNC_CLKB, 1, board.dds_sync_delays[ERTM14_PLL_SYNC_CLKB], 1000, 0 );
-
+    
     return 0;
 }
 
@@ -799,10 +808,10 @@ static void ertm14_dds_sync_calibrate(void)
 
     for( j=0; j<2; j++ )
     {
-        // sync_in fine delay setpoint is the
+        // sync_in fine delay setpoint is the 
         windows[j].setpoint = windows[j].best_start + ( AD9910_FINE_DELAY_STEP_PS * windows[j].best_length ) / 2;
     }
-
+    
 
     board_dbg("DDS_LO SYNC start=%d ps length=%d ps setpoint=%d ps\n",
         windows[0].best_start, windows[0].best_length, windows[0].setpoint
@@ -817,8 +826,8 @@ static void ertm14_dds_sync_calibrate(void)
     fine_pulse_gen_trigger( &board.dds_sync_dev, channel_mask, 1 );
         while ( !fine_pulse_gen_is_triggered( &board.dds_sync_dev, channel_mask ) );
 }
-
-
+    
+        
 void blink(int id)
 {
     struct gpio_pin *pin = NULL;
@@ -859,7 +868,7 @@ static int control_uart_poll(void)
 
         /*... dispatch */
         if( pkt->ptype == ERTM14_UART_PTYPE_PING )
-        {
+    {
 	    /* build funny pong packet */
 	    static const char hello[] = "i am david\n";
             tx_pkt->ptype = ERTM14_UART_PTYPE_PING;
@@ -1007,36 +1016,44 @@ static void streamers_init(void)
     streamers_set_rx_timeout( ERTM14_NCO_RESET_DEFAULT_TIMEOUT );
 }
 
+static inline void streamers_writel( uint32_t val, uint32_t reg )
+{
+    writel( val, (void*)(BASE_ERTM14_STREAMERS + reg ) ); 
+}
+
+static inline uint32_t streamers_readl( uint32_t reg )
+{
+    return readl( (void*)(BASE_ERTM14_STREAMERS + reg ) ); 
+}
+
 static void streamers_set_rx_latency( uint32_t lat )
 {
-    uint32_t ver = readl( (void*)BASE_ERTM14_STREAMERS );
-
-    board_dbg("streamers: set RX latency = %d cycles %p %p\n", lat, BASE_ERTM14_STREAMERS + offsetof( struct WR_STREAMERS_WB, RX_CFG5 ), ver );
-    writel( lat, (void*)(BASE_ERTM14_STREAMERS + offsetof( struct WR_STREAMERS_WB, RX_CFG5 )) );
-    writel( WR_STREAMERS_CFG_OR_RX_FIX_LAT, (void*)(BASE_ERTM14_STREAMERS + offsetof( struct WR_STREAMERS_WB, CFG )) );
+    board_dbg("streamers: set RX latency = %d cycles\n", lat );
+    streamers_writel( lat, offsetof( struct WR_STREAMERS_WB, RX_CFG5 ) );
+    streamers_writel( WR_STREAMERS_CFG_OR_RX_FIX_LAT, offsetof( struct WR_STREAMERS_WB, CFG ) );
 }
 
 int streamers_get_rx_latency(void)
-{
-    return readl( (void*)(BASE_ERTM14_STREAMERS + offsetof( struct WR_STREAMERS_WB, RX_CFG5 )) );
+    {
+    return streamers_readl( offsetof( struct WR_STREAMERS_WB, RX_CFG5 ) );
 }
 
 int streamers_get_rx_timeout(void)
 {
-    return readl( (void*)(BASE_ERTM14_STREAMERS + offsetof( struct WR_STREAMERS_WB, RX_CFG6 )) );
+    return streamers_readl( offsetof( struct WR_STREAMERS_WB, RX_CFG6 ) );
 }
 
 static void streamers_set_rx_timeout( uint32_t tmo )
 {
     board_dbg("streamers: set RX timeout = %d cycles\n", tmo );
-    writel( tmo, (void*)(BASE_ERTM14_STREAMERS + offsetof( struct WR_STREAMERS_WB, RX_CFG6 )) );
-    writel( WR_STREAMERS_CFG_OR_RX_FIX_LAT, (void*)(BASE_ERTM14_STREAMERS + offsetof( struct WR_STREAMERS_WB, CFG )) );
+    streamers_writel( tmo, offsetof( struct WR_STREAMERS_WB, RX_CFG6 ));
+    streamers_writel( WR_STREAMERS_CFG_OR_RX_FIX_LAT, offsetof( struct WR_STREAMERS_WB, CFG ));
 }
 
 
 void streamers_reset_rx_stats(void)
 {
-    writel( WR_STREAMERS_SSCR1_RST_STATS, (void*)(BASE_ERTM14_STREAMERS + offsetof( struct WR_STREAMERS_WB, SSCR1 )) );
+    streamers_writel( WR_STREAMERS_SSCR1_RST_STATS, offsetof( struct WR_STREAMERS_WB, SSCR1 ));
 }
 
 void ertm14_apply_config(struct ertm14_board_state *cfg,
@@ -1102,8 +1119,8 @@ void ertm14_apply_config(struct ertm14_board_state *cfg,
             if (mask->ref.out_state[i] &&
                 (cfg->ref.out_state[i] != ertm14_current_state->ref.out_state[i]))
                     ertm15_rf_distr_output_enable(&board.rf_distr, ERTM15_RF_REF, i, st_ref );
-        }
-	}
+    }
+}
 
     if( mask->streamers_latency_cycles )
         streamers_set_rx_latency( cfg->streamers_latency_cycles );
@@ -1131,7 +1148,7 @@ static void set_board_config(struct ertm14_board_state *bs)
 }
 
 void get_version_info(struct ertm14_version_info *bi)
-{
+    {
 	memcpy(&bi->ertm14_serial, &ertm14_board_info.board_serial_number,
 			     sizeof(ertm14_board_info.board_serial_number));
 	memcpy(&bi->ertm15_serial, &ertm15_board_info.board_serial_number,
@@ -1139,10 +1156,10 @@ void get_version_info(struct ertm14_version_info *bi)
 	/* FIXME: no mac2? */
 	ep_get_mac_addr(&wrc_endpoint_dev, &bi->ertm14_mac1_bytes[0]);
 	/* FIXME: wrpc_sw_version makes no sense here */
-	strncpy(bi->wrpc_sw_commit_id, stats.commit_id, sizeof(bi->wrpc_sw_commit_id));
-	strncpy(bi->wrpc_sw_build_date, stats.build_date, sizeof(bi->wrpc_sw_build_date));
-	strncpy(bi->wrpc_sw_build_time, stats.build_time, sizeof(bi->wrpc_sw_build_time));
-	strncpy(bi->wrpc_sw_build_by, stats.build_by, sizeof(bi->wrpc_sw_build_by));
+	strncpy(bi->wrpc_sw_commit_id, build_revision, sizeof(bi->wrpc_sw_commit_id));
+	strncpy(bi->wrpc_sw_build_date, build_date, sizeof(bi->wrpc_sw_build_date));
+	strncpy(bi->wrpc_sw_build_time, build_time, sizeof(bi->wrpc_sw_build_time));
+	strncpy(bi->wrpc_sw_build_by, build_by, sizeof(bi->wrpc_sw_build_by));
 
 	strncpy(bi->ertm14_firmware_version, ertm14_board_info.git_tag,
 				    sizeof(bi->ertm14_firmware_version));
@@ -1155,7 +1172,7 @@ void get_version_info(struct ertm14_version_info *bi)
         cd = 0;
 
     bi->calibration_date = cd;
-}
+    }
 
 void get_fpga_info(uint8_t *bi)
 {
@@ -1181,14 +1198,64 @@ static void get_wrc_diags(struct wrc_diags *diags)
 		word[i] = htonl(word[i]);
 }
 
+static void get_streamers_diags(struct WR_STREAMERS_WB *diags)
+{
+        memset( diags, 0, sizeof( struct WR_STREAMERS_WB ) );
+
+        streamers_writel( WR_STREAMERS_SSCR1_SNAPSHOT_STATS, offsetof( struct WR_STREAMERS_WB, SSCR1 ) );
+
+    diags->VER = htonl( streamers_readl( offsetof( struct WR_STREAMERS_WB, VER ) ) );
+    diags->SSCR1 = htonl( streamers_readl( offsetof( struct WR_STREAMERS_WB, SSCR1 ) ) );
+    diags->SSCR2 = htonl( streamers_readl( offsetof( struct WR_STREAMERS_WB, SSCR2 ) ) );
+    diags->SSCR3 = htonl( streamers_readl( offsetof( struct WR_STREAMERS_WB, SSCR3 ) ) );
+    diags->RX_STAT0 = htonl( streamers_readl( offsetof( struct WR_STREAMERS_WB, RX_STAT0 ) ) );
+    diags->RX_STAT1 = htonl( streamers_readl( offsetof( struct WR_STREAMERS_WB, RX_STAT1 ) ) );
+    diags->TX_STAT2 = htonl( streamers_readl( offsetof( struct WR_STREAMERS_WB, TX_STAT2 ) ) );
+    diags->TX_STAT3 = htonl( streamers_readl( offsetof( struct WR_STREAMERS_WB, TX_STAT3 ) ) );
+    diags->RX_STAT4 = htonl( streamers_readl( offsetof( struct WR_STREAMERS_WB, RX_STAT4 ) ) );
+    diags->RX_STAT5 = htonl( streamers_readl( offsetof( struct WR_STREAMERS_WB, RX_STAT5 ) ) );
+    diags->RX_STAT6 = htonl( streamers_readl( offsetof( struct WR_STREAMERS_WB, RX_STAT6 ) ) );
+    diags->RX_STAT7 = htonl( streamers_readl( offsetof( struct WR_STREAMERS_WB, RX_STAT7 ) ) );
+    diags->RX_STAT8 = htonl( streamers_readl( offsetof( struct WR_STREAMERS_WB, RX_STAT8 ) ) );
+    diags->RX_STAT9 = htonl( streamers_readl( offsetof( struct WR_STREAMERS_WB, RX_STAT9 ) ) );
+    diags->RX_STAT10 = htonl( streamers_readl( offsetof( struct WR_STREAMERS_WB, RX_STAT10 ) ) );
+    diags->RX_STAT11 = htonl( streamers_readl( offsetof( struct WR_STREAMERS_WB, RX_STAT11 ) ) );
+    diags->RX_STAT12 = htonl( streamers_readl( offsetof( struct WR_STREAMERS_WB, RX_STAT12 ) ) );
+    diags->RX_STAT13 = htonl( streamers_readl( offsetof( struct WR_STREAMERS_WB, RX_STAT13 ) ) );
+    diags->RX_STAT15 = htonl( streamers_readl( offsetof( struct WR_STREAMERS_WB, RX_STAT15 ) ) );
+    diags->RX_STAT16 = htonl( streamers_readl( offsetof( struct WR_STREAMERS_WB, RX_STAT16 ) ) );
+    diags->RX_STAT17 = htonl( streamers_readl( offsetof( struct WR_STREAMERS_WB, RX_STAT17 ) ) );
+    diags->RX_STAT18 = htonl( streamers_readl( offsetof( struct WR_STREAMERS_WB, RX_STAT18 ) ) );
+    diags->RX_STAT19 = htonl( streamers_readl( offsetof( struct WR_STREAMERS_WB, RX_STAT19 ) ) );
+    diags->RX_STAT20 = htonl( streamers_readl( offsetof( struct WR_STREAMERS_WB, RX_STAT20 ) ) );
+
+    diags->TX_CFG0 = htonl( streamers_readl( offsetof( struct WR_STREAMERS_WB, TX_CFG0 ) ) );
+    diags->TX_CFG1 = htonl( streamers_readl( offsetof( struct WR_STREAMERS_WB, TX_CFG1 ) ) );
+    diags->TX_CFG2 = htonl( streamers_readl( offsetof( struct WR_STREAMERS_WB, TX_CFG2 ) ) );
+    diags->TX_CFG3 = htonl( streamers_readl( offsetof( struct WR_STREAMERS_WB, TX_CFG3 ) ) );
+    diags->TX_CFG4 = htonl( streamers_readl( offsetof( struct WR_STREAMERS_WB, TX_CFG4 ) ) );
+    diags->TX_CFG5 = htonl( streamers_readl( offsetof( struct WR_STREAMERS_WB, TX_CFG5 ) ) );
+
+    diags->RX_CFG0 = htonl( streamers_readl( offsetof( struct WR_STREAMERS_WB, RX_CFG0 ) ) );
+    diags->RX_CFG1 = htonl( streamers_readl( offsetof( struct WR_STREAMERS_WB, RX_CFG1 ) ) );
+    diags->RX_CFG2 = htonl( streamers_readl( offsetof( struct WR_STREAMERS_WB, RX_CFG2 ) ) );
+    diags->RX_CFG3 = htonl( streamers_readl( offsetof( struct WR_STREAMERS_WB, RX_CFG3 ) ) );
+    diags->RX_CFG4 = htonl( streamers_readl( offsetof( struct WR_STREAMERS_WB, RX_CFG4 ) ) );
+    diags->RX_CFG5 = htonl( streamers_readl( offsetof( struct WR_STREAMERS_WB, RX_CFG5 ) ) );
+    diags->RX_CFG6 = htonl( streamers_readl( offsetof( struct WR_STREAMERS_WB, RX_CFG6 ) ) );
+
+    streamers_writel( 0, offsetof( struct WR_STREAMERS_WB, SSCR1 ) );
+}
+
+
 static void get_wrc_sensors(struct wrc_sensor *dst)
 {
 	int nsensors = sizeof(ertm_sensors)/sizeof(ertm_sensors[0]);
-	int i;
+    int i;
 
 	memcpy(dst, ertm_sensors, sizeof(ertm_sensors));
 	for (i = 0; i < nsensors; i++)
-		htons(dst[i].value);
+		dst[i].value = htons(dst[i].value);
 }
 
 static void refresh_wrc_nco(struct ertm14_nco_reset *nco, int connector)
@@ -1204,7 +1271,7 @@ static void refresh_wrc_nco(struct ertm14_nco_reset *nco, int connector)
 }
 
 static void nco_to_network(struct ertm14_nco_reset *nco)
-{
+    {
 	nco->enabled		= htonl(nco->enabled);
 	nco->sync_source	= htonl(nco->sync_source);
 	nco->current_stream_id	= htonl(nco->current_stream_id);
@@ -1214,7 +1281,7 @@ static void nco_to_network(struct ertm14_nco_reset *nco)
 };
 
 static void nco_to_host_order(struct ertm14_nco_reset *nco)
-{
+        {
 	nco->enabled		= ntohl(nco->enabled);
 	nco->sync_source	= ntohl(nco->sync_source);
 	nco->current_stream_id	= ntohl(nco->current_stream_id);
@@ -1230,27 +1297,32 @@ static void get_wrc_nco(struct ertm14_nco_reset *nco)
 	memcpy(nco, &ertm14_nco_stats, sizeof(ertm14_nco_stats));
 	nco_to_network(&nco[0]);
 	nco_to_network(&nco[1]);
-}
+        }
 
 static void subscribe_nco(struct ertm14_nco_reset *nco)
 {
 	struct ertm14_dds_state *dds;
+	char *lo = "lo";
+	char *ref = "ref";
+	char *ddss;
 
 	nco_to_host_order(nco);
 
 	switch (nco->connector) {
 	case ERTM14_DDS_SYNC_LO:
 		dds = &ertm14_current_state->lo;
+		ddss = lo;
 		event_post(WRC_ERTM14_EVENT_LO_RECONFIGURED);
 		break;
 	case ERTM14_DDS_SYNC_REF:
 		dds = &ertm14_current_state->ref;
+		ddss = ref;
 		event_post(WRC_ERTM14_EVENT_REF_RECONFIGURED);
 		break;
 	default:
 		return;		/* should never happen! */
 		break;
-	}
+    }
 
 	dds->sync_source = nco->sync_source;
 }
@@ -1259,6 +1331,7 @@ static int ertm_process_psnmp(struct uart_packet *rx_pkt, struct uart_packet *tx
 {
 	struct ertm14_board_state *bs;
 	struct wrc_diags *diags;
+        struct WR_STREAMERS_WB *streamer_diags;
 	struct ertm14_nco_reset *nco;
 	struct wrc_sensor *sensors;
 	uint8_t opcode = rx_pkt->payload[0];
@@ -1301,6 +1374,16 @@ static int ertm_process_psnmp(struct uart_packet *rx_pkt, struct uart_packet *tx
 		diags = (struct wrc_diags *)&tx_pkt->payload[0];
 		get_wrc_diags(diags);
 		break;
+        case ertm14_get_streamers_diags:
+		streamer_diags = (struct WR_STREAMERS_WB *)&tx_pkt->payload[0];
+		get_streamers_diags(streamer_diags);
+		break;
+    case ertm14_reset_streamers_stats:
+        streamers_reset_rx_stats();
+        break;
+    case ertm14_force_measure_channels_power:
+        ertm15_force_rf_power_measurement();
+        break;
 	case ertm14_get_wrc_nco:
 		nco = (struct ertm14_nco_reset *)&tx_pkt->payload[op->offset2];
 		get_wrc_nco(nco);
@@ -1427,7 +1510,7 @@ static int rf_nco_sync_fsm( int is_ref, struct ertm14_dds_state *state, uint32_t
         state->sync_state = ERTM14_CLK_SYNC_STATE_RESTART;
         state->sync_count = 0;
     }
-
+    
     if ( event == WRC_EVENT_LINK_DOWN || event == WRC_EVENT_TIMING_DOWN )
     {
         board_dbg("nco_sync[%s]: WR link or timing down, restarting FSM\n", name );
@@ -1496,7 +1579,7 @@ static int rf_nco_sync_fsm( int is_ref, struct ertm14_dds_state *state, uint32_t
         /* does the same as above, albeit in a neverending loop (sync_state is exported
            through the library and READY indicates at least one trigger has been received) */
         case ERTM14_CLK_SYNC_STATE_READY:
-        {
+            {
             int trigd = rf_nco_sync_wait_trigger(state, ioupdate_channel);
 
             if( trigd )
@@ -1542,10 +1625,11 @@ static void ertm14_clkab_sync_init(void)
 
 static int ertm14_clkab_sync_task(void)
 {
-  //    int evt = event_poll( evth_clkab_sync );
+    int evt = event_poll( evth_clkab_sync );
+    ( void ) evt;
     uint8_t *stateA = ertm14_current_state->clka_sync_state;
     uint8_t *stateB = ertm14_current_state->clkb_sync_state;
-
+    
 // OK, I'm commenting this one out at the request of the RF guys - we have reduced the choice of
 // CLKAB frequencies to the integer multiplies of 62.5 MHz, so that no matter how many times the WR link
 // is established, once synced during startup, CLKA/B edges will be always synchronous to the WR PPS.
@@ -1563,7 +1647,7 @@ static int ertm14_clkab_sync_task(void)
         {
             stateA[i] = ERTM14_CLK_SYNC_STATE_RESTART;
             stateB[i] = ERTM14_CLK_SYNC_STATE_RESTART;
-        }
+    }
     }
 */
     uint64_t secs;
@@ -1710,7 +1794,7 @@ static int measure_vcxo_freq( int cm_channel, int cm_ref, int gate_freq, int n_s
 
 		dac_setter( tune );
 		timer_delay_ms(1);
-		wb_cm_restart( &board.ertm14_cmon );
+    wb_cm_restart(&board.ertm14_cmon);
 		while( ! (wb_cm_read( &board.ertm14_cmon ) & ( 1<< cm_channel) ) );
 
 		int f = board.ertm14_cmon.freqs[ cm_channel ];
@@ -1747,17 +1831,17 @@ static int measure_vcxo_freq( int cm_channel, int cm_ref, int gate_freq, int n_s
 }
 
 static void blink_led( struct gpio_pin *pin )
-{
+    {
     gen_gpio_out( pin, 1 );
     timer_delay_ms(150);
     gen_gpio_out( pin, 0 );
-}
+    }
 
 static void ertm14_init_leds(void)
 {
     blink_led(&pin_led_sync_green);
     blink_led(&pin_led_sync_red);
-
+    
     led_create( &board.leds.sync, &pin_led_sync_green, &pin_led_sync_red, LED_TYPE_DUAL_COLOR, LED_OFF );
     led_set_blink_timing( &board.leds.sync, 1000, 500 );
     led_set_blink_timing( &board.leds.lo, 50, 50 );
@@ -1768,7 +1852,7 @@ static void ertm14_init_leds(void)
 
 
 static void ertm15_init_leds(void)
-{
+    {
     blink_led(&pin_ertm15_led_ref_green);
     blink_led(&pin_ertm15_led_lo_green);
     blink_led(&pin_ertm15_led_clkb_green);
@@ -1783,7 +1867,7 @@ static void ertm15_init_leds(void)
     led_create( &board.leds.clkb, &pin_ertm15_led_clkb_green, &pin_ertm15_led_clkb_red, LED_TYPE_DUAL_COLOR, LED_OFF );
     led_create( &board.leds.lo, &pin_ertm15_led_lo_green, &pin_ertm15_led_lo_red, LED_TYPE_DUAL_COLOR, LED_OFF );
     led_create( &board.leds.ref, &pin_ertm15_led_ref_green, &pin_ertm15_led_ref_red, LED_TYPE_DUAL_COLOR, LED_OFF );
-}
+    }
 
 static void set_main_dac( int value )
 {
@@ -1794,9 +1878,9 @@ static void set_dmtd_dac( int value )
 {
 	spll_set_dac( -1, value );
 }
-
+        
 int ertm15_check_oscillators(void)
-{
+    {
     board_dbg("Check REF OCXO\n");
     measure_vcxo_freq( ERTM14_CMON_CLK_REF, ERTM14_CMON_CLK_DMTD, 10000000, 1, 62500000, set_main_dac, NULL, NULL );
     board_dbg("Check DMTD VCXO\n");
@@ -1822,7 +1906,7 @@ int ertm15_pll_init(void)
     // load default 'bootstrap' config and check what is the OCXO frequency
     ltc695x_configure(&board.ltc6950_pll, &pll_ertm15_bootstrap_config);
 
-    board_dbg("Using 100 MHz OCXO\n");
+        board_dbg("Using 100 MHz OCXO\n");
     ltc695x_write(&board.ltc6950_pll, 0x8, 0x1); // reference divider = 1
     ltc695x_write(&board.ltc6950_pll, 0x15, 50); // RDIVOUT = 0, output div = 50
     ltc695x_write(&board.ltc6950_pll, 0x0a, 10); // N divider = 10 (VCO @ 1GHz, PFD @ 100 MHz)
@@ -1857,10 +1941,10 @@ int ertm15_pll_init(void)
 
     ltc6950_set_syncen( &board.ltc6950_pll, 0x0 );
 
-    board.mode |= ERTM14_MODE_OCXO_100MHZ;
+        board.mode |= ERTM14_MODE_OCXO_100MHZ;
     return 0;
-}
-
+    }
+ 
 static const struct clkab_output_map_entry *clkab_find_map_entry(  int clka_or_clkb, int output )
 {
     const struct clkab_output_map_entry *omap = (clka_or_clkb == ERTM14_OUT_CLKA) ? clka_out_map : clkb_out_map;
@@ -1869,7 +1953,7 @@ static const struct clkab_output_map_entry *clkab_find_map_entry(  int clka_or_c
     {
         if( omap[i].id_backplane  == output )
             return &omap[i];
-    }
+}
 
     return NULL;
 }
@@ -2134,7 +2218,7 @@ int ertm14_low_level_init(void)
     mmc_comm_init();
 
     ertm14_init_leds();
-
+    
     /* detect if the eRTM15 is present and decide how to configure the board */
     int ertm15_present = wait_ertm15_presence();
 
@@ -2145,7 +2229,7 @@ int ertm14_low_level_init(void)
         board_dbg( "Configuring board *WITHOUT* eRTM15 support (eRTM15 not found, not powered on or disabled in software). The WRC will not be functional!\n");
     else
         board_dbg( "Configuring board WITH eRTM15 support.\n");
-
+    
     bist_checkpoint( ertm_bist, ERTM14_BIST_ERTM15_PRESENCE, 0, ertm15_present );
 
     if( !ertm15_present )
@@ -2181,7 +2265,6 @@ int ertm14_low_level_init(void)
 
     /* At this point, we should have a stable CLK_REF coming from the PLL. Tell the FPGA to use it also as the system clock */
     board_dbg("Switching system clock to CLK_SYS\n");
-
     ertm14_switch_sys_clock(1);
 
     /* Disable bit-banged OCXO control (used for debug) */
@@ -2202,7 +2285,7 @@ int ertm14_low_level_init(void)
 
     board_dbg("Init Fine Pulse Generator\n");
 
-    /* Initialize the Fine Pulse Generator - it MUST be done
+    /* Initialize the Fine Pulse Generator - it MUST be done 
        before we touch the DDSes as it drives the DDS IOUPDATE line.
        For my own record: don't touch this, you've wasted time catching the null pointer to
        FPG device already ;-) */
@@ -2219,15 +2302,15 @@ int ertm14_low_level_init(void)
             &pin_pwrmon_adc_din,
             &pin_pwrmon_adc_dout,
             &pin_pwrmon_adc_sclk,
-            100 );
+            5 );
 
         ad7888_create( &board.pwrmon_adc, &board.spi_ad7888 );
 
 
-        /* RF distribution switches and shift registers controlling these (eRTM15 - IC26..28) */
+    /* RF distribution switches and shift registers controlling these (eRTM15 - IC26..28) */
         ertm15_rf_distr_init( &board.rf_distr, &board.pwrmon_adc );
 
-        /* Now that the PLL clocks are ready, init the DDS synthesizers */
+    /* Now that the PLL clocks are ready, init the DDS synthesizers */
         board_dbg("Initializing DDSes\n");
         ertm15_init_dds();
 
@@ -2277,7 +2360,7 @@ int ertm14_low_level_init(void)
 
     led_action( &board.leds.ref, LED_COLOR_1 | LED_COLOR_2, LED_ON );
     led_action( &board.leds.lo, LED_COLOR_1 | LED_COLOR_2, LED_ON );
-
+    
     board_dbg("eRTM14/15 early init done\n");
 
     ertm_init_complete = 1;
@@ -2291,34 +2374,34 @@ void ertm14_config_init(void)
 
     struct ertm14_board_state *cfg = ertm14_current_state;
 
-    cfg->valid = 1;
+        cfg->valid = 1;
     cfg->lo.ftw = ERTM14_DDS_DEFAULT_FTW;
     cfg->ref.ftw = ERTM14_DDS_DEFAULT_FTW;
     cfg->lo.ampl_factor = ERTM14_DDS_DEFAULT_AMPLITUDE;
     cfg->ref.ampl_factor = ERTM14_DDS_DEFAULT_AMPLITUDE;
 
-    for (j = 0; j <= ERTM14_RF_OUT_MAX_ID; j++)
-    {
-        cfg->ref.out_state[j] = ERTM15_RF_OUT_MONITOR;
-        cfg->lo.out_state[j] = ERTM15_RF_OUT_MONITOR;
-    }
+        for( j = 0; j <= ERTM14_RF_OUT_MAX_ID; j++)
+        {
+            cfg->ref.out_state [j] = ERTM15_RF_OUT_MONITOR;
+            cfg->lo.out_state [j] = ERTM15_RF_OUT_MONITOR;
+        }
+    
+        cfg->ref.sync_count = 0;
+        cfg->lo.sync_count = 0;
 
-    cfg->ref.sync_count = 0;
-    cfg->lo.sync_count = 0;
-
-    cfg->ref.sync_source = ERTM14_SYNC_SOURCE_RF_TRIGGER;
-    cfg->lo.sync_source = ERTM14_SYNC_SOURCE_RF_TRIGGER;
+        cfg->ref.sync_source = ERTM14_SYNC_SOURCE_RF_TRIGGER;
+        cfg->lo.sync_source = ERTM14_SYNC_SOURCE_RF_TRIGGER;
 
     cfg->ref.sync_state = ERTM14_CLK_SYNC_STATE_RESTART;
     cfg->lo.sync_state = ERTM14_CLK_SYNC_STATE_RESTART;
 
-    for (j = 0; j <= ERTM14_CLKAB_OUT_MAX_ID; j++)
-    {
-        cfg->clka_freq_hz[j] = 500000000;
-        cfg->clkb_freq_hz[j] = 500000000;
+        for(j = 0; j <= ERTM14_CLKAB_OUT_MAX_ID; j++)
+        {
+            cfg->clka_freq_hz[j] = 500000000;
+            cfg->clkb_freq_hz[j] = 500000000;
         cfg->clka_sync_state[j] = ERTM14_CLK_SYNC_STATE_RESTART;
         cfg->clkb_sync_state[j] = ERTM14_CLK_SYNC_STATE_RESTART;
-    }
+        }
 
     cfg->clka_enable_mask = -1; // all CLKA outputs ON
     cfg->clkb_enable_mask = -1; // all CLKB outputs ON
@@ -2336,7 +2419,7 @@ struct ertm14_board_state *ertm14_get_current_state(void)
 
 #if 0
 static int ertm14_commit_config( struct  ertm14_board_state *cfg )
-{
+{  
     int i;
         for( i = 0; i <= ERTM14_CLKAB_OUT_MAX_ID; i++)
         {
@@ -2359,13 +2442,13 @@ static int ertm14_commit_config( struct  ertm14_board_state *cfg )
             clkab_enable_output( ertm14_current_state, ERTM14_OUT_CLKB, i, enable_b );
         }
 
-        // DDSes
+            // DDSes
         ad9910_program(&board.dds_ad9910_lo, cfg->lo.ftw, 0, cfg->lo.ampl_factor );
         ad9910_program(&board.dds_ad9910_ref, cfg->ref.ftw, 0, cfg->ref.ampl_factor );
 
         board_dbg("DDS LO: FTW=0x%08x, ampl=%d\n", cfg->lo.ftw, cfg->lo.ampl_factor );
         board_dbg("DDS REF: FTW=0x%08x, ampl=%d\n", cfg->ref.ftw, cfg->ref.ampl_factor );
-
+        
         for( i = ERTM14_RF_OUT_MIN_ID; i <= ERTM14_RF_OUT_MAX_ID; i++)
         {
             int st_lo = cfg->lo.out_state[i] == ERTM15_RF_OUT_ON ? 1 : 0;
@@ -2400,7 +2483,7 @@ int ertm14_get_clkab_divider( int freq )
         if (clkab_freqs[i].freq == freq)
             return clkab_freqs[i].divider;
     }
-
+    
     return -1;
 }
 
@@ -2474,7 +2557,7 @@ int wrc_board_early_init()
         flash_entry_points[i] = 0x600000 + 0x40000 * i;
 
     flash_entry_points[i] = -1;
-
+    
     /* init storage (we use the SPI flash on eRTM14) */
     storage_spiflash_create( &wrc_storage_dev, &wrc_flash_dev );
     wrc_storage_dev.entry_points = &flash_entry_points[0];
@@ -2497,18 +2580,18 @@ int wrc_board_early_init()
    	net_rst();
 
     int ll = ertm14_low_level_init();
-
+    
     /* reset the networking part of the WRCore and start the WR Endpoint */
     ep_init( &wrc_endpoint_dev, (void *) BASE_EP );
     ep_set_mac_addr( &wrc_endpoint_dev, ertm14_mac );
-    netif_register_device( "wru0", &wrc_endpoint_dev );
+    netif_register_device( "wru0", "default", &wrc_endpoint_dev );
 
     /* Sleep for 1s to make sure WRS v4.2 always realizes that
-     * the link is down */
+ * the link is down */
 
-    timer_delay_ms(200);
-    ep_enable( &wrc_endpoint_dev, 1, 1);
-    timer_delay_ms(200);
+	timer_delay_ms(200);
+	ep_enable( &wrc_endpoint_dev, 1, 1);
+	timer_delay_ms(200);
     bist_summary( ertm_bist );
 
     return ll;
@@ -2720,26 +2803,54 @@ void ertm15_init_rf_monitor( void )
     tmo_init( &rfmon_timeout, 2000 );
 }
 
-int ertm15_update_rf_monitor( void )
+void ertm15_force_rf_power_measurement( void )
 {
-    if( tmo_expired( &rfmon_timeout ) )
-    {
-        tmo_restart(&rfmon_timeout);
-        ertm15_rf_distr_measure_power ( &board.rf_distr );
-
         struct ertm14_board_state *bstate = ertm14_get_current_state();
 
         int i;
 
         for( i = ERTM14_RF_OUT_MIN_ID; i <= ERTM14_RF_OUT_MAX_ID; i++ )
         {
-            bstate->lo.out_power[i] = board.rf_distr.pwr_lo_ch[i];
-            bstate->ref.out_power[i] = board.rf_distr.pwr_ref_ch[i];
+        bstate->lo.out_power[i] = 0;
+        bstate->ref.out_power[i] = 0;
         }
 
-        bstate->lo.amp_power = board.rf_distr.pwr_lo_in;
-        bstate->ref.amp_power = board.rf_distr.pwr_ref_in;
+    bstate->lo.amp_power = 0;
+    bstate->ref.amp_power = 0;
+
+    ertm15_rf_distr_measure_power_restart( &board.rf_distr, 1 );
+}
+
+int ertm15_update_rf_monitor( void )
+{
+    if( ertm15_rf_distr_is_pwrmon_idle( &board.rf_distr ) )
+    {
+        struct ertm14_board_state *bstate = ertm14_get_current_state();
+
+        int i;
+
+        for( i = ERTM14_RF_OUT_MIN_ID; i <= ERTM14_RF_OUT_MAX_ID; i++ )
+{
+            bstate->lo.out_power[i] = board.rf_distr.pwr_lo_ch[i] | ERTM_FLAGS_DDS_POWER_VALID_MASK;
+            bstate->ref.out_power[i] = board.rf_distr.pwr_ref_ch[i] | ERTM_FLAGS_DDS_POWER_VALID_MASK;
+}
+
+        bstate->lo.amp_power = board.rf_distr.pwr_lo_in | ERTM_FLAGS_DDS_POWER_VALID_MASK;
+        bstate->ref.amp_power = board.rf_distr.pwr_ref_in | ERTM_FLAGS_DDS_POWER_VALID_MASK;
     }
+
+    if( tmo_expired( &rfmon_timeout ) )
+{
+     //   pp_printf("TmoExp st %d ch %d\n",board.rf_distr.pwr_meas_state, board.rf_distr.pwr_meas_channel);
+        if( ertm15_rf_distr_is_pwrmon_idle( &board.rf_distr ) )
+        {
+            // pp_printf("PwrMonRst\n");
+            tmo_restart( &rfmon_timeout );
+            ertm15_rf_distr_measure_power_restart( &board.rf_distr, 0 );
+}
+    }
+
+    ertm15_rf_distr_pwrmon_update( &board.rf_distr );
 
     return 0;
 }
@@ -2763,7 +2874,6 @@ static int wrc_ptp_get_state(void)
 
 int ertm14_update_leds( void )
 {
-
     /* White Rabbit Servo */
     enum {
         WR_UNINITIALIZED = 0,

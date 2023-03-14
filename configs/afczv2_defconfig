@@ -2,7 +2,6 @@
 # Automatically generated file; DO NOT EDIT.
 # WR PTP Core software configuration
 #
-CONFIG_ARCH_LM32=y
 # CONFIG_ARCH_RISCV is not set
 # CONFIG_TARGET_GENERIC_PHY_8BIT is not set
 # CONFIG_TARGET_GENERIC_PHY_16BIT is not set
@@ -82,8 +81,7 @@ CONFIG_CUSTOM_PRINT_BUFSIZE=128
 # CONFIG_DAC_LOG is not set
 # CONFIG_CHECK_RESET is not set
 # CONFIG_SPLL_FIFO_LOG is not set
-# CONFIG_PRINTF_IS_XINT=y
-CONFIG_PRINTF_IS_FULL=y
+CONFIG_PRINTF_IS_XINT=y
 # CONFIG_PRINTF_IS_FULL is not set
 # CONFIG_PRINTF_IS_MINI is not set
 # CONFIG_PRINTF_IS_NONE is not set

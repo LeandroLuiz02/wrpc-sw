@@ -5,7 +5,7 @@
  * Author: Alessandro rubini
  *
  * Released according to the GNU GPL, version 2 or any later version.
- */
+ */a
 #ifndef __SENSORS_H__
 #define __SENSORS_H__
 

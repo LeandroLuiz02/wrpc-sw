@@ -118,7 +118,7 @@ void ep_reset_phy(struct wr_endpoint_device* dev)
 	ep_pcs_write(dev, MDIO_REG_MCR, MDIO_MCR_PDOWN);	/* reset the PHY */
 	
 	pp_printf("Running long PHY reset...\n");
-	timer_delay_ms(10000);
+	timer_delay_ms(1000);
 	pp_printf("PHY reset complete\n");
 	ep_pcs_write(dev, MDIO_REG_MCR, MDIO_MCR_RESET);	/* reset the PHY */
 	ep_pcs_write(dev, MDIO_REG_MCR, 0);	/* reset the PHY */
@@ -169,7 +169,7 @@ int ep_enable(struct wr_endpoint_device* dev, int enabled, int autoneg)
 int ep_link_up(struct wr_endpoint_device* dev, uint16_t * lpa)
 {
 	uint16_t flags = MDIO_MSR_LSTATUS;
-	uint16_t msr;
+	volatile uint16_t msr;
 
 	if (dev->flags & EP_DEV_AUTONEG_ENABLED)
 		flags |= MDIO_MSR_ANEGCOMPLETE;
@@ -192,8 +192,33 @@ int ep_get_bitslide(struct wr_endpoint_device* dev)
 /* Returns the TX/RX latencies. They are valid only when the link is up. */
 int ep_get_deltas(struct wr_endpoint_device* dev, int *delta_tx, int *delta_rx)
 {
-	/* fixme: RX/TX delays related to HW (except SFP) should be stored in
-	 * calibration block in the EEPROM on the FMC. */
+	/* fixme: these values should be stored in calibration block in the EEPROM on the FMC. Also, the TX/RX delays of a particular SFP
+	   should be added here */
+	*delta_tx = sfp_deltaTx;
+	*delta_rx =
+	    sfp_deltaRx +
+	    PICOS_PER_SERIAL_BIT *
+	    MDIO_WR_SPEC_BSLIDE_R(ep_pcs_read(dev, MDIO_REG_WR_SPEC));
+	return 0;
+}
+
+int ep_cal_pattern_enable(struct wr_endpoint_device* dev)
+{
+	uint32_t val;
+	val = ep_pcs_read(dev, MDIO_REG_WR_SPEC);
+	val |= MDIO_WR_SPEC_TX_CAL;
+	ep_pcs_write(dev, MDIO_REG_WR_SPEC, val);
+
+	return 0;
+}
+
+int ep_cal_pattern_disable(struct wr_endpoint_device* dev)
+{
+	uint32_t val;
+	val = ep_pcs_read(dev, MDIO_REG_WR_SPEC);
+	val &= (~MDIO_WR_SPEC_TX_CAL);
+	ep_pcs_write(dev, MDIO_REG_WR_SPEC, val);
+
 	return 0;
 }
 
@@ -213,7 +238,7 @@ int ep_sfp_enable(struct wr_endpoint_device* dev, int ena)
 		val &= (~MDIO_ECTRL_SFP_TX_DISABLE);
 	else
 		val |= MDIO_ECTRL_SFP_TX_DISABLE;
-
+	
 	ep_pcs_write(dev, MDIO_REG_ECTRL, val);
 
 	return 0;

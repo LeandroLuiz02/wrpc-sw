@@ -75,12 +75,12 @@ int wrc_board_early_init()
      */
 
     uint8_t *mac = board_mac_addr;
-    m24aa025_read_mac( &i2c_mac_dev[0], mac );
+    int err = m24aa025_read_mac( &i2c_mac_dev[0], mac );
 
     board_dbg("MAC address: Port 0 = %02x:%02x:%02x:%02x:%02x:%02x\n",
         mac[0],mac[1],mac[2],mac[3],mac[4],mac[5] );
 
-    spi_flash_read_id( &wrc_flash_dev );
+    uint32_t id = spi_flash_read_id( &wrc_flash_dev );
 
     for(i = 0; i < 32 + 8; i++)
         flash_entry_points[i] = 0x600000 + 0x40000 * i;
