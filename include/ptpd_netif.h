@@ -42,7 +42,6 @@ struct sockq {
 
 struct wrpc_socket {
 	struct wr_sockaddr bind_addr;
-	mac_addr_t local_mac;
 	uint16_t prio;
 
 	uint32_t phase_transition;
@@ -107,8 +106,6 @@ int ptpd_netif_recvfrom(struct wrpc_socket *sock, struct wr_sockaddr *from, void
 
 // Closes the socket.
 int ptpd_netif_close_socket(struct wrpc_socket *sock);
-
-void ptpd_netif_get_hw_addr(struct wrpc_socket *sock, mac_addr_t mac);
 
 void ptpd_netif_linearize_rx_timestamp(struct wr_timestamp *ts,
 				       int32_t dmtd_phase,

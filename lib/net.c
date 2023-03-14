@@ -32,11 +32,6 @@ void copy_eth_addr(mac_addr_t dest, const mac_addr_t src)
 	memcpy (dest, src, ETH_ALEN);
 }
 
-void ptpd_netif_get_hw_addr(struct wrpc_socket *sock, mac_addr_t mac)
-{
-	copy_eth_addr (mac, wrc_endpoint_dev.mac_addr);
-}
-
 void ptpd_netif_set_phase_transition(uint32_t phase)
 {
 	int i;
@@ -80,9 +75,6 @@ struct wrpc_socket *ptpd_netif_create_socket(struct wrpc_socket *sock,
 	net_verbose("%s: socket %p for %04x:%04x, slot %i\n", __func__,
 		    sock, ntohs(sock->bind_addr.ethertype),
 		    udpport, i);
-
-	/*get mac from endpoint */
-	copy_eth_addr (sock->local_mac, wrc_endpoint_dev.mac_addr);
 
 	wrpc_get_port_state(&pstate);
 	sock->phase_transition = pstate.t2_phase_transition;
@@ -282,8 +274,8 @@ int ptpd_netif_sendto(struct wrpc_socket * sock, struct wr_sockaddr *to, void *d
 	struct wr_ethhdr_vlan hdr;
 	int rval;
 
-	memcpy(hdr.dstmac, to->mac, 6);
-	memcpy(hdr.srcmac, s->local_mac, 6);
+	copy_eth_addr(hdr.dstmac, to->mac);
+	copy_eth_addr(hdr.srcmac, wrc_endpoint_dev.mac_addr);
 	if (wrc_vlan_number) {
 		hdr.ethtype = htons(0x8100);
 		hdr.tag = htons(wrc_vlan_number | (sock->prio << 13));
