@@ -113,7 +113,6 @@ int minic_rx_frame(struct wr_ethhdr *hdr, uint8_t * payload, uint32_t buf_size,
 	int cntr_diff;
 	int got_rx_error = 0;
 
-
 	/* check if there is something in the Rx FIFO to be retrieved */
 	if ((minic_readl(MINIC_REG_MCR) & MINIC_MCR_RX_EMPTY) || !ver_supported)
 		return 0;
@@ -179,17 +178,15 @@ int minic_rx_frame(struct wr_ethhdr *hdr, uint8_t * payload, uint32_t buf_size,
 
 
 		} else if ( rx_type == WRF_OOB) {
-
 			//pp_printf("rxoob\n");
-		if (oob_cnt == 0)
-			oob_hdr = rx_data;
-		else if (oob_cnt == 1)
-			raw_ts = (rx_data << 16) & 0xffff0000;
-		else if (oob_cnt == 2)
-			raw_ts |= (rx_data & 0x0000ffff);
+			if (oob_cnt == 0)
+				oob_hdr = rx_data;
+			else if (oob_cnt == 1)
+				raw_ts = (rx_data << 16) & 0xffff0000;
+			else if (oob_cnt == 2)
+				raw_ts |= (rx_data & 0x0000ffff);
 
-		oob_cnt++;
-
+			oob_cnt++;
 		}
 	} while (!rx_empty);
 
@@ -198,9 +195,6 @@ int minic_rx_frame(struct wr_ethhdr *hdr, uint8_t * payload, uint32_t buf_size,
 	pp_printf("\n");
 #endif
 	/* Receive OOB, if it's there */
-
-
-
 	if (oob_cnt == 0 || oob_cnt > RX_OOB_SIZE) {
 		/* in WRPC we expect every Rx frame to contain a valid OOB.
 		 * If it's not the case, something went wrong... */
