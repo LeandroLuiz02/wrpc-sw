@@ -12,6 +12,7 @@
 #include "storage.h"
 #include <dev/flash.h>
 #include "util.h"
+#include "wrc.h"
 
 /*
  * args[1] - where to write sdbfs image (0 - Flash, 1 - I2C EEPROM,
@@ -20,43 +21,55 @@
  * args[3] - i2c address of EEPROM or blocksize of Flash
  */
 
+static const char * const sdb_cmds[] =
+{
+	 [0] = "format",
+	 [1] = "fs",
+	 [2] = "fse",
+	 [3] = "ls",
+};
+
 static int cmd_sdb(const char *args[])
 {
-	if (!args[0]) {
-		pp_printf("Command expected: format, ls\n");
-		return 0;
-	}
-	
-	if (!strcasecmp(args[0], "format") || !strcasecmp(args[0], "fs")) {
-		uint32_t base = 0;
-		if( !args[1] ) {
-			pp_printf("Formatting using default location\n");
-			storage_sdbfs_format( &wrc_storage_dev, base, 0 );
+	int icmd;
+
+	icmd = sub_cmd(sdb_cmds, ARRAY_SIZE(sdb_cmds), args);
+
+	switch(icmd) {
+	case 0:
+	case 1:
+	{
+		pp_printf("Formatting using ");
+
+		if (!args[1]) {
+			pp_printf("default location\n");
+			storage_sdbfs_format( &wrc_storage_dev, 0, 0 );
 		} else {
-			base = atoi(args[1]);
-			pp_printf("Formatting using custom location 0x%X\n",
-				  (unsigned int) base);
+			uint32_t base = atoi(args[1]);
+			pp_printf("location 0x%X\n", (unsigned int) base);
 			storage_sdbfs_format( &wrc_storage_dev, base, 1 );
 		}
 		return 0;
-	} else if ( !strcasecmp( args[0], "fse")) {
-		uint32_t base = 0;
-		if( !args[1] ) {
-			pp_printf("Erasing using default location\n");
-			storage_sdbfs_erase( &wrc_storage_dev, base, 0 );
+	}
+	case 2:
+	{
+		pp_printf("Erasing using ");
+		if (!args[1]) {
+			pp_printf("default location\n");
+			storage_sdbfs_erase( &wrc_storage_dev, 0, 0 );
 		} else {
-			base = atoi(args[1]);
-			pp_printf("Erasing using custom location 0x%X\n",
-				  (unsigned int) base);
+			uint32_t base = atoi(args[1]);
+			pp_printf("location 0x%X\n", (unsigned int) base);
 			storage_sdbfs_erase( &wrc_storage_dev, base, 1 );
 		}
 		return 0;
-	} else if ( !strcasecmp( args[0], "ls" )) {
+	}
+	case 3:
 		storage_sdbfs_list();
 		return 0;
+	default:
+		return icmd;
 	}
-
-	return -EINVAL;
 }
 
 DEFINE_WRC_COMMAND(sdb) = {
