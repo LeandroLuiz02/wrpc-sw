@@ -22,8 +22,7 @@ extern void spll_log_dac(int y);
 static inline void spll_log_dac(int y) {}
 #endif
 
-void mpll_init(struct spll_main_state *s, int id_ref,
-		      int id_out)
+void mpll_init(struct spll_main_state *s, int id_ref, int id_out)
 {
 	/* Frequency branch PI controller */
 
