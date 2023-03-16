@@ -14,6 +14,14 @@
 
 #include <hw/rawmem.h>
 
+#ifdef CONFIG_ARCH_RISCV
+    #define DEV_BASE	0x100000
+#elif defined CONFIG_ARCH_LM32
+    #define DEV_BASE	0x40000
+#else
+    #error Wrong CPU architecture. Must define either LM32 or RISC-V.
+#endif
+
 #if defined(CONFIG_TARGET_GENERIC_PHY_8BIT) || defined(CONFIG_TARGET_GENERIC_PHY_16BIT)
 #  include "boards/generic/board.h"
 #elif defined(CONFIG_TARGET_WR_SWITCH)
@@ -30,6 +38,8 @@
 #  include "boards/pxie-fmc/board.h"
 #elif defined(CONFIG_TARGET_WR2RF_VME)
 #  include "boards/wr2rf-vme/board.h"
+else
+#error no board defined
 #endif
 
 extern struct wr_endpoint_device wrc_endpoint_dev;
