@@ -13,7 +13,7 @@ int wb_cm_init( struct wb_clock_monitor_device *dev, uint32_t base_addr, int n_c
     return 0;
 }
 
-void wb_cm_set_ref_frequency( struct wb_clock_monitor_device *dev, int ref_freq )
+void wb_cm_set_ref_frequency( struct wb_clock_monitor_device *dev, uint32_t ref_freq )
 {
     dev->ref_freq = ref_freq;
     dev->freq_valid_mask = 0;
@@ -30,7 +30,7 @@ int wb_cm_restart( struct wb_clock_monitor_device *dev )
     return 0;
 }
 
-int wb_cm_configure(  struct wb_clock_monitor_device *dev, int ref_sel, int prescaler, int gate_freq )
+int wb_cm_configure(  struct wb_clock_monitor_device *dev, int ref_sel, int prescaler, uint32_t gate_freq )
 {
     dev->freq_valid_mask = 0;
     dev->ref_sel = ref_sel;
@@ -57,7 +57,7 @@ int wb_cm_read(struct wb_clock_monitor_device *dev)
         if( rv & CM_CNT_VAL_VALID )
         {
       //      pp_printf("f%d %d\n", i, rv & 0x7fffffff);
-            dev->freqs[i] = (int64_t) (rv & 0x7fffffff) * ( dev->ref_freq ) / (dev->gate_freq);
+            dev->freqs[i] = (uint64_t) (rv & 0x7fffffff) * ( dev->ref_freq ) / (dev->gate_freq);
             dev->freq_valid_mask |= (1<<i);
             n_new++;
         }
