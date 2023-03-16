@@ -18,41 +18,41 @@
 #  include "ptpd.h"
 #endif
 
-extern int wrc_phase_tracking;
+static const char * const ptrack_cmds[] =
+{
+	 "enable",
+	 "ps-freeze",
+	 "vco-freeze"
+};
+
 
 static int cmd_ptrack(const char *args[])
 {
-	if (!args[0]) {
-		pp_printf("ptrack enable | ps-freeze [phase] | vco-freeze\n");
-		return 0;
-	}
-	if (!strcmp(args[0], "enable")) {
+	int icmd = sub_cmd(ptrack_cmds, ARRAY_SIZE(ptrack_cmds), args);
+
+	switch (icmd) {
+	case 0:
 		pp_printf("UnFreezing SPLL phase shifter\n");
 		spll_vco_freeze(0);
 		spll_pshifter_freeze(0);
-	}
-	else if (!strcmp(args[0], "ps-freeze")) {
-		if( args[1] )
-		{
-			pp_printf("Freezing SPLL phase shifter at phase %d ps\n", atoi(args[1]));
-			spll_set_phase_shift(0, atoi(args[1]) );
+		break;
+	case 1:
+		if (args[0]) {
+			int ps = atoi(args[1]);
+			pp_printf("Freezing SPLL phase shifter at phase %d ps\n", ps);
+			spll_set_phase_shift(0, ps);
 			spll_pshifter_freeze(1);
 		}
-		else
-		{
+		else {
 			pp_printf("Freezing SPLL phase shifter");
 			spll_pshifter_freeze(1);
 		}
-
-	}
-	else if (!strcmp(args[0], "vco-freeze"))
-	{
+		break;
+	case 2:
 		pp_printf("Freezing SPLL VCO control");
 		spll_vco_freeze(1);
+		break;
 	}
-	else
-		return -1;
-
 	return 0;
 }
 
