@@ -14,51 +14,92 @@
 #include "softpll_ng.h"
 #include "shell.h"
 
+/* The sub-commands.  */
+static const char * const pll_menu[] =
+{
+	[0] = "init",
+	[1] = "cl",
+	[2] = "stat",
+	[3] = "sps",
+	[4] = "gps",
+	[5] = "start",
+	[6] = "stop",
+	[7] = "sdac",
+	[8] = "gdac",
+	[9] = "checkvco"
+};
+
+/* Number of arguments for the sub-commands.  Mind the order!  */
+static const unsigned char nargs[] =
+{
+	[0] = 3,
+	[1] = 1,
+	[2] = 0,
+	[3] = 2,
+	[4] = 1,
+	[5] = 1,
+	[6] = 1,
+	[7] = 2,
+	[8] = 1,
+	[9] = 0
+};
+
 static int cmd_pll(const char *args[])
 {
-	int32_t cur, tgt;
+	unsigned narg;
+	int vals[8];
+	int icmd;
 
-	if (!strcasecmp(args[0], "init")) {
-		if (!args[3])
-			return -EINVAL;
-		spll_init(atoi(args[1]), atoi(args[2]), atoi(args[3]));
-	} else if (!strcasecmp(args[0], "cl")) {
-		if (!args[1])
-			return -EINVAL;
-		pp_printf("%d\n", spll_check_lock(atoi(args[1])));
-	} else if (!strcasecmp(args[0], "stat")) {
-		spll_show_stats();
-	} else if (!strcasecmp(args[0], "sps")) {
-		if (!args[2])
-			return -EINVAL;
-		spll_set_phase_shift(atoi(args[1]), atoi(args[2]));
-	} else if (!strcasecmp(args[0], "gps")) {
-		if (!args[1])
-			return -EINVAL;
-		spll_get_phase_shift(atoi(args[1]), &cur, &tgt);
-		pp_printf("%d %d\n", (int) cur, (int) tgt);
-	} else if (!strcasecmp(args[0], "start")) {
-		if (!args[1])
-			return -EINVAL;
-		spll_start_channel(atoi(args[1]));
-	} else if (!strcasecmp(args[0], "stop")) {
-		if (!args[1])
-			return -EINVAL;
-		spll_stop_channel(atoi(args[1]));
-	} else if (!strcasecmp(args[0], "sdac")) {
-		if (!args[2])
-			return -EINVAL;
-		spll_set_dac(atoi(args[1]), atoi(args[2]));
-	} else if (!strcasecmp(args[0], "gdac")) {
-		if (!args[1])
-			return -EINVAL;
-		pp_printf("%d\n", spll_get_dac(atoi(args[1])));
-	} else if(!strcasecmp(args[0], "checkvco"))
-		check_vco_frequencies();
-	else
+	icmd = sub_cmd(pll_menu, ARRAY_SIZE(pll_menu), args);
+
+	/* Decode arguments.  */
+	for (narg = 1; args[narg]; narg++)
+		vals[narg] = atoi(args[narg]);
+
+	/* Args from 1 to NARG.  */
+	narg--;
+
+	if (icmd < 0 || nargs[icmd] != narg)
 		return -EINVAL;
 
-	return 0;
+	switch (icmd) {
+	case 0:
+		spll_init(vals[1], vals[2], vals[3]);
+		return 0;
+	case 1:
+		pp_printf("%d\n", spll_check_lock(vals[1]));
+		return 0;
+	case 2:
+		spll_show_stats();
+		return 0;
+	case 3:
+		spll_set_phase_shift(vals[1], vals[2]);
+		return 0;
+	case 4:
+	{
+		int32_t cur, tgt;
+		spll_get_phase_shift(vals[1], &cur, &tgt);
+		pp_printf("%d %d\n", (int) cur, (int) tgt);
+		return 0;
+	}
+	case 5:
+		spll_start_channel(vals[1]);
+		return 0;
+	case 6:
+		spll_stop_channel(vals[1]);
+		return 0;
+	case 7:
+		spll_set_dac(vals[1], vals[2]);
+		return 0;
+	case 8:
+		pp_printf("%d\n", spll_get_dac(vals[1]));
+		return 0;
+	case 9:
+		check_vco_frequencies();
+		return 0;
+	default:
+		return 0;
+	}
 }
 
 DEFINE_WRC_COMMAND(pll) = {
