@@ -39,6 +39,12 @@ int shell_exec(const char *buf);
 int shell_interactive(void);
 extern unsigned char shell_is_interacting;
 
+/* Command sub-menu: the command of CMD (of length LEN) is selected
+   according to ARGS[0] and its index returned.
+   If the command is not found, a small help is displayed and -1 is returned.
+*/
+int sub_cmd(const char * const *cmds, unsigned len, const char *args[]);
+
 void shell_boot_script(void);
 void shell_show_build_init(void);
 void shell_register_command( const struct wrc_shell_cmd* cmd );

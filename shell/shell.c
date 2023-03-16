@@ -132,6 +132,24 @@ static void esc(char code)
 	pp_printf("\033[1%c", code);
 }
 
+int sub_cmd(const char * const *cmds, unsigned len, const char *args[])
+{
+	unsigned i;
+
+	for (i = 0; i < len; i++) {
+		if (!strcmp (cmds[i], args[0]))
+			return i;
+	}
+
+	pp_printf ("usage:\n");
+	for (i = 0; i < len; i++) {
+		/* Hack: we know we are called from shell_exec, so
+		   args[-1] is valid. */
+		pp_printf(" %s %s\n", args[-1], cmds[i]);
+	}
+	return -1;
+}
+
 static int _shell_exec(void)
 {
 	const char *tokptr[SH_MAX_ARGS + 1];
