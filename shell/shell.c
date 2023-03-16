@@ -136,9 +136,11 @@ int sub_cmd(const char * const *cmds, unsigned len, const char *args[])
 {
 	unsigned i;
 
-	for (i = 0; i < len; i++) {
-		if (!strcmp (cmds[i], args[0]))
-			return i;
+	if (args[0]) {
+		for (i = 0; i < len; i++) {
+			if (!strcmp (cmds[i], args[0]))
+				return i;
+		}
 	}
 
 	pp_printf ("usage:\n");
