@@ -88,14 +88,14 @@ extern unsigned char *BASE_EP;
 #define SDBFS_REC 5
 
 
-#define BASE_AUXWB                  0x48000
-#define BASE_SOFTPLL                0x40200
-#define BASE_PPS_GEN                0x40300
-#define BASE_UART                   0x40500
-#define BASE_SYSCON                 0x40400
-#define BASE_EP                     0x40100
-#define BASE_MINIC                  0x40000
-#define BASE_ONEWIRE                0x40600
+#define BASE_AUXWB                  (DEV_BASE + 0x08000)
+#define BASE_SOFTPLL                (DEV_BASE + 0x00200)
+#define BASE_PPS_GEN                (DEV_BASE + 0x00300)
+#define BASE_UART                   (DEV_BASE + 0x00500)
+#define BASE_SYSCON                 (DEV_BASE + 0x00400)
+#define BASE_EP                     (DEV_BASE + 0x00100)
+#define BASE_MINIC                  (DEV_BASE + 0x00000)
+#define BASE_ONEWIRE                (DEV_BASE + 0x00600)
 #define BASE_MMC_UART_14            (BASE_AUXWB + 0x200)
 #define BASE_MMC_UART_15            (BASE_AUXWB + 0x700)
 #define BASE_ERTM14_DDS_SYNC_UNIT   (BASE_AUXWB + 0x300)
