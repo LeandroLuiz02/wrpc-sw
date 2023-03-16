@@ -192,33 +192,8 @@ int ep_get_bitslide(struct wr_endpoint_device* dev)
 /* Returns the TX/RX latencies. They are valid only when the link is up. */
 int ep_get_deltas(struct wr_endpoint_device* dev, int *delta_tx, int *delta_rx)
 {
-	/* fixme: these values should be stored in calibration block in the EEPROM on the FMC. Also, the TX/RX delays of a particular SFP
-	   should be added here */
-	*delta_tx = sfp_deltaTx;
-	*delta_rx =
-	    sfp_deltaRx +
-	    PICOS_PER_SERIAL_BIT *
-	    MDIO_WR_SPEC_BSLIDE_R(ep_pcs_read(dev, MDIO_REG_WR_SPEC));
-	return 0;
-}
-
-int ep_cal_pattern_enable(struct wr_endpoint_device* dev)
-{
-	uint32_t val;
-	val = ep_pcs_read(dev, MDIO_REG_WR_SPEC);
-	val |= MDIO_WR_SPEC_TX_CAL;
-	ep_pcs_write(dev, MDIO_REG_WR_SPEC, val);
-
-	return 0;
-}
-
-int ep_cal_pattern_disable(struct wr_endpoint_device* dev)
-{
-	uint32_t val;
-	val = ep_pcs_read(dev, MDIO_REG_WR_SPEC);
-	val &= (~MDIO_WR_SPEC_TX_CAL);
-	ep_pcs_write(dev, MDIO_REG_WR_SPEC, val);
-
+	/* fixme: RX/TX delays related to HW (except SFP) should be stored in
+	 * calibration block in the EEPROM on the FMC. */
 	return 0;
 }
 
