@@ -23,7 +23,7 @@
 #include "util.h"
 #include "wrc_ptp.h"
 
-char * pps_force_map[] = {
+static const char * const pps_force_map[] = {
 	[pps_force_off] = "off",
 	[pps_force_on]  = "on",
 };
