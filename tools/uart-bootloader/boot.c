@@ -41,6 +41,7 @@
     #define CONFIG_USER_START 0x0
 #endif
 
+#include "dev/syscon.h"
 #include "dev/simple_uart.h"
 #include "hw/wrc_syscon_regs.h"
 
@@ -69,7 +70,9 @@
 
 uint8_t rxbuf[RX_BUF_SIZE];
 int     boot_wait;
-static uint32_t orig_reset_vector = 0x4;
+
+static uint32_t orig_reset_vector;
+static uint32_t orig_reset_insn;
 
 typedef void (*voidfunc_t)();
 void start_user(void);
@@ -106,10 +109,10 @@ static const struct gpio_device boot_syscon_gpio = {
 	boot_sysc_gpio_read_pin
 };
 
-static struct gpio_pin boot_pin_sysc_spi_sclk = { &boot_syscon_gpio, 10 };
-static struct gpio_pin boot_pin_sysc_spi_ncs = { &boot_syscon_gpio, 11 };
-static struct gpio_pin boot_pin_sysc_spi_mosi = { &boot_syscon_gpio, 12 };
-static struct gpio_pin boot_pin_sysc_spi_miso = { &boot_syscon_gpio, 13 };
+static const struct gpio_pin boot_pin_sysc_spi_sclk = { &boot_syscon_gpio, 10 };
+static const struct gpio_pin boot_pin_sysc_spi_ncs = { &boot_syscon_gpio, 11 };
+static const struct gpio_pin boot_pin_sysc_spi_mosi = { &boot_syscon_gpio, 12 };
+static const struct gpio_pin boot_pin_sysc_spi_miso = { &boot_syscon_gpio, 13 };
 
 void  boot_flash_init()
 {
@@ -225,7 +228,19 @@ uint32_t unpack_be32(uint8_t *p)
     return rv;
 }
 
+void pack_be32(uint8_t *p, uint32_t val)
+{
+    uint32_t rv = 0;
+
+    p[3] = val & 0xff;
+    p[2] = (val >> 8)& 0xff;
+    p[1] = (val >> 16)& 0xff;
+    p[0] = (val >> 24)& 0xff;
+}
+
+
 #ifdef CONFIG_ERTM14_FLASH
+
 void on_cmd_erase_sector(uint8_t *payload, int len)
 {
     uint32_t base = unpack_be32(payload);
@@ -253,6 +268,30 @@ void on_cmd_get_flash_id(uint8_t *payload, int len)
 
 #endif
 
+
+static uint32_t decode_reset_jump_target( uint32_t pc, uint32_t insn )
+{
+#if defined(CONFIG_ARCH_RISCV)
+    int32_t d_imm_j = 0;
+
+    if( insn & ( 1<<31 ) )
+        d_imm_j |= 0xfff00000; // sign-extend
+
+    d_imm_j |= ((insn >> 12) & 0xff ) << 12;
+    d_imm_j |= ((insn >> 20) & 0x1 ) << 11;
+    d_imm_j |= ((insn >> 25) & 0x3f ) << 5;
+    d_imm_j |= ((insn >> 21) & 0xf ) << 1;
+
+    uint32_t addr = pc + d_imm_j;
+
+    return addr;
+#else
+    #error UART bootloader can be only built for the RISC-V CPU target. 
+#endif
+}
+
+
+
 void on_cmd_write_ram(uint8_t *payload, int len)
 {
     int i;
@@ -264,9 +303,13 @@ void on_cmd_write_ram(uint8_t *payload, int len)
         { // special case for the entry vector address
             switch(base + i)
             {
-                case 1: orig_reset_vector = ((uint32_t)payload[i+4]) << 18; break;
-                case 2: orig_reset_vector |= ((uint32_t)payload[i+4]) << 10; break;
-                case 3: orig_reset_vector |= ((uint32_t)payload[i+4]) << 2; break;
+                case 0: orig_reset_insn = ((uint32_t)payload[i+4]); break;
+                case 1: orig_reset_insn |= ((uint32_t)payload[i+4])<<8; break;
+                case 2: orig_reset_insn |= ((uint32_t)payload[i+4])<<16; break;
+                case 3: orig_reset_insn |= ((uint32_t)payload[i+4])<<24;
+                        orig_reset_vector = decode_reset_jump_target( 0, orig_reset_insn );
+                        break;
+                break;
                 default:
                     break;
             }
@@ -277,16 +320,28 @@ void on_cmd_write_ram(uint8_t *payload, int len)
         }
     }
 
-    send_reply(RSP_OK, 0, NULL);
+    uint8_t buf[16];
+
+    pack_be32(buf, orig_reset_insn);
+    pack_be32(buf+4, orig_reset_vector);
+    pack_be32(buf+8, base);
+
+    send_reply(RSP_OK, 12, buf);
 }
 
 void on_cmd_go(uint8_t *payload, int len)
 {
     uint32_t base = unpack_be32(payload);
 
-    voidfunc_t f = (voidfunc_t)base;
+    voidfunc_t f = (voidfunc_t)orig_reset_vector;
 
-    send_reply(RSP_OK, 0, NULL);
+    uint8_t buf[16];
+
+    pack_be32(buf, orig_reset_insn);
+    pack_be32(buf+4, orig_reset_vector);
+    pack_be32(buf+8, base);
+
+    send_reply(RSP_OK, 12, buf);
 
     f();
 }
@@ -432,18 +487,21 @@ void dev_dbg()
 
 int boot_main()
 {
+    orig_reset_vector = 0x0;
+
     suart_init_default_baudrate( &dev_uart, BASE_UART );
 
     timer_init(1);
 
     #ifdef CONFIG_ERTM14_FLASH
-        boot_flash_init();
+//        boot_flash_init();
     #endif
 
-    boot_fsm();
+    while(1)
+        boot_fsm();
 
     #ifdef CONFIG_ERTM14_FLASH
-        try_flash_boot();
+        //try_flash_boot();
     #endif
     start_user();
 

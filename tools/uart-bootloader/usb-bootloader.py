@@ -117,7 +117,7 @@ class SerialIF:
 
         for i in range(0, l):
             frame.append(self.recv())
-
+        
         crc = self.recv()
         crc <<= 8
         crc |= self.recv()
