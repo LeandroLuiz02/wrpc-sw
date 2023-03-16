@@ -22,8 +22,6 @@
 #include <sys/errno.h>
 #include <string.h>
 
-#include "pp-printf.h"
-#include "dev/syscon.h"
 #include "common-uart-link.h"
 
 static uint16_t crc_xmodem_update(uint16_t crc, uint8_t data)

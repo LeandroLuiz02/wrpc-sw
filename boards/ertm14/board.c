@@ -375,9 +375,6 @@ void streamers_reset_rx_stats(void);
 int mmc_link_request_state(struct ertm14_mmc_link *link);
 int mmc_link_poll_state(struct ertm14_mmc_link *link, struct ertm14_mmc_state *state, int blocking);
 
-int wrc_ptp_get_servo_state( void );
-int wrc_ptp_get_state( void );
-
 
 uint32_t bswap32(uint32_t v)
 {
@@ -692,7 +689,6 @@ static int ertm14_dds_sync_init(void)
 
     int i;
 
-    int need_overwrite = 0;
 
     // retrieve calibration delays on DDS IOUPDATE and CLKAB SYNC lines from the calibration stored in eeprom
     for( i = 0; i < n_params; i++ )
@@ -707,7 +703,6 @@ static int ertm14_dds_sync_init(void)
             val = params[i].default_value_ps;
             storage_set_calibration_parameter( params[i].id, val );
             board_dbg("Sync Unit channel '%s': delay not found in calibration file, using default = %d ps\n", params[i].name, val );
-            need_overwrite = 1;
         }
         board.dds_sync_delays[ params[i].channel ] = val;
     }
@@ -1097,10 +1092,14 @@ void ertm14_apply_config(struct ertm14_board_state *cfg,
 	/* DDSes */
 
     if( apply_dds_config( &board.dds_ad9910_lo, &cfg->lo, &ertm14_current_state->lo, &mask->lo, force_all ) )
+    {
         event_post(WRC_ERTM14_EVENT_LO_RECONFIGURED);
+    }
 
     if( apply_dds_config( &board.dds_ad9910_ref, &cfg->ref, &ertm14_current_state->ref, &mask->ref, force_all ) )
+    {
         event_post(WRC_ERTM14_EVENT_REF_RECONFIGURED);
+    }
 
 	for (i = ERTM14_RF_OUT_MIN_ID; i <= ERTM14_RF_OUT_MAX_ID; i++) {
 		int st_lo = cfg->lo.out_state[i] == ERTM15_RF_OUT_ON ? 1 : 0;
@@ -1156,10 +1155,10 @@ void get_version_info(struct ertm14_version_info *bi)
 	/* FIXME: no mac2? */
 	ep_get_mac_addr(&wrc_endpoint_dev, &bi->ertm14_mac1_bytes[0]);
 	/* FIXME: wrpc_sw_version makes no sense here */
-	strncpy(bi->wrpc_sw_commit_id, build_revision, sizeof(bi->wrpc_sw_commit_id));
-	strncpy(bi->wrpc_sw_build_date, build_date, sizeof(bi->wrpc_sw_build_date));
-	strncpy(bi->wrpc_sw_build_time, build_time, sizeof(bi->wrpc_sw_build_time));
-	strncpy(bi->wrpc_sw_build_by, build_by, sizeof(bi->wrpc_sw_build_by));
+	strncpy(bi->wrpc_sw_commit_id, build_id.commit_id, sizeof(bi->wrpc_sw_commit_id));
+	strncpy(bi->wrpc_sw_build_date, build_id.build_date, sizeof(bi->wrpc_sw_build_date));
+	strncpy(bi->wrpc_sw_build_time, build_id.build_time, sizeof(bi->wrpc_sw_build_time));
+	strncpy(bi->wrpc_sw_build_by, build_id.build_by, sizeof(bi->wrpc_sw_build_by));
 
 	strncpy(bi->ertm14_firmware_version, ertm14_board_info.git_tag,
 				    sizeof(bi->ertm14_firmware_version));
@@ -1304,19 +1303,19 @@ static void subscribe_nco(struct ertm14_nco_reset *nco)
 	struct ertm14_dds_state *dds;
 	char *lo = "lo";
 	char *ref = "ref";
-	char *ddss;
+	//char *ddss;
 
 	nco_to_host_order(nco);
 
 	switch (nco->connector) {
 	case ERTM14_DDS_SYNC_LO:
 		dds = &ertm14_current_state->lo;
-		ddss = lo;
+	//	ddss = lo;
 		event_post(WRC_ERTM14_EVENT_LO_RECONFIGURED);
 		break;
 	case ERTM14_DDS_SYNC_REF:
 		dds = &ertm14_current_state->ref;
-		ddss = ref;
+	//	ddss = ref;
 		event_post(WRC_ERTM14_EVENT_REF_RECONFIGURED);
 		break;
 	default:
@@ -2573,9 +2572,13 @@ int wrc_board_early_init()
         cd = 0;
 
     if( !cd )
+    {
         board_dbg("WARNING! Board calibration info has no calibration date!\n");
+    }
     else
+    {
         board_dbg("Calibration data: %d UTC timestamp\n", cd );
+    }
 
    	net_rst();
 
@@ -2584,7 +2587,7 @@ int wrc_board_early_init()
     /* reset the networking part of the WRCore and start the WR Endpoint */
     ep_init( &wrc_endpoint_dev, (void *) BASE_EP );
     ep_set_mac_addr( &wrc_endpoint_dev, ertm14_mac );
-    netif_register_device( "wru0", "default", &wrc_endpoint_dev );
+    netif_register_device( "wru0", &wrc_endpoint_dev );
 
     /* Sleep for 1s to make sure WRS v4.2 always realizes that
  * the link is down */
@@ -2607,7 +2610,7 @@ static void mmc_show_version_info( const char *brdname, struct ertm14_mmc_state 
     pp_printf("MMC Build Info for %s:\n", brdname );
     pp_printf("  - Git build commit : %32s\n", st->info.git_sha );
     pp_printf("  - Git build tag    : %32s\n", st->info.git_tag );
-    pp_printf("  - Build date       : %d (Unix)\n",   bswap32( st->info.build_date ) );
+    pp_printf("  - Build date       : %u (Unix)\n",   bswap32( st->info.build_date ) );
     pp_printf("  - Serial Number    : %32s\n",   st->info.board_serial_number );
 }
 
