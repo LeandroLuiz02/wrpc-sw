@@ -61,7 +61,6 @@ const char *fromhex64(const char *hex, int64_t *v);
 const char *fromdec(const char *dec, int *v);
 
 void decode_mac(const char *str, unsigned char *mac);
-void decode_port(const char *str, int *port);
 
 /* div64.c, lifted from the linux kernel through pp_printf or ppsi */
 extern uint32_t __div64_32(uint64_t *n, uint32_t base);

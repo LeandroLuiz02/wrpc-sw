@@ -224,14 +224,6 @@ void decode_mac(const char *str, unsigned char *mac)
 	}
 }
 
-void decode_port(const char *str, int *port)
-{
-	if( !str )
-		*port = 0;
-	else
-		*port = atoi(str);
-}
-
 /*
  * This is a minimal atoi, that doesn't call strtol. Since we are only
  * calling atoi, it saves XXXX bytes of library code
