@@ -48,7 +48,7 @@ int storage_mount( struct storage_device *dev )
 
 		storage_dbg("try entry point 0x%08x\n", addr);
 		dev->rwops->read(dev->priv, addr, (void *)&magic, sizeof(magic) );
-		if (ntohl(magic) == SDB_MAGIC)
+		if (magic == htonl (SDB_MAGIC))
 			goto found;
 	}
 	storage_dbg("SDBFS not found.\n");
