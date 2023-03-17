@@ -11,12 +11,6 @@
 #include <libwr/sfp_lib.h>
 
 
-#ifdef CONFIG_CMD_SFP_INFO
-#define HAS_CMD_SFP_INFO 1
-#else
-#define HAS_CMD_SFP_INFO 0
-#endif
-
 #ifdef CONFIG_SFP_DOM
 #define HAS_SFP_DOM 1
 #else

@@ -32,14 +32,12 @@
 
 #include "sfp.h"
 
-void print_info(void)
+#ifdef CONFIG_CMD_SFP_INFO
+static void print_info(void)
 {
 	uint16_t tmp;
 	struct shw_sfp_header *sfp_header;
-	
-	if (!HAS_CMD_SFP_INFO) {
-		return;
-	}
+
 	sfp_header = sfp_info.sfp_header;
 	/* to save the code, print only the most important parameters */
 	pp_printf("Nominal Bit Rate: %d Mbits/s\n", sfp_header->br_nom * 100);
@@ -70,23 +68,40 @@ void print_info(void)
 		pp_printf("RX power: %d.%04d mW\n", tmp / 10000, tmp % 10000);
 	}
 }
+#endif /* CONFIG_CMD_SFP_INFO */
+
+static const char * const sfp_cmds[] =
+{
+	 [0] = "erase",
+	 [1] = "add",
+	 [2] = "show",
+	 [3] = "match",
+	 [4] = "ena",
+#ifdef CONFIG_CMD_SFP_INFO
+	 [5] = "info",
+#endif
+};
 
 static int cmd_sfp(const char *args[])
 {
-	int8_t sfpcount = 1, i, temp, ret;
-	struct s_sfpinfo sfp;
+	int icmd;
 
-	if (!args[0]) {
-		pp_printf("Wrong parameter\n");
-		return -EINVAL;
-	}
-	if (!strcasecmp(args[0], "erase")) {
+	icmd = sub_cmd(sfp_cmds, ARRAY_SIZE(sfp_cmds), args);
+
+	switch (icmd) {
+	case 0:
 		if (storage_sfpdb_erase() == EE_RET_I2CERR) {
 			pp_printf("Could not erase DB\n");
 			return -EIO;
 		}
 		return 0;
-	} else if (args[5] && !strcasecmp(args[0], "add")) {
+	case 1:
+	{
+		unsigned temp, i;
+		struct s_sfpinfo sfp;
+
+		if (!args[5])
+			return -1;
 		temp = strnlen(args[1], SFP_PN_LEN);
 		for (i = 0; i < temp; ++i)
 			sfp.pn[i] = args[1][i];
@@ -111,7 +126,13 @@ static int cmd_sfp(const char *args[])
 		}
 		pp_printf("%d SFPs in DB\n", temp);
 		return 0;
-	} else if (!strcasecmp(args[0], "show")) {
+	}
+	case 2:
+	{
+		unsigned i, temp;
+		struct s_sfpinfo sfp;
+		int sfpcount = 1;
+
 		for (i = 0; i < sfpcount; ++i) {
 			sfpcount = storage_get_sfp(&sfp, SFP_GET, i);
 			if (sfpcount == 0) {
@@ -129,8 +150,12 @@ static int cmd_sfp(const char *args[])
 				  (int) sfp.dTx, (int) sfp.dRx, sfp.alpha);
 		}
 		return 0;
-	} else if (!strcasecmp(args[0], "match")) {
-		if (args[1] && !strcasecmp(args[1], "force")) {
+	}
+	case 3:
+	{
+		int ret;
+
+		if (args[1] && !strcmp(args[1], "force")) {
 			ret = sfp_match(1);
 		} else {
 			ret = sfp_match(0);
@@ -157,17 +182,21 @@ static int cmd_sfp(const char *args[])
 			  (int) sfp_info.sfp_params.dRx,
 			  sfp_info.sfp_params.alpha);
 		return ret;
-	} else if (args[1] && !strcasecmp(args[0], "ena")) {
+	}
+	case 4:
+		if (!args[1])
+			return -1;
 		ep_sfp_enable(&wrc_endpoint_dev, atoi(args[1]));
 		return 0;
-	} else if (!strcasecmp(args[0], "info")) {
+#ifdef CONFIG_CMD_SFP_INFO
+	case 5:
 		/* DOM data is updated periodically by a task */
 		print_info();
-	} else {
-		pp_printf("Wrong parameter\n");
-		return -EINVAL;
+		return 0;
+#endif
+	default:
+		return -1;
 	}
-	return 0;
 }
 
 DEFINE_WRC_COMMAND(sfp) = {
