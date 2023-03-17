@@ -170,6 +170,11 @@ void storage_sdbfs_list(void)
 	int new = 1;
 
 	pp_printf("sdbfs on %s\n", wrc_storage_dev.name);
+	if (!fs->dev) {
+		/* If no device was mounted, exit now.  */
+		pp_printf("no SDBFS\n");
+		return;
+	}
 	while ((d = sdbfs_scan(fs, new)) != NULL) {
 		d->sdb_component.product.record_type = '\0';
 		pp_printf("file 0x%08x @ 0x%08x, name %19s\n",
