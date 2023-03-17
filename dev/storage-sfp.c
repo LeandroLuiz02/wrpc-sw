@@ -48,7 +48,7 @@ int storage_sfpdb_erase(void)
 }
 
 /* Dummy check if sfp information is correct by verifying it doesn't have
- * 0xff bytes */
+ * 0xff bytes in the part name. */
 static int sfp_valid(struct s_sfpinfo *sfp)
 {
 	int i;
@@ -173,9 +173,9 @@ static int storage_update_sfp(struct s_sfpinfo *sfp)
 
 	/* erase entire database */
 	if (storage_sfpdb_erase() == EE_RET_I2CERR) {
-			pp_printf("Could not erase DB\n");
-			return -1;
-		}
+		pp_printf("Could not erase DB\n");
+		return -1;
+	}
 
 	/* add all SFPs */
 	for (i = 0; i < sfpcount; ++i) {
