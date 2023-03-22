@@ -80,6 +80,18 @@ config TARGET_WR2RF_VME
 
 endchoice
 
+config WR_NODE_SIM
+	depends on WR_NODE && !HOST_PROCESS
+	boolean "Build simple software for test of WR PTP Core in simulation"
+	default n
+	help
+	  This option builds binary that is meant to be used in testbench
+	  simulations. It initializes only simulation-needed essentials.
+	  All the initialization that is time-consuming and unnecessary
+	  is avoided. The main function sends min-size frames to PTP
+	  MAC address destination and expects the simulation to return
+	  these frames.
+
 config WR_NODE
 	bool
 	default !TARGET_WR_SWITCH
@@ -179,6 +191,14 @@ config LATENCY_SYSLOG
 
 # The other ones can be set by non-developers
 
+comment "features"
+
+menu "PPSI config"
+	depends on WRPC_PPSI
+	source "ppsi/Kconfig_ppsi"
+
+endmenu
+
 config IPMI_CONSOLE
 	bool "Support for IPMI remote console"
 	depends on TARGET_ERTM14
@@ -191,14 +211,6 @@ config IP
 	  This allows to run LM32 code that is aware of IP. The feature is
 	  needed to run Etherbone in your gateware, because Etherbone
 	  is UDP-based and thus the CPU needs to run DHCP.
-
-config CMD_CONFIG
-	depends on WR_NODE
-	boolean "Include configuration in the output binary"
-	help
-	  This options adds the "config" command to the shell, which
-	  reports the current configuration.  This adds half a kilobyte
-	  to the binary size (100b for the code plus the .config file).
 
 config SYSLOG
 	depends on IP
@@ -224,6 +236,26 @@ config ETHERBONE
 	depends on IP && !HOST_PROCESS
 	default n
 	boolean "Etherbone support"
+
+config VLAN
+	depends on WR_NODE
+	boolean "Filter and rx/tx frames in a VLAN (as opposed to untagged)"
+
+config VLAN_NR
+	depends on VLAN
+	int "Use this VLAN number for filter/tx/rx"
+
+config VLAN_1_FOR_CLASS7
+	depends on VLAN
+	int "Route this VLAN to fabric class 7 (Etherbone)"
+
+config VLAN_2_FOR_CLASS7
+	depends on VLAN
+	int "Route this VLAN too to fabric class 7 (Etherbone)"
+
+config VLAN_FOR_CLASS6
+	depends on VLAN
+	int "Route this VLAN too to fabric class 6 (Streamer/NIC)"
 
 config SNMP
 	depends on IP && !HOST_PROCESS
@@ -273,6 +305,110 @@ config SNMP_AUX_DIAG
 	help
 	  This option adds a branch wrpcAuxDiag to the SNMP
 
+config WR_DIAG
+	depends on WR_NODE
+	boolean "Write of WRPC diagnostics to dedicated WB registers"
+	default n
+	help
+	  This is a software part of new (additional) diagnostics for WR PTP
+	  Core. It allows to access diagnostics values through WB registers
+	  (e.g. PCI bus). It allows the host machine (of SPEC/SVEC/etc.) to
+	  easily access information about the health of WR PTP Core.
+
+	  Please note that other option to access the status of WRPC, which
+	  is direct access to the WRPC's memory does not provide any mechanism
+	  to ensure the data consistency.
+
+config ABSCAL
+  depends on WR_NODE
+	default y
+	boolean "Support absolute calibration"
+	help
+	  If you select this, you'll be able to do absolute calibration
+	  using a loop-back SFP adapter, according to the procedure
+	  described and documented by Peter Jansweijer.
+
+config LLDP
+	depends on WR_NODE
+	boolean "Include LLDP protocol transmit-only"
+	default n
+	help
+	  This enable LLDP support. LLDP is a vendor-neutral link layer protocol 
+	  used by network devices for advertising their identity, capabilities, 
+	  and neighbors on local area network.
+
+config NETCONSOLE
+	depends on WR_NODE && IP && !NET_VERBOSE
+	boolean "Include netconsole via UDP"
+	default n
+	help
+	  Include netconsole to be run via UDP
+
+choice
+	prompt "Default mode of netconsole"
+	depends on NETCONSOLE
+	default NETCONSOLE_DEF_DISABLE
+
+config NETCONSOLE_DEF_WAIT
+	boolean "Netconsole is waiting for peer"
+	help
+	  Netconsole is waiting for peer to send a command
+
+config NETCONSOLE_DEF_DISABLE
+	boolean "Netconsole is disabled"
+	help
+	  Use SNMP or shell command to enable netconsole
+
+endchoice
+
+config TEMP_SENSORS
+	depends on WR_NODE
+	boolean "Add suport for temperature sensors"
+	default n
+	help
+	  Adds temp command and periodic task to read temperatures.
+	  Temperatures are can be reported by SNMP, syslog or wrpc-dump.
+	  Please note that temperature sensor type has to be selected as well
+	  (like w1)
+
+config GENERIC_SENSORS
+       depends on WR_NODE
+       boolean "Add support for generic sensors"
+       default n
+       help
+         Include generic (temperature, current, voltage) sensors.
+
+config W1
+	depends on EMBEDDED_NODE
+	boolean "Add support for W1 bus"
+	default n
+	help
+	  Add support for W1 bus
+
+config W1_TEMP
+	depends on W1 && TEMP_SENSORS
+	boolean "Add support for W1 temperature sensor"
+	default n
+	help
+	  Add support for temperature sensors on W1 bus. Adds w1 command.
+
+config W1_EEPROM
+	depends on W1
+	boolean "Add support for W1 eeprom"
+	default n
+	help
+	  Add support for eeprom on W1 bus. Adds w1r and w1w commands.
+
+comment "commands"
+
+config CMD_CONFIG
+	depends on WR_NODE
+	boolean "Include configuration in the output binary"
+	help
+	  This options adds the "config" command to the shell, which
+	  reports the current configuration.  This adds half a kilobyte
+	  to the binary size (100b for the code plus the .config file).
+
 config BUILD_INIT
 	depends on WR_NODE
 	default n
@@ -310,70 +446,6 @@ config CMD_CALIBRATION_SHOW
 	help
 	  Adds an "show" to the calibration command to print all
 	  calibration values.
-
-config VLAN
-  depends on WR_NODE
-	boolean "Filter and rx/tx frames in a VLAN (as opposed to untagged)"
-
-config VLAN_NR
-	depends on VLAN
-	int "Use this VLAN number for filter/tx/rx"
-
-config VLAN_1_FOR_CLASS7
-	depends on VLAN
-	int "Route this VLAN to fabric class 7 (Etherbone)"
-
-config VLAN_2_FOR_CLASS7
-	depends on VLAN
-	int "Route this VLAN too to fabric class 7 (Etherbone)"
-
-config VLAN_FOR_CLASS6
-	depends on VLAN
-	int "Route this VLAN too to fabric class 6 (Streamer/NIC)"
-
-config WR_DIAG
-	depends on WR_NODE
-	boolean "Write of WRPC diagnostics to dedicated WB registers"
-	default n
-	help
-	  This is a software part of new (additional) diagnostics for WR PTP
-	  Core. It allows to access diagnostics values through WB registers
-	  (e.g. PCI bus). It allows the host machine (of SPEC/SVEC/etc.) to
-	  easily access information about the health of WR PTP Core.
-
-	  Please note that other option to access the status of WRPC, which
-	  is direct access to the WRPC's memory does not provide any mechanism
-	  to ensure the data consistency.
-
-config WR_NODE_SIM
-	depends on WR_NODE && !HOST_PROCESS
-	boolean "Build simple software for test of WR PTP Core in simulation"
-	default n
-	help
-	  This option builds binary that is meant to be used in testbench
-	  simulations. It initializes only simulation-needed essentials.
-	  All the initialization that is time-consuming and unnecessary
-	  is avoided. The main function sends min-size frames to PTP
-	  MAC address destination and expects the simulation to return
-	  these frames.
-
-config ABSCAL
-  depends on WR_NODE
-	default y
-	boolean "Support absolute calibration"
-	help
-	  If you select this, you'll be able to do absolute calibration
-	  using a loop-back SFP adapter, according to the procedure
-	  described and documented by Peter Jansweijer.
-
-config LLDP
-	depends on WR_NODE
-	boolean "Include LLDP protocol transmit-only"
-	default n
-	help
-	  This enable LLDP support. LLDP is a vendor-neutral link layer protocol 
-	  used by network devices for advertising their identity, capabilities, 
-	  and neighbors on local area network.
 
 config CMD_REFRESH
 	depends on WR_NODE
@@ -432,30 +504,6 @@ config CMD_PTP_ADV
 	  --accuracy (clock accuracy)
 	  --allan (clock allan variance)
 
-config NETCONSOLE
-	depends on WR_NODE && IP && !NET_VERBOSE
-	boolean "Include netconsole via UDP"
-	default n
-	help
-	  Include netconsole to be run via UDP
-
-choice
-	prompt "Default mode of netconsole"
-	depends on NETCONSOLE
-	default NETCONSOLE_DEF_DISABLE
-
-config NETCONSOLE_DEF_WAIT
-	boolean "Netconsole is waiting for peer"
-	help
-	  Netconsole is waiting for peer to send a command
-
-config NETCONSOLE_DEF_DISABLE
-	boolean "Netconsole is disabled"
-	help
-	  Use SNMP or shell command to enable netconsole
-
-endchoice
-
 config CMD_NETCONSOLE
 	depends on NETCONSOLE
 	boolean "Include shell command to configure netconsole"
@@ -463,43 +511,16 @@ config CMD_NETCONSOLE
 	help
 	  Include command to configure netconsole
 
-config TEMP_SENSORS
+comment "wrpc-sw is tainted if you change the following options"
+config DEVELOPER
 	depends on WR_NODE
-	boolean "Add suport for temperature sensors"
-	default n
+	bool "Advanced configurations, only for developers"
 	help
-	  Adds temp command and periodic task to read temperatures.
-	  Temperatures are can be reported by SNMP, syslog or wrpc-dump.
-	  Please note that temperature sensor type has to be selected as well
-	  (like w1)
+	  The following options are new features under testing, or
+	  special customizations not normally useful for people not
+	  directly working on this package.  Please don't use unless
+	  you are a developer of wrpc-sw.
 
-config GENERIC_SENSORS
-       depends on WR_NODE
-       boolean "Add support for generic sensors"
-       default n
-       help
-         Include generic (temperature, current, voltage) sensors.
-
-config W1
-	depends on EMBEDDED_NODE
-	boolean "Add support for W1 bus"
-	default n
-	help
-	  Add support for W1 bus
-
-config W1_TEMP
-	depends on W1 && TEMP_SENSORS
-	boolean "Add support for W1 temperature sensor"
-	default n
-	help
-	  Add support for temperature sensors on W1 bus. Adds w1 command.
-
-config W1_EEPROM
-	depends on W1
-	boolean "Add support for W1 eeprom"
-	default n
-	help
-	  Add support for eeprom on W1 bus. Adds w1r and w1w commands.
 #
 # This is a set of configuration options that should not be changed by
 # normal users. If the "developer" menu is used, the binary is tainted.
@@ -577,16 +598,6 @@ config TRACE_PHY
 	int
 	default 1 if TRACE_PHY_ENABLE
 	default 0
-
-comment "wrpc-sw is tainted if you change the following options"
-config DEVELOPER
-	depends on WR_NODE
-	bool "Advanced configurations, only for developers"
-	help
-	  The following options are new features under testing, or
-	  special customizations not normally useful for people not
-	  directly working on this package.  Please don't use unless
-	  you are a developer of wrpc-sw.
 
 config HOST_PROCESS
 	depends on DEVELOPER
@@ -832,8 +843,3 @@ config PRINTF_NONE
 	boolean
 	default PRINTF_IS_NONE
 
-menu "PPSI config"
-	depends on WRPC_PPSI
-	source "ppsi/Kconfig_ppsi"
-
-endmenu
