@@ -303,14 +303,6 @@ config FLASH_INIT
 	default y if EMBEDDED_NODE
 	default n
 
-config AUX_DIAG
-	depends on WR_NODE
-	default n
-	boolean "Add support for auxiliary diagnostics registers"
-	help
-	  This option adds support for read/write of aux diag registers and
-	  the diag command.
-
 config CMD_CALIBRATION_SHOW
 	depends on WR_NODE
 	boolean "Add command to print all calibration values"
