@@ -531,15 +531,17 @@ void spll_get_num_channels(int *n_ref, int *n_out)
 void spll_show_stats()
 {
 	struct softpll_state *s = (struct softpll_state *)&softpll;
-	const char *statename = seq_states[s->seq_state];
+	const char *statename;
 
 	if (s->seq_state >= SEQ_STATES_NR)
 		statename = "<Unknown>";
+	else
+		statename = seq_states[s->seq_state];
 
 	if (softpll.mode > 0)
-		    pp_printf("softpll: irqs %d seq %s mode %d "
-		     "alignment_state %d HL%d ML%d HY=%d MY=%d DelCnt=%d setpoint:%d\n",
-		      s->irq_count, statename,
+		    pp_printf("softpll: irqs:%d seq:%s mode:%d "
+		     "alignment_state:%d HL%d ML%d HY=%d MY=%d DelCnt=%d setpoint:%d\n",
+			      s->irq_count, statename,
 			      s->mode, s->ext.align_state,
 			      s->helper.ld.locked, s->mpll.locked,
 			      s->helper.pi.y, s->mpll.pi.y,
