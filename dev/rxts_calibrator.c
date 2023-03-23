@@ -33,7 +33,7 @@
    - determine phases at which positive/negative transitions occur
    - transition phase value is in the middle between the rising and falling
      edges.
-   
+
    This calibration procedure is fast enough to be run on slave nodes whenever
    the link goes up. For master mode, the core must be run at least once as a
    slave to calibrate itself and store the current transition phase value in
@@ -53,6 +53,7 @@
 #define CAL_SCAN_RANGE (REF_CLOCK_PERIOD_PS + \
 		(3 * CAL_DEGLITCH_THRESHOLD * CAL_SCAN_STEP))
 
+/* States */
 #define TD_WAIT_INACTIVE	0
 #define TD_GOT_TRANSITION	1
 #define TD_DONE			2
@@ -65,9 +66,11 @@
 
 /* state of transition detector */
 struct trans_detect_state {
-	int prev_val;
-	int sample_count;
-	int state;
+	unsigned char state;
+
+	/* Up to CAL_DEGLITCH_THRESHOLD.  */
+	unsigned char sample_count;
+
 	int trans_phase;
 };
 
@@ -75,12 +78,9 @@ struct trans_detect_state {
    with it. If no transition phase has been found yet, returns 0. Non-zero
    polarity means we are looking for positive transitions, 0 - negative
    transitions */
-static int lookup_transition(struct trans_detect_state *state, int flip_bit,
+static void lookup_transition(struct trans_detect_state *state, int flip_bit,
 			     int phase, int polarity)
 {
-	if (polarity)
-		polarity = 1;
-
 	switch (state->state) {
 	case TD_WAIT_INACTIVE:
 		/* first, wait until we have at least CAL_DEGLITCH_THRESHOLD of
@@ -112,10 +112,9 @@ static int lookup_transition(struct trans_detect_state *state, int flip_bit,
 		break;
 
 	case TD_DONE:
-		return 1;
+		return;
 		break;
 	}
-	return 0;
 }
 
 static struct trans_detect_state det_rising, det_falling;
@@ -128,7 +127,6 @@ static int cal_cur_phase;
 void rxts_calibration_start(void)
 {
 	cal_cur_phase = 0;
-	det_rising.prev_val = det_falling.prev_val = -1;
 	det_rising.state = det_falling.state = TD_WAIT_INACTIVE;
 	det_rising.sample_count = 0;
 	det_falling.sample_count = 0;
@@ -155,7 +153,7 @@ int rxts_calibration_update(uint32_t *t24p_value)
 	lookup_transition(&det_falling, flip, cal_cur_phase, 0);
 
 	if (cal_cur_phase >= CAL_SCAN_RANGE) {
-		if (det_rising.state != TD_DONE || det_falling.state != TD_DONE) 
+		if (det_rising.state != TD_DONE || det_falling.state != TD_DONE)
 		{
 			pp_printf("RXTS calibration error.\n");
 			return -1;
