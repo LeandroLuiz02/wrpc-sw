@@ -126,7 +126,7 @@ static int cal_cur_phase;
    ptpnetif's check lock function when the PLL has already locked, to avoid
    complicating the API of ptp-noposix/ppsi. */
 
-void rxts_calibration_start(void)
+void calib_t24p_init(void)
 {
 	cal_cur_phase = 0;
 	det_rising.state = det_falling.state = TD_WAIT_INACTIVE;
@@ -212,7 +212,7 @@ int measure_t24p(void)
 	pp_printf("\n");
 
 	pp_printf("Calibrating RX timestamper...\n");
-	rxts_calibration_start();
+	calib_t24p_init();
 
 	while (!(rv = rxts_calibration_update(&value))) ;
 
@@ -273,17 +273,25 @@ static int calib_t24p_process(uint32_t *value)
 	return 0;
 }
 
-int calib_t24p(int mode)
+int calib_t24p(void)
 {
 	int ret;
 
-	if (mode == WRC_MODE_SLAVE)
-		ret = calib_t24p_process(&cal_phase_transition);
-	else
-		ret = calib_t24p_load_verbose(&cal_phase_transition);
+	ret = calib_t24p_process(&cal_phase_transition);
 
 	//update phtrans value in socket struct
 	if (ret >= 0)
 		ptpd_netif_set_phase_transition(cal_phase_transition);
 	return ret;
+}
+
+void calib_t24p_load(void)
+{
+	int ret;
+
+	ret = calib_t24p_load_verbose(&cal_phase_transition);
+
+	//update phtrans value in socket struct
+	if (ret >= 0)
+		ptpd_netif_set_phase_transition(cal_phase_transition);
 }

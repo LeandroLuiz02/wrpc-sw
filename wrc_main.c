@@ -141,7 +141,7 @@ static void wrc_initialize(void)
 
 	wrc_ptp_init();
 	/* try reading t24 phase transition from EEPROM */
-	calib_t24p(WRC_MODE_MASTER);
+	calib_t24p_load();
 	shell_init();
 	shell_register_commands();
 
