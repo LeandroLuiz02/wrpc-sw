@@ -139,7 +139,7 @@ void rxts_calibration_start(void)
 
 /* Updates RX timestamper state machine. Non-zero return value means that
    calibration is done. */
-int rxts_calibration_update(uint32_t *t24p_value)
+static int rxts_calibration_update(uint32_t *t24p_value)
 {
 	int32_t ttrans = 0;
 
