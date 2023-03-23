@@ -196,9 +196,11 @@ static int rxts_calibration_update(uint32_t *t24p_value)
 }
 
 /* legacy function for 'calibration force' command */
-int measure_t24p(uint32_t *value)
+int measure_t24p(void)
 {
 	int rv;
+	uint32_t value;
+
 	pp_printf("Waiting for link...\n");
 	while (!ep_link_up(&wrc_endpoint_dev, NULL))
 		timer_delay_ms(100);
@@ -212,8 +214,14 @@ int measure_t24p(uint32_t *value)
 	pp_printf("Calibrating RX timestamper...\n");
 	rxts_calibration_start();
 
-	while (!(rv = rxts_calibration_update(value))) ;
-	return rv;
+	while (!(rv = rxts_calibration_update(&value))) ;
+
+	if (rv < 0)
+	  return rv;
+
+	/* TODO: also apply ? */
+
+	return storage_save_t24p(value);
 }
 
 /* Delays for master must have been calibrated while running as slave */
