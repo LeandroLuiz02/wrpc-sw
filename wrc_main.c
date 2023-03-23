@@ -60,10 +60,6 @@
 #include "lib/lldp.h"
 #endif
 
-
-uint32_t cal_phase_transition = 2389;
-
-
 struct wr_endpoint_device wrc_endpoint_dev;
 
 int wrc_wr_diags(void); // fixme: move the header

@@ -12,8 +12,9 @@
 #include <libwr/hal_shmem.h>
 #include <libwr/shmem.h>
 #include <wrc_ptp.h>
-#include <dev/syscon.h>
-#include <dev/endpoint.h>
+#include "dev/syscon.h"
+#include "dev/endpoint.h"
+#include "dev/rxts_calibrator.h"
 #include <softpll_ng.h>
 #include "net.h"
 
@@ -37,8 +38,6 @@ static int read_phase_val(struct wrc_port_state *port)
 
 	return 0;
 }
-
-extern uint32_t cal_phase_transition;
 
 void wrpc_get_port_state(struct wrc_port_state *port)
 {

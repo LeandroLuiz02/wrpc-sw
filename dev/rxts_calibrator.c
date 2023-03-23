@@ -74,6 +74,8 @@ struct trans_detect_state {
 	int trans_phase;
 };
 
+uint32_t cal_phase_transition = 2389;
+
 /* finds the transition in the value of flip_bit and returns phase associated
    with it. If no transition phase has been found yet, returns 0. Non-zero
    polarity means we are looking for positive transitions, 0 - negative
