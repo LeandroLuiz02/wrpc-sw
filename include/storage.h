@@ -97,7 +97,8 @@ int storage_sfpdb_erase(void);
 int storage_match_sfp(struct s_sfpinfo *sfp);
 int storage_get_sfp(struct s_sfpinfo *sfp, int add, int pos);
 
-int storage_phtrans(uint32_t *val, int write);
+int storage_load_t24p(uint32_t *valp);
+int storage_save_t24p(uint32_t val);
 
 int storage_init_erase(void);
 int storage_init_add(const char *args[]);

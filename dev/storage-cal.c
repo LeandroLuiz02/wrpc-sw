@@ -200,11 +200,12 @@ out_close:
 	return ret;
 }
 
-// FIXME: migrate to new API
-int storage_phtrans(uint32_t *valp, int write)
+int storage_load_t24p(uint32_t *valp)
 {
-	if( !write )
-		return storage_get_calibration_parameter( CAL_PARAM_T24P, valp );
-	else
-		return storage_set_calibration_parameter( CAL_PARAM_T24P, *valp );
+	return storage_get_calibration_parameter(CAL_PARAM_T24P, valp);
+}
+
+int storage_save_t24p(uint32_t val)
+{
+	return storage_set_calibration_parameter(CAL_PARAM_T24P, val);
 }

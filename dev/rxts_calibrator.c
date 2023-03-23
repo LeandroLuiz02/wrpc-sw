@@ -219,7 +219,7 @@ static int calib_t24p_master(uint32_t *value)
 {
 	int rv;
 
-	rv = storage_phtrans(value, 0);
+	rv = storage_load_t24p(value);
 	if(rv < 0) {
 		pp_printf("Error %d while reading t24p from storage\n", rv);
 		return rv;
@@ -250,9 +250,9 @@ static int calib_t24p_slave(uint32_t *value)
 	 * Let's see if we have a matching value in EEPROM:
 	 * accept a 200ps difference, otherwise rewrite eeprom
 	 */
-	rv = storage_phtrans(&prev, 0 /* rd */);
+	rv = storage_load_t24p(&prev);
 	if (rv < 0 || (prev < *value - CALIB_T24P_RECALIBRATE_THRESHOLD) || (prev > *value + CALIB_T24P_RECALIBRATE_THRESHOLD)) {
-		rv = storage_phtrans(value, 1);
+		rv = storage_save_t24p(*value);
 		phy_dbg("Wrote new t24p value: %d ps (%s)\n", *value,
 			  rv < 0 ? "Failed" : "Success");
 	}

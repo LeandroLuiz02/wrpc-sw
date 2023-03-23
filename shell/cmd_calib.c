@@ -36,7 +36,7 @@ static int cmd_calibration(const char *args[])
 	int icmd;
 
 	if (!args[0]) {
-		if (storage_phtrans(&trans, 0) > 0) {
+		if (storage_load_t24p(&trans) > 0) {
 			pp_printf("Found phase transition in EEPROM: %dps\n",
 				  (unsigned int) trans);
 			return 0;
@@ -45,7 +45,7 @@ static int cmd_calibration(const char *args[])
 			if (measure_t24p(&trans) < 0)
 				return -1;
 
-			return storage_phtrans(&trans, 1);
+			return storage_save_t24p(trans);
 		}
 	}
 
@@ -55,7 +55,7 @@ static int cmd_calibration(const char *args[])
 	case 0:
 		if (measure_t24p(&trans) < 0)
 			return -1;
-		return storage_phtrans(&trans, 1);
+		return storage_save_t24p(trans);
 	case 1:
 		storage_load_calibration();
 		return 0;
