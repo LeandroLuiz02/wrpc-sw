@@ -14,6 +14,6 @@ extern uint32_t cal_phase_transition;
 
 void rxts_calibration_start(void);
 int measure_t24p(void);
-int calib_t24p(int mode, uint32_t *value);
+int calib_t24p(int mode);
 
 #endif

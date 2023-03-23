@@ -225,7 +225,7 @@ int measure_t24p(void)
 }
 
 /* Delays for master must have been calibrated while running as slave */
-static int calib_t24p_master(uint32_t *value)
+static int calib_t24p_load_verbose(uint32_t *value)
 {
 	int rv;
 
@@ -240,7 +240,7 @@ static int calib_t24p_master(uint32_t *value)
 
 
 /*SoftPLL must be locked prior calling this function*/
-static int calib_t24p_slave(uint32_t *value)
+static int calib_t24p_process(uint32_t *value)
 {
 	int rv;
 	uint32_t prev;
@@ -253,7 +253,7 @@ static int calib_t24p_slave(uint32_t *value)
 	}
 	if (rv < 0) {
 		/* Fall back on master == eeprom-or-error */
-		return calib_t24p_master(value);
+		return calib_t24p_load_verbose(value);
 	}
 
 	/*
@@ -261,7 +261,9 @@ static int calib_t24p_slave(uint32_t *value)
 	 * accept a 200ps difference, otherwise rewrite eeprom
 	 */
 	rv = storage_load_t24p(&prev);
-	if (rv < 0 || (prev < *value - CALIB_T24P_RECALIBRATE_THRESHOLD) || (prev > *value + CALIB_T24P_RECALIBRATE_THRESHOLD)) {
+	if (rv < 0
+	    || (prev < *value - CALIB_T24P_RECALIBRATE_THRESHOLD)
+	    || (prev > *value + CALIB_T24P_RECALIBRATE_THRESHOLD)) {
 		rv = storage_save_t24p(*value);
 		phy_dbg("Wrote new t24p value: %d ps (%s)\n", *value,
 			  rv < 0 ? "Failed" : "Success");
@@ -271,17 +273,17 @@ static int calib_t24p_slave(uint32_t *value)
 	return 0;
 }
 
-int calib_t24p(int mode, uint32_t *value)
+int calib_t24p(int mode)
 {
 	int ret;
 
 	if (mode == WRC_MODE_SLAVE)
-		ret = calib_t24p_slave(value);
+		ret = calib_t24p_process(&cal_phase_transition);
 	else
-		ret = calib_t24p_master(value);
+		ret = calib_t24p_load_verbose(&cal_phase_transition);
 
 	//update phtrans value in socket struct
 	if (ret >= 0)
-		ptpd_netif_set_phase_transition(*value);
+		ptpd_netif_set_phase_transition(cal_phase_transition);
 	return ret;
 }
