@@ -209,10 +209,10 @@ const char *fromhex(const char *hex, int *v)
 
 const char *fromdec(const char *dec, int *v)
 {
-	int o = 0, sign = 1;
+	int o = 0, sign = 0;
 
 	if (dec && *dec == '-') {
-		sign = -1;
+		sign = 1;
 		dec++;
 	}
 	for (; dec && *dec; ++dec) {
@@ -223,7 +223,9 @@ const char *fromdec(const char *dec, int *v)
 		}
 	}
 
-	*v = o * sign;
+	if (sign)
+		o = -o;
+	*v = o;
 	return dec;
 }
 
