@@ -282,15 +282,27 @@ void dump_mem(uint8_t *p, int size)
  * use signed 64bit division, then correct the sign of the result */
 long long __divdi3 (long long A, long long B)
 {
-    int sign_a, sign_b;
-    unsigned long long a_u;
-    unsigned long long b_u;
+	int sign = 0;
+	unsigned long long a_u;
+	unsigned long long b_u;
+	long long res;
 
-    sign_a = A < 0 ? -1 : 1;
-    sign_b = B < 0 ? -1 : 1;
-    a_u = A * sign_a;
-    b_u = A * sign_b;
-    return sign_a * sign_b * (long long) (a_u / b_u);
+	if (A < 0) {
+		sign ^= 1;
+		a_u = -A;
+	}
+	else
+		a_u = A;
+	if (B < 0) {
+		sign ^= 1;
+		b_u = -B;
+	}
+	else
+		b_u = B;
+	res = (long long) (a_u / b_u);
+	if (sign)
+		res = -res;
+	return res;
 }
 
 /* To save code, at the 64bit modulo use division and multiplication instead of
