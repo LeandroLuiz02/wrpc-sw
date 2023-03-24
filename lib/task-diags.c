@@ -80,7 +80,7 @@ int wrc_wr_diags(void)
 
 	
 	/* servo state (if slave)s */
-	if (ptp_mode == WRC_MODE_SLAVE) {
+	if (wrc_ptp_get_mode() == WRC_MODE_SLAVE) {
 		struct pp_servo *s = SRV(ppg->pp_instances);
 		
 		struct wrh_servo_t *wrh_servo = NULL;

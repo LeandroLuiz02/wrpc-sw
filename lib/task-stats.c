@@ -39,7 +39,8 @@ int wrc_log_stats(void)
 
 
 	/* stats update condition for Slave mode */
-	if (wrc_stats_last == s->update_count && ptp_mode == WRC_MODE_SLAVE) {
+	if (wrc_stats_last == s->update_count
+	    && wrc_ptp_get_mode() == WRC_MODE_SLAVE) {
 		last_update_tick = 0;
 		return 0;
 	}
@@ -68,7 +69,7 @@ int wrc_log_stats(void)
 	pp_printf("lock:%d ", state.locked ? 1 : 0);
 	pp_printf("ptp:%s ", get_state_as_string(&ppi_static, ppi_static.state));
 
-	if (ptp_mode == WRC_MODE_SLAVE) {
+	if (wrc_ptp_get_mode() == WRC_MODE_SLAVE) {
 		pp_printf("sv:%d ", (s->flags & PP_SERVO_FLAG_VALID) ? 1 : 0);
 		pp_printf("ss:'%s' ", s->servo_state_name);
 	}
@@ -85,7 +86,7 @@ int wrc_log_stats(void)
 	wrh_servo = (ppi_static.protocol_extension == PPSI_EXT_WR && ppi_static.extState == PP_EXSTATE_ACTIVE) ?
 			(wrh_servo_t*) ppi_static.ext_data : NULL;
 
-	if (ptp_mode == WRC_MODE_SLAVE) {
+	if (wrc_ptp_get_mode() == WRC_MODE_SLAVE) {
 #if CONFIG_HAS_EXT_WR
 		wr_servo_ext_t * wr_servo_ext =
 			&((struct wr_data *)wrh_servo)->servo_ext;
