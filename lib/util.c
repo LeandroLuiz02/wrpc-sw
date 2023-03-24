@@ -61,7 +61,7 @@ struct time_m {
 char *format_time(uint64_t sec, int format)
 {
 	struct time_m t;
-	static char buf[64];
+	static char buf[32];
 	unsigned long dayclock, dayno;
 	int year = EPOCH_YR;
 
@@ -87,6 +87,7 @@ char *format_time(uint64_t sec, int format)
 	switch(format) {
 	case TIME_FORMAT_LEGACY:
 	default:
+		/* At most 3+2+3+1+2+2+4+2+2+1+2+1+2+1=28 bytes. */
 		sprintf(buf, "%s, %s %d, %d, %02d:%02d:%02d", _days[t.tm_wday],
 			_months[t.tm_mon], t.tm_mday, t.tm_year + YEAR0,
 			t.tm_hour, t.tm_min, t.tm_sec);
