@@ -225,11 +225,10 @@ static void print_main_description(void)
 
 	pcprintf(1, 1, C_BLUE, "%s WRPC Monitor %s",
 		 wrc_global_link.wrc_hw_name, build_id.commit_id);
-	cprintf(C_MAGENTA, "\nEsc or q = exit; r = redraw GUI");
+	cprintf(C_MAGENTA, " | Esc/q = exit; r = redraw\n\n");
 
-	cprintf(C_BLUE, "\n\nTAI Time:%22sUTC offset:", "");
-
-	pp_printf("\nPLL mode:%22sPLL state:\n", "");
+	cprintf(C_BLUE, "TAI Time:%22sUTC offset:%4s  PLL mode:%4s state:\n",
+		"", "", "");
 
 	ndevs = netif_get_device_count();
 
@@ -243,7 +242,7 @@ static void print_main_description(void)
 		pp_printf(" Itf |        MAC        |       IP (source)       |    RX   |    TX   | VLAN\n");
 	}
 
-	pp_printf("\n---- HAL --|------------- PPSI ------------------------------------------------\n");
+	pp_printf("\n--- HAL ---|------------- PPSI ------------------------------------------------\n");
 	pp_printf(  " Itf | Frq |  Config   | MAC of peer port  |    PTP/EXT/PDETECT States   | Pro \n");
 	pp_printf(  "-----+-----+-----------+-------------------+-----------------------------+-----\n");
 	for (i = 0 ; i < ndevs; i++) {
@@ -265,17 +264,17 @@ static void print_time_pll(void)
 	shw_pps_gen_get_time(&sec, &nsec);
 
 	/* TAI Time */
-	pcprintf(4, 11, C_WHITE, "%s", format_time(sec, TIME_FORMAT_SORTED));
+	pcprintf(3, 11, C_WHITE, "%s", format_time(sec, TIME_FORMAT_SORTED));
 
 	/* UTC offset */
 	wrc_ptp_get_leapsec(&leap_sec , &tmp /* dummy */);
-	pprintf(4, 44, "%d", leap_sec);
+	pprintf(3, 44, "%d", leap_sec);
 
 	/* Timing mode  */
-	pprintf(5, 11, getStateAsString(timing_mode_state, WRPC_ARCH_G(ppg)->timingMode));
+	pprintf(3, 59, getStateAsString(timing_mode_state, WRPC_ARCH_G(ppg)->timingMode));
 
 	/* PLL locking state */
-	pprintf(5, 44, "Lock%s", spll_check_lock(0) ? "ed " : "ing");
+	pprintf(3, 70, "Lock%s", spll_check_lock(0) ? "ed " : "ing");
 }
 
 static void print_port(unsigned i)
@@ -286,13 +285,13 @@ static void print_port(unsigned i)
 	char buf[20];
 
 	if (port_up) {
-		pcprintf(9, 1, C_GREEN, " %s", ndev->name);
+		pcprintf(7, 1, C_GREEN, " %s", ndev->name);
 	} else {
-		pcprintf(9, 1, C_RED, "*%s", ndev->name);
+		pcprintf(7, 1, C_RED, "*%s", ndev->name);
 	}
 
 	format_mac(buf, ndev->ep->mac_addr);
-	pcprintf(9, 8, C_MAGENTA, "%s", buf);
+	pcprintf(7, 8, C_MAGENTA, "%s", buf);
 
 	if (i != 0) /* FIXME: should be independent for each interface */
 		return;
@@ -304,22 +303,22 @@ static void print_port(unsigned i)
 		format_ip(buf, ip);
 		switch (ip_status) {
 		case IP_TRAINING:
-			pcprintf(9, 28, C_RED,   "BOOTP running          ");
+			pcprintf(7, 28, C_RED,   "BOOTP running          ");
 			break;
 		case IP_OK_BOOTP:
-			pcprintf(9, 28, C_GREEN, "%16s(BOOTP)", buf);
+			pcprintf(7, 28, C_GREEN, "%16s(BOOTP)", buf);
 			break;
 		case IP_OK_STATIC:
-			pcprintf(9, 28, C_GREEN, "%15s(static)", buf);
+			pcprintf(7, 28, C_GREEN, "%15s(static)", buf);
 			break;
 		}
 	} else
-		pcprintf(9, 28, C_GREEN, "                       ");
+		pcprintf(7, 28, C_GREEN, "                       ");
 
 	minic_get_stats(&tx, &rx, &rx_err);
-	pcprintf(9, 54, C_MAGENTA, "%7d", rx);
-	pprintf(9, 64, "%7d", tx);
-	pprintf(9, 74, "%4d", wrc_vlan_number);
+	pcprintf(7, 54, C_MAGENTA, "%7d", rx);
+	pprintf(7, 64, "%7d", tx);
+	pprintf(7, 74, "%4d", wrc_vlan_number);
 }
 
 static void print_state(unsigned i)
@@ -330,15 +329,15 @@ static void print_state(unsigned i)
 	int color;
 
 	if (port_up) {
-		pcprintf(14, 1, C_GREEN, " %s", ndev->name);
+		pcprintf(12, 1, C_GREEN, " %s", ndev->name);
 	} else {
-		pcprintf(14, 1, C_RED,   "*%s", ndev->name);
+		pcprintf(12, 1, C_RED,   "*%s", ndev->name);
 	}
 
 	/* FIXME: should be independent for each interface */
 	wrpc_get_port_state(&state);
 
-	pcprintf(14, 8, C_GREEN, state.locked ? "Lck" : "   ");
+	pcprintf(12, 8, C_GREEN, state.locked ? "Lck" : "   ");
 
 /* ----------------------------------------------------------------------------------------------------------------------- */
 	/*
@@ -369,12 +368,12 @@ static void print_state(unsigned i)
 		} else {
 			str_config = "auto";
 		}
-		pcprintf(14, 14, C_WHITE, "%-10s", str_config);
+		pcprintf(12, 14, C_WHITE, "%-10s", str_config);
 
 		/* peer not implemented */
-		pprintf(14, 26, format_mac(mac_buf, p));
+		pprintf(12, 26, format_mac(mac_buf, p));
 
-		pcprintf(14, 46, C_GREEN, "%s/", getStateAsString(pp_instance_state_to_name, ppi_pt->state));
+		pcprintf(12, 46, C_GREEN, "%s/", getStateAsString(pp_instance_state_to_name, ppi_pt->state));
 		/* print extension state */
 		switch (ppi_pt->protocol_extension) {
 #if CONFIG_HAS_EXT_WR
@@ -415,7 +414,7 @@ static void print_state(unsigned i)
 			proto = '?';
 		}
 
-		pcprintf(14, 76, C_WHITE, "%c", proto);
+		pcprintf(12, 76, C_WHITE, "%c", proto);
 		color = extensionStateColor(ppi_pt);
 		cprintf(color, "-%c", pe_info->short_ext_name);
 	}
@@ -480,7 +479,7 @@ static void print_aux_data(void)
 
 static void print_servo_description(void)
 {
-	pcprintf(18, 1, C_BLUE, "Servo state:\n");
+	pcprintf(16, 1, C_BLUE, "Servo state:\n");
 
 	cprintf(C_CYAN, "\n--- Timing parameters ---------------------------------------------------------\n");
 
@@ -493,7 +492,7 @@ static void print_servo_description(void)
 
 	pp_printf("delayAsymmetry   :\n");
 	pp_printf("delayCoefficient :");
-	pprintf(25, 45, "fpa\n");
+	pprintf(23, 45, "fpa\n");
 
 	pp_printf("ingressLatency   :\n");
 	pp_printf("egressLatency    :\n");
@@ -519,7 +518,7 @@ static void print_servo_data(struct pp_instance *ppi)
 	const struct proto_ext_info_t *pe_info = IS_PROTO_EXT_INFO_AVAILABLE(proto_extension) ? &proto_ext_info[proto_extension] :  &proto_ext_info[0];
 
 	/* --------------------------- Synchronization status ---------------------------- */
-	pprintf(18, 1, "");
+	pprintf(16, 1, "");
 	if (ppi->state != PPS_SLAVE || !(ppi->servo->flags & PP_SERVO_FLAG_VALID)) {
 		cprintf(C_RED, "Link down, master mode or sync info not valid");
 		return;
@@ -549,26 +548,22 @@ static void print_servo_data(struct pp_instance *ppi)
 				  | DESCRIPTION_WR_SERVO)))
 		return;
 
-	pcprintf(18, 23, C_WHITE, "%s:%s: %s%-15s\n",
-		 ppi->cfg.iface_name,
+	pcprintf(16, 23, C_WHITE, "%s: %-20s %-15s\n",
 		 pe_info->ext_name,
 		 ppi->servo->servo_state_name,
 		 ppi->servo->flags & PP_SERVO_FLAG_WAIT_HW ?
-		 " (wait for hw)" : "");
+		 "(wait for hw)" : "");
 
 	/* "tracking disabled" is just a testing tool */
 	if (wrh_servo && !wrh_servo->tracking_enabled)
 		cprintf(C_RED, "Tracking forcibly disabled\n");
-	else
-		pp_printf("\e[K"); /* clear till the end of a line */
-
 
 	/* +- Timing parameters --------------------------------------------------------- */
 
-	pcprintf(21, 20, C_WHITE, "%19s nsec", interval_to_string(ppg->currentDS->meanDelay));
+	pcprintf(19, 20, C_WHITE, "%19s nsec", interval_to_string(ppg->currentDS->meanDelay));
 
 	/*delayMS */
-	pcprintf(22, 20, C_WHITE,"%24s", optimized_pp_time_toString_ps_as_ns(&ppi->servo->delayMS, buf));
+	pcprintf(20, 20, C_WHITE,"%24s", optimized_pp_time_toString_ps_as_ns(&ppi->servo->delayMS, buf));
 	{
 		struct pp_time *delayMM = &ppi->servo->delayMM;
 #if CONFIG_HAS_EXT_WR
@@ -576,7 +571,7 @@ static void print_servo_data(struct pp_instance *ppi)
 			delayMM = &wr_servo_ext->rawDelayMM;
 #endif
 		/* delayMM */
-		pcprintf(23, 20, C_WHITE,"%24s", optimized_pp_time_toString_ps_as_ns(delayMM, buf));
+		pcprintf(21, 20, C_WHITE,"%24s", optimized_pp_time_toString_ps_as_ns(delayMM, buf));
 	}
 
 	//cprintf(C_BLUE, "Estimated link length:     ");
@@ -591,18 +586,18 @@ static void print_servo_data(struct pp_instance *ppi)
 
 
 	/* delayAsymmetry */
-	pcprintf(24, 20, C_WHITE, "%19s nsec",   interval_to_string(ppi->portDS->delayAsymmetry));
+	pcprintf(22, 20, C_WHITE, "%19s nsec",   interval_to_string(ppi->portDS->delayAsymmetry));
 	/* delayCoefficient */
-	pcprintf(25, 23, C_WHITE, "%s", relative_interval_to_string(ppi->asymmetryCorrectionPortDS.scaledDelayCoefficient));
+	pcprintf(23, 23, C_WHITE, "%s", relative_interval_to_string(ppi->asymmetryCorrectionPortDS.scaledDelayCoefficient));
 	/* fpa */
-	pcprintf(25, 51, C_WHITE, "%Lu", ppi->asymmetryCorrectionPortDS.scaledDelayCoefficient); /* print as unsigned! */
+	pcprintf(23, 51, C_WHITE, "%Lu", ppi->asymmetryCorrectionPortDS.scaledDelayCoefficient); /* print as unsigned! */
 
 	/* ingressLatency */
-	pcprintf(26, 20, C_WHITE, "%19s nsec",   interval_to_string(ppi->timestampCorrectionPortDS.ingressLatency));
+	pcprintf(24, 20, C_WHITE, "%19s nsec",   interval_to_string(ppi->timestampCorrectionPortDS.ingressLatency));
 	/* egressLatency */
-	pcprintf(27, 20, C_WHITE, "%19s nsec",   interval_to_string(ppi->timestampCorrectionPortDS.egressLatency));
+	pcprintf(25, 20, C_WHITE, "%19s nsec",   interval_to_string(ppi->timestampCorrectionPortDS.egressLatency));
 	/* semistaticLatency */
-	pcprintf(28, 20, C_WHITE, "%19s nsec",   interval_to_string(ppi->timestampCorrectionPortDS.semistaticLatency));
+	pcprintf(26, 20, C_WHITE, "%19s nsec",   interval_to_string(ppi->timestampCorrectionPortDS.semistaticLatency));
 
 	/*if (0) {
 		cprintf(C_BLUE, "Fiber asymmetry:   ");
@@ -611,15 +606,15 @@ static void print_servo_data(struct pp_instance *ppi)
 	}*/
 
 	/* offsetFromMaster */
-	pcprintf(29, 20, C_WHITE, "%19s nsec", interval_to_string (ppg->currentDS->offsetFromMaster));
-	row_offset = 30;
+	pcprintf(27, 20, C_WHITE, "%19s nsec", interval_to_string (ppg->currentDS->offsetFromMaster));
+	row_offset = 28;
 	if (wrh_servo) {
 		/* Phase setpoint */
-		pcprintf(30, 20, C_WHITE, "%19s nsec", convert_ps_to_str_ns(buf, (int64_t) wrh_servo->cur_setpoint_ps));
+		pcprintf(28, 20, C_WHITE, "%19s nsec", convert_ps_to_str_ns(buf, (int64_t) wrh_servo->cur_setpoint_ps));
 
 
 		/* Skew */
-		pcprintf(31, 20, C_WHITE, "%19s nsec", convert_ps_to_str_ns(buf, wrh_servo->skew_ps));
+		pcprintf(29, 20, C_WHITE, "%19s nsec", convert_ps_to_str_ns(buf, wrh_servo->skew_ps));
 		row_offset += 2;
 	}
 
@@ -628,13 +623,13 @@ static void print_servo_data(struct pp_instance *ppi)
 #if CONFIG_HAS_EXT_WR
 	if (wrh_servo) {
 		/* Master PHY delays TX */
-		pcprintf(33, 26, C_WHITE,"%22s", optimized_pp_time_toString_ps_as_ns(&wr_servo_ext->delta_txm, buf));
+		pcprintf(31, 26, C_WHITE,"%22s", optimized_pp_time_toString_ps_as_ns(&wr_servo_ext->delta_txm, buf));
 		cprintf(C_BLUE, "  RX:");
 		/* print and clear till the end of a line */
 		cprintf(C_WHITE,"%22s\e[K", optimized_pp_time_toString_ps_as_ns(&wr_servo_ext->delta_rxm, buf));
 
 		/* Slave  PHY delays TX */
-		pcprintf(34, 26, C_WHITE,"%22s", optimized_pp_time_toString_ps_as_ns(&wr_servo_ext->delta_txs, buf));
+		pcprintf(32, 26, C_WHITE,"%22s", optimized_pp_time_toString_ps_as_ns(&wr_servo_ext->delta_txs, buf));
 		cprintf(C_BLUE, "  RX:");
 		/* print and clear till the end of a line */
 		cprintf(C_WHITE,"%22s\e[K", optimized_pp_time_toString_ps_as_ns(&wr_servo_ext->delta_rxs, buf));
