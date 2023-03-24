@@ -6,10 +6,8 @@
  *
  * Released according to the GNU GPL, version 2 or any later version.
  */
-#include <stdio.h>
 #include <stdint.h>
 #include <stdarg.h>
-#include <time.h>
 #include <wrc.h>
 
 /* cut from libc sources */
@@ -17,7 +15,14 @@
 #define 	YEAR0   1900
 #define 	EPOCH_YR   1970
 #define 	SECS_DAY   (24L * 60L * 60L)
+#if 0
+/* The full and correct definition */
 #define 	LEAPYEAR(year)   (!((year) % 4) && (((year) % 100) || !((year) % 400)))
+#else
+/* Correct from 1901 to 2099. */
+#define 	LEAPYEAR(year)   (!((year) % 4))
+#endif
+
 #define 	YEARSIZE(year)   (LEAPYEAR(year) ? 366 : 365)
 #define 	FIRSTSUNDAY(timp)   (((timp)->tm_yday - (timp)->tm_wday + 420) % 7)
 #define 	FIRSTDAYOF(timp)   (((timp)->tm_wday - (timp)->tm_yday + 420) % 7)
@@ -41,9 +46,21 @@ static const unsigned char _ytab[2][12] = {
 	{31, 29, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31}
 };
 
+/* Like struct tm (from time.h), but we don't depend on the header. */
+struct time_m {
+	unsigned tm_sec;
+	unsigned tm_min;
+	unsigned tm_hour;
+	
+	unsigned tm_wday;
+	unsigned tm_mday;
+	unsigned tm_mon;
+	unsigned tm_year;
+};
+
 char *format_time(uint64_t sec, int format)
 {
-	struct tm t;
+	struct time_m t;
 	static char buf[64];
 	unsigned long dayclock, dayno;
 	int year = EPOCH_YR;
@@ -60,14 +77,12 @@ char *format_time(uint64_t sec, int format)
 		year++;
 	}
 	t.tm_year = year - YEAR0;
-	t.tm_yday = dayno;
 	t.tm_mon = 0;
 	while (dayno >= _ytab[LEAPYEAR(year)][t.tm_mon]) {
 		dayno -= _ytab[LEAPYEAR(year)][t.tm_mon];
 		t.tm_mon++;
 	}
 	t.tm_mday = dayno + 1;
-	t.tm_isdst = 0;
 
 	switch(format) {
 	case TIME_FORMAT_LEGACY:
