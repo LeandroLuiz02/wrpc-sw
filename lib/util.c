@@ -12,7 +12,6 @@
 
 /* cut from libc sources */
 
-#define 	YEAR0   1900
 #define 	EPOCH_YR   1970
 #define 	SECS_DAY   (24L * 60L * 60L)
 #if 0
@@ -55,7 +54,7 @@ struct time_m {
 	unsigned tm_wday;
 	unsigned tm_mday;
 	unsigned tm_mon;
-	unsigned tm_year;
+	unsigned tm_year; /* Year from 0 to 9999 */
 };
 
 char *format_time(uint64_t sec, int format)
@@ -76,7 +75,7 @@ char *format_time(uint64_t sec, int format)
 		dayno -= YEARSIZE(year);
 		year++;
 	}
-	t.tm_year = year - YEAR0;
+	t.tm_year = year;
 	t.tm_mon = 0;
 	while (dayno >= _ytab[LEAPYEAR(year)][t.tm_mon]) {
 		dayno -= _ytab[LEAPYEAR(year)][t.tm_mon];
@@ -89,7 +88,7 @@ char *format_time(uint64_t sec, int format)
 	default:
 		/* At most 3+2+3+1+2+2+4+2+2+1+2+1+2+1=28 bytes. */
 		sprintf(buf, "%s, %s %d, %d, %02d:%02d:%02d", _days[t.tm_wday],
-			_months[t.tm_mon], t.tm_mday, t.tm_year + YEAR0,
+			_months[t.tm_mon], t.tm_mday, t.tm_year,
 			t.tm_hour, t.tm_min, t.tm_sec);
 		break;
 	case TIME_FORMAT_SYSLOG:
@@ -98,7 +97,7 @@ char *format_time(uint64_t sec, int format)
 		break;
 	case TIME_FORMAT_SORTED:
 		sprintf(buf, "%4d-%02d-%02d-%02d:%02d:%02d",
-			t.tm_year + YEAR0, t.tm_mon + 1, t.tm_mday,
+			t.tm_year, t.tm_mon + 1, t.tm_mday,
 			t.tm_hour, t.tm_min, t.tm_sec);
 		break;
 	}
