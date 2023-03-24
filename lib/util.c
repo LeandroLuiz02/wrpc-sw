@@ -24,19 +24,19 @@
 #define 	TIME_MAX   ULONG_MAX
 #define 	ABB_LEN   3
 
-static const char * const _days[] = {
+static const char _days[][4] = {
 	"Sun", "Mon", "Tue", "Wed",
 	"Thu", "Fri", "Sat"
 };
 
-static const char * const _months[] = {
+static const char _months[][4] = {
 	"Jan", "Feb", "Mar",
 	"Apr", "May", "Jun",
 	"Jul", "Aug", "Sep",
 	"Oct", "Nov", "Dec"
 };
 
-static const int _ytab[2][12] = {
+static const unsigned char _ytab[2][12] = {
 	{31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31},
 	{31, 29, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31}
 };
