@@ -309,7 +309,7 @@ long long __divdi3 (long long A, long long B)
  * modulo function from the standard library */
 unsigned long long __umoddi3 (unsigned long long A, unsigned long long B)
 {
-	volatile uint64_t x = A/B;
+	uint64_t x = A/B;
 	return A - (x)*B;
 }
 
