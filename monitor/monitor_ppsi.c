@@ -524,7 +524,7 @@ static void print_servo_data(struct pp_instance *ppi)
 		return;
 	}
 
-	wrh_servo = (ppi->protocol_extension == PPSI_EXT_WR && ppi->extState == PP_EXSTATE_ACTIVE) ?
+	wrh_servo = (ppi->extState == PP_EXSTATE_ACTIVE) ?
 			(wrh_servo_t*) ppi->ext_data : NULL;
 
 	/* should print servio description */
@@ -621,7 +621,7 @@ static void print_servo_data(struct pp_instance *ppi)
 	 /* Update counter */
 	pcprintf(row_offset, 23, C_WHITE, "%16u times", ppi->servo->update_count);
 #if CONFIG_HAS_EXT_WR
-	if (wrh_servo) {
+	if (wrh_servo_ext) {
 		/* Master PHY delays TX */
 		pcprintf(31, 26, C_WHITE,"%22s", optimized_pp_time_toString_ps_as_ns(&wr_servo_ext->delta_txm, buf));
 		cprintf(C_BLUE, "  RX:");
