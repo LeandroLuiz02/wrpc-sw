@@ -193,9 +193,9 @@ static char *optimized_pp_time_toString_ps_as_ns(struct pp_time *pptime, char *b
 	char lbuf[128];
 
 	if (pptime->secs)
-		sprintf(buf,"%s sec ", timeToString_ps_as_ns(pptime, lbuf));
+		sprintf(buf,"%s sec", timeToString_ps_as_ns(pptime, lbuf));
 	else
-		sprintf(buf,"%s nsec", interval_to_string(pp_time_to_interval(pptime)));
+		sprintf(buf,"%s ns ", interval_to_string(pp_time_to_interval(pptime)));
 	return buf;
 }
 
@@ -556,7 +556,7 @@ static void print_servo_data(struct pp_instance *ppi)
 
 	/* +- Timing parameters --------------------------------------------------------- */
 
-	pcprintf(19, 20, C_WHITE, "%19s nsec", interval_to_string(ppg->currentDS->meanDelay));
+	pcprintf(19, 20, C_WHITE, "%20s ns", interval_to_string(ppg->currentDS->meanDelay));
 
 	/*delayMS */
 	pprintf(20, 20, "%24s", optimized_pp_time_toString_ps_as_ns(&ppi->servo->delayMS, buf));
@@ -582,18 +582,18 @@ static void print_servo_data(struct pp_instance *ppi)
 
 
 	/* delayAsymmetry */
-	pprintf(22, 20, "%19s nsec",   interval_to_string(ppi->portDS->delayAsymmetry));
+	pprintf(22, 20, "%20s ns",   interval_to_string(ppi->portDS->delayAsymmetry));
 	/* delayCoefficient */
-	pprintf(23, 23, "%s", relative_interval_to_string(ppi->asymmetryCorrectionPortDS.scaledDelayCoefficient));
+	pprintf(23, 22, "%s", relative_interval_to_string(ppi->asymmetryCorrectionPortDS.scaledDelayCoefficient));
 	/* fpa */
 	pprintf(23, 51, "%Lu", ppi->asymmetryCorrectionPortDS.scaledDelayCoefficient); /* print as unsigned! */
 
 	/* ingressLatency */
-	pprintf(24, 20, "%19s nsec",   interval_to_string(ppi->timestampCorrectionPortDS.ingressLatency));
+	pprintf(24, 20, "%20s ns", interval_to_string(ppi->timestampCorrectionPortDS.ingressLatency));
 	/* egressLatency */
-	pprintf(25, 20, "%19s nsec",   interval_to_string(ppi->timestampCorrectionPortDS.egressLatency));
+	pprintf(25, 20, "%20s ns", interval_to_string(ppi->timestampCorrectionPortDS.egressLatency));
 	/* semistaticLatency */
-	pprintf(26, 20, "%19s nsec",   interval_to_string(ppi->timestampCorrectionPortDS.semistaticLatency));
+	pprintf(26, 20, "%20s ns", interval_to_string(ppi->timestampCorrectionPortDS.semistaticLatency));
 
 	/*if (0) {
 		cprintf(C_BLUE, "Fiber asymmetry:   ");
@@ -602,20 +602,20 @@ static void print_servo_data(struct pp_instance *ppi)
 	}*/
 
 	/* offsetFromMaster */
-	pprintf(27, 20, "%19s nsec", interval_to_string (ppg->currentDS->offsetFromMaster));
+	pprintf(27, 20, "%20s ns", interval_to_string (ppg->currentDS->offsetFromMaster));
 	row_offset = 28;
 	if (wrh_servo) {
 		/* Phase setpoint */
-		pprintf(28, 20, "%19s nsec", convert_ps_to_str_ns(buf, (int64_t) wrh_servo->cur_setpoint_ps));
+		pprintf(28, 20, "%20s ns", convert_ps_to_str_ns(buf, (int64_t) wrh_servo->cur_setpoint_ps));
 
 
 		/* Skew */
-		pprintf(29, 20, "%19s nsec", convert_ps_to_str_ns(buf, wrh_servo->skew_ps));
+		pprintf(29, 20, "%20s ns", convert_ps_to_str_ns(buf, wrh_servo->skew_ps));
 		row_offset += 2;
 	}
 
 	 /* Update counter */
-	pprintf(row_offset, 23, "%16u times", ppi->servo->update_count);
+	pprintf(row_offset, 24, "%16u times", ppi->servo->update_count);
 #if CONFIG_HAS_EXT_WR
 	if (wrh_servo_ext) {
 		/* Master PHY delays TX */
