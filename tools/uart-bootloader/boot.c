@@ -35,6 +35,10 @@
     #include "dev/bb_spi.h"
     #include "dev/gpio.h"
     #include "dev/spi_flash.h"
+
+    #define ERTM14_FLASH_PAGE_SIZE 65536
+    #define ERTM14_FLASH_SIZE 16777216
+    #define ERTM14_FIRMWARE_MAGIC 0xf1dee41a
 #endif
 
 #ifndef CONFIG_USER_START
@@ -53,7 +57,6 @@
 #define CMD_GET_FLASH_ID 6
 #define CMD_EXIT 7
 
-
 #define RSP_OK 1
 #define RSP_HELLO 5
 #define RSP_CRC_ERROR 2
@@ -64,9 +67,8 @@
 
 #define RX_BUF_SIZE (256 + 16)
 
-#define BOOT_TIMEOUT 2000
-#define UART_TIMEOUT 2000
-
+#define BOOT_TIMEOUT 500
+#define UART_TIMEOUT 500
 
 uint8_t rxbuf[RX_BUF_SIZE];
 int     boot_wait;
@@ -462,23 +464,11 @@ void boot_fsm()
     }
 }
 
-void dumphex( uint32_t x )
-{
-    const char* hexchars = "0123456789abcdef";
-    int i;
-    for(i=0;i<8;i++ )
-        suart_write_byte( &dev_uart, hexchars[ (x >> (4*(7-i))) & 0xf ] );
-    suart_write_byte( &dev_uart, '\n');
-}
-
-#define ERTM14_FLASH_PAGE_SIZE 65536
-#define ERTM14_FLASH_SIZE 16777216
-#define ERTM14_FIRMWARE_MAGIC 0xf1dee41a
 void try_flash_boot()
 {
     uint8_t buf[512];
     uint32_t offset;
-//    suart_write_string(&dev_uart,"Trying flash boot\n");
+
     for(offset = 0; offset < ERTM14_FLASH_SIZE; offset += ERTM14_FLASH_PAGE_SIZE)
     {
         uint32_t magic, size;
@@ -486,20 +476,10 @@ void try_flash_boot()
         magic = unpack_be32( buf );
         size = unpack_be32( buf + 4 );
 
-//        dumphex(magic);
-//        dumphex(size);
-
         if ( magic == ERTM14_FIRMWARE_MAGIC )
         {
             uint32_t insn = unpack_le32(buf + 8);
             orig_reset_vector = decode_reset_jump_target( 0, insn );
-  //          suart_write_string(&dev_uart,"Signature foundXXX3\n");
-            //dumphex(insn);
-            //dumphex(orig_reset_vector);
-
-            //dumphex( readl((void*)4 ));
-            //dumphex( readl((void*)8 ));
-            //dumphex( readl((void*)0x2c ));
             spi_flash_read(&dev_flash, offset + 8 + 4, (void*)4, size); // keep the original bootloader reset vector
             start_user();
         }
@@ -519,33 +499,25 @@ void dev_dbg()
     /* stub to avoid linking errors */
 }
 
-const char *helloStr="Boot says good afternoon\n";
-
 int boot_main()
 {
     orig_reset_vector = 0x0;
 
     suart_init_default_baudrate( &dev_uart, BASE_UART );
-    
+
     timer_init(1);
 
     #ifdef CONFIG_ERTM14_FLASH
-        //#warning flashboot
         boot_flash_init();
     #endif
 
-    
-    suart_write_string(&dev_uart,helloStr);
-    
-
 	for(;;)
-{
-    boot_fsm();
+    {
+        boot_fsm();
 
-    #ifdef CONFIG_ERTM14_FLASH
-        try_flash_boot();
-    #endif
-//    start_user();
-}
+        #ifdef CONFIG_ERTM14_FLASH
+            try_flash_boot();
+        #endif
+    }
     return 0;
 }
