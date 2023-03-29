@@ -120,7 +120,7 @@ void  boot_flash_init()
 		&boot_pin_sysc_spi_ncs,
 		&boot_pin_sysc_spi_mosi,
 		&boot_pin_sysc_spi_miso,
-		&boot_pin_sysc_spi_sclk, 10 );
+		&boot_pin_sysc_spi_sclk, 0 );
 
     spi_flash_create( &dev_flash, &spi_flash, 16384, 0 );
 }
@@ -217,6 +217,8 @@ void on_cmd_init()
     send_reply(RSP_OK, 0, NULL);
 }
 
+
+
 uint32_t unpack_be32(uint8_t *p)
 {
     uint32_t rv = 0;
@@ -225,6 +227,17 @@ uint32_t unpack_be32(uint8_t *p)
     rv |= ((uint32_t)p[2]) << 8;
     rv |= ((uint32_t)p[1]) << 16;
     rv |= ((uint32_t)p[0]) << 24;
+    return rv;
+}
+
+uint32_t unpack_le32(uint8_t *p)
+{
+    uint32_t rv = 0;
+
+    rv |= p[0];
+    rv |= ((uint32_t)p[1]) << 8;
+    rv |= ((uint32_t)p[2]) << 16;
+    rv |= ((uint32_t)p[3]) << 24;
     return rv;
 }
 
@@ -289,7 +302,7 @@ static uint32_t decode_reset_jump_target( uint32_t pc, uint32_t insn )
     #error UART bootloader can be only built for the RISC-V CPU target. 
 #endif
 }
-
+                
 
 
 void on_cmd_write_ram(uint8_t *payload, int len)
@@ -449,6 +462,14 @@ void boot_fsm()
     }
 }
 
+void dumphex( uint32_t x )
+{
+    const char* hexchars = "0123456789abcdef";
+    int i;
+    for(i=0;i<8;i++ )
+        suart_write_byte( &dev_uart, hexchars[ (x >> (4*(7-i))) & 0xf ] );
+    suart_write_byte( &dev_uart, '\n');
+}
 
 #define ERTM14_FLASH_PAGE_SIZE 65536
 #define ERTM14_FLASH_SIZE 16777216
@@ -457,16 +478,29 @@ void try_flash_boot()
 {
     uint8_t buf[512];
     uint32_t offset;
+//    suart_write_string(&dev_uart,"Trying flash boot\n");
     for(offset = 0; offset < ERTM14_FLASH_SIZE; offset += ERTM14_FLASH_PAGE_SIZE)
     {
         uint32_t magic, size;
-        spi_flash_read(&dev_flash, offset, buf, 8 );
+        spi_flash_read(&dev_flash, offset, buf, 16 );
         magic = unpack_be32( buf );
         size = unpack_be32( buf + 4 );
 
+//        dumphex(magic);
+//        dumphex(size);
+
         if ( magic == ERTM14_FIRMWARE_MAGIC )
         {
-            spi_flash_read(&dev_flash, offset + 8, (void*)0, size);
+            uint32_t insn = unpack_le32(buf + 8);
+            orig_reset_vector = decode_reset_jump_target( 0, insn );
+  //          suart_write_string(&dev_uart,"Signature foundXXX3\n");
+            //dumphex(insn);
+            //dumphex(orig_reset_vector);
+
+            //dumphex( readl((void*)4 ));
+            //dumphex( readl((void*)8 ));
+            //dumphex( readl((void*)0x2c ));
+            spi_flash_read(&dev_flash, offset + 8 + 4, (void*)4, size); // keep the original bootloader reset vector
             start_user();
         }
     }
@@ -485,25 +519,33 @@ void dev_dbg()
     /* stub to avoid linking errors */
 }
 
+const char *helloStr="Boot says good afternoon\n";
+
 int boot_main()
 {
     orig_reset_vector = 0x0;
 
     suart_init_default_baudrate( &dev_uart, BASE_UART );
-
+    
     timer_init(1);
 
     #ifdef CONFIG_ERTM14_FLASH
-//        boot_flash_init();
+        //#warning flashboot
+        boot_flash_init();
     #endif
 
-    while(1)
-        boot_fsm();
+    
+    suart_write_string(&dev_uart,helloStr);
+    
+
+	for(;;)
+{
+    boot_fsm();
 
     #ifdef CONFIG_ERTM14_FLASH
-        //try_flash_boot();
+        try_flash_boot();
     #endif
-    start_user();
-
+//    start_user();
+}
     return 0;
 }
