@@ -70,6 +70,9 @@
 #define BOOT_TIMEOUT 500
 #define UART_TIMEOUT 500
 
+#define BOOT_BOARD_ID_LENGTH 8
+static const char bootBoardId[BOOT_BOARD_ID_LENGTH] = "e14wrpc5";
+
 uint8_t rxbuf[RX_BUF_SIZE];
 int     boot_wait;
 
@@ -190,7 +193,7 @@ void uart_readm_blocking(uint8_t *buf, int count)
     }
 }
 
-void send_reply(uint8_t code, int length, uint8_t *data)
+void send_reply(uint8_t code, int length, const uint8_t *data)
 {
     uint8_t  buf[32];
     uint16_t crc, i;
@@ -367,7 +370,7 @@ void boot_fsm()
 
     boot_wait = 1;
 
-    send_reply(RSP_HELLO, 0, NULL);
+    send_reply(RSP_HELLO, BOOT_BOARD_ID_LENGTH, bootBoardId );
 
     for (;;)
     {
