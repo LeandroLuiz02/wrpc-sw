@@ -375,29 +375,6 @@ void streamers_reset_rx_stats(void);
 int mmc_link_request_state(struct ertm14_mmc_link *link);
 int mmc_link_poll_state(struct ertm14_mmc_link *link, struct ertm14_mmc_state *state, int blocking);
 
-
-uint32_t bswap32(uint32_t v)
-{
-    uint32_t rv = 0;
-
-    rv |= (v >> 24) & 0xff;
-    rv |= (v >> 8) & 0xff00;
-    rv |= (v << 8) & 0xff0000;
-    rv |= (v << 24) & 0xff000000;
-
-    return rv;
-}
-
-uint16_t bswap16(uint16_t v)
-{
-    uint16_t rv = 0;
-
-    rv |= (v >> 8) & 0xff;
-    rv |= (v << 8) & 0xff00;
-
-    return rv;
-}
-
 //#define PROFILE_ULINK
 
 void bist_checkpoint( struct bist_stage *bist, int id, int channel, int pass )
@@ -481,7 +458,7 @@ static int wait_ertm15_presence(void)
     board_dbg("Waiting for the eRTM15 to power up...\n");
 
     led_action( &board.leds.sync, LED_COLOR_1 | LED_COLOR_2, LED_BLINK );
-    
+
     timeout_t e15_powerup_timeout;
     timeout_t e15_rx_timeout;
 
@@ -506,17 +483,17 @@ static int wait_ertm15_presence(void)
 
         if( ret > 0 )
         {
-            uint32_t flags = bswap32( state.flags );
+            uint32_t flags = le32_to_host( state.flags );
             board_dbg("Got eRTM15 rsp, flags = %x\n", flags );
 
             if( flags & ERTM_FLAGS_POWERED_ON )
             {
-    return 1;
-}
+                return 1;
+            }
         }
     }
 
-    return -1;
+    return 0;
 }
 
 /* CLKA inverted outputs: 0, 1, 4, 5, 6 (LTC6953 ordering) */
@@ -808,10 +785,10 @@ static void ertm14_dds_sync_calibrate(void)
     }
     
 
-    board_dbg("DDS_LO SYNC start=%d ps length=%d ps setpoint=%d ps\n",
+    board_dbg("DDS_LO SYNC start=%d ps length=%d samples setpoint=%d ps\n",
         windows[0].best_start, windows[0].best_length, windows[0].setpoint
     );
-    board_dbg("DDS_REF SYNC start=%d ps length=%d ps setpoint=%d ps\n",
+    board_dbg("DDS_REF SYNC start=%d ps length=%d samples setpoint=%d ps\n",
         windows[1].best_start, windows[1].best_length, windows[1].setpoint
     );
 
@@ -2289,7 +2266,7 @@ int ertm14_low_level_init(void)
        For my own record: don't touch this, you've wasted time catching the null pointer to
        FPG device already ;-) */
 
-    fine_pulse_gen_create( &board.dds_sync_dev, BASE_ERTM14_DDS_SYNC_UNIT );
+    fine_pulse_gen_init( &board.dds_sync_dev, BASE_ERTM14_DDS_SYNC_UNIT, FINE_PULSE_GEN_TARGET_KINTEX7 );
 
     if( ! (board.mode & ERTM14_MODE_WITHOUT_ERTM15 ) )
     {
@@ -2610,7 +2587,7 @@ static void mmc_show_version_info( const char *brdname, struct ertm14_mmc_state 
     pp_printf("MMC Build Info for %s:\n", brdname );
     pp_printf("  - Git build commit : %32s\n", st->info.git_sha );
     pp_printf("  - Git build tag    : %32s\n", st->info.git_tag );
-    pp_printf("  - Build date       : %u (Unix)\n",   bswap32( st->info.build_date ) );
+    pp_printf("  - Build date       : %u (Unix)\n",   le32_to_host( st->info.build_date ) );
     pp_printf("  - Serial Number    : %32s\n",   st->info.board_serial_number );
 }
 
@@ -2702,7 +2679,7 @@ void poll_mmc_sensors(struct ertm14_mmc_link *link)
             continue;
 
         // ARMs are little endian, LM32 is big endian.... Such is life...
-        sensor->value = bswap16(s->value);
+        sensor->value = le16_to_host(s->value);
         sensor->flags |= WRC_SENSOR_VALID;
     }
 }
