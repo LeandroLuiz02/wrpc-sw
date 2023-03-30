@@ -369,7 +369,7 @@ int ertm15_rf_distr_pwrmon_update(  struct ertm15_rf_distribution_device *dev )
             }
 
             uint32_t dt = timer_get_tics() - dev->pwr_meas_start_tics;
-            board_dbg("pwr_meas took %d ms, forced=%d\n", dt, dev->pwr_meas_force );
+            //board_dbg("pwr_meas took %d ms, forced=%d\n", dt, dev->pwr_meas_force );
 
             dev->pwr_meas_force = 0;
             dev->pwr_meas_state = PWR_MEAS_STATE_DONE;
