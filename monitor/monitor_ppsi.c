@@ -380,7 +380,7 @@ static void print_state(unsigned i)
 #if CONFIG_HAS_EXT_WR
 		case PPSI_EXT_WR :
 		{
-			portDS_t *portDS = portDS;
+			portDS_t *portDS = ppi_pt->portDS;
 			struct wr_dsport *extPortDS = portDS->ext_dsport;
 
 			extension_state_name = getStateAsString(wr_instance_extension_state, extPortDS->state);
