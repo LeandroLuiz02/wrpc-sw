@@ -890,7 +890,7 @@ static void dds_state_order(struct ertm14_dds_state *dds, int hton)
 
 static void board_state_to_no(struct ertm14_board_state *dds, int hton)
 {
-    struct ertm14_board_state r, *result = &r;
+    struct ertm14_board_state *result = dds;
     int i;
     uint32_t (*convert)(uint32_t hostlong) = (hton ? htonl : ntohl);
 
@@ -1278,21 +1278,16 @@ static void get_wrc_nco(struct ertm14_nco_reset *nco)
 static void subscribe_nco(struct ertm14_nco_reset *nco)
 {
 	struct ertm14_dds_state *dds;
-	char *lo = "lo";
-	char *ref = "ref";
-	//char *ddss;
 
 	nco_to_host_order(nco);
 
 	switch (nco->connector) {
 	case ERTM14_DDS_SYNC_LO:
 		dds = &ertm14_current_state->lo;
-	//	ddss = lo;
 		event_post(WRC_ERTM14_EVENT_LO_RECONFIGURED);
 		break;
 	case ERTM14_DDS_SYNC_REF:
 		dds = &ertm14_current_state->ref;
-	//	ddss = ref;
 		event_post(WRC_ERTM14_EVENT_REF_RECONFIGURED);
 		break;
 	default:
@@ -2266,7 +2261,7 @@ int ertm14_low_level_init(void)
        For my own record: don't touch this, you've wasted time catching the null pointer to
        FPG device already ;-) */
 
-    fine_pulse_gen_init( &board.dds_sync_dev, BASE_ERTM14_DDS_SYNC_UNIT, FINE_PULSE_GEN_TARGET_KINTEX7 );
+    fine_pulse_gen_init( &board.dds_sync_dev, (void *) BASE_ERTM14_DDS_SYNC_UNIT, FINE_PULSE_GEN_TARGET_KINTEX7 );
 
     if( ! (board.mode & ERTM14_MODE_WITHOUT_ERTM15 ) )
     {
@@ -2587,7 +2582,7 @@ static void mmc_show_version_info( const char *brdname, struct ertm14_mmc_state 
     pp_printf("MMC Build Info for %s:\n", brdname );
     pp_printf("  - Git build commit : %32s\n", st->info.git_sha );
     pp_printf("  - Git build tag    : %32s\n", st->info.git_tag );
-    pp_printf("  - Build date       : %u (Unix)\n",   le32_to_host( st->info.build_date ) );
+    pp_printf("  - Build date       : %lu (Unix)\n",   le32_to_host( st->info.build_date ) );
     pp_printf("  - Serial Number    : %32s\n",   st->info.board_serial_number );
 }
 

@@ -191,9 +191,7 @@ void fine_pulse_gen_force_pulse(struct fine_pulse_gen_device *dev, int channel)
 
     uint32_t trig_mask = (WB_FPGEN_CSR_FORCE0 << channel);
 
-    uint32_t csr_pre = fpgen_readl(dev, WB_FPGEN_CSR);
     fpgen_writel(dev, trig_mask, WB_FPGEN_CSR);
-    uint32_t csr_post = fpgen_readl(dev, WB_FPGEN_CSR);
 
 #ifdef FPGEN_EXTRA_VERBOSE
     dev_dbg("fpgen force sync ch %x ocr_a %08x ocr_b %08x mask %x pre %08x post %08x\n", channel, ocr_a, ocr_b, trig_mask, csr_pre, csr_post);
@@ -272,8 +270,6 @@ int fine_pulse_gen_is_triggered(struct fine_pulse_gen_device *dev, uint32_t mask
             continue;
 
         struct fine_pulse_gen_channel* ch = &dev->channels[i];
-
-        uint32_t ready_mask = 1 << (WB_FPGEN_CSR_READY_SHIFT + i);
 
         if( (ch->flags & FINE_PULSE_GEN_CH_ARMED) )
         {

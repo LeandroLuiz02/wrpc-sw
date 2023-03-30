@@ -132,7 +132,7 @@ static inline uint16_t mdio_xdrp_read(struct wr_endpoint_device *dev, int locati
 }
 
 
-static void dump_xdrp_regs(struct wr_endpoint_device *dev)
+void dump_xdrp_regs(struct wr_endpoint_device *dev)
 {
     phy_dbg("[lpdc] XDRP regs dump:\n");
     int i;
@@ -438,8 +438,7 @@ static int rx_fsm_update(void)
 				{
                     
                     #ifdef LPDC_EXTRA_DEBUG
-                       int i;
-
+                       
                     {
 		    lpc_stat = mdio_lpdc_read( &wrc_endpoint_dev, LPDC_MDIO_STAT);
 
@@ -447,7 +446,7 @@ static int rx_fsm_update(void)
 		    rx_aligned = lpc_stat & LPDC_MDIO_STAT_LINK_ALIGNED;
             
 		    uint32_t rx_comma_pos = (lpc_stat & LPDC_MDIO_STAT_COMMA_CURRENT_POS_MASK ) >> LPDC_MDIO_STAT_COMMA_CURRENT_POS_SHIFT;
-		    pp_printf("Lpc_Stat %x up %d algn %d cpos %d\n", lpc_stat, rx_up, rx_aligned, rx_comma_pos, 0);
+		    pp_printf("Lpc_Stat %x up %d algn %d cpos %lu\n", lpc_stat, rx_up, rx_aligned, rx_comma_pos);
           				usleep(100000);
 
                     }

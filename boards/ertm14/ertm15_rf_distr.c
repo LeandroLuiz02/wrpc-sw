@@ -368,7 +368,7 @@ int ertm15_rf_distr_pwrmon_update(  struct ertm15_rf_distribution_device *dev )
                 dev->pwr_ref_valid = ERTM14_ALL_RF_OUT_ID_MASK & ~( dev->ref_enabled );
             }
 
-            uint32_t dt = timer_get_tics() - dev->pwr_meas_start_tics;
+            //uint32_t dt = timer_get_tics() - dev->pwr_meas_start_tics;
             //board_dbg("pwr_meas took %d ms, forced=%d\n", dt, dev->pwr_meas_force );
 
             dev->pwr_meas_force = 0;

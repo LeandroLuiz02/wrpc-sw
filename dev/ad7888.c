@@ -26,13 +26,6 @@
 #include "dev/bb_spi.h"
 #include "dev/ad7888.h"
 
-
-extern struct gpio_device gpio_aux;
-
-static const struct gpio_pin pin_mon_adc_sclk = { &gpio_aux, 45 };
-static const struct gpio_pin pin_mon_adc_dout = { &gpio_aux, 46 };
-static const struct gpio_pin pin_mon_adc_din = { &gpio_aux, 47 };
-
 static int first_bit_set_after(uint32_t mask, int n)
 {
     int i;
