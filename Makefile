@@ -82,6 +82,7 @@ cflags-$(CONFIG_ARCH_LM32)  +=  -Iinclude/std
 
 cflags-$(CONFIG_WRPC_PPSI) += \
 	-I$(PPSI)/arch-wrpc \
+	-I$(PPSI)/proto-ext-whiterabbit \
 	-I$(PPSI)
 
 # in order to build tools/wrpc-dump, we need these flags, even for wrs builds
