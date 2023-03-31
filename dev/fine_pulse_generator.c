@@ -271,9 +271,11 @@ int fine_pulse_gen_is_triggered(struct fine_pulse_gen_device *dev, uint32_t mask
 
         struct fine_pulse_gen_channel* ch = &dev->channels[i];
 
+        uint32_t ready_mask = 1 << (WB_FPGEN_CSR_READY_SHIFT + i);
+
         if( (ch->flags & FINE_PULSE_GEN_CH_ARMED) )
         {
-            if( (rv & mask) == 0 )
+            if( (rv & ready_mask) == 0 )
                 return 0;
             else {
                 ch->flags &= ~FINE_PULSE_GEN_CH_ARMED;
