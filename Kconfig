@@ -688,6 +688,10 @@ config SPLL_FIFO_LOG
 	  related timing.  The information is shown by tools/wrpc-dump
 	  if present, no change/rebuild of the tool is needed.
 
+config VERBOSE_DETAIL
+       depends on DEVELOPER
+       bool "Display meaning of each digit for the 'verbose' command"
+
 config LTO
 	bool
 	default y if ARCH_RISCV
