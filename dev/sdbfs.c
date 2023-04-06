@@ -27,9 +27,9 @@ static struct sdb_device *sdbfs_readentry(struct sdbfs *fs,
 	 * returns the pointer to the entry, which may be stored in
 	 * the fs structure itself. Only touches fs->current_record.
 	 */
-	fs->dev->rwops->read(fs->dev->priv, offset, &fs->current_record, sizeof(fs->current_record));
-
-	return &fs->current_record;
+	struct sdb_device *res = &fs->current_record;
+	fs->dev->rwops->read(fs->dev->priv, offset, res, sizeof(*res));
+	return res;
 }
 
 /* Helper for scanning: we enter a new directory, and we must validate */
