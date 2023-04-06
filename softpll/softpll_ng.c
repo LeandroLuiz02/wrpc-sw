@@ -113,9 +113,9 @@ static inline void sequencing_fsm(struct softpll_state *s, int tag_value, int ta
 			   gets called again */
 			spll_enable_tagger(MAIN_CHANNEL, 1);
 
-			softpll.dac_timeout = timer_get_tics()
+			s->dac_timeout = timer_get_tics()
 				+ TICS_PER_SECOND / 20;
-			softpll.seq_state = SEQ_WAIT_CLEAR_DACS;
+			s->seq_state = SEQ_WAIT_CLEAR_DACS;
 			
 			break;
 		}
@@ -123,7 +123,7 @@ static inline void sequencing_fsm(struct softpll_state *s, int tag_value, int ta
 		/* State "Wait until DACs have been cleared". Makes sure the VCO control inputs have stabilized before starting the PLL. */
 		case SEQ_WAIT_CLEAR_DACS:
 		{
-			if (time_after(timer_get_tics(), softpll.dac_timeout))
+			if (time_after(timer_get_tics(), s->dac_timeout))
 			{
 				if(s->mode == SPLL_MODE_GRAND_MASTER)
 					s->seq_state = SEQ_START_EXT;
