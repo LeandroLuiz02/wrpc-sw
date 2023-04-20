@@ -631,7 +631,7 @@ static void print_servo_data(struct pp_instance *ppi)
 	 /* Update counter */
 	pprintf(row_offset, 24, "%16u times", ppi->servo->update_count);
 #if CONFIG_HAS_EXT_WR
-	if (wrh_servo_ext) {
+	if (wr_servo_ext) {
 		/* Master PHY delays TX */
 		pprintf(31, 26, "%22s", optimized_pp_time_toString_ps_as_ns(&wr_servo_ext->delta_txm, buf));
 		cprintf(C_BLUE, "  RX:");
