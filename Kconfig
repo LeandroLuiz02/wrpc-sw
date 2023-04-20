@@ -652,6 +652,12 @@ config CMD_LL
 	  on the master, because they are just sent to the slave
 	  during the initial handshake
 
+config CMD_SDB_RDUMP
+       depends on DEVELOPER && WR_NODE
+       bool "Add sdb rdump command"
+       help
+         This enables the 'sdb rdump' command to raw dump a storage area
+
 config DAC_LOG
 	depends on DEVELOPER && EMBEDDED_NODE
 	bool "Be able send DAC values through UDP"

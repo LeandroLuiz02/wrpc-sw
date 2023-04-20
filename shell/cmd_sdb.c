@@ -4,13 +4,13 @@
  * Released according to the GNU GPL, version 2 or any later version.
  */
 #include <string.h>
-#include <errno.h>
 
 #include "pp-printf.h"
 #include "shell.h"
 #include "dev/syscon.h"
 #include "storage.h"
-#include <dev/flash.h>
+#include "dev/flash.h"
+#include "libsdbfs.h"
 #include "util.h"
 #include "wrc.h"
 
@@ -27,7 +27,42 @@ static const char * const sdb_cmds[] =
 	 [1] = "fs",
 	 [2] = "fse",
 	 [3] = "ls",
+#if CONFIG_CMD_SDB_RDUMP
+	 [4] = "rdump",
+#endif
 };
+
+#if CONFIG_CMD_SDB_RDUMP
+static void cmd_sdb_rdump(unsigned off)
+{
+	struct storage_device *dev = wrc_sdbfs.dev;
+	unsigned char buf[256];
+	unsigned i, j;
+	int res;
+
+	if (dev == NULL)
+		return;
+	res = dev->rwops->read(dev->priv, off, buf, sizeof(buf));
+	if (res != sizeof(buf)) {
+		pp_printf("read error: %d\n", res);
+		return;
+	}
+
+	for (i = 0; i < sizeof(buf); i += 16) {
+		pp_printf("%08x:", off + i);
+		for (j = 0; j < 16; j++)
+			pp_printf(" %02x", buf[i + j]);
+		pp_printf ("  ");
+		for (j = 0; j < 16; j++) {
+			unsigned c = buf[i + j];
+			if (c < 32 || c > 127)
+				c = '.';
+			pp_printf("%c", c);
+		}
+		pp_printf("\n");
+	}
+}
+#endif
 
 static int cmd_sdb(const char *args[])
 {
@@ -67,6 +102,18 @@ static int cmd_sdb(const char *args[])
 	case 3:
 		storage_sdbfs_list();
 		return 0;
+#if CONFIG_CMD_SDB_RDUMP
+	case 4:
+	{
+		int addr;
+		if (args[1])
+			fromhex(args[1], &addr);
+		else
+			addr = 0;
+		cmd_sdb_rdump(addr);
+		return 0;
+	}
+#endif
 	default:
 		return icmd;
 	}
