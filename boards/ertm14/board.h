@@ -26,6 +26,8 @@
 #include "board-state.h"
 #include "common-uart-link.h"
 
+#define ERTM14_SECONDARY_DEBUG_UART 1
+
 #define WRC_MAX_TASKS 24
 
 #define BOARD_USE_CUSTOM_SDBFS 1
@@ -36,7 +38,7 @@
 #undef BOARD_ERTM14_REV_1
 #define BOARD_ERTM14_REV_2
 
-#define BOARD_CONSOLE_DEVICES 2
+#define BOARD_MAX_CONSOLE_DEVICES (3 + HAS_NETCONSOLE + HAS_PUTS_SYSLOG)
 
 #define BOARD_USE_EVENTS 1
 
@@ -64,6 +66,9 @@
 
 /* Number of auxillary clock channels - usually equal to the number of FMCs */
 #define NUM_AUX_CLOCKS 1
+
+int board_init(void);
+int board_update(void);
 
 /* spll parameter that are board-specific */
 #  define BOARD_DIVIDE_DMTD_CLOCKS	0
