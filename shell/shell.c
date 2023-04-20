@@ -332,6 +332,7 @@ int shell_interactive()
 	return 0;
 }
 
+#ifdef CONFIG_INIT_COMMAND
 static const char shell_init_cmd[] = CONFIG_INIT_COMMAND;
 
 static int build_init_readcmd(uint8_t *cmd, int maxlen)
@@ -353,12 +354,14 @@ static int build_init_readcmd(uint8_t *cmd, int maxlen)
 	}
 	return i;
 }
+#endif
 
 void shell_boot_script(void)
 {
 	int next = 0;
 
-	while (CONFIG_HAS_BUILD_INIT) {
+#ifdef CONFIG_INIT_COMMAND
+	while (1) {
 		cmd_len = build_init_readcmd((uint8_t *)cmd_buf,
 					SH_MAX_LINE_LEN);
 		if (!cmd_len)
@@ -366,6 +369,7 @@ void shell_boot_script(void)
 		pp_printf("executing: %s\n", cmd_buf);
 		shell_exec(cmd_buf);
 	}
+#endif
 
 	while (CONFIG_HAS_FLASH_INIT) {
 		cmd_len = storage_init_readcmd((uint8_t *)cmd_buf,
@@ -390,7 +394,8 @@ void shell_show_build_init(void)
 	int i = 0;
 
 	pp_printf("-- built-in script --\n");
-	while (CONFIG_HAS_BUILD_INIT) {
+#ifdef CONFIG_INIT_COMMAND
+	while (1) {
 		cmd_len = build_init_readcmd((uint8_t *)cmd_buf,
 					SH_MAX_LINE_LEN);
 		if (!cmd_len)
@@ -398,6 +403,7 @@ void shell_show_build_init(void)
 		pp_printf("%s\n", cmd_buf);
 		++i;
 	}
+#endif
 	if (!i)
 		pp_printf("(empty)\n");
 }

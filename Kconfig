@@ -419,16 +419,7 @@ config INIT_COMMAND
 	string "Enter the init command, use ';' as command separator"
 	default ""
 
-config INIT_COMMAND
-	string
-	default ""
-
 # The following two integer values are derived, and used in if() (shell.c)
-config HAS_BUILD_INIT
-	int
-	default 1 if BUILD_INIT
-	default 0
-
 config HAS_FLASH_INIT
 	int
 	default 1 if FLASH_INIT
