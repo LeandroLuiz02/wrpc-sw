@@ -176,10 +176,15 @@ void storage_sdbfs_list(void)
 		return;
 	}
 	while ((d = sdbfs_scan(fs, new)) != NULL) {
+		unsigned addr_first, addr_last;
+		/* Hack: ensure the name is NUL terminated. */
 		d->sdb_component.product.record_type = '\0';
-		pp_printf("file 0x%08x @ 0x%08x, name %19s\n",
-			  (int)(d->sdb_component.product.device_id),
-			  (int)(ntohll(d->sdb_component.addr_first)),
+
+		addr_first = ntohll(d->sdb_component.addr_first);
+		addr_last = ntohll(d->sdb_component.addr_last);
+		pp_printf("file 0x%08x @ %08x-%08x, name %19s\n",
+			  (unsigned)(d->sdb_component.product.device_id),
+			  addr_first, addr_last,
 			  (char *)(d->sdb_component.product.name));
 		new = 0;
 	}
