@@ -502,6 +502,11 @@ config CMD_NETCONSOLE
 	help
 	  Include command to configure netconsole
 
+config CMD_MONITOR_SERVO_ERR
+       depends on WR_NODE
+       boolean "Extend monitor command with stats for servo errors"
+       default n
+
 comment "wrpc-sw is tainted if you change the following options"
 config DEVELOPER
 	depends on WR_NODE

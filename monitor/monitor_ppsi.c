@@ -475,6 +475,12 @@ static void print_aux_data(void)
 
 static void print_servo_description(void)
 {
+#if CONFIG_MONITOR_SERVO_ERR
+	pcprintf(19, 45, C_BLUE, "err state:");
+	pprintf(20, 45, "err offset:");
+	pprintf(21, 45, "err delta:");
+#endif
+
 	pcprintf(16, 1, C_BLUE, "Servo state:\n");
 
 	cprintf(C_CYAN, "\n--- Timing parameters ---------------------------------------------------------\n");
@@ -553,6 +559,14 @@ static void print_servo_data(struct pp_instance *ppi)
 	/* "tracking disabled" is just a testing tool */
 	if (wrh_servo && !wrh_servo->tracking_enabled)
 		cprintf(C_RED, "Tracking forcibly disabled\n");
+
+#if CONFIG_MONITOR_SERVO_ERR
+	if (wrh_servo) {
+		pcprintf(19, 60, C_WHITE, " %u ", wrh_servo->n_err_state);
+		pprintf(20, 60, " %u ", wrh_servo->n_err_offset);
+		pprintf(21, 60, " %u ", wrh_servo->n_err_delta_rtt);
+	}
+#endif
 
 	/* +- Timing parameters --------------------------------------------------------- */
 
