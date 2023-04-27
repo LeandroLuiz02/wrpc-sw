@@ -27,11 +27,12 @@ struct spll_main_state {
 	int div_ref;
 	int div_interp;
 	int n_ref, n_out;
-	//uint8_t div_lookup[16];
 
 	int tag_out_interp;
 
-	int adder_ref, adder_out, tag_ref, tag_out, tag_ref_d, tag_out_d, tag_out_raw_d, tag_out_raw;
+	int adder_ref, adder_out;
+	int tag_ref, tag_ref_d;
+	int tag_out, tag_out_d, tag_out_raw_d, tag_out_raw;
 	int dref_dt, dout_dt, tag_ref_raw_d, tag_out_raw_d2;
 	int locked; // locked flag
 	int phase_shift_target;
