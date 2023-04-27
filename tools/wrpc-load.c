@@ -28,6 +28,7 @@
 #include "hw/wrc_cpu_csr.h"
 
 static int verbose;
+static int flag_check;
 
 static uint32_t wrc_readl(struct mapping_desc *desc, unsigned reg)
 {
@@ -58,10 +59,10 @@ static void wrc_write_uaddr(struct mapping_desc *desc, unsigned int addr)
 	wrc_writel(desc, 0xb00 + WRC_CPU_CSR_REG_UADDR, addr >> 2);
 }
 
-static void wrc_write_buf(struct mapping_desc *desc,
-			  const unsigned char *buf,
-			  unsigned len,
-			  unsigned addr)
+static int wrc_write_buf(struct mapping_desc *desc,
+                         const unsigned char *buf,
+                         unsigned len,
+                         unsigned addr)
 {
 	if ((len & 0x03) != 0 || (addr & 0x03) != 0)
 		abort();
@@ -81,10 +82,24 @@ static void wrc_write_buf(struct mapping_desc *desc,
 		if (verbose)
 			printf ("Write %08x at %08x\n", v, addr);
 
+                if (flag_check) {
+                        uint32_t r;
+                        wrc_write_uaddr(desc, addr);
+                        r = wrc_readl(desc, 0xb00 + WRC_CPU_CSR_REG_UDATA);
+                        if (r != v) {
+                                printf ("Error at %08x: "
+                                        "read %08x instead of %08x\n",
+                                        addr, r, v);
+                                return -1;
+                        }
+                }
+
 		len -= 4;
 		addr += 4;
 		buf += 4;
 	}
+
+        return 0;
 }
 
 static int wrc_load_firmware(struct mapping_desc *desc, const char *filename)
@@ -114,14 +129,16 @@ static int wrc_load_firmware(struct mapping_desc *desc, const char *filename)
 	}
 
 	addr = 0;
-	wrc_write_buf(desc, hdr, sizeof(hdr), addr);
+	if (wrc_write_buf(desc, hdr, sizeof(hdr), addr) != 0)
+                goto err_close;
 	addr += sizeof (hdr);
 
 	while (1) {
 		res = read(fd, buf, sizeof(buf));
 		if (res <= 0)
 			break;
-		wrc_write_buf(desc, buf, res, addr);
+		if (wrc_write_buf(desc, buf, res, addr) != 0)
+                        goto err_close;
 		addr += res;
 	}
 	printf ("%u KB written\n", addr / 1024);
@@ -215,6 +232,7 @@ static void wrpc_load_help(char *prog)
 int main(int argc, char *argv[])
 {
 	int c;
+        int status;
 	const char *filename;
 	struct mapping_args *map_args;
 	struct mapping_desc *mdesc = NULL;
@@ -226,11 +244,12 @@ int main(int argc, char *argv[])
 		return 1;
 	}
 
+        status = 0;
+
 	cmd = CMD_LOAD;
-	while ((c = getopt(argc, argv, "h:vds")) != -1) {
+	while ((c = getopt(argc, argv, "hvdsc")) != -1) {
 		switch (c) {
 		case 'h':
-		case '?':
 			wrpc_load_help(argv[0]);
 			exit(EXIT_SUCCESS);
 			break;
@@ -243,6 +262,12 @@ int main(int argc, char *argv[])
 		case 'v':
 			verbose++;
 			break;
+                case 'c':
+                        flag_check++;
+                        break;
+		case '?':
+                        printf("%s: unknown option, try -h\n", argv[0]);
+                        exit(1);
 		}
 	}
 
@@ -266,7 +291,8 @@ int main(int argc, char *argv[])
 	switch (cmd) {
 	case CMD_LOAD:
 		/* Load */
-		wrc_load_firmware (mdesc, filename);
+		if (wrc_load_firmware (mdesc, filename) < 0)
+                        status = 1;
 		break;
 	case CMD_SAVE:
 		/* Save */
@@ -281,5 +307,5 @@ int main(int argc, char *argv[])
 	/* Start */
 	wrc_cpu_reset(mdesc, 0);
 
-	return 0;
+	return status;
 }
