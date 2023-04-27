@@ -82,7 +82,6 @@
 
 #define EEPROM_STORAGE 0
 
-void sdb_find_devices(void);
-void sdb_print_devices(void);
+int wrc_generic_board_storage_init(void);
 
 #endif /* __BOARD_WRC_H */

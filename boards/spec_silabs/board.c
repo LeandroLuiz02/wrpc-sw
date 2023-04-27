@@ -1,6 +1,4 @@
 #include "board.h"
-#include "dev/bb_spi.h"
-#include "dev/bb_i2c.h"
 #include "dev/spi_flash.h"
 #include "dev/i2c_eeprom.h"
 #include "dev/syscon.h"
@@ -13,89 +11,44 @@
 #include <softpll/softpll_ng.h>
 
 static struct wr_si57x_interface_device si57x;
-static struct i2c_bus i2c_wrc_eeprom;
-static struct i2c_eeprom_device wrc_eeprom_dev;
+
+#define BASE_SI57X_INTERFACE	(DEV_BASE + 0x8000)
 
 #define SI57X_I2C_ADDR 0x55
 
-int wrc_board_early_init()
+static void wrc_board_si57x_init(void)
 {
-	int memtype;
-	uint32_t sdbfs_entry;
-	uint32_t sector_size;
-
-
-	if (EEPROM_STORAGE) {
-	/* EEPROM support */
-		bb_i2c_create( &i2c_wrc_eeprom,
-			&pin_sysc_fmc_scl,
-			&pin_sysc_fmc_sda );
-		bb_i2c_init( &i2c_wrc_eeprom );
-
-		i2c_eeprom_create( &wrc_eeprom_dev, &i2c_wrc_eeprom, FMC_EEPROM_ADR, 2);
-		storage_i2ceeprom_create( &wrc_storage_dev, &wrc_eeprom_dev );
-	} else {
-	/* Flash support */
-		/*
-		 * declare GPIO pins and configure their directions for bit-banging SPI
-		 * limit SPI speed to 10MHz by setting bit_delay = CPU_CLOCK / 10^6
-		 */
-		bb_spi_create( &spi_wrc_flash,
-			&pin_sysc_spi_ncs,
-			&pin_sysc_spi_mosi,
-			&pin_sysc_spi_miso,
-			&pin_sysc_spi_sclk, CPU_CLOCK / 10000000 );
-
-		spi_wrc_flash.rd_falling_edge = 1;
-
-		/*
-		 * Read from gateware info about used memory. Currently only base
-		 * address and sector size for memtype flash is supported.
-		 */
-		get_storage_info(&memtype, &sdbfs_entry, &sector_size);
-
-		/*
-		 * Initialize SPI flash and read its ID
-		 */
-		spi_flash_create( &wrc_flash_dev, &spi_wrc_flash, sector_size, sdbfs_entry);
-
-		/*
-		 * Initialize storage subsystem with newly created SPI Flash
-		 */
-		storage_spiflash_create( &wrc_storage_dev, &wrc_flash_dev );
-	}
-
-	/*
-	 * Mount SDBFS filesystem from storage.
-	 */
-	storage_mount( &wrc_storage_dev );
-
-
-	wr_si57x_interface_init( &si57x,  BASE_SI57X_INTERFACE, SI57X_I2C_ADDR );
-
 	uint8_t regs[16];
 
-	si57x_reset( &si57x );
+	wr_si57x_interface_init(&si57x, BASE_SI57X_INTERFACE, SI57X_I2C_ADDR);
+
+	si57x_reset(&si57x);
 
 	timer_delay_ms(10);
 
-	si57x_read( &si57x, 0, regs, 16 ); 
+	si57x_read(&si57x, 0, regs, 16);
 	uint32_t f_xtal = 0;
 
-	si57x_get_xtal_frequency( &si57x, &f_xtal );
+	si57x_get_xtal_frequency(&si57x, &f_xtal);
 
 	// set Si570 to 100 MHz, hw interface VCO gain = 3 (~20 ppm)
-	si57x_set_frequency( &si57x, f_xtal, 100000000, 3 );
+	si57x_set_frequency(&si57x, f_xtal, 100000000, 3);
 
-	spll_set_aux_mode( 0, SPLL_AUX_MODE_SLAVE );
-	spll_set_aux_frequency_ratio( 0, 5, 4); // 100 MHz / 4 = 125 MHz / 5
+	spll_set_aux_mode(0, SPLL_AUX_MODE_SLAVE);
+	spll_set_aux_frequency_ratio(0, 5, 4); // 100 MHz / 4 = 125 MHz / 5
 
 	timer_delay_ms(100); // do we really need this?
+}
+
+int wrc_board_early_init(void)
+{
+	wrc_generic_board_storage_init();
+	wrc_board_si57x_init();
 
 	return 0;
 }
 
-int wrc_board_init()
+int wrc_board_init(void)
 {
 	uint8_t mac_addr[6];
 	/*
