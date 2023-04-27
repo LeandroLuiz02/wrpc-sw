@@ -128,7 +128,7 @@ void spll_set_gain_schedule( spll_gain_schedule_t* sch );
 int spll_measure_frequency(int osc);
 void spll_set_ptracker_average_samples(int channel, int nsamples);
 
-int spll_get_debug_queue_samples( uint32_t *buf, int size, int undersample );
+int spll_get_debug_queue_samples( uint32_t *buf, int *count, int undersample );
 void spll_debug_queue_purge(void);
 
 void spll_set_aux_mode( int channel, int mode );
