@@ -24,6 +24,7 @@
 #include <time.h>
 #include <limits.h>
 #include <termios.h>
+#include <elf.h>
 
 #ifdef SUPPORT_CERN_VMEBRIDGE
 #include <libvmebus.h>
@@ -661,6 +662,122 @@ static int wrc_write_buf(struct board *board,
         return 0;
 }
 
+static Elf32_Half read_elf_half (const Elf32_Half *v)
+{
+  const unsigned char *p = (const unsigned char *)v;
+  return p[0] | (p[1] << 8);   /* LE  */
+}
+
+static Elf32_Word read_elf_word (const Elf32_Word *v)
+{
+  const unsigned char *p = (const unsigned char *)v;
+  return p[0] | (p[1] << 8) | (p[2] << 16) | (p[3] << 24);   /* LE  */
+}
+
+static int wrc_load_elf(struct board *board, const char *filename, int fd)
+{
+        Elf32_Ehdr ehdr;
+        unsigned poff;
+        unsigned pnum;
+        //unsigned memsz;
+        unsigned loff;
+        unsigned i;
+
+        if (lseek(fd, 0, SEEK_SET) != 0
+            || read (fd, &ehdr, sizeof (ehdr)) != sizeof(ehdr)) {
+                fprintf (stderr, "cannot read ELF header of %s\n", filename);
+                return -1;
+        }
+        if (ehdr.e_ident[EI_MAG0] != ELFMAG0
+            || ehdr.e_ident[EI_MAG1] != ELFMAG1
+            || ehdr.e_ident[EI_MAG2] != ELFMAG2
+            || ehdr.e_ident[EI_MAG3] != ELFMAG3) {
+                fprintf (stderr, "file %s is not an ELF file\n", filename);
+                return -1;
+        }
+
+        if (ehdr.e_ident[EI_CLASS] != ELFCLASS32
+            || ehdr.e_ident[EI_DATA] != ELFDATA2LSB
+            || ehdr.e_ident[EI_VERSION] != EV_CURRENT) {
+                fprintf (stderr, "file %s is not expect ELF class\n", filename);
+                return -1;
+        }
+
+        if (read_elf_half (&ehdr.e_type) != ET_EXEC
+            || read_elf_half (&ehdr.e_machine) != 0xf3
+            || read_elf_word (&ehdr.e_version) != EV_CURRENT) {
+                fprintf (stderr,
+                         "file %s is not a risc-v executable\n", filename);
+                return -1;
+        }
+
+        if (read_elf_half (&ehdr.e_phentsize) != sizeof (Elf32_Phdr)) {
+                fprintf (stderr, "file %s has bad phdr size\n", filename);
+                return -1;
+        }
+
+        pnum = read_elf_half (&ehdr.e_phnum);
+
+        if (read_elf_word (&ehdr.e_entry) != 0) {
+                fprintf (stderr, "file %s entry point is not 0\n", filename);
+                return -1;
+        }
+
+        poff = read_elf_word (&ehdr.e_phoff);
+
+        loff = 0;
+        for (i = 0; i < pnum; i++) {
+                Elf32_Phdr phdr;
+                unsigned sz;
+                unsigned vaddr;
+                unsigned char buf[4096];
+                unsigned l, len;
+
+                if (lseek (fd, poff + i * sizeof(Elf32_Phdr), SEEK_SET) < 0
+                    || read (fd, &phdr, sizeof (phdr)) != sizeof(phdr)) {
+                        fprintf(stderr,
+                                "%s: cannot read program header\n", filename);
+                        return -1;
+                }
+                if (read_elf_word (&phdr.p_type) != PT_LOAD)
+                        continue;
+
+                sz = read_elf_word (&phdr.p_filesz);
+                if (sz == 0)
+                        continue;
+                //memsz = read_elf_word (&phdr.p_memsz);
+                loff = read_elf_word (&phdr.p_offset);
+                vaddr = read_elf_word (&phdr.p_vaddr);
+                if (lseek (fd, loff, SEEK_SET) < 0) {
+                        fprintf(stderr,
+                                "%s: cannot seek to program content %i\n",
+                                filename, i);
+                        return -1;
+                }
+
+                sz = (sz + 3) & ~3;
+
+                len = 0;
+                while (len < sz) {
+                        l = sz - len;
+                        if (l > sizeof(buf))
+                                l = sizeof(buf);
+                        if (read (fd, buf, l) != l) {
+                                fprintf(stderr,
+                                        "%s: cannot read program\n", filename);
+                                return -1;
+                        }
+
+                        if (wrc_write_buf(board, buf, l, vaddr + len) < 0)
+                                return -1;
+                        len += l;
+                }
+
+                /* TODO: do we want to clear until memsz ? */
+        }
+        return 0;
+}
+
 static int wrc_load_firmware(struct board *board, const char *filename)
 {
 	int fd;
@@ -683,24 +800,26 @@ static int wrc_load_firmware(struct board *board, const char *filename)
 
 	if (hdr[0] == 0x7f
 	    && hdr[1] == 'E' && hdr[2] == 'L' && hdr[3] == 'F') {
-		fprintf(stderr, "ELF file %s not yet handled\n", filename);
-		goto err_close;
-	}
-
-	addr = 0;
-	if (wrc_write_buf(board, hdr, sizeof(hdr), addr) != 0)
-                goto err_close;
-	addr += sizeof (hdr);
-
-	while (1) {
-		res = read(fd, buf, sizeof(buf));
-		if (res <= 0)
-			break;
-		if (wrc_write_buf(board, buf, res, addr) != 0)
+                if (wrc_load_elf(board, filename, fd) < 0)
                         goto err_close;
-		addr += res;
 	}
-	printf ("%u KB written\n", addr / 1024);
+        else {
+                addr = 0;
+                if (wrc_write_buf(board, hdr, sizeof(hdr), addr) != 0)
+                        goto err_close;
+                addr += sizeof (hdr);
+
+                while (1) {
+                        res = read(fd, buf, sizeof(buf));
+                        if (res <= 0)
+                                break;
+                        if (wrc_write_buf(board, buf, res, addr) != 0)
+                                goto err_close;
+                        addr += res;
+                }
+                printf ("%u KB written\n", addr / 1024);
+        }
+
 	close(fd);
 	return 0;
 
