@@ -144,7 +144,7 @@ struct spll_aux_state {
 	int mode; /* SPLL_AUX_MODE* */
 	int seq_state;
 #ifdef CONFIG_FRAC_SPLL
-	/* Fractionnal pll ratio (0 if 1:1).  */
+	/* Fractional pll ratio (0 if 1:1).  */
 	int div_ref;
 	int div_fb;
 #endif
