@@ -49,8 +49,6 @@ void mpll_init(struct spll_main_state *s, int id_ref, int id_out)
 #endif
 	s->enabled = 0;
 
-	s->frequency_lock_threshold = 1000;
-
 	/* Freqency branch lock detection */
 	s->ld.threshold = 1200;
 	s->ld.lock_samples = 1000;
@@ -58,7 +56,10 @@ void mpll_init(struct spll_main_state *s, int id_ref, int id_out)
 	s->id_ref = id_ref;
 	s->id_out = id_out;
 	s->dac_index = id_out - spll_n_chan_ref;
+#ifdef CONFIG_FRAC_SPLL
 	s->div_ref = s->div_fb = 0;
+	s->frequency_lock_threshold = 1000;
+#endif
 
 	if( s->gain_sched )
 	{
@@ -131,16 +132,18 @@ void mpll_start(struct spll_main_state *s)
 	s->tag_out = -1;
 	s->tag_ref_d = -1;
 	s->tag_out_d = -1;
-	s->tag_out_raw_d = -1;
-	s->tag_out_interp = -1;
-	s->tag_out_raw = -1;
-	s->n_ref = s->n_out = 0;
 	s->phase_shift_target = 0;
 	s->phase_shift_current = 0;
 	s->sample_n = 0;
 	s->enabled = 1;
 	s->locked = 0;
-	s->div_cnt=  0;
+#ifdef CONFIG_FRAC_SPLL
+	s->tag_out_raw_d = -1;
+	s->tag_out_interp = -1;
+	s->tag_out_raw = -1;
+	s->n_ref = s->n_out = 0;
+	s->div_cnt = 0;
+#endif
 
 	if( s->gain_sched )
 	{
@@ -168,6 +171,7 @@ void mpll_stop(struct spll_main_state *s)
 	s->enabled = 0;
 }
 
+#ifdef CONFIG_FRAC_SPLL
 static inline void update_dtag_dt( int *dtag_dt, int tag, int *tag_d )
 {
 	if( tag == *tag_d )
@@ -178,6 +182,7 @@ static inline void update_dtag_dt( int *dtag_dt, int tag, int *tag_d )
 			*dtag_dt += (1<<TAG_BITS);
 	*tag_d = tag;
 }
+#endif
 
 int mpll_update(struct spll_main_state *s, int tag, int source)
 {
@@ -192,6 +197,8 @@ int mpll_update(struct spll_main_state *s, int tag, int source)
 	if (source == s->id_ref)
 	{
 		s->tag_ref = tag;
+		
+#ifdef CONFIG_FRAC_SPLL
 		s->n_ref++;
 
 		if(s->tag_out_interp >= 0)
@@ -200,10 +207,12 @@ int mpll_update(struct spll_main_state *s, int tag, int source)
 			s->n_out++;
 			s->tag_out_interp = -1;
 		}
+#endif
 	}
 
 	if (source == s->id_out)
 	{
+#ifdef CONFIG_FRAC_SPLL
 		s->tag_out_raw_d = s->tag_out_raw;
 		s->tag_out_raw = tag;
 		if (s->div_ref == 0)
@@ -255,11 +264,15 @@ int mpll_update(struct spll_main_state *s, int tag, int source)
 			if (s->div_cnt == s->div_ref)
 				s->div_cnt = 0;
 		}
+#else
+		s->tag_out = tag;
+#endif
 	}
 
 	if (s->tag_ref >= 0) {
-
+#ifdef CONFIG_FRAC_SPLL
 		update_dtag_dt( &s->dref_dt, s->tag_ref, &s->tag_ref_raw_d );
+#endif
 
 		if(s->tag_ref_d >= 0 && s->tag_ref_d > s->tag_ref)
 			s->adder_ref += (1 << TAG_BITS);
@@ -269,7 +282,9 @@ int mpll_update(struct spll_main_state *s, int tag, int source)
 
 
 	if (s->tag_out >= 0) {
+#ifdef CONFIG_FRAC_SPLL
 		update_dtag_dt( &s->dout_dt, s->tag_out, &s->tag_out_raw_d2 );
+#endif
 
 		if(s->tag_out_d >= 0 && s->tag_out_d > s->tag_out)
 			s->adder_out += (1 << TAG_BITS);
@@ -279,11 +294,13 @@ int mpll_update(struct spll_main_state *s, int tag, int source)
 
 	if (s->tag_ref >= 0 && s->tag_out >= 0) {
 
+#ifdef CONFIG_FRAC_SPLL
 		if( abs(s->dout_dt - s->dref_dt) > s->frequency_lock_threshold )
 		{
 			err = s->dref_dt - s->dout_dt;
 		}
 		else
+#endif
 		{
 			err = s->adder_ref + s->tag_ref - s->adder_out - s->tag_out;
 		}
@@ -317,8 +334,10 @@ int mpll_update(struct spll_main_state *s, int tag, int source)
 			spll_log_dac(y);
 
 
+#ifdef CONFIG_FRAC_SPLL
 		spll_debug(mtag | DBG_REF, s->dref_dt, 0);
 		spll_debug(mtag | DBG_TAG, s->dout_dt, 0);
+#endif
 		spll_debug(mtag | DBG_ERR, err, 0);
 		spll_debug(mtag | DBG_SAMPLE_ID, s->sample_n++, 0);
 		spll_debug(mtag | DBG_Y, y, 1);

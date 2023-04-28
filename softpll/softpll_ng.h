@@ -143,8 +143,11 @@ void spll_set_aux_frequency_ratio( int channel, int div_ref, int div_fb );
 struct spll_aux_state {
 	int mode; /* SPLL_AUX_MODE* */
 	int seq_state;
+#ifdef CONFIG_FRAC_SPLL
+	/* Fractionnal pll ratio (0 if 1:1).  */
 	int div_ref;
 	int div_fb;
+#endif
 	int32_t phase_value;
 	union {
 		struct spll_main_state dmtd;

@@ -22,22 +22,25 @@ struct spll_main_state {
 	spll_lock_det_t ld;
 	spll_gain_schedule_t* gain_sched;
 
+#ifdef CONFIG_FRAC_SPLL
 	int div_cnt;
 	int div_fb;
 	int div_ref;
 	int div_interp;
 	int n_ref, n_out;
 
+	int tag_out_raw_d, tag_out_raw;
 	int tag_out_interp;
+	int dref_dt, dout_dt, tag_ref_raw_d, tag_out_raw_d2;
+	int frequency_lock_threshold;
+#endif
 
 	int adder_ref, adder_out;
 	int tag_ref, tag_ref_d;
-	int tag_out, tag_out_d, tag_out_raw_d, tag_out_raw;
-	int dref_dt, dout_dt, tag_ref_raw_d, tag_out_raw_d2;
+	int tag_out, tag_out_d;
 	int locked; // locked flag
 	int phase_shift_target;
 	int phase_shift_current;
-	int frequency_lock_threshold;
 	int id_ref, id_out;	/* IDs of the reference and the output channel */
 	int sample_n;
 	int dac_index;

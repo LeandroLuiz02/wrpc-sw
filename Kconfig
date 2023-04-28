@@ -402,6 +402,11 @@ config W1_EEPROM
 	help
 	  Add support for eeprom on W1 bus. Adds w1r and w1w commands.
 
+config FRAC_SPLL
+       boolean "Add support for fractionnal PLL (experimental)"
+       default y if TARGET_SPEC_SILABS
+       default n
+
 comment "commands"
 
 config CMD_CONFIG

@@ -426,14 +426,17 @@ int spll_start_channel(int channel)
 		return -1;
 	}
 
-	struct spll_main_state *m = &s->aux[channel - 1].pll.dmtd;
+	struct spll_aux_state *a = &s->aux[channel - 1];
+	struct spll_main_state *m = &a->pll.dmtd;
 
+#ifdef CONFIG_FRAC_SPLL
 	m->div_cnt = 0;
-	m->div_ref = s->aux[channel - 1].div_ref;
-	m->div_fb = s->aux[channel - 1].div_fb;
-
-	mpll_start(&s->aux[channel - 1].pll.dmtd);
+	m->div_ref = a->div_ref;
+	m->div_fb = a->div_fb;
 	m->frequency_lock_threshold = 100; // HACK: make this programmable (we need higher threshold for the main VCO than for the AUXes, esp. silabs)
+#endif
+
+	mpll_start(m);
 
 	return 0;
 }
@@ -565,6 +568,7 @@ void spll_show_stats(void)
 	{
 		struct spll_aux_state *s = (struct spll_aux_state *) &softpll.aux[ch - 1];
 
+#ifdef CONFIG_FRAC_SPLL
 		pp_printf("softpll: AUX%d [ratio %d/%d = %d Hz]: ph %ld seq %d en %d lock %d samples %d nref %d nout %d ERR=%d Y=%d\n",
 				ch-1,
 				s->div_fb,
@@ -579,7 +583,17 @@ void spll_show_stats(void)
 				s->pll.dmtd.n_out,
 				s->pll.dmtd.pi.x,
 				s->pll.dmtd.pi.y );
-
+#else
+		pp_printf("softpll: AUX%d: ph %ld seq %d en %d lock %d samples %d ERR=%d Y=%d\n",
+				ch-1,
+				s->phase_value,
+				s->seq_state,
+				s->pll.dmtd.enabled,
+				s->pll.dmtd.locked,
+				s->pll.dmtd.sample_n,
+				s->pll.dmtd.pi.x,
+				s->pll.dmtd.pi.y );
+#endif
 	}
 }
 
@@ -767,7 +781,7 @@ void spll_set_dac(int index, int value)
 		SPLL->DAC_HPLL = value;
 	} else {
 		SPLL->DAC_MAIN =
-				    SPLL_DAC_MAIN_DAC_SEL_W(index) | (value & 0xffff);
+		  SPLL_DAC_MAIN_DAC_SEL_W(index) | (value & 0xffff);
 
 		if (index == 0)
 			softpll.mpll.pi.y = value;
@@ -888,11 +902,13 @@ void spll_set_aux_mode( int channel, int mode )
 	softpll.aux[channel].mode = mode;
 }
 
+#ifdef CONFIG_FRAC_SPLL
 void spll_set_aux_frequency_ratio( int channel, int div_ref, int div_fb )
 {
 	softpll.aux[channel].div_fb = div_fb;
 	softpll.aux[channel].div_ref = div_ref;
 }
+#endif
 
 int spll_pshifter_freeze(int freeze)
 {
