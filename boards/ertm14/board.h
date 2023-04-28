@@ -12,7 +12,6 @@
 #include "dev/ad951x.h"
 #include "dev/ltc695x.h"
 #include "dev/ad9910.h"
-#include "dev/clock_monitor.h"
 #include "dev/24aa025.h"
 #include "dev/ad7888.h"
 #include "dev/leds.h"
@@ -145,7 +144,6 @@ int board_update(void);
 struct ertm14_board
 {
     struct gpio_device gpio_aux;
-    struct wb_clock_monitor_device ertm14_cmon;
 
     struct spi_bus spi_pll_main;
     struct spi_bus spi_pll_ext;
