@@ -525,6 +525,16 @@ config DEVELOPER
 	  directly working on this package.  Please don't use unless
 	  you are a developer of wrpc-sw.
 
+config FREQUENCY_MONITOR
+	boolean "Add support for built-on clock frequency monitor"
+	default n
+	help
+	  Enables the "freqmon" command in the WRC shell which lets
+	  the user check all relevant clock frequencies (REF, DMTD,
+	  RX, AUX, EXT) as well as the oscillators' tuning range.
+	  Requires g_with_clock_freq_monitor to be enabled in the HDL
+	  IP instantiation.
+
 #
 # This is a set of configuration options that should not be changed by
 # normal users. If the "developer" menu is used, the binary is tainted.
