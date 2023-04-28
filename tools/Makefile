@@ -5,11 +5,13 @@ SDBFS ?= no
 CFLAGS = -Wall -ggdb -I../include -I../liblinux -I../liblinux/extest -Werror
 CFLAGS += -D__GIT_VER__="\"$(GIT_VER)\"" -D__GIT_USR__="\"$(GIT_USR)\""
 CFLAGS += -DBUILD_HOST
+CFLAGS += --std=gnu99
 LDFLAGS = $(TOOLS_LDFLAGS) -lutil -L../liblinux -ldevmap -L../liblinux/extest -lextest
 ALL    = genraminit genramvhd genrammif
 #ALL   += wrpc-w1-read wrpc-w1-write
 ALL   += pfilter-builder
 ALL   += mapper
+ALL   += wrpc
 ALL   += wrpc-vuart
 ALL   += wrpc-gdbserver
 ALL   += wrpc-load
@@ -25,6 +27,13 @@ ALL += eb-w1-write
 endif
 ifneq ($(SDBFS),no)
 ALL += sdb-wrpc.bin
+endif
+
+ifeq ($(SUPPORT_CERN_VMEBRIDGE), y)
+LIBVME_LIB = $(VMEBRIDGE)/lib
+LIBVME_INC = $(VMEBRIDGE)/include
+LIBVME_CFLAGS += -I$(LIBVME_INC) -I$(LIBVME_LIB) -DSUPPORT_CERN_VMEBRIDGE
+LIBVME_LDFLAGS += -L$(LIBVME_LIB) -lvmebus
 endif
 
 AS		= as
@@ -87,6 +96,12 @@ wrpc-gdbserver: wrpc-gdbserver.o vuart_lib.o
 
 wrpc-load: wrpc-load.o
 	$(CC) $(CFLAGS) $^ $(LDFLAGS) -o $@
+
+wrpc: wrpc.o
+	$(CC) $(CFLAGS) $^ $(TOOL_LDFLAGS) $(LIBVME_LDFLAGS) -o $@
+
+wrpc.o: wrpc.c
+	$(CC) -c $(CFLAGS) $< $(LIBVME_CFLAGS) -o $@
 
 pfilter-builder: pfilter-builder.c
 	$(CC) $(CFLAGS)  -include ../include/generated/autoconf.h \
