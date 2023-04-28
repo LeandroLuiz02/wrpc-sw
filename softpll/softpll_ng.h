@@ -134,6 +134,8 @@ void spll_debug_queue_purge(void);
 void spll_set_aux_mode( int channel, int mode );
 void spll_set_aux_frequency_ratio( int channel, int div_ref, int div_fb );
 
+int spll_is_ext_supported(void);
+
 /*
  * Aux and main state:
  * used to be in .c file, but we need it here for memory dumping
