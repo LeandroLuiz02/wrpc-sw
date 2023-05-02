@@ -8,20 +8,20 @@
 struct wb_clock_monitor_device
 {
     uint32_t base;
-    int prescaler;
-    int gate_freq;
-    int ref_sel;
-    int n_channels;
-    int ref_freq;
+    unsigned prescaler;
+    unsigned gate_freq;
+    unsigned ref_sel;
+    unsigned n_channels;
+    unsigned ref_freq;
     uint32_t freqs[CM_MAX_CHANNELS];
     uint32_t freq_valid_mask;
 };
 
-int wb_cm_init( struct wb_clock_monitor_device *dev, uint32_t base_addr, int n_channels );
+int wb_cm_init( struct wb_clock_monitor_device *dev, uint32_t base_addr, unsigned n_channels );
 int wb_cm_restart( struct wb_clock_monitor_device *dev );
-int wb_cm_configure(  struct wb_clock_monitor_device *dev, int ref_sel, int prescaler, int gate_freq );
+int wb_cm_configure(  struct wb_clock_monitor_device *dev, unsigned ref_sel, unsigned prescaler, unsigned gate_freq );
 int wb_cm_read(struct wb_clock_monitor_device *dev);
 int wb_cm_show(struct wb_clock_monitor_device *dev);
-void wb_cm_set_ref_frequency( struct wb_clock_monitor_device *dev, int ref_freq );
+void wb_cm_set_ref_frequency( struct wb_clock_monitor_device *dev, unsigned ref_freq );
 
 #endif

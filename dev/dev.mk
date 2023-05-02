@@ -34,7 +34,8 @@ obj-$(CONFIG_EMBEDDED_NODE) += \
 	dev/netif.o \
 	dev/leds.o \
 	dev/si57x.o \
-	dev/wdiags.o
+	dev/wdiags.o \
+        dev/clock_monitor.o
 
 obj-$(CONFIG_WR_NODE) += \
 	dev/sensors.o \
@@ -61,10 +62,8 @@ obj-$(CONFIG_TARGET_GENERIC_PHY_16BIT) += \
 obj-$(CONFIG_TARGET_WR_SWITCH) += \
 
 obj-$(CONFIG_TARGET_AFCZ) += \
-				dev/clock_monitor.o \
 
 obj-$(CONFIG_TARGET_AFCZ_V2) += \
-				dev/clock_monitor.o \
 
 obj-$(CONFIG_TARGET_SIS8300KU) += \
 
@@ -74,7 +73,6 @@ obj-$(CONFIG_TARGET_ERTM14) += \
 				dev/ad7888.o \
 				dev/ad951x.o \
 				dev/ad9910.o \
-				dev/clock_monitor.o
 
 obj-$(CONFIG_TARGET_PXIE_FMC) += \
 				dev/24aa025.o \
