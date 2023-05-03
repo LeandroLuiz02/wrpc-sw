@@ -147,7 +147,7 @@ void ad9910_enable_external_ioupdate( struct ad9910_device *dev, int enable )
 {
     uint64_t cfr2 = ad9910_read(dev, 1, 32 );
 
-    pp_printf("CFR2 = 0x%08x\n", (uint32_t) cfr2 );
+    pp_printf("CFR2 = 0x%08x\n", (unsigned) cfr2 );
 
     if( enable )
         cfr2 &= ~ (1<<23);

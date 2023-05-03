@@ -42,7 +42,8 @@ static void dump_dds_state( const char *name, struct ertm14_dds_state *cfg )
     int i;
     uint64_t freq = ad9910_ftw_to_frequency( cfg->ftw );
 
-    pp_printf("%s DDS FTW:                0x%08x (%d Hz)\n", name, (uint32_t) cfg->ftw, (uint32_t) freq );
+    pp_printf("%s DDS FTW:                0x%08x (%d Hz)\n",
+	      name, (unsigned) cfg->ftw, (unsigned) freq );
     pp_printf("%s DDS amplitude factor:   %d\n", name, cfg->ampl_factor);
     pp_printf("%s DDS measured power:     %d.%02d dBm\n", name, cfg->amp_power / 1000, cfg->amp_power % 1000);
     pp_printf("%s outputs:\n", name);
@@ -63,8 +64,8 @@ static void dump_config( struct ertm14_board_state *cfg )
     for(i = 0; i <= ERTM14_CLKAB_OUT_MAX_ID; i++)
     {
         pp_printf(" - CLKA%02d: %-20d Hz (%s) CLKB%02d: %-20d Hz (%s)\n",
-        i, cfg->clka_freq_hz[i], (cfg->clka_enable_mask & (1<<i)) ? "ON " : "OFF",
-        i, cfg->clkb_freq_hz[i], (cfg->clkb_enable_mask & (1<<i)) ? "ON " : "OFF" );
+	i, (unsigned)cfg->clka_freq_hz[i], (cfg->clka_enable_mask & (1<<i)) ? "ON " : "OFF",
+        i, (unsigned)cfg->clkb_freq_hz[i], (cfg->clkb_enable_mask & (1<<i)) ? "ON " : "OFF" );
 
     }
 }

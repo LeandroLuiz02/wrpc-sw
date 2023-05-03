@@ -119,7 +119,7 @@ if(link->state != LINK_STATE_IDLE && link->extra_verbose)
                 link->check_crc = crc_xmodem_update( 0, 0x55 );
                 #ifndef __linux__
                 if( link->extra_verbose )
-                    pp_printf("RxS %d\n", timer_get_tics() );
+		    pp_printf("RxS %d\n", (unsigned)timer_get_tics() );
 
                 link->ts = timer_get_tics();
                 #endif
@@ -162,7 +162,7 @@ if(link->state != LINK_STATE_IDLE && link->extra_verbose)
 
             #ifndef __linux__
                 if( link->extra_verbose )
-                    pp_printf("RxPL %d\n", timer_get_tics() );
+                    pp_printf("RxPL %d\n", (int)timer_get_tics() );
 
             //    link->ts = timer_get_tics();
                 #endif
@@ -205,7 +205,7 @@ if(link->state != LINK_STATE_IDLE && link->extra_verbose)
                 *pkt = &link->rx_packet;
                 #ifndef __linux__
                 if( link->extra_verbose )
-                    pp_printf("RxF %d [%d] size %d\n", timer_get_tics(), timer_get_tics()-link->ts, link->rx_count );
+                    pp_printf("RxF %d [%d] size %d\n", (int)timer_get_tics(), (int)timer_get_tics()-link->ts, link->rx_count );
                 #endif
                 return RX_FSM_GOT_PACKET;
 

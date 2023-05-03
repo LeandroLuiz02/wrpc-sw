@@ -58,6 +58,7 @@
 #include "sensors.h"
 #include "softpll_ng.h"
 #include "storage.h"
+#include "net.h"
 #include "wrc_ptp.h"
 
 #include <hw/wr_streamers.h>
@@ -909,7 +910,7 @@ static void dds_state_order(struct ertm14_dds_state *dds, int hton)
 
 static void board_state_to_no(struct ertm14_board_state *dds, int hton)
 {
-    struct ertm14_board_state r, *result = &r;
+    struct ertm14_board_state *result = dds;
     int i;
     uint32_t (*convert)(uint32_t hostlong) = (hton ? htonl : ntohl);
 
@@ -1082,8 +1083,9 @@ void ertm14_apply_config(struct ertm14_board_state *cfg,
     if( apply_dds_config( &board.dds_ad9910_lo, &cfg->lo, &ertm14_current_state->lo, &mask->lo, force_all ) )
         event_post(WRC_ERTM14_EVENT_LO_RECONFIGURED);
 
-    if( apply_dds_config( &board.dds_ad9910_ref, &cfg->ref, &ertm14_current_state->ref, &mask->ref, force_all ) )
+    if( apply_dds_config( &board.dds_ad9910_ref, &cfg->ref, &ertm14_current_state->ref, &mask->ref, force_all ) ) {
         event_post(WRC_ERTM14_EVENT_REF_RECONFIGURED);
+    }
 
 	for (i = ERTM14_RF_OUT_MIN_ID; i <= ERTM14_RF_OUT_MAX_ID; i++) {
 		int st_lo = cfg->lo.out_state[i] == ERTM15_RF_OUT_ON ? 1 : 0;
@@ -1139,10 +1141,10 @@ void get_version_info(struct ertm14_version_info *bi)
 	/* FIXME: no mac2? */
 	copy_eth_addr(bi->ertm14_mac1_bytes, wrc_endpoint_dev.mac_addr);
 	/* FIXME: wrpc_sw_version makes no sense here */
-	strncpy(bi->wrpc_sw_commit_id, stats.commit_id, sizeof(bi->wrpc_sw_commit_id));
-	strncpy(bi->wrpc_sw_build_date, stats.build_date, sizeof(bi->wrpc_sw_build_date));
-	strncpy(bi->wrpc_sw_build_time, stats.build_time, sizeof(bi->wrpc_sw_build_time));
-	strncpy(bi->wrpc_sw_build_by, stats.build_by, sizeof(bi->wrpc_sw_build_by));
+	strncpy(bi->wrpc_sw_commit_id, build_id.commit_id, sizeof(bi->wrpc_sw_commit_id));
+	strncpy(bi->wrpc_sw_build_date, build_id.build_date, sizeof(bi->wrpc_sw_build_date));
+	strncpy(bi->wrpc_sw_build_time, build_id.build_time, sizeof(bi->wrpc_sw_build_time));
+	strncpy(bi->wrpc_sw_build_by, build_id.build_by, sizeof(bi->wrpc_sw_build_by));
 
 	strncpy(bi->ertm14_firmware_version, ertm14_board_info.git_tag,
 				    sizeof(bi->ertm14_firmware_version));
@@ -2492,7 +2494,7 @@ int wrc_board_early_init()
     else
         board_dbg("Calibration data: %d UTC timestamp\n", cd );
 
-   	net_rst();
+    net_rst();
 
     int ll = ertm14_low_level_init();
 
@@ -2522,7 +2524,8 @@ static void mmc_show_version_info( const char *brdname, struct ertm14_mmc_state 
     pp_printf("MMC Build Info for %s:\n", brdname );
     pp_printf("  - Git build commit : %32s\n", st->info.git_sha );
     pp_printf("  - Git build tag    : %32s\n", st->info.git_tag );
-    pp_printf("  - Build date       : %d (Unix)\n",   bswap32( st->info.build_date ) );
+    pp_printf("  - Build date       : %u (Unix)\n",
+	      (unsigned)bswap32( st->info.build_date ) );
     pp_printf("  - Serial Number    : %32s\n",   st->info.board_serial_number );
 }
 
