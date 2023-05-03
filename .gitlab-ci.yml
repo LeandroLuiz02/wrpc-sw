@@ -1,19 +1,8 @@
-# NOTE: to be able to run CI define the following env variables:
-# --DOCKER_IMAGE_PATH - the path to docker image
-# --CROSS_COMPILE_LM32 - prefix for lm32 cross compiler
-# --CROSS_COMPILE_RISCV - prefix for riscv cross compiler
-
-
-image: ${DOCKER_IMAGE_PATH}
-
 variables:
   GIT_SUBMODULE_STRATEGY: normal
 
 before_script:
-  - pwd
-  - curl https://ohwr.org/project/wrpc-sw/wikis/uploads/9f9224d2249848ed3e854636de9c08dc/riscv-11.2-small.tgz | tar xf -
-  - ls
-  - export PATH=/opt/lm32-gcc/bin:$PATH
+  - PATH=/compilers/riscv-11.2-small/bin:/compilers/lm32-gcc-4.5.3/bin:$PATH
 
 stages:
 - compile
@@ -21,39 +10,37 @@ stages:
 make_wrpc_sw:
   stage: compile
   tags:
-    - wrpc_sw
+  - ohwrsw
   script:
   - make spec_defconfig
   - make
   artifacts:
     name: wrpc_sw_ci_${CI_JOB_NAME}_${CI_JOB_ID}
     paths:
-    - wrc.bin
     - wrc.elf
-    - wrc.bram
-    - wrc.mif
 
 make_all:
   stage: compile
   tags:
-    - wrpc_sw
+  - ohwrsw
   script:
-    # to make compare_size.sh work
-    - touch size_db.txt
-    - echo "Using `grep -c ^processor /proc/cpuinfo` parallel jobs".
-    - GIT_HASH_START="HEAD~1" MAKEFLAGS="-j `grep -c ^processor /proc/cpuinfo`" ./MAKEALL -c
-  artifacts:
-    name: wrpc_sw_ci_${CI_JOB_NAME}_${CI_JOB_ID}
-    paths:
-    - size_info.txt
-    - ./*.elf
-    - ./*.bin
-
+    - NPROC=$(grep -c ^processor /proc/cpuinfo)
+    - fail=""
+    - for f in $(ls configs); do
+    -   make clean
+    -   make $f
+    -   if ! make -j$NPROC; then
+    -     echo "FAILURE of $f"
+    -     fail="$fail $f"
+    -   fi
+    - done
+    - echo "FAILED TARGET are $fail"
+    - test "$fail" = ""
 
 make_rt_cpu:
   stage: compile
   tags:
-    - wrpc_sw
+  - ohwrsw
   script:
   - make wr_switch_defconfig
   - make
