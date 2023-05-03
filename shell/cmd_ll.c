@@ -11,7 +11,6 @@
 #include <storage.h>
 #include <dev/endpoint.h>
 #include <ppsi/ppsi.h>
-#include "wr-api.h"
 #include <ppsi/ppsi.h>
 
 extern struct pp_globals *ppg;
