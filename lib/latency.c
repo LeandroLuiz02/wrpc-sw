@@ -29,11 +29,8 @@ static unsigned long prios[] = {7, 6, 0}; /* the prio for the 3 frames */
 static int ltest_fake_delay_ns;
 
 /* latency probe: we need to enqueue 3 short frames: 64*3+overhead = 256 */
-static uint8_t __latency_queue[256];
-static struct wrpc_socket *latency_socket, __static_latency_socket = {
-	.queue.buff = __latency_queue,
-	.queue.size = sizeof(__latency_queue),
-};
+static DECLARE_WRPC_SOCKET(latency_socket, 256);
+static struct wrpc_socket *latency_socket;
 
 static struct wr_sockaddr latency_addr = {
 	.mac = {0xff, 0xff, 0xff, 0xff, 0xff, 0xff}, /* for sending */
@@ -43,9 +40,9 @@ static struct wr_sockaddr latency_addr = {
 void latency_init(void)
 {
 	latency_addr.ethertype = htons(CONFIG_LATENCY_ETHTYPE);
-	latency_socket = ptpd_netif_create_socket(&__static_latency_socket,
-						  &latency_addr,
-						  PTPD_SOCK_RAW_ETHERNET, 0);
+	latency_socket = ptpd_netif_create_socket
+	  (GET_WRPC_SOCKET(latency_socket), LEN_WRPC_SOCKET(latency_socket),
+	   &latency_addr, PTPD_SOCK_RAW_ETHERNET, 0);
 }
 
 static struct latency_frame {
@@ -89,7 +86,7 @@ static void latency_report(struct wr_timestamp *lat)
 	int i;
 
 	if (!nextj) {
-		const unsigned char *mac[6] = wrc_endpoint_dev.mac_addr;
+		uint8_t *mac = wrc_endpoint_dev.mac_addr;
 
 		/* first time; pick a time in the future */
 		nextj = jiffies + TICS_PER_SECOND * (10 + (mac[5] % 60));
