@@ -64,7 +64,7 @@ int wrc_board_early_init()
 	wrc_flash_dev.use_4byte_addr = 0;
 	wrc_flash_dev.size = 0x1000000; // 32 MB flash
 
-	uint32_t id = spi_flash_read_id( &wrc_flash_dev );
+	unsigned id = spi_flash_read_id( &wrc_flash_dev );
 
 	if( id != 0x00012018 && id != 0xC22019 )
 	{
