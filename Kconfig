@@ -74,9 +74,9 @@ config TARGET_PXIE_FMC
 	  PXIe FMC Carrier (Zynq Ultrascale+)
 
 config TARGET_WR2RF_VME
-	bool "WR2RF-VME Board (v1)"
+	bool "WR2RF-VME Board"
 	help
-	  WR2RF-VME Board (v1)
+	  WR2RF-VME Board
 
 config TARGET_SPEC_SILABS
 	bool "SPEC Board with a silabs aux oscillator (TEST)"

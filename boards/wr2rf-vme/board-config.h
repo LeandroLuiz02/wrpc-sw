@@ -4,14 +4,8 @@
  * Released according to the GNU GPL, version 2 or any later version.
  */
 
-#ifndef __BOARD_WR2RF_VME_H
-#define __BOARD_WR2RF_VME_H
-
-#include "dev/gpio.h"
-#include "dev/bb_spi.h"
-#include "dev/24aa025.h"
-#include "dev/spi_flash.h"
-#include "dev/bb_i2c.h"
+#ifndef __BOARD_CONFIG_WR2RF_VME_H
+#define __BOARD_CONFIG_WR2RF_VME_H
 
 #define BOARD_USE_CUSTOM_SDBFS 1
 #define BOARD_HAS_CUSTOM_NETWORK_INIT 1
@@ -60,4 +54,4 @@
 
 #define SDBFS_REC 5
 
-#endif /* __BOARD_WRC_H */
+#endif /* __BOARD_CONFIG_WR2RF_VME_H */
