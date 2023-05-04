@@ -13,24 +13,6 @@
  * when wrpc-sw is build for wrc (node) -- as opposed to wrs (switch)
  */
 
-#ifdef CONFIG_ARCH_RISCV
-#define DEV_BASE	0x100000
-#elif defined CONFIG_ARCH_LM32
-#define DEV_BASE	0x40000
-#else
-#error (Wrong Arch!)
-#endif
-
-/* Fixed base addresses */
-#define BASE_MINIC		(DEV_BASE + 0x000)
-#define BASE_EP			(DEV_BASE + 0x100)
-#define BASE_SOFTPLL		(DEV_BASE + 0x200)
-#define BASE_PPS_GEN 		(DEV_BASE + 0x300)
-#define BASE_SYSCON		(DEV_BASE + 0x400)
-#define BASE_UART		(DEV_BASE + 0x500)
-#define BASE_ONEWIRE		(DEV_BASE + 0x600)
-#define BASE_ETHERBONE_CFG	(DEV_BASE + 0x8000)
-
 /* Board-specific parameters */
 #define TICS_PER_SECOND 1000
 
@@ -69,8 +51,5 @@
 #define MAC_CHIP_ADR   0x51
 
 #define SDBFS_REC 5
-
-void sdb_find_devices(void);
-void sdb_print_devices(void);
 
 #endif /* __BOARD_WRC_H */
