@@ -170,10 +170,10 @@ ifeq ($(GIT_USR),)
 GIT_USR = $(shell whoami)@$(shell hostname)
 endif
 
-all: tools $(OUTPUT).elf $(arch-files-y)
 ifeq ($(CONFIG_TARGET_ERTM14),y)
 all: libertm
 endif
+all: tools $(OUTPUT).elf $(arch-files-y)
 
 .PRECIOUS: %.elf %.bin
 .PHONY: all tools clean gitmodules extest liblinux
