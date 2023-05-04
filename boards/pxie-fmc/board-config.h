@@ -6,8 +6,8 @@
  *
  * Released according to the GNU GPL, version 2 or any later version.
  */
-#ifndef __BOARD_PXIE_FMC_WRC_H
-#define __BOARD_PXIE_FMC_WRC_H
+#ifndef __BOARD_CONFIG_PXIE_FMC_H
+#define __BOARD_CONFIG_PXIE_FMC_H
 /*
  * This is meant to be automatically included by the Makefile,
  * when wrpc-sw is build for wrc (node) -- as opposed to wrs (switch)
@@ -39,8 +39,6 @@
 #define BOARD_MAX_CHAN_AUX		2
 #define BOARD_MAX_PTRACKERS		1
 
-#undef CONFIG_DISALLOW_LONG_DIVISION
-
 #define BOARD_USE_EVENTS 0
 
 #define BOARD_CONSOLE_DEVICES 1
@@ -52,4 +50,4 @@
 
 #define SDBFS_REC 5
 
-#endif /* __BOARD_WRC_H */
+#endif /* __BOARD_CONFIG_PXIE_FMC_H */
