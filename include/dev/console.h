@@ -39,8 +39,11 @@ int console_binary_recv_byte( struct console_device *dev );
 
 void console_set_mode_switch_hook( struct console_device *dev, void (*callback)(int) );
 
+void console_register_device( struct console_device *dev );
+
 #ifdef CONFIG_IPMI_CONSOLE
 int console_ipmi_process_request(struct console_device* dev,  uint8_t *req, int size, uint8_t *rsp, int rsp_size );
+void console_ipmi_init( void );
 #endif
 
 #endif
