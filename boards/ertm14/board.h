@@ -37,7 +37,7 @@
 #undef BOARD_ERTM14_REV_1
 #define BOARD_ERTM14_REV_2
 
-#define BOARD_MAX_CONSOLE_DEVICES (3 + HAS_NETCONSOLE + HAS_PUTS_SYSLOG)
+#define BOARD_CONSOLE_DEVICES 2
 
 #define BOARD_USE_EVENTS 1
 
@@ -65,9 +65,6 @@
 
 /* Number of auxillary clock channels - usually equal to the number of FMCs */
 #define NUM_AUX_CLOCKS 1
-
-int board_init(void);
-int board_update(void);
 
 /* spll parameter that are board-specific */
 #  define BOARD_DIVIDE_DMTD_CLOCKS	0

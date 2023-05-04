@@ -1790,7 +1790,7 @@ static void ertm14_init_leds(void)
 
 
 static void ertm15_init_leds(void)
-    {
+{
     blink_led(&pin_ertm15_led_ref_green);
     blink_led(&pin_ertm15_led_lo_green);
     blink_led(&pin_ertm15_led_clkb_green);
@@ -1805,8 +1805,6 @@ static void ertm15_init_leds(void)
     led_create( &board.leds.clkb, &pin_ertm15_led_clkb_green, &pin_ertm15_led_clkb_red, LED_TYPE_DUAL_COLOR, LED_OFF );
     led_create( &board.leds.lo, &pin_ertm15_led_lo_green, &pin_ertm15_led_lo_red, LED_TYPE_DUAL_COLOR, LED_OFF );
     led_create( &board.leds.ref, &pin_ertm15_led_ref_green, &pin_ertm15_led_ref_red, LED_TYPE_DUAL_COLOR, LED_OFF );
-    }
-
 }
 
 // initializes the eRTM15 LTC6950 PLL & OCXO

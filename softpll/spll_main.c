@@ -193,9 +193,6 @@ int mpll_update(struct spll_main_state *s, int tag, int source)
 
 	int err, y;
 
-	int mtag = DBG_MAIN( s->id_out - spll_n_chan_ref );
-
-
 	if (source == s->id_ref)
 	{
 		s->tag_ref = tag;
