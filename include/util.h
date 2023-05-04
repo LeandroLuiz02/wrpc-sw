@@ -8,6 +8,19 @@
 
 #include <stdint.h>
 
+#ifndef min
+#define min(a, b) \
+	({ __typeof__ (a) _a = (a); \
+	  __typeof__ (b) _b = (b); \
+	  _a < _b ? _a : _b; })
+#endif
+
+/* Don't use abs from the library */
+#define abs(x) ((x >= 0) ? x : -x)
+
+#undef ARRAY_SIZE
+#define ARRAY_SIZE(arr) (sizeof(arr) / sizeof((arr)[0]))
+
 /* Color codes for cprintf()/pcprintf() */
 #define C_DIM 0x80
 

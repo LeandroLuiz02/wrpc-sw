@@ -13,28 +13,15 @@
  * Also, this brings in very common and needed headers
  */
 #include <inttypes.h>
-#include <dev/syscon.h>
-#include <pp-printf.h>
-#include <util.h>
-#include <trace.h>
-#include <wrc-event.h>
-#include <wrc-task.h>
-#include <wrc-debug.h>
+#include "dev/syscon.h"
+#include "pp-printf.h"
+#include "util.h"
+#include "trace.h"
+#include "wrc-event.h"
+#include "wrc-task.h"
+#include "wrc-debug.h"
 
 #define sprintf pp_sprintf
-
-#ifndef min
-#define min(a, b) \
-	({ __typeof__ (a) _a = (a); \
-	  __typeof__ (b) _b = (b); \
-	  _a < _b ? _a : _b; })
-#endif
-
-/* Don't use abs from the library */
-#define abs(x) ((x >= 0) ? x : -x)
-
-#undef ARRAY_SIZE
-#define ARRAY_SIZE(arr) (sizeof(arr) / sizeof((arr)[0]))
 
 /* Allow "if" at C language level, to avoid ifdef */
 #ifdef CONFIG_TARGET_WR_SWITCH
