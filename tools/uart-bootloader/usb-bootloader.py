@@ -117,7 +117,7 @@ class SerialIF:
 
         for i in range(0, l):
             frame.append(self.recv())
-
+        
         crc = self.recv()
         crc <<= 8
         crc |= self.recv()
@@ -266,8 +266,8 @@ class DSIBootloader:
             image = fw
         elif target.lower() == "wrc":
             offset = 0x300000
-            image = struct.pack(">LLL", 0xf1dee41a, len(fw), 0xe000b800) + fw[4:]
-            #print(type(fw), len(fw), len(image))
+            image = struct.pack(">LL", 0xf1dee41a, len(fw) ) + fw[0:]
+            print(type(fw), len(fw), len(image))
         elif target.lower() == "autoexec":
             offset = 0x610000
             image = struct.pack(">H", len(fw)) + fw

@@ -12,7 +12,6 @@
 #include <wrc.h>
 
 #include "board.h"
-#include "dev/console.h"
 #include "dev/clock_monitor.h"
 #include "dev/console.h"
 #include "softpll_ng.h"
@@ -37,7 +36,7 @@ static const char *get_rf_out_state_string(int state)
 }
 
 
-static void dump_dds_state( const char *name, struct ertm14_dds_state *cfg )
+static void dump_dds_state( const char *name, struct ertm14_dds_state *cfg ) 
 {
     int i;
     uint64_t freq = ad9910_ftw_to_frequency( cfg->ftw );
@@ -66,7 +65,6 @@ static void dump_config( struct ertm14_board_state *cfg )
         pp_printf(" - CLKA%02d: %-20d Hz (%s) CLKB%02d: %-20d Hz (%s)\n",
 	i, (unsigned)cfg->clka_freq_hz[i], (cfg->clka_enable_mask & (1<<i)) ? "ON " : "OFF",
         i, (unsigned)cfg->clkb_freq_hz[i], (cfg->clkb_enable_mask & (1<<i)) ? "ON " : "OFF" );
-
     }
 }
 
@@ -107,7 +105,7 @@ static void set_dds_param(struct ertm14_board_state *cfg, struct ertm14_board_st
                  if( out >= ERTM14_RF_OUT_MIN_ID && out <= ERTM14_RF_OUT_MAX_ID )
                  {
                      pp_printf("DDS %s is %s\n", is_lo?"LO":"REF", atoi(value2)?"ON":"OFF" );
-                     dcfg->out_state[out] = atoi(value2) ? ERTM15_RF_OUT_ON : ERTM15_RF_OUT_OFF;
+                    dcfg->out_state[out] = atoi(value2) ? ERTM15_RF_OUT_ON : ERTM15_RF_OUT_OFF;
                      dmask->out_state[out] = 1;
                  }
                  else
@@ -130,7 +128,7 @@ static void set_clk_param(struct ertm14_board_state *cfg, struct ertm14_board_st
 {
     int is_clka = !strcasecmp( name , "clka");
     int is_clkb = !strcasecmp( name , "clkb");
-
+    
     if (is_clka || is_clkb)
     {
         uint32_t *freq = is_clka ? cfg->clka_freq_hz : cfg->clkb_freq_hz;
@@ -138,7 +136,7 @@ static void set_clk_param(struct ertm14_board_state *cfg, struct ertm14_board_st
 
         uint32_t *freq_mask = is_clka ? mask->clka_freq_hz : mask->clkb_freq_hz;
         uint32_t *enable_flag_mask = is_clka ? &mask->clka_enable_mask : &mask->clkb_enable_mask;
-
+        
         int ch = atoi(channel);
 
         switch(param)
@@ -150,9 +148,9 @@ static void set_clk_param(struct ertm14_board_state *cfg, struct ertm14_board_st
             case PARAM_ENABLE:
             {
                 *enable_flag_mask |= (1<<ch);
-                if(atoi(value))
+              if(atoi(value))
                     *enable_flag |= (1<<ch);
-                else
+            else
                     *enable_flag &= ~(1<<ch);
 
                 break;
@@ -164,7 +162,7 @@ static void set_clk_param(struct ertm14_board_state *cfg, struct ertm14_board_st
     else
     {
         pp_printf("Expected CLK name: clka clkb\n");
-    }
+}
 }
 
 static void set_streamers_timeout(struct ertm14_board_state *cfg, struct ertm14_board_state* mask, int param )
@@ -226,7 +224,7 @@ static void ertm_show_cm(void)
         wb_cm_read(cm);
     for (i = 0; i < 5; i++)
     {
-        pp_printf("cm%d: %d (valid=%d)\n", i, cm->freqs[i], cm->freq_valid_mask & (1 << i) ? 1 : 0);
+        pp_printf("cm%d: %u (valid=%d)\n", i, cm->freqs[i], cm->freq_valid_mask & (1 << i) ? 1 : 0);
     }
 }
 
@@ -250,6 +248,22 @@ static void set_pps_mode(const char *mode )
     ertm14_set_pps_out_mode( m );
 }
 
+static void ertm14_dna_cmd(void)
+{
+	volatile unsigned *dna = (volatile unsigned *)BASE_ERTM14_DNA;
+
+	pp_printf("--buildinfo--\n");
+	pp_printf("%s", (const char *)BASE_ERTM14_BUILD_INFO);
+	pp_printf("--dna--\n");
+	if (!(dna[0] & 1))
+		pp_printf ("not valid\n");
+	else {
+		unsigned i;
+		for (i = 1; i < 4; i++)
+			pp_printf("%08x\n", dna[i]);
+	}
+}
+
 /* FIXME: this should be in a .h file */
 extern void phy_calibration_disable(void);
 extern void streamers_reset_rx_stats(void);
@@ -264,15 +278,15 @@ static int cmd_ertm(const char *args[])
     memset(&nstate, 0, sizeof(struct ertm14_board_state ) );
     memset(&mask, 0, sizeof(struct ertm14_board_state ) );
 
-    if (!strcasecmp(args[0], "test-dac"))
+    if (!strcasecmp(args[0], "test-dac")) 
     {
         ertm_test_dac();
     }
-    else if (!strcasecmp(args[0], "cm"))
+    else if (!strcasecmp(args[0], "cm")) 
     {
         ertm_show_cm();
 	}
-    else if (!strcasecmp(args[0], "test-clocks"))
+    else if (!strcasecmp(args[0], "test-clocks")) 
     {
 		pp_printf("eRTM14/15 clock frequency test:\n");
 
@@ -280,7 +294,7 @@ static int cmd_ertm(const char *args[])
         spll_init( SPLL_MODE_DISABLED, 0, 0);
 
         pp_printf("Main Ref clock: ");
-
+        
         spll_set_dac(0, 0); // main -> min
         usleep(500000);
         int main_min = measure_clock( ERTM14_CMON_CLK_REF, ERTM14_CMON_CLK_DMTD, DMTD_CLOCK_FREQ_HZ );
@@ -288,13 +302,13 @@ static int cmd_ertm(const char *args[])
         spll_set_dac(0, 65530); // main -> max
         usleep(500000);
         int main_max = measure_clock( ERTM14_CMON_CLK_REF, ERTM14_CMON_CLK_DMTD, DMTD_CLOCK_FREQ_HZ );
-
+        
         spll_set_dac(0, 32768); // main -> midrange
         usleep(500000);
         int main_mid = measure_clock( ERTM14_CMON_CLK_REF, ERTM14_CMON_CLK_DMTD, DMTD_CLOCK_FREQ_HZ );
 
         pp_printf("min=%d, max=%d, mid=%d Hz\n", main_min, main_max, main_mid);
-
+        
         pp_printf("DMTD clock: ");
 
         spll_set_dac(-1, 0); // dmtd -> min
@@ -304,7 +318,7 @@ static int cmd_ertm(const char *args[])
         spll_set_dac(-1, 65530); // dmtd -> max
         usleep(500000);
         int dmtd_max = measure_clock( ERTM14_CMON_CLK_DMTD, ERTM14_CMON_CLK_REF, 20000000 );
-
+        
         spll_set_dac(-1, 32768); // dmtd -> midrange
         usleep(500000);
         int dmtd_mid = measure_clock( ERTM14_CMON_CLK_DMTD, ERTM14_CMON_CLK_REF, 20000000 );
@@ -334,6 +348,8 @@ static int cmd_ertm(const char *args[])
         set_pps_mode( args[1] );
     } else if (!strcasecmp(args[0], "ccal")) {
         ertm14_sync_pulse_cal(  );
+    } else if (!strcasecmp(args[0], "dna")) {
+        ertm14_dna_cmd(  );
     }
     ertm14_apply_config( &nstate, &mask, 0 );
     update_config( cstate, &nstate, &mask );
@@ -362,6 +378,7 @@ static int ertm14_monitor_ui(void)
     if( !tmo_expired( &ertm14_mon_timer ))
         return 0;
 
+    uint32_t ret;
     uint32_t rx_count, rx_lat_min, rx_lat_max, rx_match, rx_late, rx_timeout;
 
     tmo_restart( &ertm14_mon_timer );
@@ -369,15 +386,17 @@ static int ertm14_monitor_ui(void)
     term_clear();
 
 	cprintf(C_BLUE, "eRTM14/15 Board Monitor");
-	cprintf(C_MAGENTA, "\nEsc = exit\n\n");
+	cprintf(C_GREY, "\nEsc = exit\n\n");
 
-    diag_read_word(8, DIAG_RO_BANK, &rx_count);
-    diag_read_word(4, DIAG_RO_BANK, &rx_lat_max);
-    diag_read_word(5, DIAG_RO_BANK, &rx_lat_min);
-    diag_read_word(20, DIAG_RO_BANK, &rx_match);
-    diag_read_word(22, DIAG_RO_BANK, &rx_late);
-    diag_read_word(24, DIAG_RO_BANK, &rx_timeout);
+    ret = diag_read_word(8, DIAG_RO_BANK, &rx_count);
+    ret = diag_read_word(4, DIAG_RO_BANK, &rx_lat_max);
+    ret = diag_read_word(5, DIAG_RO_BANK, &rx_lat_min);
+    ret = diag_read_word(20, DIAG_RO_BANK, &rx_match);
+    ret = diag_read_word(22, DIAG_RO_BANK, &rx_late);
+    ret = diag_read_word(24, DIAG_RO_BANK, &rx_timeout);
 
+    (void) ret;
+    
     struct ertm14_board_state *st = ertm14_get_current_state();
 
     if(!st)

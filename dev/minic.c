@@ -230,7 +230,7 @@ int minic_rx_frame(struct wr_ethhdr *hdr, uint8_t * payload, uint32_t buf_size,
 		minic.rx_errors++;
 		return -1;
 	} else {
-		minic.rx_count++;
+	minic.rx_count++;
 	}
 
 	if (minic_readl(MINIC_REG_MCR) & MINIC_MCR_RX_FULL)
@@ -361,10 +361,10 @@ int minic_tx_frame(struct wr_ethhdr_vlan *hdr, uint8_t *payload, uint32_t size,
 		hwts->sec = sec;
 		hwts->ahead = 0;
 		hwts->nsec = counter_r * (REF_CLOCK_PERIOD_PS / 1000);
-
+		
 		minic.tx_count++;
         }
-
+        
 	return size;
 }
 

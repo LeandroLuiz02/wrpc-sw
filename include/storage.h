@@ -29,6 +29,8 @@
 #define CAL_PARAM_CLKA_SYNC_DELAY_PS ASCII_TO_U32('e', '1', '4', '2')
 #define CAL_PARAM_CLKB_SYNC_DELAY_PS ASCII_TO_U32('e', '1', '4', '3')
 #define CAL_PARAM_CALIBRATION_DATE ASCII_TO_U32('d','a','t','e')
+#define CAL_PARAM_FPGA_DNA_0 ASCII_TO_U32('d','n','a','0')
+#define CAL_PARAM_COMMIT_SHA_0 ASCII_TO_U32('s','h','a','0')
 
 #define SFP_SECTION_PATTERN 0xdeadbeef
 
@@ -111,6 +113,7 @@ void storage_sdbfs_list(void);
 int storage_is_calibration_loaded(void);
 int storage_get_calibration_parameter( int id, uint32_t *valp );
 int storage_set_calibration_parameter( int id, uint32_t val );
+int storage_set_calibration_parameter_and_save( int id, uint32_t val );
 wrc_cal_data_t* storage_get_calibration_data(void);
 int storage_load_calibration(void);
 int storage_save_calibration(void);

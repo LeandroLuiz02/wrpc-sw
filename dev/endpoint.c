@@ -20,7 +20,7 @@
 #include "ppsi/lib.h"
 
 #include <hw/endpoint_regs.h>
-#include <hw/endpoint_mdio.h>
+#include <hw/ep_mdio_regs.h>
 
 #include <wrc_global.h>
 
@@ -31,14 +31,22 @@
 /* functions for accessing PCS (MDIO) registers */
 uint16_t ep_pcs_read(struct wr_endpoint_device *dev, int location)
 {
-	ep_write( dev, EP_REG_MDIO_CR, EP_MDIO_CR_ADDR_W(location >> 2) );
+	ep_write(dev, EP_REG_MDIO_ASR, ((location >> 10) & 0xff) << EP_MDIO_ASR_PHYAD_SHIFT);
+	ep_write(dev, EP_REG_MDIO_CR,
+		(((location >> 2) & 0xff) << EP_MDIO_CR_ADDR_SHIFT) );
+
 	while (( ep_read(dev, EP_REG_MDIO_ASR) & EP_MDIO_ASR_READY) == 0) ;
-	return EP_MDIO_ASR_RDATA_R(ep_read(dev, EP_REG_MDIO_ASR)) & 0xffff;
+	uint32_t rv = EP_MDIO_ASR_RDATA_R(ep_read(dev, EP_REG_MDIO_ASR)) & 0xffff;
+
+	return rv;
 }
 
 void ep_pcs_write(struct wr_endpoint_device *dev, int location, int value)
 {
-	ep_write(dev, EP_REG_MDIO_CR, EP_MDIO_CR_ADDR_W(location >> 2)
+	ep_write(dev, EP_REG_MDIO_ASR, ((location >> 10) & 0xff) << EP_MDIO_ASR_PHYAD_SHIFT);
+
+	ep_write(dev, EP_REG_MDIO_CR,
+		(((location >> 2) & 0xff) << EP_MDIO_CR_ADDR_SHIFT)
 	    | EP_MDIO_CR_DATA_W(value)
 	    | EP_MDIO_CR_RW );
 
@@ -98,22 +106,23 @@ void ep_reset_phy(struct wr_endpoint_device* dev)
 	uint32_t mcr;
 /* Reset the GTP Transceiver - it's important to do the GTP phase alignment every time
    we start up the software, otherwise the calibration RX/TX deltas may not be correct */
-	ep_pcs_write(dev, MDIO_REG_MCR, MDIO_MCR_PDOWN);	/* reset the PHY */
+	ep_pcs_write(dev, EP_MDIO_MCR, EP_MDIO_MCR_PDOWN);	/* reset the PHY */
 	
-	pp_printf("Running long PHY reset...\n");
-	timer_delay_ms(10000);
-	pp_printf("PHY reset complete\n");
-	ep_pcs_write(dev, MDIO_REG_MCR, MDIO_MCR_RESET);	/* reset the PHY */
-	ep_pcs_write(dev, MDIO_REG_MCR, 0);	/* reset the PHY */
+	phy_dbg("Running long PHY reset...\n");
+	timer_delay_ms(1000);
+	phy_dbg("PHY reset complete\n");
+	ep_pcs_write(dev, EP_MDIO_MCR, EP_MDIO_MCR_RESET);	/* reset the PHY */
+	ep_pcs_write(dev, EP_MDIO_MCR, 0);	/* reset the PHY */
 
 /* Don't advertise anything - we don't want flow control */
-	ep_pcs_write(dev, MDIO_REG_ADVERTISE, 0);
+	ep_pcs_write(dev, EP_MDIO_ADVERTISE, 0);
 
-	mcr = MDIO_MCR_SPEED1000_MASK | MDIO_MCR_FULLDPLX_MASK;
+	mcr = EP_MDIO_MCR_SPEED1000 | EP_MDIO_MCR_FULLDPLX;
 	if (dev->flags & EP_DEV_AUTONEG_ENABLED)
-		mcr |= MDIO_MCR_ANENABLE | MDIO_MCR_ANRESTART;
+		mcr |= EP_MDIO_MCR_ANENABLE | EP_MDIO_MCR_ANRESTART;
 
-	ep_pcs_write(dev, MDIO_REG_MCR, mcr);
+	ep_pcs_write(dev, EP_MDIO_MCR, mcr);
+	ep_pcs_write(dev, EP_MDIO_WR_SPEC, 0);
 }
 
 /* Enables/disables transmission and reception. When autoneg is set to 1,
@@ -151,17 +160,19 @@ int ep_enable(struct wr_endpoint_device* dev, int enabled, int autoneg)
    and stores the Link Partner Ability (LPA) autonegotiation register at *lpa */
 int ep_link_up(struct wr_endpoint_device* dev, uint16_t * lpa)
 {
-	uint16_t flags = MDIO_MSR_LSTATUS;
-	uint16_t msr;
+	uint16_t flags = EP_MDIO_MSR_LSTATUS;
+	volatile uint16_t msr;
 
 	if (dev->flags & EP_DEV_AUTONEG_ENABLED)
-		flags |= MDIO_MSR_ANEGCOMPLETE;
+		flags |= EP_MDIO_MSR_ANEGCOMPLETE;
 
-	msr = ep_pcs_read(dev, MDIO_REG_MSR);
-	msr = ep_pcs_read(dev, MDIO_REG_MSR);	/* Read this flag twice to make sure the status is updated */
+	msr = ep_pcs_read(dev, EP_MDIO_MSR);
+	msr = ep_pcs_read(dev, EP_MDIO_MSR);	/* Read this flag twice to make sure the status is updated */
+
+	//pp_printf("MSR %x\n", msr);
 
 	if (lpa)
-		*lpa = ep_pcs_read(dev, MDIO_REG_LPA);
+		*lpa = ep_pcs_read(dev, EP_MDIO_LPA);
 
 	return (msr & flags) == flags ? 1 : 0;
 }
@@ -169,7 +180,7 @@ int ep_link_up(struct wr_endpoint_device* dev, uint16_t * lpa)
 int ep_get_bitslide(struct wr_endpoint_device* dev)
 {
 	return PICOS_PER_SERIAL_BIT *
-	    MDIO_WR_SPEC_BSLIDE_R(ep_pcs_read(dev, MDIO_REG_WR_SPEC));
+	    (( ep_pcs_read(dev, EP_MDIO_WR_SPEC) & EP_MDIO_WR_SPEC_BSLIDE_MASK) >> EP_MDIO_WR_SPEC_BSLIDE_SHIFT);
 }
 
 /* Returns the TX/RX latencies. They are valid only when the link is up. */
@@ -191,13 +202,13 @@ int ep_sfp_enable(struct wr_endpoint_device* dev, int ena)
 {
 	uint32_t val;
 
-	val = ep_pcs_read(dev, MDIO_REG_ECTRL);
+	val = ep_pcs_read(dev, EP_MDIO_ECTRL);
 	if(ena)
-		val &= (~MDIO_ECTRL_SFP_TX_DISABLE);
+		val &= (~EP_MDIO_ECTRL_SFP_TX_DISABLE);
 	else
-		val |= MDIO_ECTRL_SFP_TX_DISABLE;
+		val |= EP_MDIO_ECTRL_SFP_TX_DISABLE;
 
-	ep_pcs_write(dev, MDIO_REG_ECTRL, val);
+	ep_pcs_write(dev, EP_MDIO_ECTRL, val);
 
 	return 0;
 }

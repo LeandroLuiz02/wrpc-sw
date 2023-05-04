@@ -249,6 +249,17 @@ struct ertm_status *ertm_init(const char *address)
 		errno = ENODEV;
 		return NULL;
 	}
+	/* this hardcodes using file lock-based mutexes. This protects
+	 * the critical section from concurrent processes but NOT from
+	 * concurrent threads. In case of thread contention, use
+	 * ertm_semaphore_mutex, implemented in semph.c based on POSIX
+	 * semaphores */
+	st->mutex = ertm_flock_mutex;
+	if (st->mutex->create(st) < 0) {
+		errno = ENODEV;
+		return NULL;
+	}
+
 	/* we init with fake values, then override with
 	 * actual default hardware configs */
 	ertm_status_init(st->state);
@@ -333,10 +344,11 @@ static int bad_inputs(struct ertm_status *handle,
 	return 0;
 }
 
-int ertm_proto_cycle(struct uart_link *link,
+int ertm_proto_cycle_unlocked(struct ertm_status *st,
 	int8_t opcode, void *payload, void *answer)
 {
 	int res = 0;
+	struct uart_link *link = &st->link;
 	struct uart_packet request, *tx_pkt = &request;
 	struct uart_packet *r;
 	struct ertm14_protocol_op *op = get_proto_op(opcode);
@@ -371,6 +383,24 @@ int ertm_proto_cycle(struct uart_link *link,
 	memcpy(answer, &r->payload[op->offset2], op->length2);
 
 	return 0;
+}
+
+/* all protocol cycle operations are locked, except set_board_config
+ * and commit_board_config; this locked/unlocked frig is needed because
+ * set_board_config/commit_board_config are not atomic in the wrc,
+ * hence we make them atomic by making of their sequential call in
+ * commit_config a critical section, instead of making ertm_proto_cycle
+ * a single critical region, which would be ideal. Such is life
+ */
+int ertm_proto_cycle(struct ertm_status *st,
+	int8_t opcode, void *payload, void *answer)
+{
+	int ret;
+
+	st->mutex->acquire(st);
+	ret = ertm_proto_cycle_unlocked(st, opcode, payload, answer);
+	st->mutex->release(st);
+	return ret;
 }
 
 void dds_to_host_order(struct ertm14_dds_state *dds, struct ertm14_dds_state *host)
@@ -453,14 +483,26 @@ static void diags_to_host(struct wrc_diags *diags, struct wrc_diags *host)
 	for (i = 0; i < ndiags; i++)
 		dst[i] = ntohl(src[i]);
 }
+
+static void streamer_diags_to_host(struct WR_STREAMERS_WB *diags, struct WR_STREAMERS_WB *host)
+{
+	int i;
+	int ndiags = sizeof(*diags) / sizeof(uint32_t);
+	uint32_t *src = (uint32_t *)diags;
+	uint32_t *dst = (uint32_t *)host;
+
+	for (i = 0; i < ndiags; i++)
+		dst[i] = ntohl(src[i]);
+}
+
+
 /* here, bs **can** (and should) be st->state->board_state */
 int ertm_get_board_config(struct ertm_status *st, struct ertm14_board_state *bs)
 {
-	struct uart_link *link = &st->link;
 	struct ertm14_board_state b, *board = &b;
 	int res;
 
-	res = ertm_proto_cycle(link, ertm14_get_board_config, NULL, board);
+	res = ertm_proto_cycle(st, ertm14_get_board_config, NULL, board);
 	if (res < 0)
 		return res;
 
@@ -472,16 +514,31 @@ int ertm_get_wr_diags(struct ertm_status *st, struct wrc_diags *wrc_diags)
 {
 	int res;
 
-	struct uart_link *link = &st->link;
 	struct wrc_diags d, *diags = &d;
 
-	res = ertm_proto_cycle(link, ertm14_get_wrc_diags, NULL, diags);
+	res = ertm_proto_cycle(st, ertm14_get_wrc_diags, NULL, diags);
 	if (res < 0)
 		return res;
 	diags_to_host(diags, wrc_diags);
 
 	return 0;
 }
+
+int ertm_get_streamer_diags(struct ertm_status *st, struct WR_STREAMERS_WB *streamer_diags)
+{
+	int res;
+
+	struct WR_STREAMERS_WB d, *diags = &d;
+
+	res = ertm_proto_cycle(st, ertm14_get_streamers_diags, NULL, diags);
+	if (res < 0)
+		return res;
+
+	streamer_diags_to_host(diags, streamer_diags);
+
+	return 0;
+}
+
 
 void bytes_to_64_mac(uint64_t *mac, uint8_t src[])
 {
@@ -522,14 +579,13 @@ void split_buildinfo(char *fpga, char *tag, char *date)
 static int get_version_info(struct ertm_status *st,
 			    struct ertm_board_info *bi)
 {
-	struct uart_link *link = &st->link;
 	int res;
 	char *fpga = bi->firmware_metadata.fpga_buildinfo_text;
 	uint32_t *words = (uint32_t *)fpga;
 	int size = sizeof(bi->firmware_metadata.fpga_buildinfo_text)/sizeof(uint32_t);
 	int i;
 
-	res = ertm_proto_cycle(link, ertm14_get_version_info, NULL, bi);
+	res = ertm_proto_cycle(st, ertm14_get_version_info, NULL, bi);
 	/* FIXME: if they **really** want the MAC in uint64_t shape,
 	 * here it is. I would prefer to have a uint8_t[8]
 	 */
@@ -539,7 +595,7 @@ static int get_version_info(struct ertm_status *st,
 
 	if (res < 0)
 		return res;
-	res = ertm_proto_cycle(link, ertm14_get_fpga_info, NULL, fpga);
+	res = ertm_proto_cycle(st, ertm14_get_fpga_info, NULL, fpga);
 	if (res < 0)
 		return res;
 	for (i = 0; i < size; i++)
@@ -590,12 +646,11 @@ int ertm_get_sensors(struct ertm_status *st,
 	struct ertm_temperatures *t, struct ertm_voltages *v)
 {
 	int i, res;
-	struct uart_link *link = &st->link;
 
 	struct proto_wrc_sensor sensors[ERTM14_MAX_SENSORS_COUNT];
 	struct proto_wrc_sensor *sensor;
 
-	res = ertm_proto_cycle(link, ertm14_get_sensors, NULL, sensors);
+	res = ertm_proto_cycle(st, ertm14_get_sensors, NULL, sensors);
 	if (res < 0)
 		return res;
 	sensors_to_host(sensors, ERTM14_MAX_SENSORS_COUNT);
@@ -634,24 +689,22 @@ int ertm_get_sensors(struct ertm_status *st,
 static int set_board_config(struct ertm_status *st,
 			const struct ertm14_board_state *config)
 {
-	struct uart_link *link = &st->link;
 	struct ertm14_board_state tmp, *bstmp = &tmp;
 
 	copy_config(bstmp, config);
 	bstmp->valid = 1;
 	board_state_to_network_order(bstmp, bstmp);
-	return ertm_proto_cycle(link, ertm14_set_board_config, bstmp, NULL);
+	return ertm_proto_cycle_unlocked(st, ertm14_set_board_config, bstmp, NULL);
 }
 
 static int commit_board_config(struct ertm_status *st,
 			struct ertm14_board_state *mask)
 {
-	struct uart_link *link = &st->link;
 	struct ertm14_board_state tmp, *bstmp = &tmp;
 
 	copy_config(bstmp, mask);
 	board_state_to_network_order(bstmp, bstmp);
-	return ertm_proto_cycle(link, ertm14_commit_board_config, bstmp, NULL);
+	return ertm_proto_cycle_unlocked(st, ertm14_commit_board_config, bstmp, NULL);
 }
 
 static void update_board_config(struct ertm_status *st,
@@ -691,12 +744,12 @@ static int ertm_get_freq_sync_out_state(struct ertm_status *handle,
 	case ERTM_LO:
 		freg  = &bs->lo.ftw;
 		ssreg = &bs->lo.sync_state;
-		enable = bs->lo.out_state[channel] != ERTM_RF_OUT_OFF;
+		enable = bs->lo.out_state[channel] != ERTM15_RF_OUT_OFF;
 		break;
 	case ERTM_REF:
 		freg  = &bs->ref.ftw;
 		ssreg = &bs->ref.sync_state;
-		enable = bs->ref.out_state[channel] != ERTM_RF_OUT_OFF;
+		enable = bs->ref.out_state[channel] != ERTM15_RF_OUT_OFF;
 		break;
 	default:
 		errno = EINVAL;
@@ -764,8 +817,10 @@ static void commit_config(struct ertm_status *handle,
 		break;
 	case ERTM_IMMEDIATE:
 		update_config(bs, next, mask);
+		handle->mutex->acquire(handle);
 		set_board_config(handle, next);
 		commit_board_config(handle, mask);
+		handle->mutex->release(handle);
 		clean_config(next);
 		clean_config(mask);
 		break;
@@ -908,11 +963,21 @@ struct ertm14_board_state *get_board_state(struct ertm_status *st)
 	return bs;
 }
 
+static int32_t signext32( uint32_t in, int bit )
+{
+	uint32_t mask = ~ ((1<<bit)-1);
+	printf("MASK %x\n", mask);
+	if( in & (1<<bit) )
+		return in | mask;
+	else
+		return in;
+}
+
 static double amp_power_to_dBm(uint32_t amp_power)
 {
 	/* register values are in mBm, *not* mdBm;
 	 * hence the *10/1000.0 factor */
-	return amp_power / 100.0;
+	return (signext32( amp_power & 0x7fffffff, 30 ) ) / 100.0;
 }
 
 int ertm_get_power(struct ertm_status *handle,
@@ -932,6 +997,10 @@ int ertm_get_power(struct ertm_status *handle,
 	}
 
 	update_board_config(handle, bs);
+
+	if( !( dds->amp_power & ERTM_FLAGS_DDS_POWER_VALID_MASK ) )
+		return -EBUSY;
+
 	*power = amp_power_to_dBm(dds->amp_power);
 	return 0;
 }
@@ -975,7 +1044,11 @@ int ertm_get_channel_power_all(struct ertm_status *handle,
 	update_board_config(handle, bs);
 	for (i = ERTM_LOREF_MIN_CH; i <= ERTM_LOREF_MAX_CH; i++) {
 		if (valid_mask & (1<<i))
+		{
+			if( ! (dds->out_power[i] & ERTM_FLAGS_DDS_POWER_VALID_MASK) )
+				return -EBUSY;
 		    power[i] = amp_power_to_dBm(dds->out_power[i]);
+	}
 	}
 	return 0;
 }
@@ -1097,9 +1170,8 @@ void nco_to_network_order(struct ertm_nco_reset *nco)
 	nco->connector		= htonl(nco->connector);
 };
 
-int ertm_nco_reset_get_status(struct ertm_status *handle, struct ertm_nco_reset status[2])
+int ertm_nco_reset_get_status(struct ertm_status *handle, struct ertm_nco_reset status[])
 {
-	struct uart_link *link = &handle->link;
 	struct ertm14_board_state *bs = &handle->state->board_state;
 	int res;
 
@@ -1107,7 +1179,7 @@ int ertm_nco_reset_get_status(struct ertm_status *handle, struct ertm_nco_reset 
 		errno = EINVAL;
 		return ERTM_BAD_HANDLE;
 	}
-	res = ertm_proto_cycle(link, ertm14_get_wrc_nco, NULL, status);
+	res = ertm_proto_cycle(handle, ertm14_get_wrc_nco, NULL, status);
 	if (res < 0)
 		return res;
 	nco_to_host_order(&status[0]);
@@ -1118,7 +1190,6 @@ int ertm_nco_reset_get_status(struct ertm_status *handle, struct ertm_nco_reset 
 int ertm_nco_reset_subscribe(struct ertm_status *handle,
 		enum ertm_connector connector, int mode, int channel, uint32_t stream_id)
 {
-	struct uart_link *link = &handle->link;
 	struct ertm14_board_state *bs = &handle->state->board_state;
 	struct ertm14_dds_state *dds;
 	struct ertm_nco_reset tmp, *nco_subscription = &tmp;
@@ -1146,7 +1217,7 @@ int ertm_nco_reset_subscribe(struct ertm_status *handle,
 	nco_subscription->current_stream_id = stream_id = 0;
 		/* remove this when several streams exist */
 	nco_to_network_order(nco_subscription);
-	res = ertm_proto_cycle(link, ertm14_subscribe_nco, nco_subscription, NULL);
+	res = ertm_proto_cycle(handle, ertm14_subscribe_nco, nco_subscription, NULL);
 	if (res < 0)
 		return res;
 	return 0;
@@ -1171,6 +1242,23 @@ int ertm_wr_diags(struct ertm_status *handle, struct ertm_wr_status *status)
 	return ertm_get_wr_diags(handle, s);
 }
 
+int ertm_streamer_diags(struct ertm_status *handle, struct ertm_streamer_status *status)
+{
+	struct WR_STREAMERS_WB *s = (struct WR_STREAMERS_WB *)status;
+	return ertm_get_streamer_diags(handle, s);
+}
+
+int ertm_reset_streamer_diags(struct ertm_status *handle )
+{
+	if (bad_handle(handle))
+		return -ERTM_BAD_HANDLE;
+
+	/* do a call to ptp start/stop */
+	int dummy;
+
+	return ertm_proto_cycle(handle, ertm14_reset_streamers_stats, &dummy, NULL);
+}
+
 int ertm_wr_status(struct ertm_status *handle, int *link_up, int *is_locked)
 {
 	struct ertm_wr_status status;
@@ -1186,16 +1274,14 @@ int ertm_wr_status(struct ertm_status *handle, int *link_up, int *is_locked)
 
 int ertm_wr_enable(struct ertm_status *handle, int mode)
 {
-	struct uart_link *link;
 	uint8_t e = mode;
 
 	if (bad_handle(handle))
 		return -ERTM_BAD_HANDLE;
 
 	/* do a call to ptp start/stop */
-	link = &handle->link;
 	handle->state->ptp_enabled = e;
-	return ertm_proto_cycle(link, ertm14_ptp_enable, &e, NULL);
+	return ertm_proto_cycle(handle, ertm14_ptp_enable, &e, NULL);
 }
 
 /* streamer latency and timeout getter/setters */
@@ -1247,4 +1333,15 @@ int ertm_get_streamers_latency_timeout(struct ertm_status *handle,
 	*latency_cycles = bs->streamers_latency_cycles;
 	*timeout_cycles = bs->streamers_timeout_cycles;
 	return 0;
+}
+
+int ertm_force_measure_channels_power( struct ertm_status *handle )
+{
+	if (bad_handle(handle))
+		return -ERTM_BAD_HANDLE;
+
+	/* do a call to ptp start/stop */
+	int dummy;
+
+	return ertm_proto_cycle(handle, ertm14_force_measure_channels_power, &dummy, NULL);
 }

@@ -161,7 +161,7 @@ struct ring_buffer
     int head, tail, size, count;
 };
 
-struct console_ipmi_priv_data
+struct console_ipmi_priv_data 
 {
     uint8_t tx_buf_mem[IPMI_CON_TX_BUF_SIZE];
     uint8_t rx_buf_mem[IPMI_CON_RX_BUF_SIZE];

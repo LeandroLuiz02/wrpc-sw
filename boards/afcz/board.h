@@ -69,6 +69,9 @@
 
 #define NS_PER_CLOCK 16
 
+/* Baud rate of the builtin UART (does not apply to the VUART) */
+#define UART_BAUDRATE 115200ULL
+
 /* Maximum number of simultaneously created sockets */
 #define NET_MAX_SOCKETS 12
 
@@ -95,10 +98,12 @@ int board_update(void);
 
 #define CONSOLE_UART_BAUDRATE 115200
 
+#define SDB_ADDRESS 0x30000
+
 #define FMC_EEPROM_ADR 0x50
 
 #define SDBFS_REC 5
-
+ 
 
 void sdb_find_devices(void);
 void sdb_print_devices(void);

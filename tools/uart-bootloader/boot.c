@@ -35,12 +35,17 @@
     #include "dev/bb_spi.h"
     #include "dev/gpio.h"
     #include "dev/spi_flash.h"
+
+    #define ERTM14_FLASH_PAGE_SIZE 65536
+    #define ERTM14_FLASH_SIZE 16777216
+    #define ERTM14_FIRMWARE_MAGIC 0xf1dee41a
 #endif
 
 #ifndef CONFIG_USER_START
     #define CONFIG_USER_START 0x0
 #endif
 
+#include "dev/syscon.h"
 #include "dev/simple_uart.h"
 #include "hw/wrc_syscon_regs.h"
 
@@ -52,7 +57,6 @@
 #define CMD_GET_FLASH_ID 6
 #define CMD_EXIT 7
 
-
 #define RSP_OK 1
 #define RSP_HELLO 5
 #define RSP_CRC_ERROR 2
@@ -63,13 +67,17 @@
 
 #define RX_BUF_SIZE (256 + 16)
 
-#define BOOT_TIMEOUT 2000
-#define UART_TIMEOUT 2000
+#define BOOT_TIMEOUT 500
+#define UART_TIMEOUT 500
 
+#define BOOT_BOARD_ID_LENGTH 8
+static const char bootBoardId[BOOT_BOARD_ID_LENGTH] = "e14wrpc5";
 
 uint8_t rxbuf[RX_BUF_SIZE];
 int     boot_wait;
-static uint32_t orig_reset_vector = 0x4;
+
+static uint32_t orig_reset_vector;
+static uint32_t orig_reset_insn;
 
 typedef void (*voidfunc_t)();
 void start_user(void);
@@ -106,10 +114,10 @@ static const struct gpio_device boot_syscon_gpio = {
 	boot_sysc_gpio_read_pin
 };
 
-static struct gpio_pin boot_pin_sysc_spi_sclk = { &boot_syscon_gpio, 10 };
-static struct gpio_pin boot_pin_sysc_spi_ncs = { &boot_syscon_gpio, 11 };
-static struct gpio_pin boot_pin_sysc_spi_mosi = { &boot_syscon_gpio, 12 };
-static struct gpio_pin boot_pin_sysc_spi_miso = { &boot_syscon_gpio, 13 };
+static const struct gpio_pin boot_pin_sysc_spi_sclk = { &boot_syscon_gpio, 10 };
+static const struct gpio_pin boot_pin_sysc_spi_ncs = { &boot_syscon_gpio, 11 };
+static const struct gpio_pin boot_pin_sysc_spi_mosi = { &boot_syscon_gpio, 12 };
+static const struct gpio_pin boot_pin_sysc_spi_miso = { &boot_syscon_gpio, 13 };
 
 void  boot_flash_init()
 {
@@ -117,7 +125,7 @@ void  boot_flash_init()
 		&boot_pin_sysc_spi_ncs,
 		&boot_pin_sysc_spi_mosi,
 		&boot_pin_sysc_spi_miso,
-		&boot_pin_sysc_spi_sclk, 10 );
+		&boot_pin_sysc_spi_sclk, 0 );
 
     spi_flash_create( &dev_flash, &spi_flash, 16384, 0 );
 }
@@ -185,7 +193,7 @@ void uart_readm_blocking(uint8_t *buf, int count)
     }
 }
 
-void send_reply(uint8_t code, int length, uint8_t *data)
+void send_reply(uint8_t code, int length, const uint8_t *data)
 {
     uint8_t  buf[32];
     uint16_t crc, i;
@@ -214,6 +222,8 @@ void on_cmd_init()
     send_reply(RSP_OK, 0, NULL);
 }
 
+
+
 uint32_t unpack_be32(uint8_t *p)
 {
     uint32_t rv = 0;
@@ -225,7 +235,30 @@ uint32_t unpack_be32(uint8_t *p)
     return rv;
 }
 
+uint32_t unpack_le32(uint8_t *p)
+{
+    uint32_t rv = 0;
+
+    rv |= p[0];
+    rv |= ((uint32_t)p[1]) << 8;
+    rv |= ((uint32_t)p[2]) << 16;
+    rv |= ((uint32_t)p[3]) << 24;
+    return rv;
+}
+
+void pack_be32(uint8_t *p, uint32_t val)
+{
+    uint32_t rv = 0;
+
+    p[3] = val & 0xff;
+    p[2] = (val >> 8)& 0xff;
+    p[1] = (val >> 16)& 0xff;
+    p[0] = (val >> 24)& 0xff;
+}
+
+
 #ifdef CONFIG_ERTM14_FLASH
+
 void on_cmd_erase_sector(uint8_t *payload, int len)
 {
     uint32_t base = unpack_be32(payload);
@@ -253,6 +286,30 @@ void on_cmd_get_flash_id(uint8_t *payload, int len)
 
 #endif
 
+
+static uint32_t decode_reset_jump_target( uint32_t pc, uint32_t insn )
+{
+#if defined(CONFIG_ARCH_RISCV)
+    int32_t d_imm_j = 0;
+
+    if( insn & ( 1<<31 ) )
+        d_imm_j |= 0xfff00000; // sign-extend
+
+    d_imm_j |= ((insn >> 12) & 0xff ) << 12;
+    d_imm_j |= ((insn >> 20) & 0x1 ) << 11;
+    d_imm_j |= ((insn >> 25) & 0x3f ) << 5;
+    d_imm_j |= ((insn >> 21) & 0xf ) << 1;
+
+    uint32_t addr = pc + d_imm_j;
+
+    return addr;
+#else
+    #error UART bootloader can be only built for the RISC-V CPU target. 
+#endif
+}
+                
+
+
 void on_cmd_write_ram(uint8_t *payload, int len)
 {
     int i;
@@ -264,9 +321,13 @@ void on_cmd_write_ram(uint8_t *payload, int len)
         { // special case for the entry vector address
             switch(base + i)
             {
-                case 1: orig_reset_vector = ((uint32_t)payload[i+4]) << 18; break;
-                case 2: orig_reset_vector |= ((uint32_t)payload[i+4]) << 10; break;
-                case 3: orig_reset_vector |= ((uint32_t)payload[i+4]) << 2; break;
+                case 0: orig_reset_insn = ((uint32_t)payload[i+4]); break;
+                case 1: orig_reset_insn |= ((uint32_t)payload[i+4])<<8; break;
+                case 2: orig_reset_insn |= ((uint32_t)payload[i+4])<<16; break;
+                case 3: orig_reset_insn |= ((uint32_t)payload[i+4])<<24;
+                        orig_reset_vector = decode_reset_jump_target( 0, orig_reset_insn );
+                        break;
+                break;
                 default:
                     break;
             }
@@ -277,16 +338,28 @@ void on_cmd_write_ram(uint8_t *payload, int len)
         }
     }
 
-    send_reply(RSP_OK, 0, NULL);
+    uint8_t buf[16];
+
+    pack_be32(buf, orig_reset_insn);
+    pack_be32(buf+4, orig_reset_vector);
+    pack_be32(buf+8, base);
+
+    send_reply(RSP_OK, 12, buf);
 }
 
 void on_cmd_go(uint8_t *payload, int len)
 {
     uint32_t base = unpack_be32(payload);
 
-    voidfunc_t f = (voidfunc_t)base;
+    voidfunc_t f = (voidfunc_t)orig_reset_vector;
 
-    send_reply(RSP_OK, 0, NULL);
+    uint8_t buf[16];
+
+    pack_be32(buf, orig_reset_insn);
+    pack_be32(buf+4, orig_reset_vector);
+    pack_be32(buf+8, base);
+
+    send_reply(RSP_OK, 12, buf);
 
     f();
 }
@@ -297,7 +370,7 @@ void boot_fsm()
 
     boot_wait = 1;
 
-    send_reply(RSP_HELLO, 0, NULL);
+    send_reply(RSP_HELLO, BOOT_BOARD_ID_LENGTH, bootBoardId );
 
     for (;;)
     {
@@ -394,24 +467,23 @@ void boot_fsm()
     }
 }
 
-
-#define ERTM14_FLASH_PAGE_SIZE 65536
-#define ERTM14_FLASH_SIZE 16777216
-#define ERTM14_FIRMWARE_MAGIC 0xf1dee41a
 void try_flash_boot()
 {
     uint8_t buf[512];
     uint32_t offset;
+
     for(offset = 0; offset < ERTM14_FLASH_SIZE; offset += ERTM14_FLASH_PAGE_SIZE)
     {
         uint32_t magic, size;
-        spi_flash_read(&dev_flash, offset, buf, 8 );
+        spi_flash_read(&dev_flash, offset, buf, 16 );
         magic = unpack_be32( buf );
         size = unpack_be32( buf + 4 );
 
         if ( magic == ERTM14_FIRMWARE_MAGIC )
         {
-            spi_flash_read(&dev_flash, offset + 8, (void*)0, size);
+            uint32_t insn = unpack_le32(buf + 8);
+            orig_reset_vector = decode_reset_jump_target( 0, insn );
+            spi_flash_read(&dev_flash, offset + 8 + 4, (void*)4, size); // keep the original bootloader reset vector
             start_user();
         }
     }
@@ -432,6 +504,8 @@ void dev_dbg()
 
 int boot_main()
 {
+    orig_reset_vector = 0x0;
+
     suart_init_default_baudrate( &dev_uart, BASE_UART );
 
     timer_init(1);
@@ -440,12 +514,13 @@ int boot_main()
         boot_flash_init();
     #endif
 
-    boot_fsm();
+	for(;;)
+    {
+        boot_fsm();
 
-    #ifdef CONFIG_ERTM14_FLASH
-        try_flash_boot();
-    #endif
-    start_user();
-
+        #ifdef CONFIG_ERTM14_FLASH
+            try_flash_boot();
+        #endif
+    }
     return 0;
 }

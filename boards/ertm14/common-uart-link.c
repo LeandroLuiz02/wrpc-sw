@@ -22,9 +22,15 @@
 #include <sys/errno.h>
 #include <string.h>
 
-#include "pp-printf.h"
-#include "dev/syscon.h"
 #include "common-uart-link.h"
+
+#ifndef __linux__
+    #ifdef CONFIG_TARGET_ERTM14
+    // hack - -Werror prevents compiling this under WRPC/eRTM14 because we're missing prototypes for pp_printf() and timer_get_tics()
+        #include "dev/syscon.h"
+        #include "wrc-debug.h"
+    #endif
+#endif
 
 static uint16_t crc_xmodem_update(uint16_t crc, uint8_t data)
 {
@@ -119,7 +125,7 @@ if(link->state != LINK_STATE_IDLE && link->extra_verbose)
                 link->check_crc = crc_xmodem_update( 0, 0x55 );
                 #ifndef __linux__
                 if( link->extra_verbose )
-		    pp_printf("RxS %d\n", (unsigned)timer_get_tics() );
+		    pp_printf("RxS %u\n", (unsigned)timer_get_tics() );
 
                 link->ts = timer_get_tics();
                 #endif
@@ -162,7 +168,7 @@ if(link->state != LINK_STATE_IDLE && link->extra_verbose)
 
             #ifndef __linux__
                 if( link->extra_verbose )
-                    pp_printf("RxPL %d\n", (int)timer_get_tics() );
+                    pp_printf("RxPL %u\n", (unsigned)timer_get_tics() );
 
             //    link->ts = timer_get_tics();
                 #endif
@@ -205,7 +211,7 @@ if(link->state != LINK_STATE_IDLE && link->extra_verbose)
                 *pkt = &link->rx_packet;
                 #ifndef __linux__
                 if( link->extra_verbose )
-                    pp_printf("RxF %d [%d] size %d\n", (int)timer_get_tics(), (int)timer_get_tics()-link->ts, link->rx_count );
+                    pp_printf("RxF %u [%u] size %d\n", (unsigned)timer_get_tics(), (unsigned)timer_get_tics()-link->ts, link->rx_count );
                 #endif
                 return RX_FSM_GOT_PACKET;
 

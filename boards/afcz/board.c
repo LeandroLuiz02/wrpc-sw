@@ -541,7 +541,6 @@ static void set_dmtd_dac( int value )
 
 static void set_main_dac( int value )
 {
-	//pp_printf("smaind %d\n", value );
 	spll_set_dac( 0, value );
 }
 

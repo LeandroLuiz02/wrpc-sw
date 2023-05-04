@@ -60,35 +60,35 @@ void ep_pfilter_init_default(struct wr_endpoint_device *dev)
 		h = v[0];
 		l = (v[1] << 24) | (v[2] << 16) | (v[3] << 8) | v[4];
 
-		/*
-		 * Patch the local MAC address in place,
-		 * in the first three instructions after NOP
-		 */
+	/*
+	 * Patch the local MAC address in place,
+	 * in the first three instructions after NOP
+	 */
                 if (i >= 1 && i <= 3) {
                         unsigned midx = 2 * (i - 1);
                         l &= ~(0xffff << 13);
                         l |= ((mac[midx] << 8) | mac[midx + 1]) << 13;
-                }
-                /* If this is the VLAN rule-set, patch the vlan number too */
+		}
+	/* If this is the VLAN rule-set, patch the vlan number too */
 		if (((l >> 13) & 0xffff) == 0x0aaa
                     && ((l >> 7) & 0x1f) == 7) {
-                        mac_dbg("fixing VLAN number in rule: use %i\n",
-                                        wrc_vlan_number);
+			mac_dbg("fixing VLAN number in rule: use %i\n",
+					wrc_vlan_number);
                         l &= ~(0xffff << 13);
                         l |= wrc_vlan_number << 13;
-                }
+	}
 
                 cmd_word = l | ((uint64_t)h << 32);
-                //mac_dbg("pfilter rule %02i: %x.%08x\n", i,
+		//mac_dbg("pfilter rule %02i: %x.%08x\n", i,
                 //              (uint32_t)(cmd_word >> 32),
                 //              (uint32_t)(cmd_word));
 
-                cr1 = EP_PFCR1_MM_DATA_LSB_W(cmd_word & 0xfff);
-                cr0 = EP_PFCR0_MM_ADDR_W(i) | EP_PFCR0_MM_DATA_MSB_W(cmd_word >> 12) |
-                    EP_PFCR0_MM_WRITE_MASK;
+		cr1 = EP_PFCR1_MM_DATA_LSB_W(cmd_word & 0xfff);
+		cr0 = EP_PFCR0_MM_ADDR_W(i) | EP_PFCR0_MM_DATA_MSB_W(cmd_word >> 12) |
+		    EP_PFCR0_MM_WRITE_MASK;
 
-                ep_write( dev, EP_REG_PFCR1, cr1 );
-                ep_write( dev, EP_REG_PFCR0, cr0 );
+		ep_write( dev, EP_REG_PFCR1, cr1 );
+		ep_write( dev, EP_REG_PFCR0, cr0 );
 	}
 
 	ep_write( dev, EP_REG_PFCR0, EP_PFCR0_ENABLE);

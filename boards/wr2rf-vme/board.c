@@ -76,8 +76,6 @@ int wrc_board_early_init(void)
     board_dbg("MAC address: Port 0 = %02x:%02x:%02x:%02x:%02x:%02x\n",
         mac[0],mac[1],mac[2],mac[3],mac[4],mac[5] );
 
-    spi_flash_read_id( &wrc_flash_dev );
-
     for(i = 0; i < 32 + 8; i++)
         flash_entry_points[i] = 0x600000 + 0x40000 * i;
 

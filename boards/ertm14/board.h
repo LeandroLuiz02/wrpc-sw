@@ -26,8 +26,9 @@
 #include "board-state.h"
 #include "common-uart-link.h"
 
-#define WRC_MAX_TASKS 24
 #define ERTM14_SECONDARY_DEBUG_UART 1
+
+#define WRC_MAX_TASKS 24
 
 #define BOARD_USE_CUSTOM_SDBFS 1
 #define BOARD_HAS_CUSTOM_NETWORK_INIT 1
@@ -87,14 +88,14 @@ extern unsigned char *BASE_EP;
 #define SDBFS_REC 5
 
 
-#define BASE_AUXWB                  0x48000
-#define BASE_SOFTPLL                0x40200
-#define BASE_PPS_GEN                0x40300
-#define BASE_UART                   0x40500
-#define BASE_SYSCON                 0x40400
-#define BASE_EP                     0x40100
-#define BASE_MINIC                  0x40000
-#define BASE_ONEWIRE                0x40600
+#define BASE_AUXWB                  (DEV_BASE + 0x08000)
+#define BASE_SOFTPLL                (DEV_BASE + 0x00200)
+#define BASE_PPS_GEN                (DEV_BASE + 0x00300)
+#define BASE_UART                   (DEV_BASE + 0x00500)
+#define BASE_SYSCON                 (DEV_BASE + 0x00400)
+#define BASE_EP                     (DEV_BASE + 0x00100)
+#define BASE_MINIC                  (DEV_BASE + 0x00000)
+#define BASE_ONEWIRE                (DEV_BASE + 0x00600)
 #define BASE_MMC_UART_14            (BASE_AUXWB + 0x200)
 #define BASE_MMC_UART_15            (BASE_AUXWB + 0x700)
 #define BASE_ERTM14_DDS_SYNC_UNIT   (BASE_AUXWB + 0x300)
@@ -102,11 +103,13 @@ extern unsigned char *BASE_EP;
 #define BASE_ERTM14_10MHZ_ALIGN_UNIT       (BASE_AUXWB + 0x400)
 #define BASE_ERTM14_RF_FRAME_TRANSCEIVER       (BASE_AUXWB + 0x500)
 #define BASE_ERTM14_STREAMERS       (BASE_AUXWB + 0x600)
-#define BASE_ERTM14_DEBUG_UART       (BASE_AUXWB + 0x800)
-#define BASE_ERTM14_BUILD_INFO       (BASE_AUXWB + 0x900)
+#define BASE_ERTM14_DEBUG_UART      (BASE_AUXWB + 0x800)
+#define BASE_ERTM14_BUILD_INFO      (BASE_AUXWB + 0x900)
+#define BASE_ERTM14_DNA             (BASE_AUXWB + 0x1000)
 
 #define ERTM14_RF_OUT_MIN_ID	ERTM_COMMON_RF_OUT_MIN_ID
 #define ERTM14_RF_OUT_MAX_ID	ERTM_COMMON_RF_OUT_MAX_ID
+#define ERTM14_ALL_RF_OUT_ID_MASK ERTM_COMMON_ALL_RF_OUT_ID_MASK
 
 #define ERTM14_OUT_CLKA 0
 #define ERTM14_OUT_CLKB 1
@@ -114,7 +117,7 @@ extern unsigned char *BASE_EP;
 #define ERTM14_CLKAB_OUT_MIN_ID	ERTM_COMMON_CLKAB_OUT_MIN_ID
 #define ERTM14_CLKAB_OUT_MAX_ID ERTM_COMMON_CLKAB_OUT_MAX_ID
 
-#define ERTM14_CLKAB_OUT_FRONT_PANEL 15
+#define ERTM14_CLKAB_OUT_FRONT_PANEL	ERTM_COMMON_CLKAB_OUT_FRONT_PANEL
 
 // clock monitor core channels (see ertm14_top.vhd for assignment to the clock monitor core)
 #define ERTM14_CMON_CLK_SYS 0       /* system clock */
