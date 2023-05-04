@@ -37,8 +37,6 @@ static struct console_uart_priv_data console_uart_priv_2nd;
 #endif
 struct console_device console_uart_dev, console_uart_2nd;
 struct console_device* console_devs[BOARD_MAX_CONSOLE_DEVICES];
-static struct console_device console_netconsole_dev;
-static struct console_device console_syslog_dev;
 
 #define CON_ESCAPE_CODE 0x1b
 #define CON_SWITCH_BINARY_CODE 'B'
@@ -148,36 +146,6 @@ void console_register_device( struct console_device *dev )
     }
 }
 
-static int con_netconsole_getc(struct console_device* dev)
-{
-	return netconsole_read_byte();
-}
-
-static int con_netconsole_put_string(struct console_device* dev, const char *s)
-{
-	return netconsole_write_string(s);
-}
-
-static void console_netconsole_init(void)
-{
-	console_netconsole_dev.get_char = con_netconsole_getc;
-	console_netconsole_dev.put_string = con_netconsole_put_string;
-	console_register_device( &console_netconsole_dev );
-}
-
-static int con_syslog_put_string(struct console_device* dev, const char *s)
-{
-	return syslog_puts(s);
-}
-
-
-static void console_syslog_init(void)
-{
-	/* no get_char for syslog! */
-	console_syslog_dev.put_string = con_syslog_put_string;
-	console_register_device(&console_syslog_dev);
-}
-
 int puts(const char *s)
 {
     if( puts_direct)
@@ -248,11 +216,13 @@ void console_init()
     console_ipmi_init();
 #endif
 
-    if (HAS_NETCONSOLE)
-	console_netconsole_init();
+#ifdef CONFIG_NETCONSOLE
+    console_netconsole_init();
+#endif
 
-    if (HAS_PUTS_SYSLOG)
-	console_syslog_init();
+#ifdef CONFIG_PUTS_SYSLOG
+    console_syslog_init();
+#endif
 
 #ifdef ERTM14_SECONDARY_DEBUG_UART
     // hack: there's a second UART attached to the console available on the J11 pins 2 & 3.

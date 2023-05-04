@@ -1,10 +1,7 @@
-
-# Those hardware-specific files should not be built for the host, even if
-# most of them give no error or warning. The host has different implementations
-obj-$(CONFIG_ARCH_LM32) += 	dev/simple_uart.o dev/console.o
-obj-$(CONFIG_ARCH_RISCV) += 	dev/simple_uart.o dev/console.o
-
 obj-$(CONFIG_EMBEDDED_NODE) += \
+	dev/simple_uart.o \
+	dev/console.o \
+	dev/console-net.o \
 	dev/endpoint.o \
 	dev/ep_pfilter.o \
 	dev/minic.o \

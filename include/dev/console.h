@@ -46,5 +46,13 @@ int console_ipmi_process_request(struct console_device* dev,  uint8_t *req, int 
 void console_ipmi_init( void );
 #endif
 
+#ifdef CONFIG_NETCONSOLE
+void console_netconsole_init(void);
+#endif
+
+#ifdef CONFIG_PUTS_SYSLOG
+void console_syslog_init(void);
+#endif
+
 #endif
 
