@@ -20,8 +20,6 @@
 #include "netconsole.h"
 #include "lib/syslog.h"
 
-static int puts_direct = 0;
-
 struct console_uart_priv_data console_uart_priv;
 struct console_device console_uart_dev;
 
@@ -137,11 +135,6 @@ void console_register_device( struct console_device *dev )
 
 int puts(const char *s)
 {
-    if( puts_direct)
-    {
-        return con_uart_put_string( &console_uart_dev, s );
-    }
-
     int i, rv = 0;
 
     for(i = 0; i < ARRAY_SIZE(console_devs); i++)
