@@ -33,5 +33,17 @@ void console_uart_init(struct console_device *dev,
 
 extern struct console_uart_priv_data console_uart_priv;
 extern struct console_device console_uart_dev;
+
+
+void console_uart_set_crlf_mode(int on);
+
+void console_force_mode( struct console_device *dev, int mode );
+int console_get_mode( struct console_device *dev );
+
+int console_binary_send_byte( struct console_device *dev, uint8_t b );
+int console_binary_recv_byte( struct console_device *dev );
+
+void console_set_mode_switch_hook( struct console_device *dev, void (*callback)(int) );
+
 #endif
 
