@@ -231,7 +231,7 @@ void cm_show_clocks(void)
         char freq_str[32];
 
         if (cmon_dev.freq_valid_mask & (1 << i))
-            pp_sprintf(freq_str, "%-12ld", cmon_dev.freqs[i]);
+            pp_sprintf(freq_str, "%-12u", cmon_dev.freqs[i]);
         else
             strcpy(freq_str, "UNKNOWN");
 
