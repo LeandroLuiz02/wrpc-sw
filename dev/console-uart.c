@@ -28,14 +28,16 @@ static int con_rx_internal(struct console_device* dev)
 {
     struct console_uart_priv_data* priv = (struct console_uart_priv_data*) dev->priv;
 
+#ifdef CONFIG_CONSOLE_UART_MODE
     if ( priv->state == CON_STATE_ESC_FLUSH )
     {
         priv->state = CON_STATE_IDLE;
         return priv->prev_char;
     }
-
+#endif
     int rx_char = suart_read_byte( &priv->uart_dev );
 
+#ifdef CONFIG_CONSOLE_UART_MODE
     if( rx_char < 0 )
         return rx_char;
 
@@ -74,6 +76,7 @@ static int con_rx_internal(struct console_device* dev)
         }
         priv->state = CON_STATE_IDLE;
     }
+#endif
     return rx_char;
 }
 
@@ -83,14 +86,16 @@ static int con_uart_put_string(struct console_device* dev, const char *s)
     char c;
     int count = 0;
 
+#ifdef CONFIG_CONSOLE_UART_MODE
     // binary mode uses different API
     if( dev->flags & CONSOLE_FLAGS_MODE_BINARY )
         return 0;
+#endif
 
     while ( (c = *s++) != 0 )
     {
-	    if( (dev->flags & CONSOLE_FLAGS_INSERT_CRLF) &&  c == '\n')
-    		suart_write_byte(&priv->uart_dev, '\r');
+	if( (dev->flags & CONSOLE_FLAGS_INSERT_CRLF) &&  c == '\n')
+	    suart_write_byte(&priv->uart_dev, '\r');
 
         suart_write_byte(&priv->uart_dev, c);
         count++;
@@ -101,8 +106,10 @@ static int con_uart_put_string(struct console_device* dev, const char *s)
 
 static int con_uart_getc(struct console_device* dev)
 {
+#ifdef CONFIG_CONSOLE_UART_MODE
     if( dev->flags & CONSOLE_FLAGS_MODE_BINARY )
         return 0;
+#endif
 
     return con_rx_internal( dev );
 }
@@ -113,12 +120,6 @@ void console_uart_set_crlf_mode(int on)
         console_uart_dev.flags |= CONSOLE_FLAGS_INSERT_CRLF;
     else
         console_uart_dev.flags &= ~CONSOLE_FLAGS_INSERT_CRLF;
-}
-
-void console_set_mode_switch_hook( struct console_device *dev, void (*callback)(int) )
-{
-    struct console_uart_priv_data* priv = (struct console_uart_priv_data*) dev->priv;
-    priv->mode_switch_hook = callback;
 }
 
 void console_uart_init(struct console_device *dev,
@@ -133,11 +134,21 @@ void console_uart_init(struct console_device *dev,
     dev->get_char = con_uart_getc;
     dev->put_string = con_uart_put_string;
 
+#ifdef CONFIG_CONSOLE_UART_MODE
     priv->prev_char = 0;
     priv->state = CON_STATE_IDLE;
     priv->mode_switch_hook = NULL;
+#endif
 
     console_register_device(dev);
+}
+
+#ifdef CONFIG_CONSOLE_UART_MODE
+
+void console_set_mode_switch_hook( struct console_device *dev, void (*callback)(int) )
+{
+    struct console_uart_priv_data* priv = (struct console_uart_priv_data*) dev->priv;
+    priv->mode_switch_hook = callback;
 }
 
 void console_force_mode( struct console_device *dev, int mode )
@@ -146,7 +157,9 @@ void console_force_mode( struct console_device *dev, int mode )
 
     dev->flags &= ~( CONSOLE_FLAGS_MODE_BINARY | CONSOLE_FLAGS_MODE_TTY );
     dev->flags |= mode;
+#ifdef CONFIG_CONSOLE_UART_MODE
     priv->state = CON_STATE_IDLE;
+#endif
 }
 
 int console_get_mode( struct console_device *dev )
@@ -187,3 +200,4 @@ int console_binary_recv_byte( struct console_device *dev )
 
     return rx_byte;
 }
+#endif
