@@ -34,13 +34,12 @@
 #define BASE_CLOCK_MONITOR      (DEV_BASE + 0xa00)
 #define BASE_AUXWB              (DEV_BASE + 0x8000)
 
+/* Board configuration. */
 #if defined(CONFIG_TARGET_GENERIC_PHY_8BIT) || defined(CONFIG_TARGET_GENERIC_PHY_16BIT) || defined(CONFIG_TARGET_SPEC_SILABS)
-#  include "boards/generic/board.h"
+#  include "boards/generic/board-config.h"
 #elif defined(CONFIG_TARGET_WR_SWITCH)
 #  include "boards/wr-switch/board.h"
-#elif defined(CONFIG_TARGET_AFCZ_V1)
-#  include "boards/afcz/board.h"
-#elif defined(CONFIG_TARGET_AFCZ_V2)
+#elif defined(CONFIG_TARGET_AFCZ_V1) || defined(CONFIG_TARGET_AFCZ_V2)
 #  include "boards/afcz/board.h"
 #elif defined(CONFIG_TARGET_ERTM14)
 #  include "boards/ertm14/board.h"

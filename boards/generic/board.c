@@ -4,6 +4,7 @@
 #include "dev/syscon.h"
 #include "dev/endpoint.h"
 #include "storage.h"
+#include "board-decl.h"
 
 int wrc_board_early_init(void)
 {

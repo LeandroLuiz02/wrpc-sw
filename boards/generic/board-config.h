@@ -4,8 +4,8 @@
  * Released according to the GNU GPL, version 2 or any later version.
  */
 
-#ifndef __BOARD_WRC_H
-#define __BOARD_WRC_H
+#ifndef __BOARD_CONFIG_GENERIC_H
+#define __BOARD_CONFIG_GENERIC_H
 /*
  * This is meant to be automatically included by the Makefile,
  * when wrpc-sw is build for wrc (node) -- as opposed to wrs (switch)
@@ -61,6 +61,4 @@
 
 #define EEPROM_STORAGE 0
 
-int wrc_generic_board_storage_init(void);
-
-#endif /* __BOARD_WRC_H */
+#endif /* __BOARD_CONFIG_GENERIC_H */

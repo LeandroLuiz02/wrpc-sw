@@ -5,6 +5,7 @@
 #include "dev/endpoint.h"
 #include "dev/si57x.h"
 #include "storage.h"
+#include "../generic/board-decl.h"
 
 #include <wrc-debug.h>
 
