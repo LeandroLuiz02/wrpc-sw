@@ -1,4 +1,5 @@
-#include "board.h"
+/* Need common board.h */
+#include "../../include/board.h"
 #include "dev/bb_spi.h"
 #include "dev/spi_flash.h"
 #include "dev/syscon.h"
