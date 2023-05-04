@@ -86,7 +86,7 @@ int board_update(void);
 
 #undef CONFIG_DISALLOW_LONG_DIVISION
 
-#define BOARD_MAX_CONSOLE_DEVICES 1
+#define BOARD_CONSOLE_DEVICES 1
 
 #define BOARD_USE_EVENTS 0
 

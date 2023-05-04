@@ -26,8 +26,6 @@
 #include "board-state.h"
 #include "common-uart-link.h"
 
-#define ERTM14_SECONDARY_DEBUG_UART 1
-
 #define WRC_MAX_TASKS 24
 
 #define BOARD_USE_CUSTOM_SDBFS 1
@@ -38,7 +36,7 @@
 #undef BOARD_ERTM14_REV_1
 #define BOARD_ERTM14_REV_2
 
-#define BOARD_MAX_CONSOLE_DEVICES (3 + HAS_NETCONSOLE + HAS_PUTS_SYSLOG)
+#define BOARD_CONSOLE_DEVICES 2
 
 #define BOARD_USE_EVENTS 1
 
@@ -202,5 +200,7 @@ void ertm14_apply_config(struct ertm14_board_state *cfg,
 	struct ertm14_board_state *mask, int force_all);
 void ertm14_set_pps_out_mode(int mode);
 void ertm14_sync_pulse_cal(void);
+
+void console_ertm14_init(void);
 
 #endif /* __BOARD_WRC_H */

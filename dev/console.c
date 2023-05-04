@@ -6,37 +6,26 @@
  * Released according to the GNU GPL, version 2 or any later version.
  */
 
-#include <stdio.h>
 #include <stdint.h>
 #include <errno.h>
+#include <stddef.h>
 
+#include "util.h"
 #include "pp-printf.h"
 #include "board.h"
 #include "dev/simple_uart.h"
 #include "dev/console.h"
+#include "dev/console-uart.h"
+
+#include "netconsole.h"
 #include "lib/syslog.h"
-#include <netconsole.h>
 
 static int puts_direct = 0;
 
-#define CON_STATE_IDLE 0
-#define CON_STATE_ESC_PENDING 1 // previous char was escape, waiting for control code
-#define CON_STATE_ESC_FLUSH 2  // previous char was an unrecognized escape sequence, pass both to the user
+struct console_uart_priv_data console_uart_priv;
+struct console_device console_uart_dev;
 
-struct console_uart_priv_data
-{
-    struct simple_uart_device uart_dev;
-    uint8_t state;
-    uint8_t prev_char;
-    void (*mode_switch_hook)( int is_binary );
-};
-
-static struct console_uart_priv_data console_uart_priv;
-#ifdef ERTM14_SECONDARY_DEBUG_UART
-static struct console_uart_priv_data console_uart_priv_2nd;
-#endif
-struct console_device console_uart_dev, console_uart_2nd;
-struct console_device* console_devs[BOARD_MAX_CONSOLE_DEVICES];
+static struct console_device* console_devs[BOARD_CONSOLE_DEVICES + HAS_NETCONSOLE + HAS_PUTS_SYSLOG];
 
 #define CON_ESCAPE_CODE 0x1b
 #define CON_SWITCH_BINARY_CODE 'B'
@@ -136,7 +125,7 @@ void console_uart_set_crlf_mode(int on)
 void console_register_device( struct console_device *dev )
 {
     int i;
-    for(i = 0; i < BOARD_MAX_CONSOLE_DEVICES; i++)
+    for(i = 0; i < ARRAY_SIZE(console_devs); i++)
     {
         if ( console_devs[i] == NULL )
         {
@@ -155,7 +144,7 @@ int puts(const char *s)
 
     int i, rv = 0;
 
-    for(i = 0; i < BOARD_MAX_CONSOLE_DEVICES; i++)
+    for(i = 0; i < ARRAY_SIZE(console_devs); i++)
     {
 	    struct console_device *con = console_devs[i];
         if(!con)
@@ -171,7 +160,7 @@ int console_getc(void)
 {
     int i;
 
-    for(i = 0; i < BOARD_MAX_CONSOLE_DEVICES; i++)
+    for(i = 0; i < ARRAY_SIZE(console_devs); i++)
     {
         struct console_device *con = console_devs[i];
         if(!con)
@@ -194,23 +183,29 @@ void console_set_mode_switch_hook( struct console_device *dev, void (*callback)(
     priv->mode_switch_hook = callback;
 }
 
-void console_init()
+void console_uart_init(struct console_device *dev,
+		       struct console_uart_priv_data *priv,
+		       unsigned addr,
+		       unsigned baudrate)
 {
-    int i;
+    suart_init(&priv->uart_dev, addr, baudrate);
 
-    for(i = 0; i < BOARD_MAX_CONSOLE_DEVICES; i++)
-        console_devs[i] = NULL;
+    dev->flags = CONSOLE_FLAGS_MODE_TTY | CONSOLE_FLAGS_INSERT_CRLF;
+    dev->priv = priv;
+    dev->get_char = con_uart_getc;
+    dev->put_string = con_uart_put_string;
 
-    suart_init( &console_uart_priv.uart_dev, BASE_UART, CONSOLE_UART_BAUDRATE );
+    priv->prev_char = 0;
+    priv->state = CON_STATE_IDLE;
+    priv->mode_switch_hook = NULL;
 
-    console_uart_dev.flags = CONSOLE_FLAGS_MODE_TTY | CONSOLE_FLAGS_INSERT_CRLF;
-    console_uart_dev.priv = &console_uart_priv;
-    console_uart_dev.get_char = con_uart_getc;
-    console_uart_dev.put_string = con_uart_put_string;
-    console_uart_priv.prev_char = 0;
-    console_uart_priv.state = CON_STATE_IDLE;
-    console_uart_priv.mode_switch_hook = NULL;
-    console_register_device( &console_uart_dev );
+    console_register_device(dev);
+}
+
+void console_init(void)
+{
+    console_uart_init(&console_uart_dev, &console_uart_priv,
+		      BASE_UART, CONSOLE_UART_BAUDRATE);
 
 #ifdef CONFIG_IPMI_CONSOLE
     console_ipmi_init();
@@ -222,25 +217,6 @@ void console_init()
 
 #ifdef CONFIG_PUTS_SYSLOG
     console_syslog_init();
-#endif
-
-#ifdef ERTM14_SECONDARY_DEBUG_UART
-    // hack: there's a second UART attached to the console available on the J11 pins 2 & 3.
-    // This is meant to help debugging the UART link (which uses the primary front panel USB console uart...)
-    suart_init( &console_uart_priv_2nd.uart_dev, BASE_ERTM14_DEBUG_UART, CONSOLE_UART_BAUDRATE );
-
-    console_uart_2nd.flags = CONSOLE_FLAGS_MODE_TTY | CONSOLE_FLAGS_INSERT_CRLF;
-    console_uart_2nd.priv = &console_uart_priv_2nd;
-    console_uart_2nd.get_char = con_uart_getc;
-    console_uart_2nd.put_string = con_uart_put_string;
-
-    console_uart_priv_2nd.prev_char = 0;
-    console_uart_priv_2nd.state = CON_STATE_IDLE;
-    console_uart_priv_2nd.mode_switch_hook = NULL;
-    console_register_device( &console_uart_2nd );
-
-    pp_printf("Console UART FIFO:: %d\n", suart_is_fifo_supported( &console_uart_priv.uart_dev ) );
-    pp_printf("Debug UART FIFO:: %d\n", suart_is_fifo_supported( &console_uart_priv_2nd.uart_dev ) );
 #endif
 }
 

@@ -1,5 +1,6 @@
 #include <string.h>
 #include "dev/console.h"
+#include "dev/console-uart.h"
 #include "dev/syscon.h"
 #include "dev/simple_uart.h"
 #include "common-uart-link.h"

@@ -1,6 +1,8 @@
-obj-$(CONFIG_EMBEDDED_NODE) += \
+obj-y += \
 	dev/simple_uart.o \
-	dev/console.o \
+	dev/console.o
+
+obj-$(CONFIG_EMBEDDED_NODE) += \
 	dev/console-net.o \
 	dev/endpoint.o \
 	dev/ep_pfilter.o \

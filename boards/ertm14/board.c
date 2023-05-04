@@ -40,6 +40,7 @@
 #include "dev/bb_i2c.h"
 #include "dev/pps_gen.h"
 #include "dev/console.h"
+#include "dev/console-uart.h"
 #include "dev/endpoint.h"
 #include "dev/74x595.h"
 #include "dev/netif.h"
@@ -2484,6 +2485,8 @@ int wrc_board_early_init()
 {
     static int32_t flash_entry_points[64];
     int i;
+
+    console_ertm14_init();
 
     bist_init( ertm_bist );
 
