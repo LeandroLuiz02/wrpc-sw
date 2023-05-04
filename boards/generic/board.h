@@ -4,8 +4,6 @@
  * Released according to the GNU GPL, version 2 or any later version.
  */
 
-#include <netconsole.h>
-
 #ifndef __BOARD_WRC_H
 #define __BOARD_WRC_H
 /*
@@ -13,24 +11,7 @@
  * when wrpc-sw is build for wrc (node) -- as opposed to wrs (switch)
  */
 
-#ifdef CONFIG_ARCH_RISCV
-#define DEV_BASE	0x100000
-#elif defined CONFIG_ARCH_LM32
-#define DEV_BASE	0x40000
-#else
-#error (Wrong Arch!)
-#endif
-
-/* Fixed base addresses */
-#define BASE_MINIC		(DEV_BASE + 0x000)
-#define BASE_EP			(DEV_BASE + 0x100)
-#define BASE_SOFTPLL		(DEV_BASE + 0x200)
-#define BASE_PPS_GEN 		(DEV_BASE + 0x300)
-#define BASE_SYSCON		(DEV_BASE + 0x400)
-#define BASE_UART		(DEV_BASE + 0x500)
-#define BASE_ONEWIRE		(DEV_BASE + 0x600)
-#define BASE_WDIAGS_PRIV       	(DEV_BASE + 0x900)
-#define BASE_ETHERBONE_CFG	(DEV_BASE + 0x8000)
+#define BASE_ETHERBONE_CFG	BASE_AUXWB
 
 /* Board-specific parameters */
 #define TICS_PER_SECOND 1000
@@ -67,8 +48,6 @@
 #define BOARD_MAX_CHAN_REF		1
 #define BOARD_MAX_CHAN_AUX		2
 #define BOARD_MAX_PTRACKERS		1
-
-#undef CONFIG_DISALLOW_LONG_DIVISION
 
 #define BOARD_USE_EVENTS 0
 
