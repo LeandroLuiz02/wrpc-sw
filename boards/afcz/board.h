@@ -12,21 +12,15 @@
 
 #define BOARD_HAS_CUSTOM_NETWORK_INIT 1
 
-/* Fixed base addresses */
+/* Unusual base addresses */
+#undef DEV_BASE
+#define DEV_BASE 0x20000
 
-#define BASE_UART                   0x20500
-#define BASE_SYSCON                 0x20400
-#define BASE_WR_ENDPOINT_MAIN       0x20100
-#define BASE_MINIC                  0x20000
-#define BASE_ONEWIRE                0x20600
-#define BASE_SOFTPLL 0x20200
-#define BASE_PPS_GEN 0x20300
-#define BASE_WDIAGS_PRIV	0x20900
+#define BASE_WR_ENDPOINT_MAIN       BASE_EP
 
-#define BASE_AUXWB 0x28000
-#define BASE_SI57X_INTERFACE (BASE_AUXWB + 0x80)
-#define BASE_CLOCK_MONITOR (BASE_AUXWB + 0xc0)
-#define BASE_WR_ENDPOINT_BTRAIN     (BASE_AUXWB + 0x00)
+#define BASE_SI57X_INTERFACE    (BASE_AUXWB + 0x80)
+#define BASE_AFCZ_CLOCK_MONITOR (BASE_AUXWB + 0xc0)
+#define BASE_WR_ENDPOINT_BTRAIN (BASE_AUXWB + 0x00)
 
 #define AFCZ_CM_CHANNEL_CLK_PCB 0
 #define AFCZ_CM_CHANNEL_CLK_SYS 3

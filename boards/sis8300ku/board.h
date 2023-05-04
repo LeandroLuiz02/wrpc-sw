@@ -13,19 +13,11 @@
 #define BOARD_USE_CUSTOM_SDBFS 1
 #define BOARD_HAS_CUSTOM_NETWORK_INIT 1
 
-/* Fixed base addresses */
-#define BASE_MINIC	0x20000
-#define BASE_EP		0x20100
-#define BASE_SOFTPLL 	0x20200
-#define BASE_PPS_GEN 	0x20300
-#define BASE_SYSCON	0x20400
-#define BASE_UART	0x20500
-#define BASE_ONEWIRE	0x20600
-#define BASE_WDIAGS_PRIV	0x20900
+/* Unusual base addresses */
+#undef DEV_BASE
+#define DEV_BASE 0x20000
 
-#define BASE_GPIO 0x28080
-
-//#define BASE_ETHERNOBE_CFG	0x20700
+#define BASE_GPIO (BASE_AUXWB + 0x080)
 
 /* Board-specific parameters */
 #define TICS_PER_SECOND 1000

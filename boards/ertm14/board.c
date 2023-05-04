@@ -1407,7 +1407,7 @@ static int ertm_process_psnmp(struct uart_packet *rx_pkt, struct uart_packet *tx
 
 static void ertm14_clock_monitor_init(void)
 {
-    wb_cm_init(&board.ertm14_cmon, BASE_CLOCK_MONITOR, 5);
+    wb_cm_init(&board.ertm14_cmon, BASE_ERTM_CLOCK_MONITOR, 5);
     wb_cm_set_ref_frequency( &board.ertm14_cmon, DMTD_CLOCK_FREQ_HZ );
 
     /* use the DDMTD clock as the reference frequency (we don't care much about accuracy here)

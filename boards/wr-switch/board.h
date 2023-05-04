@@ -13,6 +13,12 @@
 #define NS_PER_CLOCK          16
 #define REF_CLOCK_PERIOD_PS   16000
 
+#undef DEV_BASE
+#undef BASE_MINIC
+#undef BASE_SOFTPLL
+#undef BASE_PPS_GEN
+#undef BASE_UART
+
 /* RT CPU Memory layout */
 #define BASE_UART 0x10000
 #define BASE_SOFTPLL 0x10100

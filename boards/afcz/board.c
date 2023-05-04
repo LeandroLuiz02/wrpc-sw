@@ -1,4 +1,5 @@
-#include "board.h"
+/* We need the common board.h */
+#include "../../include/board.h"
 
 #include "wrc-debug.h"
 #include "dev/syscon.h"
@@ -755,7 +756,7 @@ int wrc_board_early_init()
 	idt8v_commit_configuration ( &board.clk_mux );
 #endif
 
-	wb_cm_init( &board.clk_mon, BASE_CLOCK_MONITOR, 6 );
+	wb_cm_init( &board.clk_mon, BASE_AFCZ_CLOCK_MONITOR, 6 );
 
 #if defined(CONFIG_TARGET_AFCZ_V1)
 	sfp_setup();

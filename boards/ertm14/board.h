@@ -80,32 +80,20 @@ int board_update(void);
 
 #define ERTM14_MAX_CONFIGS 8
 
-extern unsigned char *BASE_MINIC;
-extern unsigned char *BASE_EP;
-
 #define FMC_EEPROM_ADR 0x50
 
 #define SDBFS_REC 5
 
-
-#define BASE_AUXWB                  (DEV_BASE + 0x08000)
-#define BASE_SOFTPLL                (DEV_BASE + 0x00200)
-#define BASE_PPS_GEN                (DEV_BASE + 0x00300)
-#define BASE_UART                   (DEV_BASE + 0x00500)
-#define BASE_SYSCON                 (DEV_BASE + 0x00400)
-#define BASE_EP                     (DEV_BASE + 0x00100)
-#define BASE_MINIC                  (DEV_BASE + 0x00000)
-#define BASE_ONEWIRE                (DEV_BASE + 0x00600)
-#define BASE_MMC_UART_14            (BASE_AUXWB + 0x200)
-#define BASE_MMC_UART_15            (BASE_AUXWB + 0x700)
-#define BASE_ERTM14_DDS_SYNC_UNIT   (BASE_AUXWB + 0x300)
-#define BASE_CLOCK_MONITOR          (BASE_AUXWB + 0x100)
-#define BASE_ERTM14_10MHZ_ALIGN_UNIT       (BASE_AUXWB + 0x400)
-#define BASE_ERTM14_RF_FRAME_TRANSCEIVER       (BASE_AUXWB + 0x500)
-#define BASE_ERTM14_STREAMERS       (BASE_AUXWB + 0x600)
-#define BASE_ERTM14_DEBUG_UART      (BASE_AUXWB + 0x800)
-#define BASE_ERTM14_BUILD_INFO      (BASE_AUXWB + 0x900)
-#define BASE_ERTM14_DNA             (BASE_AUXWB + 0x1000)
+#define BASE_ERTM_CLOCK_MONITOR          (BASE_AUXWB + 0x100)
+#define BASE_MMC_UART_14             	 (BASE_AUXWB + 0x200)
+#define BASE_ERTM14_DDS_SYNC_UNIT    	 (BASE_AUXWB + 0x300)
+#define BASE_ERTM14_10MHZ_ALIGN_UNIT 	 (BASE_AUXWB + 0x400)
+#define BASE_ERTM14_RF_FRAME_TRANSCEIVER (BASE_AUXWB + 0x500)
+#define BASE_ERTM14_STREAMERS            (BASE_AUXWB + 0x600)
+#define BASE_MMC_UART_15                 (BASE_AUXWB + 0x700)
+#define BASE_ERTM14_DEBUG_UART           (BASE_AUXWB + 0x800)
+#define BASE_ERTM14_BUILD_INFO      	 (BASE_AUXWB + 0x900)
+#define BASE_ERTM14_DNA             	 (BASE_AUXWB + 0x1000)
 
 #define ERTM14_RF_OUT_MIN_ID	ERTM_COMMON_RF_OUT_MIN_ID
 #define ERTM14_RF_OUT_MAX_ID	ERTM_COMMON_RF_OUT_MAX_ID

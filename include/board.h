@@ -22,6 +22,18 @@
     #error Wrong CPU architecture. Must define either LM32 or RISC-V.
 #endif
 
+/* Fixed base addresses */
+#define BASE_MINIC              (DEV_BASE + 0x000)
+#define BASE_EP                 (DEV_BASE + 0x100)
+#define BASE_SOFTPLL            (DEV_BASE + 0x200)
+#define BASE_PPS_GEN            (DEV_BASE + 0x300)
+#define BASE_SYSCON             (DEV_BASE + 0x400)
+#define BASE_UART               (DEV_BASE + 0x500)
+#define BASE_ONEWIRE            (DEV_BASE + 0x600)
+#define BASE_WDIAGS_PRIV        (DEV_BASE + 0x900)
+#define BASE_CLOCK_MONITOR      (DEV_BASE + 0xa00)
+#define BASE_AUXWB              (DEV_BASE + 0x8000)
+
 #if defined(CONFIG_TARGET_GENERIC_PHY_8BIT) || defined(CONFIG_TARGET_GENERIC_PHY_16BIT) || defined(CONFIG_TARGET_SPEC_SILABS)
 #  include "boards/generic/board.h"
 #elif defined(CONFIG_TARGET_WR_SWITCH)
