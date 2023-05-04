@@ -75,9 +75,6 @@
 /* Number of auxillary clock channels - usually equal to the number of FMCs */
 #define NUM_AUX_CLOCKS 1
 
-int board_init(void);
-int board_update(void);
-
 /* spll parameter that are board-specific */
 #define BOARD_DIVIDE_DMTD_CLOCKS	0
 #define BOARD_MAX_CHAN_REF		1
@@ -98,8 +95,4 @@ int board_update(void);
 
 #define SDBFS_REC 5
  
-
-void sdb_find_devices(void);
-void sdb_print_devices(void);
-
 #endif /* __BOARD_WRC_H */
