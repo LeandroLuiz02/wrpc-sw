@@ -69,7 +69,8 @@
 #define CONSOLE_UART_BAUDRATE 115200
 
 /* Maximum number of files in the sdb filesystem.
-   Need at least 4: ., sfp database, init script and calibration */
+   Need at least 4: ., sfp database, init script and calibration
+   MAC address could also be written on sdbfs. */
 #define SDBFS_REC 5
 
 /* Specific to this board (see board.c) */
