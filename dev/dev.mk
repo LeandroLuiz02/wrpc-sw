@@ -90,8 +90,8 @@ dev/ep_pfilter.o: $(pfilter-y)
 
 dev/storage.o: $(sdbfsimg-y)
 
-$(pfilter-y): tools
+$(pfilter-y): tools/pfilter-builder
 	./tools/pfilter-builder include/generated/
 
-$(sdbfsimg-y): tools
+$(sdbfsimg-y): tools/gensdbfs
 	./tools/gensdbfs $(sdbfs_swap_bytes-y) -c include/generated/sdbfs-default.h tools/sdbfs tools/sdbfs-default.bin

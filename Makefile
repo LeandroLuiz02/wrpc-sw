@@ -68,13 +68,12 @@ dump_mem_ppsi_wrpc.o: CFLAGS+=-Itools -fno-lto
 dump-info.o: CFLAGS+=-Ippsi/tools -fno-lto
 
 # our linker script is preprocessed, so have a rule here
-%.ld: %.ld.S $(AUTOCONF) .config
+%.ld: %.ld.S $(AUTOCONF)
 	$(CC) -include $(AUTOCONF) -E -P $*.ld.S -o $@
 
 
-cflags-y =	-ffreestanding -include $(AUTOCONF) -Iinclude \
-			-I. -Isoftpll -Iipc
-cflags-y +=	-Ipp_printf
+cflags-y = -MMD -ffreestanding -include $(AUTOCONF)
+cflags-y += -Iinclude -I. -Isoftpll -Iipc -Ipp_printf
 cflags-$(CONFIG_LTO) += -flto
 
 # Only for lm32
@@ -159,7 +158,7 @@ CFLAGS = $(cflags-y) -Wall -Werror -Wstrict-prototypes \
 ldflags-$(CONFIG_LTO) += -flto
 
 # Assembler Flags
-ASFLAGS = -I. $(asflags-y)
+ASFLAGS = -MD -I. $(asflags-y)
 
 LDFLAGS = $(ldflags-y) \
 	-Wl,--gc-sections -Os -lgcc -lc
@@ -184,7 +183,7 @@ all: libertm
 all: tools $(OUTPUT).elf $(arch-files-y)
 
 .PRECIOUS: %.elf %.bin
-.PHONY: all tools clean gitmodules extest liblinux
+.PHONY: all tools clean extest liblinux
 .PHONY: libertm boards-clean
 
 # we need to remove "ptpdump" support for ppsi if RAM size is small and
@@ -199,13 +198,6 @@ ifeq ($(CONFIG_LTO),y)
   PPSI_USER_CFLAGS += -flto
 endif
 
-$(obj-ppsi): gitmodules
-	$(MAKE) -C $(PPSI) ppsi.a WRPCSW_ROOT=.. \
-		CROSS_COMPILE=$(CROSS_COMPILE) CONFIG_NO_PRINTF=y \
-		CONFIG_LTO=$(CONFIG_LTO) \
-		USER_CFLAGS="$(PPSI_USER_CFLAGS)" \
-		CPU_ARCH=$(CPU_ARCH) \
-
 $(OUTPUT).elf: $(LDS-y) $(AUTOCONF) gitmodules config.o $(OBJS)
 	$(CC) $(CFLAGS) -D__GIT_VER__="\"$(GIT_VER)\"" -D__GIT_USR__="\"$(GIT_USR)\"" -Wno-error -c revision.c
 	${CC} -Wl,-Map,$(OUTPUT).map -o $@ revision.o config.o $(OBJS) $(LDFLAGS)
@@ -218,7 +210,7 @@ OBJCOPY-TARGET-$(CONFIG_ARCH_LM32) = -O elf32-lm32 -B lm32
 OBJCOPY-TARGET-$(CONFIG_ARCH_RISCV) = -O elf32-littleriscv -B riscv
 OBJCOPY-TARGET-$(CONFIG_HOST_PROCESS) = -O elf64-x86-64 -B i386
 
-config.o: .config $(AUTOCONF)
+config.o: .config
 	grep CONFIG .config > .config.bin
 	dd bs=1 count=1 if=/dev/zero 2> /dev/null >> .config.bin
 	$(OBJCOPY) -I binary $(OBJCOPY-TARGET-y) .config.bin $@
@@ -230,22 +222,21 @@ GENRAM_ENDIAN_FLAG-$(CONFIG_ARCH_RISCV) = -l
 %.bin: %.elf
 	${OBJCOPY} -O binary $< $@
 
-%.bram: %.bin tools
+%.bram: %.bin tools/genraminit
 	./tools/genraminit $(GENRAM_ENDIAN_FLAG-y) $< $(CONFIG_RAMSIZE) > $@
 
-%.vhd: tools %.bin
+%.vhd: %.bin tools/genramvhd
 	./tools/genramvhd -s $(CONFIG_RAMSIZE) $*.bin > $@
 
-%.mif: tools %.bin
+%.mif: %.bin tools/genrammif
 	./tools/genrammif $(GENRAM_ENDIAN_FLAG-y) $*.bin $(CONFIG_RAMSIZE) > $@
-
-$(AUTOCONF): silentoldconfig gitmodules
 
 clean: boards-clean
 	rm -f $(OBJS) config.o pconfig.o revision.o $(OUTPUT).elf \
 		$(LDS) \
 		$(OUTPUT).bin rules-*.bin \
 		$(OUTPUT).bram $(OUTPUT).vhd $(OUTPUT).mif $(OUTPUT)_disasm.S
+	rm -f $(OBJS:.o=.d)
 	$(MAKE) -C $(PPSI) clean
 	$(MAKE) -C tools clean
 	$(MAKE) -C liblinux clean
@@ -270,7 +261,7 @@ libertm:
 extest:
 	$(MAKE) -C liblinux/extest CC=cc
 
-tools: .config gitmodules liblinux extest
+tools/gensdbfs tools/pfilter-builder tools/genraminit tools/genramvhd tools/genrammif tools: .config $(AUTOCONF) gitmodules liblinux extest
 	$(MAKE) -C tools
 
 tools-diag: liblinux extest
@@ -279,8 +270,9 @@ tools-diag: liblinux extest
 # if needed, check out the submodules (first time only), so users
 # who didn't read carefully the manual won't get confused
 gitmodules:
-	@test -d ppsi/arch-wrpc || echo "Checking out submodules"
-	@test -d ppsi/arch-wrpc || git submodule update --init
+	@echo "Checking out submodules"
+	git submodule update --init
+	touch gitmodules
 
 # Explicit rule for $(CURDIR)/.config
 # needed since -include XXX triggers build for XXX
@@ -316,7 +308,15 @@ scripts_basic config:
 defconfig:
 	$(MAKE) quiet=quiet_ -f Makefile.kconfig spec_defconfig
 
-.config: silentoldconfig
+# silentoldconfig is needed to regenerate autoconf.h
+$(AUTOCONF): .config
+	@mkdir -p include/config include/generated
+	$(MAKE) -f Makefile.kconfig silentoldconfig
+
+# Re-configure in case of Kconfig change
+.config: Kconfig $(PPSI)/Kconfig_ppsi
+	@mkdir -p include/config include/generated
+	$(MAKE) -f Makefile.kconfig silentoldconfig
 
 # This forces more compilations than needed, but it's useful
 # (we depend on .config and not on include/generated/autoconf.h
@@ -342,3 +342,7 @@ load:
 # print output name (used by MAKEALL)
 output_name:
 	echo $(OUTPUT)
+
+$(OBJS): $(AUTOCONF)
+
+-include $(OBJS:.o=.d)
