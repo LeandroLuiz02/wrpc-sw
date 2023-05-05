@@ -24,19 +24,26 @@
 #include <time.h>
 #include <limits.h>
 #include <termios.h>
+#include <signal.h>
+#include <stddef.h>
 #include <elf.h>
 
 #ifdef SUPPORT_CERN_VMEBRIDGE
 #include <libvmebus.h>
 #endif
 
+#include "libertm.h"
+#include "spll_debug.h"
+
 #include "hw/wrc_cpu_csr.h"
 #include "hw/wrc_syscon_regs.h"
 #include "hw/wb_uart.h"
+#include "hw/softpll_regs.h"
 
 #define OFFSET_SYSCON		0x400
 #define OFFSET_UART		0x500
 #define OFFSET_CPU_CSR		0xb00
+#define OFFSET_SOFTPLL      0x200
 
 #define VUART_EOL 13
 #define VUART_CMD_USLEEP 1000000
@@ -87,6 +94,12 @@ struct board_pci {
 	struct board_mem parent;
 	const char *resource_file;
 	uint64_t offset;
+};
+
+struct board_ertm14 {
+	struct board parent;
+	const char* uart_dev;
+	struct ertm_status *handle;
 };
 
 struct pci_slot {
@@ -214,6 +227,56 @@ static int board_pci_init(struct board *board_base,
 	return 0;
 }
 
+static void board_ertm14_help(void)
+{
+        printf("eRTM14/15 board\n");
+        printf(" -e USB/UART device \n");
+        printf("Note only the SoftPLL recorder tool is available. Others will not work.\n");
+}
+
+static int board_ertm14_fini(struct board *base_board)
+{
+	struct board_ertm14 *board = (struct board_ertm14 *)base_board;
+
+	if(board->handle)
+		ertm_exit(board->handle);
+
+	return 0;
+}
+
+
+static int board_ertm14_init(struct board *board_base,
+			  int *argc, char *argv[])
+{
+	struct board_ertm14 *board = (struct board_ertm14 *)board_base;
+	printf("bi");
+
+	/* Args: -f file, -o offset */
+	if (*argc > 2 && !strcmp (argv[1], "-e")) {
+		remove_arg1(argc, argv);
+		board->uart_dev = argv[1];
+		remove_arg1(argc, argv);
+	}
+
+	if( !board->uart_dev )
+	{
+		fprintf(stderr, "ertm14: USB/UART device expected (-e option, check help).\n");
+		return -1;
+	}
+
+	struct ertm_status *handle = ertm_init(board->uart_dev);
+
+	if (handle == NULL)
+	{
+		fprintf(stderr, "ertm14: could not open %s\n", board->uart_dev);
+		return -1;
+	}
+
+	board->handle = handle;
+
+	return 0;
+}
+
 static int board_pci_fini(struct board *base_board)
 {
 	struct board_pci *board = (struct board_pci *)base_board;
@@ -272,6 +335,21 @@ static struct board_pci board_pci =
 	NULL,
 	0
 };
+
+static struct board_ertm14 board_ertm14 =
+{
+		{
+			"ertm14",
+			board_ertm14_init,
+			board_ertm14_fini,
+			board_ertm14_help,
+			NULL,
+			NULL
+		},
+		NULL,
+		NULL
+};
+
 
 static int board_spec_init(struct board *board_base,
 			  int *argc, char *argv[])
@@ -561,6 +639,7 @@ static struct board_cernvme board_wr2rf =
 static struct board *boards[] = {
         &board_pci.parent.parent,
         &board_spec.parent.parent,
+	&board_ertm14.parent,
 #ifdef SUPPORT_CERN_VMEBRIDGE
         &board_cernvme.parent.parent,
         &board_wr2rf.parent.parent,
@@ -914,7 +993,7 @@ static int do_help(int argc, char *argv[])
 	printf ("usage: %s [command] [OPTIONS...]\n", progname);
 	printf ("command is one of:\n");
 	for (unsigned i = 0; tools[i]; i++)
-		printf(" %-10s - %s\n", tools[i]->name, tools[i]->short_help);
+		printf(" %-18s - %s\n", tools[i]->name, tools[i]->short_help);
 	return 0;
 }
 
@@ -1340,6 +1419,254 @@ static int do_board(int argc, char *argv[])
         return 0;
 }
 
+static void help_spll_recorder()
+{
+	fprintf(stderr, "SoftPLL debug/recorder tool. \n");
+	fprintf(stderr, "This dumps the real-time SPLL traces (error values/DAC drive/events) into stdout for the purpose of further analysis/plotting. \n");
+
+	fprintf(stderr, "Usage: %s spll-recorder [options]\n", progname);
+	fprintf(stderr, "        -u <undersampling factor>\n");
+}
+
+static const char *dbg_source_to_string(int src)
+{
+	switch (src)
+	{
+	case SPLL_DBG_SRC_HELPER:
+		return "helper";
+	case SPLL_DBG_SRC_MAIN:
+		return "main";
+	case SPLL_DBG_SRC_AUX(0):
+		return "aux0";
+	case SPLL_DBG_SRC_AUX(1):
+		return "aux1";
+	case SPLL_DBG_SRC_AUX(2):
+		return "aux2";
+	case SPLL_DBG_SRC_AUX(3):
+		return "aux3";
+	case SPLL_DBG_SRC_EXT:
+		return "ext";
+	default:
+		return "<unknown?>";
+	}
+}
+
+static const char *dbg_signal_to_string(int src)
+{
+	switch (src)
+	{
+	case SPLL_DBG_SIGNAL_ERR:
+		return "err";
+	case SPLL_DBG_SIGNAL_Y:
+		return "y";
+	case SPLL_DBG_SIGNAL_PERIOD:
+		return "period";
+	case SPLL_DBG_SIGNAL_REF:
+		return "ref";
+	case SPLL_DBG_SIGNAL_TAG:
+		return "tag";
+	case SPLL_DBG_SIGNAL_SAMPLE_ID:
+		return "sample";
+	case SPLL_DBG_SIGNAL_TIME_MS:
+		return "time_ms";
+	case SPLL_DBG_SIGNAL_PHASE_CURRENT:
+		return "phase_current";
+	case SPLL_DBG_SIGNAL_PHASE_TARGET:
+		return "phase_target";
+	default:
+		return "<unknown?>";
+	}
+}
+
+static const char *dbg_event_to_string(int src)
+{
+	switch (src)
+	{
+	case SPLL_DBG_EVT_GAIN_SWITCH:
+		return "gain-switch";
+	case SPLL_DBG_EVT_LOCK_ACQUIRED:
+		return "lock-acquired";
+	case SPLL_DBG_EVT_LOCK_LOSS:
+		return "lock-lost";
+	case SPLL_DBG_EVT_START:
+		return "start";
+	default:
+		return "<unknown?>";
+	}
+}
+
+static int32_t signext32(uint32_t in, int bit)
+{
+	uint32_t mask = ~((1 << bit) - 1);
+	if (in & (1 << bit))
+		return in | mask;
+	else
+		return in;
+}
+
+static int prev_src = -1;
+static volatile int kill_acquisition = 0;
+
+void spll_sighandler(int sig)
+{
+	fprintf(stderr, "Signal caught: %d\n", sig);
+	kill_acquisition = 1;
+}
+
+void spll_dump_debug_data(const uint32_t *buf, size_t size)
+{
+	while (size--)
+	{
+		uint32_t x = *buf++;
+
+		int sig = SPLL_DBG_EXTRACT_SIGNAL(x);
+		int src = SPLL_DBG_EXTRACT_SOURCE(x);
+		uint32_t value_raw = SPLL_DBG_EXTRACT_VALUE(x);
+		int32_t value;
+
+		switch (sig)
+		{
+		case SPLL_DBG_SIGNAL_ERR:
+			value = signext32(value_raw, 23);
+			break;
+		default:
+			value = value_raw;
+		};
+
+		if (prev_src != src)
+		{
+			printf("%s ", dbg_source_to_string(src));
+			prev_src = src;
+		}
+
+		if (sig == SPLL_DBG_SIGNAL_EVENT)
+		{
+			printf(" event=%s", dbg_event_to_string(value));
+		}
+
+		printf("%s=%d ", dbg_signal_to_string(sig),
+			   value);
+
+		if (SPLL_DBG_IS_LAST_RECORD(x))
+		{
+			printf("\n");
+			prev_src = -1;
+		}
+	}
+}
+
+void spll_readout_ertm14(struct board_ertm14* board, int undersample )
+{
+
+	int r = ertm_configure_spll_debug_dump(board->handle, 1, undersample);
+	if (r)
+		perror("ertm_configure_spll_debug_dump()");
+
+	for (;;)
+	{
+		uint32_t buf[16384];
+		size_t buf_size = 16384;
+		int r = ertm_read_spll_debug_data(board->handle, buf, &buf_size);
+		if (r >= 0)
+		{
+			spll_dump_debug_data(buf, buf_size);
+		}
+
+		if (kill_acquisition)
+			break;
+	}
+
+	r = ertm_configure_spll_debug_dump(board->handle, 0, 0);
+	if (r)
+		perror("ertm_configure_spll_debug_dump()");
+
+	fprintf(stderr, "ertm14: stopping SPLL logging...\n");
+}
+
+void spll_readout_direct(struct board* board )
+{
+
+	// purge the SPLL debug FIFO
+	int dummy;
+	for(;;)
+	{
+		uint32_t r = board->readl(board, OFFSET_SOFTPLL + offsetof( struct SPLL_WB, DFR_HOST_CSR ) );
+		if (r & SPLL_DFR_HOST_CSR_EMPTY)
+			break;
+	
+		dummy = board->readl(board, OFFSET_SOFTPLL + offsetof( struct SPLL_WB, DFR_HOST_R0 ) );
+		(void) dummy;
+	}
+
+	
+	for (;;)
+	{
+		uint32_t buf[16384];
+		size_t buf_size = 16384, cnt = 0;
+		const size_t max_record_size = 256;
+		int got_a_full_record = 1;
+
+		while( cnt < buf_size - max_record_size )
+		{
+			uint32_t fifo_sr = board->readl(board, OFFSET_SOFTPLL + offsetof( struct SPLL_WB, DFR_HOST_CSR ) );
+
+			if( got_a_full_record && ( fifo_sr & SPLL_DFR_HOST_CSR_EMPTY ) )
+				break;
+
+			uint32_t r = board->readl(board, OFFSET_SOFTPLL + offsetof( struct SPLL_WB, DFR_HOST_R0 ) );
+			buf[cnt++] = r;
+			got_a_full_record = SPLL_DBG_IS_LAST_RECORD(r) ? 1 : 0;
+		}
+
+		if( cnt > 0 )
+			spll_dump_debug_data(buf, cnt);
+	}
+}
+
+
+static int do_spll_recorder(int argc, char *argv[])
+{
+	int is_ertm = 0;
+	int c;
+	int undersample = 20;
+
+	if (board_open(&argc, argv) < 0)
+		return 1;
+
+	/* Parse specific args */
+	while ((c = getopt (argc, argv, "u:b:he:")) != -1) {
+		switch (c) {
+		case 'u':
+			/* Enable command mode */
+			undersample = atoi(optarg);
+			break;
+		case 'h':
+			help_spll_recorder();
+			break;
+		case '?':
+		default:
+			break;
+		}
+	}
+
+	is_ertm = !strcmp( board->name, "ertm14" );
+	if(is_ertm)
+	{
+		signal(SIGINT, spll_sighandler);
+		signal(SIGTERM, spll_sighandler);
+
+		spll_readout_ertm14( (struct board_ertm14*) board, undersample );
+	}
+	else
+	{
+		spll_readout_direct( (struct board*) board );
+	}
+
+	board->fini(board);
+
+	return 0;
+}
+
 static const struct tool_base tool_help = {
         "help",
         "display list of commands (this help), or help for a command",
@@ -1382,6 +1709,13 @@ static const struct tool_base tool_info = {
         help_info
 };
 
+static const struct tool_base tool_spll_recorder = {
+        "spll-recorder",
+        "SoftPLL log recorder",
+        do_spll_recorder,
+        help_spll_recorder
+};
+
 static const struct tool_base *tools[] = {
 	&tool_help,
 	&tool_version,
@@ -1389,6 +1723,7 @@ static const struct tool_base *tools[] = {
 	&tool_load,
 	&tool_vuart,
 	&tool_info,
+	&tool_spll_recorder,
 	NULL
 };
 
