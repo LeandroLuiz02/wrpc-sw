@@ -21,6 +21,7 @@ ALL   += wrpc-load
 ALL   += wr-streamers
 ALL   += wrpc-diags
 ALL   += gensdbfs
+ALL   += wrpc
 ALL-$(CONFIG_WRPC_PPSI)  += wrpc-dump
 
 ALL+= $(ALL-y)
@@ -94,9 +95,6 @@ wrpc-diags: wrpc-diags.c
 wrpc-vuart: wrpc-vuart.o vuart_lib.o
 	$(CC) $(CFLAGS) -Werror $^ $(LDFLAGS) -o $@
 
-wrpc-spll-recorder: wrpc-spll-recorder.o
-	$(CC) $(CFLAGS) $^ $(LDFLAGS) -o $@ ../libertm/libertm.a -ludev -lm
-
 wrpc-gdbserver: wrpc-gdbserver.o vuart_lib.o
 	$(CC) $(CFLAGS) -Werror  $^ $(LDFLAGS) -o $@
 
@@ -104,7 +102,7 @@ wrpc-load: wrpc-load.o
 	$(CC) $(CFLAGS) $^ $(LDFLAGS) -o $@
 
 wrpc: wrpc.o
-	$(CC) $(CFLAGS) $^ $(TOOL_LDFLAGS) $(LIBVME_LDFLAGS) -o $@
+	$(CC) $(CFLAGS) $^ $(TOOL_LDFLAGS) $(LIBVME_LDFLAGS) -o $@  ../libertm/libertm.a -ludev -lm
 
 wrpc.o: wrpc.c
 	$(CC) -c $(CFLAGS) $< $(LIBVME_CFLAGS) -o $@
