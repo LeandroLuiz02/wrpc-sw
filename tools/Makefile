@@ -16,7 +16,6 @@ ALL    = genraminit genramvhd genrammif
 ALL   += pfilter-builder
 ALL   += mapper
 ALL   += wrpc-vuart
-ALL   += wrpc-gdbserver
 ALL   += wrpc-load
 ALL   += wr-streamers
 ALL   += wrpc-diags
@@ -93,10 +92,7 @@ wrpc-diags: wrpc-diags.c
 	$(CC) $(CFLAGS)  $^ $(LDFLAGS) -o $@ -lreadline
 
 wrpc-vuart: wrpc-vuart.o vuart_lib.o
-	$(CC) $(CFLAGS) -Werror $^ $(LDFLAGS) -o $@
-
-wrpc-gdbserver: wrpc-gdbserver.o vuart_lib.o
-	$(CC) $(CFLAGS) -Werror  $^ $(LDFLAGS) -o $@
+	$(CC) $(CFLAGS) $^ $(LDFLAGS) -o $@
 
 wrpc-load: wrpc-load.o
 	$(CC) $(CFLAGS) $^ $(LDFLAGS) -o $@
