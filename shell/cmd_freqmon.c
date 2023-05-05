@@ -189,7 +189,8 @@ static int measure_vcxo_freq(int cm_channel, int n_steps, uint32_t expected_freq
         if (tune == tune_max)
             break;
 
-        pp_printf(" - DAC value=%d, f=%d Hz, delta_f=%ld Hz\n", tune, f, f - expected_freq);
+        pp_printf(" - DAC value=%d, f=%d Hz, delta_f=%d Hz\n",
+		  tune, f, (int)(f - expected_freq));
 
         tune += tune_step;
         if (tune > tune_max)

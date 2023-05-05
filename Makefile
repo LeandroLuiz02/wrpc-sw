@@ -74,11 +74,12 @@ dump-info.o: CFLAGS+=-Ippsi/tools -fno-lto
 
 cflags-y =	-ffreestanding -include $(AUTOCONF) -Iinclude \
 			-I. -Isoftpll -Iipc
-cflags-y +=	-I$(CURDIR)/pp_printf
+cflags-y +=	-Ipp_printf
 cflags-$(CONFIG_LTO) += -flto
 
 # Only for lm32
 cflags-$(CONFIG_ARCH_LM32)  +=  -Iinclude/std
+cflags-$(CONFIG_ARCH_RISCV) +=  -Iinclude/std
 
 cflags-$(CONFIG_WRPC_PPSI) += \
 	-I$(PPSI)/arch-wrpc \
@@ -90,8 +91,17 @@ cflags-y += \
 	-I$(PPSI)/arch-wrpc/include \
 	-I$(PPSI)/include
 
-obj-ppsi = $(PPSI)/ppsi.a
-obj-$(CONFIG_WRPC_PPSI) += $(obj-ppsi)
+ifdef CONFIG_WRPC_PPSI
+# we should use linux/scripts/setlocalversion instead...
+PPSI_VERSION := $(shell cd ppsi; git describe --always --dirty)
+
+cflags-y += -DPPSI_VERSION=\"$(PPSI_VERSION)\"
+OBJ-y :=
+
+ARCH=wrpc
+include $(PPSI)/ppsi.mk
+obj-y += $(OBJ-y)
+endif
 
 # Below, CONFIG_PPSI is wrong, as we can't build these for the host
 obj-$(CONFIG_EMBEDDED_NODE) += \

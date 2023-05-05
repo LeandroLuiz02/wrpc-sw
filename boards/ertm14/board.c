@@ -2525,7 +2525,8 @@ static void mmc_show_version_info( const char *brdname, struct ertm14_mmc_state 
     pp_printf("MMC Build Info for %s:\n", brdname );
     pp_printf("  - Git build commit : %32s\n", st->info.git_sha );
     pp_printf("  - Git build tag    : %32s\n", st->info.git_tag );
-    pp_printf("  - Build date       : %lu (Unix)\n", le32_to_host( st->info.build_date ) );
+    pp_printf("  - Build date       : %u (Unix)\n",
+	      (unsigned)le32_to_host( st->info.build_date ) );
     pp_printf("  - Serial Number    : %32s\n",   st->info.board_serial_number );
 }
 
