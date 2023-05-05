@@ -36,9 +36,6 @@
 /* Socket buffer size, determines the max. RX packet size */
 #define NET_MAX_SKBUF_SIZE 512
 
-/* Number of auxillary clock channels - usually equal to the number of FMCs */
-#define NUM_AUX_CLOCKS 1
-
 /* spll parameter that are board-specific */
 #ifdef CONFIG_TARGET_GENERIC_PHY_16BIT
 #  define BOARD_DIVIDE_DMTD_CLOCKS	0

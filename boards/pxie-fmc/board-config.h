@@ -30,9 +30,6 @@
 /* Socket buffer size, determines the max. RX packet size */
 #define NET_MAX_SKBUF_SIZE 512
 
-/* Number of auxillary clock channels - usually equal to the number of FMCs */
-#define NUM_AUX_CLOCKS 1
-
 /* spll parameter that are board-specific */
 #define BOARD_DIVIDE_DMTD_CLOCKS	0
 #define BOARD_MAX_CHAN_REF		1
@@ -45,6 +42,7 @@
 
 #define CONSOLE_UART_BAUDRATE 115200
 
+/* i2c eeproms address */
 #define CFG_EEPROM_ADR 0x50
 #define MAC_CHIP_ADR   0x51
 

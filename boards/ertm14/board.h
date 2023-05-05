@@ -63,9 +63,6 @@
 /* Socket buffer size, determines the max. RX packet size */
 #define NET_MAX_SKBUF_SIZE 512
 
-/* Number of auxillary clock channels - usually equal to the number of FMCs */
-#define NUM_AUX_CLOCKS 1
-
 /* spll parameter that are board-specific */
 #  define BOARD_DIVIDE_DMTD_CLOCKS	0
 #  define NS_PER_CLOCK 16
@@ -75,8 +72,6 @@
 #define BOARD_MAX_PTRACKERS		1
 
 #define ERTM14_MAX_CONFIGS 8
-
-#define FMC_EEPROM_ADR 0x50
 
 #define SDBFS_REC 5
 
