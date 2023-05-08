@@ -261,7 +261,7 @@ libertm:
 extest:
 	$(MAKE) -C liblinux/extest CC=cc
 
-tools/gensdbfs tools/pfilter-builder tools/genraminit tools/genramvhd tools/genrammif tools: .config $(AUTOCONF) gitmodules liblinux extest
+tools/gensdbfs tools/pfilter-builder tools/genraminit tools/genramvhd tools/genrammif tools: .config $(AUTOCONF) gitmodules liblinux extest libertm
 	$(MAKE) -C tools
 
 tools-diag: liblinux extest
@@ -303,7 +303,6 @@ scripts_basic config:
 
 %config:
 	$(MAKE) quiet=quiet_ -f Makefile.kconfig $@
-
 
 defconfig:
 	$(MAKE) quiet=quiet_ -f Makefile.kconfig spec_defconfig
