@@ -124,8 +124,12 @@ int wrc_wr_diags(void)
 	/* Auxiliar channels (if any) */
 	spll_get_num_channels(NULL, &n_out);
 	if (n_out > 8) n_out = 8; /* hardware limit. */
-	for (i = 0; i < n_out; i++) {
-		aux_stat |= ((SPLL_AUX_SLAVE_LOCKED | SPLL_AUX_MONITOR_READY) & spll_get_aux_status(i).flags) << i;
+	for (i = 0; i < n_out - 1; i++) {
+		struct spll_aux_clock_status status = spll_get_aux_status( i );
+		aux_stat |= ((SPLL_AUX_SLAVE_LOCKED | SPLL_AUX_MONITOR_READY) & status.flags) << i;
+
+		wdiags_write_aux_clock_details( i, status.mode, status.phase, status.flags & SPLL_AUX_MONITOR_ENABLED, status.flags & SPLL_AUX_MONITOR_READY );
+
 	}
 	wdiags_write_aux_state(aux_stat);
 
