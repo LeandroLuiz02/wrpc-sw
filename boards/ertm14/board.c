@@ -611,6 +611,7 @@ static void ertm14_spll_setup(void)
 
     // Aux clock 0 is used for 'factory' calibration of CLKAB/LO/REF outputs.
     spll_set_aux_mode( 0, SPLL_AUX_MODE_PHASE_MONITOR );
+    gen_gpio_out( &pin_tm_clk_aux0_lock_en, 1 );
 }
 
 
@@ -2005,6 +2006,9 @@ int ertm14_init_ref_clock_distribution(void)
         ad951x_configure(&board.ad9516_main, &pll_main_ocxo_config);
         // ad951x_configure(&board.ad9516_ext, &pll_ext_10mhz_config);
     }
+
+    gen_gpio_out( &pin_pll_ext_reset, 0 );
+
     return 0;
 }
 
@@ -3012,8 +3016,6 @@ void ertm14_sync_pulse_cal(void)
         clkab_enable_sync( ertm14_current_state, ERTM14_OUT_CLKA, i, 1 );
         clkab_enable_sync( ertm14_current_state, ERTM14_OUT_CLKB, i, 1 );
     }
-
-    gen_gpio_out( &pin_tm_clk_aux0_lock_en, 1 );
 
     spll_init( SPLL_MODE_FREE_RUNNING_MASTER, 0, 0 );
 
