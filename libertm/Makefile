@@ -24,7 +24,7 @@ LIBS = $(TARGET).a $(TARGET).so libertm_display.so
 LIBOBJS = $(TARGET).o linux-uart-link.o common-uart-link.o udev-serial.o magics.o flock.o
 LIBOBJS += semaph.o
 
-all: libs main udev-find
+all: libs main aux_logger udev-find
 libs: $(LIBS)
 
 $(TARGET).a $(TARGET).so: $(LIBOBJS)
@@ -36,6 +36,10 @@ $(TARGET).o: $(TARGET).h
 
 main: main.o libertm.a display.o
 	$(CC) $(CFLAGS) -o $@ $^ $(LDLIBS) $(LDFLAGS) -lm -ludev
+
+aux_logger: aux_logger.o libertm.a display.o
+	$(CC) $(CFLAGS) -o $@ $^ $(LDLIBS) $(LDFLAGS) -lm -ludev
+
 udev-find: udev-find.o libertm.a
 	$(CC) $(CFLAGS) -o $@ $^ $(LDLIBS) $(LDFLAGS) -lm -ludev
 
@@ -54,6 +58,6 @@ libertm_display.so: display.o
 
 clean:
 	rm -f *.o *.a *.so
-	rm -f serial ertm-serial main udev-find
+	rm -f serial ertm-serial main aux_logger udev-find
 
 include deploy.mk
