@@ -40,10 +40,8 @@
 #  define NS_PER_CLOCK 16
 
 #define BOARD_MAX_CHAN_REF		1
-#define BOARD_MAX_CHAN_AUX		2
+#define BOARD_MAX_CHAN_AUX		0 /* No extra vcxo */
 #define BOARD_MAX_PTRACKERS		1
-
-#define ERTM14_MAX_CONFIGS 8
 
 #define SDB_ADDRESS 0x50000
 
