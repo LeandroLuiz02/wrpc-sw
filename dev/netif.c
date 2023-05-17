@@ -22,14 +22,6 @@
 static unsigned char netif_n_count = 0;
 static struct wrc_netif_device netif_devs[WRC_NETIF_MAX_DEVICES];
 
-struct wr_endpoint_device* netif_get_default_endpoint(void)
-{
-    if( netif_n_count == 0 )
-        return NULL;
-    
-    return netif_devs[0].ep;
-}
-
 int netif_register_device(const char *name, struct wr_endpoint_device* ep)
 {
     if( netif_n_count >= WRC_NETIF_MAX_DEVICES )
