@@ -301,6 +301,8 @@ void spll_very_init()
 
 	if( spll_n_chan_out > 3 ) // fixme: bug in HDL?
 		spll_n_chan_out = 3;
+
+	softpll.mpll.gain_sched = NULL;
 }
 
 void spll_init(int mode, int slave_ref_channel, int flags)
@@ -399,8 +401,6 @@ void spll_init(int mode, int slave_ref_channel, int flags)
 	if(mode == SPLL_MODE_DISABLED)
 		return;
 
-	softpll.mpll.gain_sched = NULL;
-	
 	SPLL->EIC_IER = 1;
 	SPLL->OCER |= 1;
 	
@@ -555,13 +555,23 @@ void spll_show_stats(void)
 	pp_printf("softpll: n_ref %d n_out %d\n", spll_n_chan_ref, spll_n_chan_out);
 
 	if (softpll.mode > 0)
+	{
 		    pp_printf("softpll: irqs:%d seq:%s mode:%d "
-		     "alignment_state:%d HL%d ML%d HY=%d MY=%d DelCnt=%d setpoint:%d\n",
+		     "alignment_state:%d HL%d ML%d HY=%d MY=%d DelCnt=%d setpoint:%d",
 		      s->irq_count, statename,
 			      s->mode, s->ext.align_state,
 			      s->helper.ld.locked, s->mpll.locked,
 			      s->helper.pi.y, s->mpll.pi.y,
 			      s->delock_count, s->mpll.phase_shift_current);
+
+		if( softpll.mpll.gain_sched )
+		{
+			pp_printf(" gain_sched:%d/%d", softpll.mpll.gain_sched->current_stage + 1, softpll.mpll.gain_sched->n_stages );
+		}
+
+		pp_printf("\n");
+
+	}
 
 	int ch;
 
