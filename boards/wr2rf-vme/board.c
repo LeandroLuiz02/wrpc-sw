@@ -41,6 +41,7 @@
 #include "dev/netif.h"
 #include "dev/24aa025.h"
 
+#include "softpll_ng.h"
 
 #include "storage.h"
 #include "wrc_ptp.h"
@@ -49,6 +50,31 @@
 
 static struct i2c_bus i2c_mac_bus[2];
 static struct m24aa025_device i2c_mac_dev[2];
+
+spll_gain_schedule_t spll_main_ocxo_gain_sched;
+
+static void wr2rf_spll_setup(void)
+{
+/* configure a suitable PI gain schedule for the SoftPLL: */
+    spll_gain_schedule_t* gs=  &spll_main_ocxo_gain_sched;
+
+    gs->n_stages = 2;
+
+/* we start with ~100 Hz bandwidth to make it lock reasonably fast */
+    gs->stages[0].kp = -4000 * 16;
+    gs->stages[0].ki = -5 * 16;
+    gs->stages[0].lock_samples = 30000;
+    gs->stages[0].shift = 16;
+
+/* once it's locked, the loop bandwidth is switched to ~0.1 Hz to filter out WR link added phase noise */
+    gs->stages[1].kp = -3000;
+    gs->stages[1].ki = -5;
+    gs->stages[1].lock_samples = 10000;
+    gs->stages[1].shift = 16;
+
+    spll_set_gain_schedule( gs );
+}
+
 
 int wrc_board_early_init(void)
 {
@@ -99,6 +125,8 @@ int wrc_board_early_init(void)
     timer_delay_ms(200);
     ep_enable( &wrc_endpoint_dev, 1, 1);
     timer_delay_ms(200);
+
+    wr2rf_spll_setup();
 
     return 0;
 }
