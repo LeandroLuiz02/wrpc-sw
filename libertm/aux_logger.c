@@ -41,18 +41,46 @@ int main(int argc, char *argv[])
 		exit(1);
 	}
 
+	int timeout = 120;
+	if( argc >= 2 )
+		timeout = atoi(argv[1]);
+
+	int good_samples = 0;
+
 	for(;;)
 	{
 		ertm_wr_diags(handle, &handle->state->wr_status);
 
 		uint32_t aux0_stat = handle->state->wr_status.WDIAG_AUX0_DETAIL_STAT;
+		struct ertm_wr_status *st = &handle->state->wr_status;
+
 
 		//printf("aux0: %08x\n", aux0_stat );
 
 		if( aux0_stat & WRC_DIAGS_WDIAG_AUX0_DETAIL_STAT_LOCKED )
 		{
 			uint32_t phase = aux0_stat & 0xffffff;
-			printf("[%-.20f,0,0,0]\n", (double)phase*1e-12);
+			if(good_samples == 3 )
+			{
+				printf("[%d,%lld,%lld,%d,%d,%d]\n", phase,
+					(( uint64_t) st->WDIAG_MU_MSB << 32 ) | st->WDIAG_MU_LSB,
+					(( uint64_t) st->WDIAG_DMS_MSB << 32 ) | st->WDIAG_DMS_LSB,
+					st->WDIAG_ASYM,
+					st->WDIAG_CKO,
+					st->WDIAG_SETP );
+				break;
+			}
+
+			good_samples++;
+			timeout--;
+
+			if(!timeout)
+			{
+				printf("Timeout!\n");
+				fflush(stdout);
+				ertm_exit(handle);
+				return 0;
+			}
 		}
 
 		fflush(stdout);
