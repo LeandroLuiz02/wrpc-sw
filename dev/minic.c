@@ -7,19 +7,18 @@
  *
  * Released according to the GNU GPL, version 2 or any later version.
  */
-#include <stdio.h>
-#include <string.h>
-#include <wrc.h>
-#include <wrpc.h>
-#include <assert.h>
 
-#include "types.h"
+#include <string.h>
+#include <assert.h>
+#include "wrc.h"
+#include "wrpc.h"
+
 #include "board.h"
 #include "dev/pps_gen.h"		/* for pps_gen_get_time() */
 #include "dev/minic.h"
-#include <dev/syscon.h>
+#include "dev/syscon.h"
 
-#include <hw/minic_regs.h>
+#include "hw/minic_regs.h"
 
 #define MINIC_HDL_VERSION 1
 

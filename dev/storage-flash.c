@@ -8,11 +8,10 @@
  * Released according to the GNU GPL, version 2 or any later version.
  */
 #include <errno.h>
-#include <wrc.h>
-#include <dev/w1.h>
-#include <storage.h>
+#include "wrc.h"
+#include "dev/w1.h"
+#include "storage.h"
 
-#include "types.h"
 #include "dev/spi_flash.h"
 
 static const int32_t spi_flash_default_entry_points[] =

@@ -6,8 +6,6 @@
 #ifndef __MINIC_H
 #define __MINIC_H
 
-#include "types.h"
-
 #define ETH_HEADER_SIZE 14
 #define ETH_ALEN 6
 #define ETH_P_1588     0x88F7          /* IEEE 1588 Timesync */
@@ -42,6 +40,14 @@ struct wr_ethhdr_vlan {
 
 struct wr_minic {
 	int tx_count, rx_count, rx_errors;
+};
+
+struct hw_timestamp {
+	uint8_t valid;
+	int ahead;
+	uint64_t sec;
+	uint32_t nsec;
+	uint32_t phase;
 };
 
 extern struct wr_minic minic;

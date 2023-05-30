@@ -7,12 +7,9 @@
  *
  * Released according to the GNU GPL, version 2 or any later version.
  */
-#include <errno.h>
-#include <wrc.h>
-#include <storage.h>
+#include "storage.h"
 
-#include "types.h"
-#include <dev/fram.h>
+#include "dev/fram.h"
 
 
 const struct storage_rwops spi_fram_rwops = {

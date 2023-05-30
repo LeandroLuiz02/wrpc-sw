@@ -8,7 +8,6 @@
  */
 #include <wrc.h>
 #include <dev/fram.h>
-#include <types.h>
 #include <storage.h>
 #include <dev/flash.h>
 #include <dev/bb_spi.h>

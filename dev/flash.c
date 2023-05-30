@@ -6,10 +6,9 @@
  *
  * Released according to the GNU LGPL, version 2.1 or any later version.
  */
-#include <wrc.h>
-#include <types.h>
-#include <dev/flash.h>
-#include <storage.h>
+#include "wrc.h"
+#include "dev/flash.h"
+#include "storage.h"
 
 #include <libsdbfs.h>
 

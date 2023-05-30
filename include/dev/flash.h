@@ -9,7 +9,7 @@
 #ifndef __FLASH_H_
 #define __FLASH_H_
 
-#include "types.h"
+#include <stdint.h>
 
 #define FLASH_BLOCKSIZE 65536
 

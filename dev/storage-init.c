@@ -7,11 +7,9 @@
  *
  * Released according to the GNU GPL, version 2 or any later version.
  */
-#include <errno.h>
-#include <wrc.h>
-#include <storage.h>
+#include "wrc.h"
+#include "storage.h"
 
-#include "types.h"
 #include <sdb.h>
 
 #include <libsdbfs.h>

@@ -7,7 +7,6 @@
  *
  * Released according to the GNU GPL, version 2 or any later version.
  */
-#include "types.h"
 #include "board.h"
 #include "dev/syscon.h"
 #include "dev/bb_i2c.h"
