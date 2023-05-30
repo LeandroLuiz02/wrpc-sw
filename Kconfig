@@ -323,7 +323,7 @@ config WR_DIAG
 	  to ensure the data consistency.
 
 config ABSCAL
-  depends on WR_NODE
+        depends on WR_NODE
 	default y
 	boolean "Support absolute calibration"
 	help
