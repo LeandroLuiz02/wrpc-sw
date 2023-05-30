@@ -113,7 +113,4 @@ void ptpd_netif_linearize_rx_timestamp(struct wr_timestamp *ts,
 				       int clock_period);
 void ptpd_netif_set_phase_transition(uint32_t phase);
 
-struct wrc_port_state;
-void wrpc_get_port_state(struct wrc_port_state *port);
-
 #endif /* __PTPD_NETIF_H */

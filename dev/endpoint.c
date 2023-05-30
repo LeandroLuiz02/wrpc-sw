@@ -13,8 +13,8 @@
 
 #include "board.h"
 #include "dev/syscon.h"
-#include <dev/endpoint.h>
-#include <dev/minic.h>
+#include "dev/endpoint.h"
+#include "dev/minic.h"
 #include "storage.h"
 #include "shell.h"
 #include "ppsi/lib.h"
@@ -87,13 +87,6 @@ void ep_init(struct wr_endpoint_device* dev, void *base_addr)
 	dev->flags = 0;
 
 	ep_sfp_enable(dev, 1);
-
-#if 0
-	if (!IS_WR_NODE_SIM){
-		*(unsigned int *)(0x62000) = 0x2;	// reset network stuff (cleanup required!)
-		*(unsigned int *)(0x62000) = 0;
-	}
-#endif
 
 	ep_write(dev, EP_REG_ECR, 0);		/* disable Endpoint */
 	ep_write(dev, EP_REG_VCR0, EP_VCR0_QMODE_W(3));	/* disable VLAN unit - not used by WRPC */

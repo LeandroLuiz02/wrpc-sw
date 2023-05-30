@@ -64,6 +64,8 @@
 
 #define CALIB_T24P_RECALIBRATE_THRESHOLD 2000
 
+uint32_t cal_phase_transition = DEFAULT_T24P_PHASE_TRANSITION;
+
 /* state of transition detector */
 struct trans_detect_state {
 	unsigned char state;
@@ -73,8 +75,6 @@ struct trans_detect_state {
 
 	int trans_phase;
 };
-
-uint32_t cal_phase_transition = 2389;
 
 /* finds the transition in the value of flip_bit and returns phase associated
    with it. If no transition phase has been found yet, returns 0. Non-zero
@@ -158,6 +158,7 @@ static int rxts_calibration_update(uint32_t *t24p_value)
 		if (det_rising.state != TD_DONE || det_falling.state != TD_DONE)
 		{
 			pp_printf("RXTS calibration error.\n");
+			*t24p_value = DEFAULT_T24P_PHASE_TRANSITION;
 			return -1;
 		}
 

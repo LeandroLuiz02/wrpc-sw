@@ -25,7 +25,6 @@
 
 int wrc_wr_diags(void)
 {
-	struct wrc_port_state ps;
 	static uint32_t last_update_tick;
 	int tx, rx, rx_err;
 	uint64_t sec;
@@ -60,8 +59,8 @@ int wrc_wr_diags(void)
 	wdiags_write_time(sec, nsec);
 
 	/* port state */
-	wrpc_get_port_state(&ps);
-	wdiags_write_port_state((wrc_global_link.link_up == NETIF_LINK_UP), (ps.locked ? 1 : 0));
+	wdiags_write_port_state
+	  ((wrc_global_link.link_up == NETIF_LINK_UP), spll_check_lock(0));
 
 	/* port PTP State (from ppsi)
 	* see: ppsi/include/ppsi/ieee1588_types.h

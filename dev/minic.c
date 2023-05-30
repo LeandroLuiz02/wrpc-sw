@@ -198,9 +198,8 @@ int minic_rx_frame(struct wr_ethhdr *hdr, uint8_t * payload, uint32_t buf_size,
 		/* in WRPC we expect every Rx frame to contain a valid OOB.
 		 * If it's not the case, something went wrong... */
 		net_verbose("Warning: got incorrect or missing Rx OOB\n");
-		if (hwts)
-			hwts->valid = 0;
-	} else if (hwts) {
+		hwts->valid = 0;
+	} else {
 		/* build correct timestamp to return in hwts structure */
 		shw_pps_gen_get_time(&sec, &counter_ppsg);
 

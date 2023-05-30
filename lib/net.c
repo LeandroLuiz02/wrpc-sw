@@ -24,6 +24,7 @@
 #include "dev/endpoint.h"
 #include "softpll_ng.h"
 #include "ipv4.h"
+#include "dev/rxts_calibrator.h"
 
 static struct wrpc_socket *socks[NET_MAX_SOCKETS];
 
@@ -49,7 +50,6 @@ struct wrpc_socket *ptpd_netif_create_socket(struct wrpc_socket *sock,
 					     int udp_or_raw, int udpport)
 {
 	int i;
-	struct wrc_port_state pstate;
 
 	/* Look for the first available socket. */
 	for (i = 0; i < ARRAY_SIZE(socks); i++)
@@ -76,8 +76,7 @@ struct wrpc_socket *ptpd_netif_create_socket(struct wrpc_socket *sock,
 		    sock, ntohs(sock->bind_addr.ethertype),
 		    udpport, i);
 
-	wrpc_get_port_state(&pstate);
-	sock->phase_transition = pstate.t2_phase_transition;
+	sock->phase_transition = cal_phase_transition;
 
 	/*packet queue */
 	sock->queue.head = sock->queue.tail = 0;

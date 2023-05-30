@@ -6,8 +6,8 @@
 #ifndef __ENDPOINT_H
 #define __ENDPOINT_H
 
-#include <hw/rawmem.h>
 #include <stdint.h>
+#include "hw/rawmem.h"
 
 typedef enum {
 	AND = 0,

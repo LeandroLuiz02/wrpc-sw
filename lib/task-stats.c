@@ -26,7 +26,6 @@ uint32_t wrc_stats_last;
 
 int wrc_log_stats(void)
 {
-	struct wrc_port_state state;
 	int tx, rx, rx_err;
 	struct spll_aux_clock_status aux_stat;
 	uint64_t sec;
@@ -62,11 +61,10 @@ int wrc_log_stats(void)
 	wrc_stats_last = s->update_count;
 
 	shw_pps_gen_get_time(&sec, &nsec);
-	wrpc_get_port_state(&state);
 	minic_get_stats(&tx, &rx, &rx_err);
 
 	pp_printf("lnk:%d rx:%d tx:%d ", (wrc_global_link.link_up == NETIF_LINK_UP), rx, tx);
-	pp_printf("lock:%d ", state.locked ? 1 : 0);
+	pp_printf("lock:%d ", spll_check_lock(0) ? 1 : 0);
 	pp_printf("ptp:%s ", get_state_as_string(&ppi_static, ppi_static.state));
 
 	if (wrc_ptp_get_mode() == WRC_MODE_SLAVE) {

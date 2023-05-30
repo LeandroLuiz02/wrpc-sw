@@ -10,6 +10,7 @@
 #ifndef __RXTS_CALIBRATOR_H
 #define __RXTS_CALIBRATOR_H
 
+#define DEFAULT_T24P_PHASE_TRANSITION 2389
 extern uint32_t cal_phase_transition;
 
 void calib_t24p_init(void);

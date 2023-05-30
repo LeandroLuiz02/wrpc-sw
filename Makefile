@@ -104,8 +104,7 @@ endif
 
 # Below, CONFIG_PPSI is wrong, as we can't build these for the host
 obj-$(CONFIG_EMBEDDED_NODE) += \
-	monitor/monitor_ppsi.o \
-	lib/ppsi-wrappers.o
+	monitor/monitor_ppsi.o
 
 cflags-$(CONFIG_ARCH_LM32) += -mmultiply-enabled -mbarrel-shift-enabled
 cflags-$(CONFIG_ARCH_RISCV) += -march=rv32im$(USE-COMP-INSTR-y) -mabi=ilp32

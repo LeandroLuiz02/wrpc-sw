@@ -321,7 +321,7 @@ static void print_state(unsigned i)
 {
 	struct wrc_netif_device *ndev = netif_get_device(i);
 	int port_up = ndev->link_state == NETIF_LINK_UP;
-	struct wrc_port_state state;
+	int locked = spll_check_lock(0);
 	int color;
 
 	if (port_up) {
@@ -330,10 +330,7 @@ static void print_state(unsigned i)
 		pcprintf(12, 1, C_RED,   "*%s", ndev->name);
 	}
 
-	/* FIXME: should be independent for each interface */
-	wrpc_get_port_state(&state);
-
-	pcprintf(12, 8, C_GREEN, state.locked ? "Lck" : "   ");
+	pcprintf(12, 8, C_GREEN, locked ? "Lck" : "   ");
 
 /* ----------------------------------------------------------------------------------------------------------------------- */
 	/*
