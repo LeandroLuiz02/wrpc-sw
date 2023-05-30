@@ -64,15 +64,15 @@ static const struct subcmd {
 } subcmd[] = {
 	{"start", wrc_ptp_run, 1},
 	{"stop", wrc_ptp_run, 0},
-	{"e2e", wrc_ptp_sync_mech, MECH_E2E},
+	{"e2e",   wrc_ptp_sync_mech, MECH_E2E},
 	{"delay", wrc_ptp_sync_mech, MECH_E2E},
 #ifdef CONFIG_P2P
-	{"p2p", wrc_ptp_sync_mech, MECH_P2P},
+	{"p2p",    wrc_ptp_sync_mech, MECH_P2P},
 	{"pdelay", wrc_ptp_sync_mech, MECH_P2P},
 #endif
-	{"gm", wrc_ptp_set_mode, WRC_MODE_GM},
+	{"gm",     wrc_ptp_set_mode, WRC_MODE_GM},
 	{"master", wrc_ptp_set_mode, WRC_MODE_MASTER},
-	{"slave", wrc_ptp_set_mode, WRC_MODE_SLAVE},
+	{"slave",  wrc_ptp_set_mode, WRC_MODE_SLAVE},
 #ifdef CONFIG_CMD_PTP_ADV
 	 /* use next param as a val for func */
 	{"prio1",    wrc_ptp_set_prio1, USE_CMD_PARAM},

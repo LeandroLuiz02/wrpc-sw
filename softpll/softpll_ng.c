@@ -76,7 +76,7 @@ static inline void start_ptrackers(struct softpll_state *s)
 	int i;
 	for (i = 0; i < spll_n_chan_ref; i++)
 		if (ptracker_mask & (1 << i))
-				ptracker_start(&s->ptrackers[i]);
+			ptracker_start(&s->ptrackers[i]);
 }
 
 static inline void update_ptrackers(struct softpll_state *s, int tag_value, int tag_source)
