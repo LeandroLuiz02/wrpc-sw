@@ -5,12 +5,11 @@
 *.bin
 *.map
 *.mif
-*.*~
 *~
 *_disasm.S
 *.vhd
 *.cmd
-*.o
+*.d
 .tmp_*
 .config
 .config.old
