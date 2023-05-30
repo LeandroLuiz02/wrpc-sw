@@ -45,7 +45,7 @@ struct wrpc_socket {
 	uint16_t prio;
 
 	uint32_t phase_transition;
-	uint32_t dmtd_phase;
+
 	struct sockq queue;
 };
 

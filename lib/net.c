@@ -78,7 +78,6 @@ struct wrpc_socket *ptpd_netif_create_socket(struct wrpc_socket *sock,
 
 	wrpc_get_port_state(&pstate);
 	sock->phase_transition = pstate.t2_phase_transition;
-	sock->dmtd_phase = pstate.phase_val;
 
 	/*packet queue */
 	sock->queue.head = sock->queue.tail = 0;
