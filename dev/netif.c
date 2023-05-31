@@ -22,19 +22,19 @@
 static unsigned char netif_n_count = 0;
 static struct wrc_netif_device netif_devs[WRC_NETIF_MAX_DEVICES];
 
-int netif_register_device(const char *name, struct wr_endpoint_device* ep)
+int netif_register_device(struct wr_endpoint_device* ep)
 {
     if( netif_n_count >= WRC_NETIF_MAX_DEVICES )
         return -1;
 
-    struct wrc_netif_device *ndev = &netif_devs[ netif_n_count ];
-    netif_n_count++;
+    struct wrc_netif_device *ndev = &netif_devs[netif_n_count];
 
-    ndev->name = name;
     ndev->ep = ep;
     ndev->link_state = NETIF_LINK_DOWN;
 
-    dev_dbg("Registered network interface %s @ %p\n", ndev->name, ndev->ep->base );
+    dev_dbg("Registered network interface %u @ %p\n", netif_n_count, ndev->ep->base );
+
+    netif_n_count++;
 
     return 0;
 }

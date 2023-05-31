@@ -229,13 +229,13 @@ static void print_main_description(void)
 	ndevs = netif_get_device_count();
 
 	/*show_ports */
-	cprintf(C_CYAN, "-----+-------------------+-------------------------+---------+---------+-----\n");
-	pp_printf(      " Itf |        MAC        |       IP (source)       |    RX   |    TX   | VLAN\n");
-	pp_printf(      "-----+-------------------+-------------------------+---------+---------+-----\n");
+	cprintf(C_CYAN, "---+-------------------+-------------------------+---------+---------+-----\n");
+	pp_printf(      " # |        MAC        |       IP (source)       |    RX   |    TX   | VLAN\n");
+	pp_printf(      "---+-------------------+-------------------------+---------+---------+-----\n");
 
 	for (i = 0 ; i < ndevs; i++) {
 		/* reuse the string above, strings between "|" will be overwritten anyway */
-		pp_printf(" Itf |        MAC        |       IP (source)       |    RX   |    TX   | VLAN\n");
+		pp_printf(" # |        MAC        |       IP (source)       |    RX   |    TX   | VLAN\n");
 	}
 
 	pp_printf("\n--- HAL ---|------------- PPSI ------------------------------------------------\n");
@@ -281,13 +281,13 @@ static void print_port(unsigned i)
 	char buf[20];
 
 	if (port_up) {
-		pcprintf(7, 1, C_GREEN, " %s", ndev->name);
+		pcprintf(7, 1, C_GREEN, " %u", i);
 	} else {
-		pcprintf(7, 1, C_RED, "*%s", ndev->name);
+		pcprintf(7, 1, C_RED, "*%u", i);
 	}
 
 	format_mac(buf, ndev->ep->mac_addr);
-	pcprintf(7, 8, C_MAGENTA, "%s", buf);
+	pcprintf(7, 6, C_MAGENTA, "%s", buf);
 
 	if (i != 0) /* FIXME: should be independent for each interface */
 		return;
@@ -299,22 +299,22 @@ static void print_port(unsigned i)
 		format_ip(buf, ip);
 		switch (ip_status) {
 		case IP_TRAINING:
-			pcprintf(7, 28, C_RED,   "BOOTP running          ");
+			pcprintf(7, 26, C_RED,   "BOOTP running          ");
 			break;
 		case IP_OK_BOOTP:
-			pcprintf(7, 28, C_GREEN, "%16s(BOOTP)", buf);
+			pcprintf(7, 26, C_GREEN, "%16s(BOOTP)", buf);
 			break;
 		case IP_OK_STATIC:
-			pcprintf(7, 28, C_GREEN, "%15s(static)", buf);
+			pcprintf(7, 26, C_GREEN, "%15s(static)", buf);
 			break;
 		}
 	} else
-		pcprintf(7, 28, C_GREEN, "                       ");
+		pcprintf(7, 26, C_GREEN, "                       ");
 
 	minic_get_stats(&tx, &rx, &rx_err);
-	pcprintf(7, 54, C_MAGENTA, "%7d", rx);
-	pprintf(7, 64, "%7d", tx);
-	pprintf(7, 74, "%4d", wrc_vlan_number);
+	pcprintf(7, 52, C_MAGENTA, "%7d", rx);
+	pprintf(7, 62, "%7d", tx);
+	pprintf(7, 72, "%4d", wrc_vlan_number);
 }
 
 static void print_state(unsigned i)
@@ -324,19 +324,7 @@ static void print_state(unsigned i)
 	int locked = spll_check_lock(0);
 	int color;
 
-	if (port_up) {
-		pcprintf(12, 1, C_GREEN, " %s", ndev->name);
-	} else {
-		pcprintf(12, 1, C_RED,   "*%s", ndev->name);
-	}
 
-	pcprintf(12, 8, C_GREEN, locked ? "Lck" : "   ");
-
-/* ----------------------------------------------------------------------------------------------------------------------- */
-	/*
-	 * Actually, what is interesting is the PTP state.
-	 * For this lookup, the port in ppsi shmem
-	 */
 	/* Assume one instance per port */
 	/* FIXME: add support of more ports */
 //		for (j = 0; j < ppg->nlinks; j++) {
@@ -350,6 +338,14 @@ static void print_state(unsigned i)
 		const char * extension_state_name = EMPTY_EXTENSION_STATE_NAME;
 		char proto;
 		char mac_buf[20];
+
+		if (port_up) {
+			pcprintf(12, 1, C_GREEN, " %s", ppi_pt->iface_name);
+		} else {
+			pcprintf(12, 1, C_RED,   "*%s", ppi_pt->iface_name);
+		}
+
+		pcprintf(12, 8, C_GREEN, locked ? "Lck" : "   ");
 
 		// Evaluate the instance configuration
 		if (is_slaveOnly(ppg->defaultDS)) {
