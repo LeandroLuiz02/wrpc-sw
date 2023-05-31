@@ -99,6 +99,11 @@ static inline void update_ptrackers(struct softpll_state *s, int tag_value, int 
 
 static inline void sequencing_fsm(struct softpll_state *s, int tag_value, int tag_source)
 {
+	if( tag_source == spll_n_chan_ref ) // main osc
+		s->tag_count++;
+	else if ( tag_source == 0 ) // ref 0
+		s->ref_count++;
+
 	switch (s->seq_state) {
 		/* State "Clear DACs": initial SPLL sequnencer state. Brings both DACs (not the AUXs) to the default values
 		   prior to starting the SPLL. */
@@ -249,28 +254,10 @@ void spll_irq_entry(void)
 	uint32_t trr;
 	int i, tag_source, tag_value;
 	static uint16_t tag_count;
-	struct spll_fifo_log *l = NULL;
-	uint32_t enter_stamp;
-
-	if (HAS_FIFO_LOG)
-		enter_stamp = (PPSG->CNTR_NSEC & 0xfffffff);
 
 	/* check if there are more tags in the FIFO, and log them if so configured to */
 	while (!(SPLL->TRR_CSR & SPLL_TRR_CSR_EMPTY)) {
 		trr = SPLL->TRR_R0;
-
-		if (HAS_FIFO_LOG) {
-			/* save this to a circular buffer */
-			i = tag_count % FIFO_LOG_LEN;
-			l = fifo_log + i;
-			l->tstamp = (PPSG->CNTR_NSEC & 0xfffffff);
-			if (!enter_stamp)
-				enter_stamp = l->tstamp;
-			l->duration = 0;
-			l->trr = trr;
-			l->irq_count = s->irq_count & 0xffff;
-			l->tag_count = tag_count++;
-		}
 
 		/* And process the values */
 		tag_source = SPLL_TRR_R0_CHAN_ID_R(trr);
@@ -280,8 +267,6 @@ void spll_irq_entry(void)
 		update_loops(s, tag_value, tag_source);
 	}
 
-	if (HAS_FIFO_LOG && l)
-		l->duration = (PPSG->CNTR_NSEC & 0xfffffff) - enter_stamp;
 	s->irq_count++;
 	clear_irq();
 }
@@ -325,6 +310,7 @@ void spll_init(int mode, int slave_ref_channel, int flags)
 
 	s->mode = mode;
 	s->delock_count = 0;
+	s->ref_count = s->tag_count = 0;
 
 	SPLL->OCER = 0;
 	SPLL->RCER = 0;
@@ -338,7 +324,7 @@ void spll_init(int mode, int slave_ref_channel, int flags)
 	SPLL->RCER = 0;
 	SPLL->ECCR = 0;
 	SPLL->OCCR = 0;
-	SPLL->DEGLITCH_THR = 1000;
+	SPLL->DEGLITCH_THR = 700;
 
 	PPSG->CR |= PPSG_CR_CNT_EN;
 
@@ -557,12 +543,13 @@ void spll_show_stats(void)
 	if (softpll.mode > 0)
 	{
 		    pp_printf("softpll: irqs:%d seq:%s mode:%d "
-		     "alignment_state:%d HL%d ML%d HY=%d MY=%d DelCnt=%d setpoint:%d",
+		     "alignment_state:%d HL%d ML%d HY=%d MY=%d DelCnt=%d setpoint:%d refcnt:%d tagcnt:%d",
 		      s->irq_count, statename,
 			      s->mode, s->ext.align_state,
 			      s->helper.ld.locked, s->mpll.locked,
 			      s->helper.pi.y, s->mpll.pi.y,
-			      s->delock_count, s->mpll.phase_shift_current);
+			      s->delock_count, s->mpll.phase_shift_current,
+				  s->ref_count, s->tag_count);
 
 		if( softpll.mpll.gain_sched )
 		{

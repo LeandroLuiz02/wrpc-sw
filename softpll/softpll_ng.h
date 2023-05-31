@@ -165,6 +165,7 @@ struct softpll_state {
 	uint32_t dac_timeout;
 	int delock_count;
 	unsigned irq_count;
+	unsigned ref_count, tag_count;
 	int32_t mpll_shift_ps;
 
 	struct spll_helper_state helper;
