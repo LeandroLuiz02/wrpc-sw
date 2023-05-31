@@ -64,8 +64,6 @@
 
 #define CALIB_T24P_RECALIBRATE_THRESHOLD 2000
 
-uint32_t cal_phase_transition = DEFAULT_T24P_PHASE_TRANSITION;
-
 /* state of transition detector */
 struct trans_detect_state {
 	unsigned char state;
@@ -75,6 +73,9 @@ struct trans_detect_state {
 
 	int trans_phase;
 };
+
+static struct trans_detect_state det_rising, det_falling;
+static int cal_cur_phase;
 
 /* finds the transition in the value of flip_bit and returns phase associated
    with it. If no transition phase has been found yet, returns 0. Non-zero
@@ -118,9 +119,6 @@ static void lookup_transition(struct trans_detect_state *state, int flip_bit,
 		break;
 	}
 }
-
-static struct trans_detect_state det_rising, det_falling;
-static int cal_cur_phase;
 
 /* Starts RX timestamper calibration process state machine. Invoked by
    ptpnetif's check lock function when the PLL has already locked, to avoid
@@ -276,23 +274,25 @@ static int calib_t24p_process(uint32_t *value)
 
 int calib_t24p(void)
 {
+	uint32_t val;
 	int ret;
 
-	ret = calib_t24p_process(&cal_phase_transition);
+	ret = calib_t24p_process(&val);
 
 	//update phtrans value in socket struct
 	if (ret >= 0)
-		ptpd_netif_set_phase_transition(cal_phase_transition);
+		netif_set_phase_transition(0, val);
 	return ret;
 }
 
 void calib_t24p_load(void)
 {
+	uint32_t val;
 	int ret;
 
-	ret = calib_t24p_load_verbose(&cal_phase_transition);
+	ret = calib_t24p_load_verbose(&val);
 
 	//update phtrans value in socket struct
 	if (ret >= 0)
-		ptpd_netif_set_phase_transition(cal_phase_transition);
+		netif_set_phase_transition(0, val);
 }

@@ -45,8 +45,6 @@ struct wrpc_socket {
 	struct wrc_netif_device *nif;
 	uint16_t prio;
 
-	uint32_t phase_transition;
-
 	struct sockq queue;
 };
 
@@ -115,6 +113,4 @@ void ptpd_netif_linearize_rx_timestamp(struct wr_timestamp *ts,
 				       int32_t dmtd_phase,
 				       int cntr_ahead, int transition_point,
 				       int clock_period);
-void ptpd_netif_set_phase_transition(uint32_t phase);
-
 #endif /* __PTPD_NETIF_H */

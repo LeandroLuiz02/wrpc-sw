@@ -34,16 +34,6 @@ void copy_eth_addr(mac_addr_t dest, const mac_addr_t src)
 	memcpy (dest, src, ETH_ALEN);
 }
 
-void ptpd_netif_set_phase_transition(uint32_t phase)
-{
-	int i;
-
-	for (i=0; i< ARRAY_SIZE(socks); ++i) {
-		if (socks[i])
-			socks[i]->phase_transition = phase;
-	}
-}
-
 struct wrpc_socket *ptpd_netif_create_socket(struct wrpc_socket *sock,
 					     unsigned len,
 					     struct wr_sockaddr * bind_addr,
@@ -78,8 +68,6 @@ struct wrpc_socket *ptpd_netif_create_socket(struct wrpc_socket *sock,
 	net_verbose("%s: socket %p for %04x:%04x, slot %i\n", __func__,
 		    sock, ntohs(sock->bind_addr.ethertype),
 		    udpport, i);
-
-	sock->phase_transition = cal_phase_transition;
 
 	/*packet queue */
 	sock->queue.head = sock->queue.tail = 0;
@@ -254,7 +242,7 @@ int ptpd_netif_recvfrom(struct wrpc_socket *s, struct wr_sockaddr *from, void *d
 		ptpd_netif_linearize_rx_timestamp(rx_timestamp,
 						  rx_timestamp->raw_phase,
 						  hwts.ahead,
-						  s->phase_transition,
+						  s->nif->phase_transition,
 						  REF_CLOCK_PERIOD_PS);
 	}
 
