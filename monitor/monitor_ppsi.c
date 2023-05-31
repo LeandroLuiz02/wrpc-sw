@@ -276,7 +276,7 @@ static void print_time_pll(void)
 static void print_port(unsigned i)
 {
 	struct wrc_netif_device *ndev = netif_get_device(i);
-	int port_up = ndev->link_state == NETIF_LINK_UP;
+	int port_up = ep_link_up(ndev->ep, NULL);
 	int tx, rx, rx_err;
 	char buf[20];
 
@@ -320,7 +320,7 @@ static void print_port(unsigned i)
 static void print_state(unsigned i)
 {
 	struct wrc_netif_device *ndev = netif_get_device(i);
-	int port_up = ndev->link_state == NETIF_LINK_UP;
+	int port_up = ep_link_up(ndev->ep, NULL);
 	int locked = spll_check_lock(0);
 	int color;
 

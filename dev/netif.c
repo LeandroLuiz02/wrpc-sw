@@ -30,7 +30,6 @@ int netif_register_device(struct wr_endpoint_device* ep)
     struct wrc_netif_device *ndev = &netif_devs[netif_n_count];
 
     ndev->ep = ep;
-    ndev->link_state = NETIF_LINK_DOWN;
 
     dev_dbg("Registered network interface %u @ %p\n", netif_n_count, ndev->ep->base );
 
@@ -44,54 +43,7 @@ int netif_get_device_count(void)
     return netif_n_count;
 }
 
-static int netif_update_task(void)
-{
-    int i;
-    for( i = 0; i < netif_n_count; i++ )
-    {
-        struct wrc_netif_device *ndev = &netif_devs[ i ];
-
-        int up = ep_link_up( ndev->ep, NULL );
-        //pp_printf("%s link %d\n", ndev->name, up );
-        switch(ndev->link_state)
-        {
-            case NETIF_LINK_DOWN:
-                if( up )
-                    ndev->link_state = NETIF_LINK_WENT_UP;
-                break;
-            case NETIF_LINK_UP:
-                if( !up )
-                    ndev->link_state = NETIF_LINK_WENT_DOWN;
-                break;
-            case NETIF_LINK_WENT_UP:
-                if( up )
-                    ndev->link_state = NETIF_LINK_UP;
-                else
-                    ndev->link_state = NETIF_LINK_WENT_DOWN;
-                break;
-            case NETIF_LINK_WENT_DOWN:
-                if( up )
-                    ndev->link_state = NETIF_LINK_WENT_UP;
-                else
-                    ndev->link_state = NETIF_LINK_DOWN;
-                break;
-            default:
-                break;
-        }
-    }
-
-    return 0;
-}
-
-
 struct wrc_netif_device* netif_get_device(int idx)
 {
     return &netif_devs[idx];
-}
-
-
-int netif_init(void)
-{
-    wrc_task_create("netif", NULL, netif_update_task);
-    return 0;
 }

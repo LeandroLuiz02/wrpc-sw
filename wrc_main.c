@@ -99,7 +99,6 @@ static void wrc_initialize(void)
 	timer_init(1);
 	spll_very_init();
 	usleep_init();
-	netif_init();
 
 	/* Initialize W1 before board, in case mac address is read from it. */
 	if (HAS_W1)
