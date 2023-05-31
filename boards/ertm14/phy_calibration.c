@@ -456,8 +456,11 @@ static int update_comma_histogram( struct comma_histogram *hist, uint16_t *patte
             //pp_printf("Found Comma [%c] @ %d\n", comma_found_minus ? '-' : '+', i);
             hist->bins[ i ]++;
             hist->total_samples++;
+            return 1;
         }
     }
+
+    return 0;
 }
 
 #define LPDC_HIST_COMMA_POS_OUT_OF_RANGE -2
@@ -465,76 +468,73 @@ static int update_comma_histogram( struct comma_histogram *hist, uint16_t *patte
 #define LPDC_HIST_INSUFFICIENT_SAMPLES 0
 #define LPDC_HIST_HIT 1
 
-
-int check_histogram_threshold_hit( struct comma_histogram *hist, int threshold_samples, int border_discount_percent, int bins_filled, int target_comma_pos, int *comma_pos )
+int check_histogram_threshold_hit(struct comma_histogram *hist, int threshold_samples, int border_discount_percent, int bins_filled, int target_comma_pos, int *comma_pos)
 {
     int i;
     int max_bin_idx, max_bin_value = 0;
-    for(i=0;i<LPDC_NUM_COMMA_POSITIONS;i++)
+    for (i = 0; i < LPDC_NUM_COMMA_POSITIONS; i++)
     {
-        if( hist->bins[i] > max_bin_value )
+        if (hist->bins[i] > max_bin_value)
         {
             max_bin_value = hist->bins[i];
             max_bin_idx = i;
         }
     }
 
-    if ( max_bin_value > 0 && abs(max_bin_idx - target_comma_pos) > bins_filled-1 )
+    if (max_bin_value > 0 && abs(max_bin_idx - target_comma_pos) > bins_filled - 1)
         return LPDC_HIST_COMMA_POS_OUT_OF_RANGE;
 
-    if( max_bin_value < threshold_samples )
+    if (max_bin_value < threshold_samples)
         return LPDC_HIST_INSUFFICIENT_SAMPLES;
 
-    
-        int thr_border = (100 - border_discount_percent) * max_bin_value / 1000;
-        int low_idx = max_bin_idx, high_idx = max_bin_idx;
+    int thr_border = (100 - border_discount_percent) * max_bin_value / 1000;
+    int low_idx = max_bin_idx, high_idx = max_bin_idx;
 
-        while( low_idx > 0 )
+    while (low_idx > 0)
+    {
+        if (hist->bins[low_idx - 1] > thr_border)
+            low_idx--;
+        else
+            break;
+    }
+
+    if (low_idx == 0 && hist->bins[LPDC_NUM_COMMA_POSITIONS - 1] > thr_border)
+    {
+        low_idx = LPDC_NUM_COMMA_POSITIONS - 1;
+        while (low_idx > LPDC_NUM_COMMA_POSITIONS / 2)
         {
-            if( hist->bins[low_idx-1] > thr_border )
+            if (hist->bins[low_idx - 1] > thr_border)
                 low_idx--;
             else
                 break;
         }
 
-        if(low_idx == 0 && hist->bins[LPDC_NUM_COMMA_POSITIONS-1] > thr_border )
-        {
-            low_idx = LPDC_NUM_COMMA_POSITIONS-1;
-            while( low_idx > LPDC_NUM_COMMA_POSITIONS/2 )
-            {
-                if( hist->bins[low_idx-1] > thr_border )
-                    low_idx--;
-                else
-                    break;
-            }
+        if (low_idx == LPDC_NUM_COMMA_POSITIONS / 2)
+            return LPDC_HIST_TOO_WIDE;
+    }
 
-            if( low_idx == LPDC_NUM_COMMA_POSITIONS/2 )
-                return LPDC_HIST_TOO_WIDE;
-        }
-
-        while( high_idx < LPDC_NUM_COMMA_POSITIONS-1 )
-        {
-            if( hist->bins[high_idx+1] > thr_border )
-                high_idx++;
-            else
-                break;
-        }
-
+    while (high_idx < LPDC_NUM_COMMA_POSITIONS - 1)
+    {
+        if (hist->bins[high_idx + 1] > thr_border)
+            high_idx++;
+        else
+            break;
+    }
 
     int n_bins = high_idx > low_idx ? high_idx - low_idx + 1 : LPDC_NUM_COMMA_POSITIONS + 1 + high_idx - low_idx;
-    if( n_bins > bins_filled )
+    if (n_bins > bins_filled)
         return LPDC_HIST_TOO_WIDE;
 
-    for(i=low_idx; i != high_idx; i = (i + 1) % LPDC_NUM_COMMA_POSITIONS )
-        if( hist->bins[i] < threshold_samples )
+    for (i = low_idx; i != high_idx; i = (i + 1) % LPDC_NUM_COMMA_POSITIONS)
+        if (hist->bins[i] < threshold_samples)
             return LPDC_HIST_INSUFFICIENT_SAMPLES;
 
     *comma_pos = low_idx;
 
-    if( low_idx == target_comma_pos )
-       return LPDC_HIST_HIT;
+    if (low_idx == target_comma_pos)
+        return LPDC_HIST_HIT;
     else
-       return LPDC_HIST_COMMA_POS_OUT_OF_RANGE;
+        return LPDC_HIST_COMMA_POS_OUT_OF_RANGE;
 }
 
 static int rx_fsm_update(struct wrc_lpdc_state *lpdc)
@@ -618,11 +618,6 @@ s                timer_delay_ms(2000);
 
 		case RX_SETUP_STATE_RESET_PCS:
 		{
-            int i;
-            uint16_t pattern[ LPDC_NUM_PATTERN_WORDS ];
-
-//            pp_printf("Reset PCS!\n");
-
             reset_comma_histogram( &fsm->comma_hist );
 
             mdio_lpdc_set_bits( lpdc, LPDC_MDIO_CTRL, LPDC_MDIO_CTRL_RX_SW_RESET );

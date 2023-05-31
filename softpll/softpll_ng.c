@@ -252,8 +252,7 @@ void spll_irq_entry(void)
 {
 	struct softpll_state *s = (struct softpll_state *)&softpll;
 	uint32_t trr;
-	int i, tag_source, tag_value;
-	static uint16_t tag_count;
+	int tag_source, tag_value;
 
 	/* check if there are more tags in the FIFO, and log them if so configured to */
 	while (!(SPLL->TRR_CSR & SPLL_TRR_CSR_EMPTY)) {
