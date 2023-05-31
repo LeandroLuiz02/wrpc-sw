@@ -22,6 +22,7 @@
 #include "dev/minic.h"
 #include "ipv4.h"
 #include "net.h"
+#include "dev/netif.h"
 #include "dev/pps_gen.h"
 #include "hw/etherbone-config.h"
 #include "revision.h"
@@ -268,8 +269,6 @@ static int shell_cmd_return_code;
 static uint32_t aux_diag_reg_ro_num;
 static uint32_t aux_diag_reg_rw_num;
 
-
-extern struct pp_instance ppi_static;
 
 /* __DATE__ and __TIME__ is already stored in struct spll_stats stats, but
  * redefining it here makes code smaller than concatenate existing one */
@@ -611,11 +610,12 @@ void snmp_init(void)
 {
 	uint32_t aux_diag_id;
 	uint32_t aux_diag_ver;
+	struct wrc_netif_device *nif = netif_get_device(0);
 
 	/* Use UDP engine activated by function arguments  */
 	snmp_socket = ptpd_netif_create_socket
 	  (GET_WRPC_SOCKET(snmp_socket), LEN_WRPC_SOCKET(snmp_socket),
-	   NULL, PTPD_SOCK_UDP, 161 /* snmp */);
+	   NULL, PTPD_SOCK_UDP, 161 /* snmp */, nif);
 	if (SNMP_AUX_DIAG_ENABLED) {
 		/* Fix ID and version of aux diag registers by values read from FPGA */
 		diag_read_info(&aux_diag_id, &aux_diag_ver, &aux_diag_reg_rw_num,

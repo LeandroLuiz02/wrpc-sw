@@ -42,6 +42,7 @@ struct sockq {
 
 struct wrpc_socket {
 	struct wr_sockaddr bind_addr;
+	struct wrc_netif_device *nif;
 	uint16_t prio;
 
 	uint32_t phase_transition;
@@ -78,6 +79,8 @@ struct wr_timestamp {
 	int correct;
 };
 
+struct wr_minic;
+
 /* Copy a mac address (wrapper around memcpy). */
 void copy_eth_addr(mac_addr_t dest, const mac_addr_t src);
 
@@ -85,8 +88,9 @@ void copy_eth_addr(mac_addr_t dest, const mac_addr_t src);
 // to bind_addr.
 struct wrpc_socket *ptpd_netif_create_socket(struct wrpc_socket *s,
 					     unsigned len,
-					     struct wr_sockaddr * bind_addr,
-					     int udp_or_raw, int udpport);
+					     struct wr_sockaddr *bind_addr,
+					     int udp_or_raw, int udpport,
+					     struct wrc_netif_device *nif);
 
 // Sends a UDP/RAW packet (data, data_length) to addr in wr_sockaddr.
 // For raw frames, mac/ethertype needs to be provided, for UDP - ip/port.

@@ -13,6 +13,7 @@
 #include "dev/spi_flash.h"
 #include "dev/endpoint.h"
 #include "dev/netif.h"
+#include "dev/minic.h"
 #include "softpll_ng.h"
 
 #include "hw/si570_if_wb.h"
@@ -765,8 +766,8 @@ int wrc_board_early_init()
 	net_rst();
 	ep_init( &wrc_endpoint_dev, (void *) BASE_WR_ENDPOINT_MAIN );
 	ep_init( &board.ep_btrain, (void *) BASE_WR_ENDPOINT_BTRAIN );
-	netif_register_device(&wrc_endpoint_dev);
-	netif_register_device(&board.ep_btrain );
+	netif_register_device(&wrc_endpoint_dev, &minic);
+	netif_register_device(&board.ep_btrain, NULL);
 
 #if defined (CONFIG_TARGET_AFCZ_V1)
 	afczv1_read_persistent_mac();

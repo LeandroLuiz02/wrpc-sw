@@ -13,6 +13,7 @@
 #include "dev/endpoint.h"
 #include "ipv4.h"
 #include "net.h"
+#include "dev/netif.h"
 #include "wrc_global.h"
 
 static DECLARE_WRPC_SOCKET(arp_socket, 128);
@@ -32,6 +33,7 @@ static struct wrpc_socket *arp_socket;
 void arp_init(void)
 {
 	struct wr_sockaddr saddr;
+	struct wrc_netif_device *nif = netif_get_device(0);
 
 	/* Configure socket filter */
 	memset(&saddr, 0, sizeof(saddr));
@@ -40,7 +42,7 @@ void arp_init(void)
 
 	arp_socket = ptpd_netif_create_socket
 	  (GET_WRPC_SOCKET(arp_socket), LEN_WRPC_SOCKET(arp_socket),
-	   &saddr, PTPD_SOCK_RAW_ETHERNET, 0);
+	   &saddr, PTPD_SOCK_RAW_ETHERNET, 0, nif);
 }
 
 static int process_arp(uint8_t * buf, int len)

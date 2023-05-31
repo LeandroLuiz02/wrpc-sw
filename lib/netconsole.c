@@ -7,14 +7,15 @@
  * Released according to the GNU GPL, version 2 or any later version.
  */
 #include <string.h>
-#include <wrc.h>
-#include <wrpc.h>
+#include "wrc.h"
+#include "wrpc.h"
 #include "wrc_global.h"
 
 #include "ipv4.h"
 #include "net.h"
 #include "shell.h"
 #include "netconsole.h"
+#include "dev/netif.h"
 
 #ifdef CONFIG_NETCONSOLE_DEF_WAIT
 #define NETCONSOLE_DEF_VAL NETCONSOLE_WAIT
@@ -35,9 +36,11 @@ struct wr_udp_addr netconsole_udp_addr;
 /* init for netconsole task */
 void netconsole_init(void)
 {
+	struct wrc_netif_device *nif = netif_get_device(0);
+
 	netconsole_socket = ptpd_netif_create_socket
 	  (GET_WRPC_SOCKET(netconsole_socket), LEN_WRPC_SOCKET(netconsole_socket),
-	   NULL, PTPD_SOCK_UDP, NETCONSOLE_PORT);
+	   NULL, PTPD_SOCK_UDP, NETCONSOLE_PORT, nif);
 }
 
 int netconsole_read_byte(void)

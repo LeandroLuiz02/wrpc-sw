@@ -25,6 +25,7 @@
 #include "shell.h"
 #include "wrc_ptp.h"
 #include "wrc_global.h"
+#include "dev/netif.h"
 #include "dev/syscon.h"
 #include "softpll_ng.h"
 
@@ -242,6 +243,7 @@ static void lldp_update(void)
 
 void lldp_init(void)
 {
+	struct wrc_netif_device *nif = netif_get_device(0);
 	struct wr_sockaddr saddr;
 
 	/* LLDP: raw ethernet*/
@@ -250,7 +252,7 @@ void lldp_init(void)
 
 	lldp_socket = ptpd_netif_create_socket
 	  (GET_WRPC_SOCKET(lldp_socket), LEN_WRPC_SOCKET(lldp_socket),
-	   &saddr, PTPD_SOCK_RAW_ETHERNET, 0);
+	   &saddr, PTPD_SOCK_RAW_ETHERNET, 0, nif);
 
 	memset(&addr, 0x0, sizeof(struct wr_sockaddr));
 	memcpy(addr.mac, LLDP_MCAST_MAC, 6);

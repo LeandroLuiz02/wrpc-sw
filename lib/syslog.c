@@ -23,9 +23,11 @@ static uint32_t tics, tics_zero;
 
 void syslog_init(void)
 {
+	struct wrc_netif_device *nif = netif_get_device(0);
+
 	syslog_socket = ptpd_netif_create_socket
 	  (GET_WRPC_SOCKET(syslog_socket), LEN_WRPC_SOCKET(syslog_socket),
-	   NULL, PTPD_SOCK_UDP, 514 /* syslog */);
+	   NULL, PTPD_SOCK_UDP, 514 /* syslog */, nif);
 	syslog_addr.sport = syslog_addr.dport = htons(514);
 	tics_zero = timer_get_tics();
 }

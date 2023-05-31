@@ -18,9 +18,10 @@
 struct wrc_netif_device
 {
     struct wr_endpoint_device* ep;
+    struct wr_minic *nic;
 };
 
-int netif_register_device(struct wr_endpoint_device* ep);
+int netif_register_device(struct wr_endpoint_device *ep, struct wr_minic *nic);
 int netif_get_device_count(void);
 struct wrc_netif_device* netif_get_device(int idx);
 

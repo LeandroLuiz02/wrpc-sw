@@ -42,6 +42,7 @@
 #include "dev/24aa025.h"
 
 #include "softpll_ng.h"
+#include "dev/minic.h"
 
 #include "storage.h"
 #include "wrc_ptp.h"
@@ -118,7 +119,7 @@ int wrc_board_early_init(void)
 
     ep_init(&wrc_endpoint_dev, (void *) BASE_EP);
     ep_set_mac_addr( &wrc_endpoint_dev, board_mac_addr );
-    netif_register_device(&wrc_endpoint_dev );
+    netif_register_device(&wrc_endpoint_dev, &minic);
 
     /* Sleep for 1s to make sure WRS v4.2 always realizes that
      * the link is down */

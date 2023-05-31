@@ -22,6 +22,7 @@
 #include "dev/pps_gen.h"
 #include "dev/minic.h"
 #include "dev/endpoint.h"
+#include "dev/netif.h"
 #include "softpll_ng.h"
 #include "ipv4.h"
 #include "dev/rxts_calibrator.h"
@@ -43,11 +44,11 @@ void ptpd_netif_set_phase_transition(uint32_t phase)
 	}
 }
 
-
 struct wrpc_socket *ptpd_netif_create_socket(struct wrpc_socket *sock,
 					     unsigned len,
 					     struct wr_sockaddr * bind_addr,
-					     int udp_or_raw, int udpport)
+					     int udp_or_raw, int udpport,
+					     struct wrc_netif_device *nif)
 {
 	int i;
 
@@ -71,6 +72,8 @@ struct wrpc_socket *ptpd_netif_create_socket(struct wrpc_socket *sock,
 		sock->bind_addr.ethertype = htons(0x0800); /* IPv4 */
 		sock->bind_addr.udpport = udpport;
 	}
+
+	sock->nif = nif;
 
 	net_verbose("%s: socket %p for %04x:%04x, slot %i\n", __func__,
 		    sock, ntohs(sock->bind_addr.ethertype),
@@ -264,16 +267,16 @@ int ptpd_netif_recvfrom(struct wrpc_socket *s, struct wr_sockaddr *from, void *d
 	return min(size, data_length);
 }
 
-int ptpd_netif_sendto(struct wrpc_socket * sock, struct wr_sockaddr *to, void *data,
-		      size_t data_length, struct wr_timestamp *tx_timestamp)
+int ptpd_netif_sendto(struct wrpc_socket *sock, struct wr_sockaddr *to,
+		      void *data, size_t data_length,
+		      struct wr_timestamp *tx_timestamp)
 {
-	struct wrpc_socket *s = (struct wrpc_socket *)sock;
 	struct hw_timestamp hwts;
 	struct wr_ethhdr_vlan hdr;
 	int rval;
 
 	copy_eth_addr(hdr.dstmac, to->mac);
-	copy_eth_addr(hdr.srcmac, wrc_endpoint_dev.mac_addr);
+	copy_eth_addr(hdr.srcmac, sock->nif->ep->mac_addr);
 	if (wrc_vlan_number) {
 		hdr.ethtype = htons(0x8100);
 		hdr.tag = htons(wrc_vlan_number | (sock->prio << 13));
@@ -282,11 +285,11 @@ int ptpd_netif_sendto(struct wrpc_socket * sock, struct wr_sockaddr *to, void *d
 		hdr.ethtype = sock->bind_addr.ethertype;
 	}
 	net_verbose("TX: socket %04x:%04x, len %i\n",
-		    ntohs(s->bind_addr.ethertype),
-		    s->bind_addr.udpport,
+		    ntohs(sock->bind_addr.ethertype),
+		    sock->bind_addr.udpport,
 		    data_length);
 
-	rval = minic_tx_frame(&hdr, (uint8_t *) data, data_length, &hwts);
+	rval = minic_tx_frame(sock->nif->nic, &hdr, (uint8_t *) data, data_length, &hwts);
 
 	if (tx_timestamp) {
 		tx_timestamp->sec = hwts.sec;
@@ -297,7 +300,7 @@ int ptpd_netif_sendto(struct wrpc_socket * sock, struct wr_sockaddr *to, void *d
 	return rval;
 }
 
-int net_bh_poll(void)
+static int netif_poll(struct wrc_netif_device *nif)
 {
 	struct wrpc_socket *s = NULL, *raws = NULL, *udps = NULL;
 	struct sockq *q;
@@ -309,7 +312,7 @@ int net_bh_poll(void)
 	uint16_t size, port;
 	uint16_t ethtype, tag;
 
-	recvd = minic_rx_frame(&hdr, buffer, sizeof(buffer), &hwts);
+	recvd = minic_rx_frame(nif->nic, &hdr, buffer, sizeof(buffer), &hwts);
 
 	if (recvd <= 0)		/* No data received? */
 		return 0;
@@ -327,7 +330,7 @@ int net_bh_poll(void)
 		net_verbose("%s: want vlan %i, got %i: discard\n",
 				    __func__, wrc_vlan_number,
 				    ntohs(tag) & 0xfff);
-			return 0;
+		return 0;
 	}
 
 	/* Prepare for IP/UDP checks */
@@ -339,6 +342,8 @@ int net_bh_poll(void)
 	for (i = 0; i < ARRAY_SIZE(socks); i++) {
 		s = socks[i];
 		if (!s)
+			continue;
+		if (s->nif != nif)
 			continue;
 		if (hdr.ethtype != s->bind_addr.ethertype)
 			continue;
@@ -394,4 +399,18 @@ int net_bh_poll(void)
 		    s->bind_addr.udpport,
 		    q->avail, q->n, q_required);
 	return 1;
+}
+
+
+int net_bh_poll(void)
+{
+	unsigned i;
+	int res = 0;
+
+	for (i = 0; i < netif_get_device_count(); i++) {
+		struct wrc_netif_device *nif = netif_get_device(i);
+
+		res |= netif_poll(nif);
+	}
+	return res;
 }

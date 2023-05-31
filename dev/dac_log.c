@@ -1,8 +1,9 @@
-#include <wrc.h>
-#include <wrpc.h>
+#include "wrc.h"
+#include "wrpc.h"
 #include <string.h>
-#include <shell.h>
-#include <lib/ipv4.h>
+#include "shell.h"
+#include "lib/ipv4.h"
+#include "dev/netif.h"
 
 /* a tx-only socket: no queue is there */
 static DECLARE_WRPC_SOCKET(daclog_socket, 0);
@@ -35,9 +36,11 @@ void spll_log_dac(int y)
 
 void daclog_init(void)
 {
+	struct wrc_netif_device *nif = netif_get_device(0);
+
 	daclog_socket = ptpd_netif_create_socket
 	  (GET_WRPC_SOCKET(daclog_socket), LEN_WRPC_SOCKET(daclog_socket),
-	   NULL, PTPD_SOCK_UDP, 1050);
+	   NULL, PTPD_SOCK_UDP, 1050, nif);
 	daclog_addr.sport = daclog_addr.dport = htons(1050);
 }
 

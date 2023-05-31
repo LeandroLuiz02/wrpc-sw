@@ -311,7 +311,7 @@ static void print_port(unsigned i)
 	} else
 		pcprintf(7, 26, C_GREEN, "                       ");
 
-	minic_get_stats(&tx, &rx, &rx_err);
+	minic_get_stats(ndev->nic, &tx, &rx, &rx_err);
 	pcprintf(7, 52, C_MAGENTA, "%7d", rx);
 	pprintf(7, 62, "%7d", tx);
 	pprintf(7, 72, "%4d", wrc_vlan_number);

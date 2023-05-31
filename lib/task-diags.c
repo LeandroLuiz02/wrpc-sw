@@ -26,6 +26,7 @@
 int wrc_wr_diags(void)
 {
 	static uint32_t last_update_tick;
+	struct wrc_netif_device *ndev = netif_get_device(0);
 	int tx, rx, rx_err;
 	uint64_t sec;
 	uint32_t nsec;
@@ -51,7 +52,7 @@ int wrc_wr_diags(void)
 	wdiag_set_valid(0);
 	
 	/* frame statistics */
-	minic_get_stats(&tx, &rx, &rx_err);
+	minic_get_stats(ndev->nic, &tx, &rx, &rx_err);
 	wdiags_write_cnts(tx, rx, rx_err);
 
 	/* local time */

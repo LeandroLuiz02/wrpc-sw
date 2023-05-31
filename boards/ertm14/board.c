@@ -42,6 +42,7 @@
 #include "dev/console-uart.h"
 #include "dev/endpoint.h"
 #include "dev/74x595.h"
+#include "dev/minic.h"
 #include "dev/netif.h"
 #include "dev/leds.h"
 #include "dev/wdiags.h"
@@ -2506,7 +2507,7 @@ int wrc_board_early_init()
     /* reset the networking part of the WRCore and start the WR Endpoint */
     ep_init( &wrc_endpoint_dev, (void *) BASE_EP );
     ep_set_mac_addr( &wrc_endpoint_dev, ertm14_mac );
-    netif_register_device(&wrc_endpoint_dev );
+    netif_register_device(&wrc_endpoint_dev, &minic);
 
     /* Sleep for 1s to make sure WRS v4.2 always realizes that
  * the link is down */

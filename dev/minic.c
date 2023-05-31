@@ -36,34 +36,38 @@
   rc = (raw) & 0xfffffff;		  \
   fc = (raw >> 28) & 0xf;
 
+//#define RX_DUMP
+
 /* Exported for snmp.  */
 struct wr_minic minic;
 
 static unsigned char ver_supported;
 
 
-static inline void minic_writel(uint32_t reg, uint32_t data)
+static inline void minic_writel(struct wr_minic *nic, uint32_t reg, uint32_t data)
 {
-	*(volatile uint32_t *)(BASE_MINIC + reg) = data;
+	*(volatile uint32_t *)(nic->base + reg) = data;
 }
 
-static inline uint32_t minic_readl(uint32_t reg)
+static inline uint32_t minic_readl(struct wr_minic *nic, uint32_t reg)
 {
-	return *(volatile uint32_t *)(BASE_MINIC + reg);
+	return *(volatile uint32_t *)(nic->base + reg);
 }
 
-static inline void minic_txword(int type, uint16_t word)
+static inline void minic_txword(struct wr_minic *nic, int type, uint16_t word)
 {
-	minic_writel(MINIC_REG_TX_FIFO,
-			MINIC_TX_FIFO_TYPE_W(type) | MINIC_TX_FIFO_DAT_W(word));
+    minic_writel(nic, MINIC_REG_TX_FIFO,
+		 MINIC_TX_FIFO_TYPE_W(type) | MINIC_TX_FIFO_DAT_W(word));
 }
 
-void minic_init(void)
+void minic_init(struct wr_minic *nic, void *base)
 {
 	uint32_t mcr;
 
+	nic->base = base;
+
 	/* before doing anything, check the HDL interface version */
-	mcr = minic_readl(MINIC_REG_MCR);
+	mcr = minic_readl(nic, MINIC_REG_MCR);
 	if (MINIC_MCR_VER_R(mcr) != MINIC_HDL_VERSION) {
 		pp_printf("Error: Minic HDL version %d not supported by sw\n",
 			  (int) MINIC_MCR_VER_R(mcr));
@@ -73,31 +77,32 @@ void minic_init(void)
 	ver_supported = 1;
 
 	/* disable interrupts, driver does polling */
-	minic_writel(MINIC_REG_EIC_IDR, MINIC_EIC_IDR_TX |
+	minic_writel(nic, MINIC_REG_EIC_IDR, MINIC_EIC_IDR_TX |
 			MINIC_EIC_IDR_RX | MINIC_EIC_IDR_TXTS);
 
 	/* enable RX path */
-	minic_writel(MINIC_REG_MCR, mcr | MINIC_MCR_RX_EN);
+	minic_writel(nic, MINIC_REG_MCR, mcr | MINIC_MCR_RX_EN);
 }
 
-void minic_disable()
+void minic_disable(struct wr_minic *nic)
 {
-	minic_writel(MINIC_REG_MCR, 0);
+	minic_writel(nic, MINIC_REG_MCR, 0);
 }
 
-int minic_poll_rx()
+int minic_poll_rx(struct wr_minic *nic)
 {
 	uint32_t mcr;
 
 	if (!ver_supported)
 		return 0;
 
-	mcr = minic_readl(MINIC_REG_MCR);
+	mcr = minic_readl(nic, MINIC_REG_MCR);
 
 	return (mcr & MINIC_MCR_RX_EMPTY) ? 0 : 1;
 }
 
-int minic_rx_frame(struct wr_ethhdr *hdr, uint8_t * payload, uint32_t buf_size,
+int minic_rx_frame(struct wr_minic *nic, struct wr_ethhdr *hdr,
+		   uint8_t *payload, uint32_t buf_size,
 		   struct hw_timestamp *hwts)
 {
 	uint32_t hdr_size, payload_size;
@@ -112,8 +117,11 @@ int minic_rx_frame(struct wr_ethhdr *hdr, uint8_t * payload, uint32_t buf_size,
 	int cntr_diff;
 	int got_rx_error = 0;
 
+	if (!ver_supported)
+		return 0;
+
 	/* check if there is something in the Rx FIFO to be retrieved */
-	if ((minic_readl(MINIC_REG_MCR) & MINIC_MCR_RX_EMPTY) || !ver_supported)
+	if ((minic_readl(nic, MINIC_REG_MCR) & MINIC_MCR_RX_EMPTY))
 		return 0;
 
 	hdr_size = 0;
@@ -127,22 +135,22 @@ int minic_rx_frame(struct wr_ethhdr *hdr, uint8_t * payload, uint32_t buf_size,
 	oob_hdr = RXOOB_TS_INCORRECT;
 
 #ifdef RX_DUMP
-	pp_printf("RX:");
+	pp_printf("RX@%x:", (unsigned)nic->base);
 #endif
 
 	do {
-		uint32_t rx;
+		unsigned rx;
 
-		rx = minic_readl(MINIC_REG_RX_FIFO);
+		rx = minic_readl(nic, MINIC_REG_RX_FIFO);
 #ifdef RX_DUMP
 		if ((rx >> 16) == 0)
-			pp_printf(" %04x", (unsigned)rx);
+			pp_printf(" %04x", rx);
 		else
-			pp_printf(" %08x", (unsigned)rx);
+			pp_printf(" %08x", rx);
 #endif
 		rx_type = MINIC_RX_FIFO_TYPE_R(rx);
-		rx_data = (uint16_t) MINIC_RX_FIFO_DAT_R(rx);
-		rx_empty = (rx & MINIC_RX_FIFO_EMPTY) ? 1 : 0;
+		rx_data = MINIC_RX_FIFO_DAT_R(rx);
+		rx_empty = (rx & MINIC_RX_FIFO_EMPTY);
 
 		if (rx_type == WRF_DATA && hdr_size < ETH_HEADER_SIZE) {
 			/* reading header */
@@ -168,8 +176,8 @@ int minic_rx_frame(struct wr_ethhdr *hdr, uint8_t * payload, uint32_t buf_size,
 			//pp_printf("Rxstat %x\n", rx_data);
 			if (RX_STATUS_ERROR(rx_data))
 			{
-				pp_printf("Warning: Minic received erroneous "
-					  "frame, %x\n", rx_data);
+				pp_printf("Warning: Minic @%x received erroneous "
+					  "frame, %x\n", (unsigned)nic->base, rx);
 				got_rx_error = 1;
 			}
 
@@ -225,20 +233,21 @@ int minic_rx_frame(struct wr_ethhdr *hdr, uint8_t * payload, uint32_t buf_size,
 	/* Increment Rx counter for statistics */
 	if( got_rx_error )
 	{
-		minic.rx_errors++;
+		nic->rx_errors++;
 		return -1;
 	} else {
-	minic.rx_count++;
+		nic->rx_count++;
 	}
 
-	if (minic_readl(MINIC_REG_MCR) & MINIC_MCR_RX_FULL)
+	if (minic_readl(nic, MINIC_REG_MCR) & MINIC_MCR_RX_FULL)
 		pp_printf("Warning: Minic Rx fifo full, expect wrong frames\n");
 
 	/* return number of bytes written to the *payload buffer */
 	return (buf_size < payload_size ? buf_size : payload_size);
 }
 
-int minic_tx_frame(struct wr_ethhdr_vlan *hdr, uint8_t *payload, uint32_t size,
+int minic_tx_frame(struct wr_minic *nic, struct wr_ethhdr_vlan *hdr,
+		   uint8_t *payload, uint32_t size,
 		   struct hw_timestamp *hwts)
 {
 	uint32_t mcr, pwords, hwords;
@@ -260,10 +269,10 @@ int minic_tx_frame(struct wr_ethhdr_vlan *hdr, uint8_t *payload, uint32_t size,
 	pwords = size >> 1;
 
 	/* First we write status word (empty status for Tx) */
-	minic_txword(WRF_STATUS, 0);
+	minic_txword(nic, WRF_STATUS, 0);
 
 #ifdef TX_DUMP
-	pp_printf("TX:");
+	pp_printf("TX @%x:", (unsigned)nic->base);
 #endif
 	/* Write the header of the frame */
 	ptr = (uint16_t *)hdr;
@@ -271,7 +280,7 @@ int minic_tx_frame(struct wr_ethhdr_vlan *hdr, uint8_t *payload, uint32_t size,
 #ifdef TX_DUMP
 		pp_printf(" %04x", htons(ptr[i]));
 #endif
-		minic_txword(WRF_DATA, htons(ptr[i]));
+		minic_txword(nic, WRF_DATA, htons(ptr[i]));
 	}
 
 	/* Write the payload without the last word (which can be one byte) */
@@ -280,12 +289,12 @@ int minic_tx_frame(struct wr_ethhdr_vlan *hdr, uint8_t *payload, uint32_t size,
 #ifdef TX_DUMP
 		pp_printf(" %04x", htons(ptr[i]));
 #endif
-		minic_txword(WRF_DATA, htons(ptr[i]));
+		minic_txword(nic, WRF_DATA, htons(ptr[i]));
 	}
 
 	/* Write last word of the payload (which can be one byte) */
 	if (size & 1)
-		minic_txword(WRF_BYTESEL, htons(ptr[i]));
+		minic_txword(nic, WRF_BYTESEL, htons(ptr[i]));
 
 #ifdef TX_DUMP
 	pp_printf("\n");
@@ -293,18 +302,18 @@ int minic_tx_frame(struct wr_ethhdr_vlan *hdr, uint8_t *payload, uint32_t size,
 
 	/* Write also OOB if needed */
 	if (hwts) {
-		minic_txword(WRF_OOB, TX_OOB);
-		minic_txword(WRF_OOB, WRPC_FID);
+		minic_txword(nic, WRF_OOB, TX_OOB);
+		minic_txword(nic, WRF_OOB, WRPC_FID);
 	}
 
 	/* Start sending the frame, and while we read mcr check for fifo full */
-	mcr = minic_readl(MINIC_REG_MCR);
+	mcr = minic_readl(nic, MINIC_REG_MCR);
 	assert_warn((mcr & MINIC_MCR_TX_FULL) == 0, "Minic tx fifo full\n");
-	minic_writel(MINIC_REG_MCR, mcr | MINIC_MCR_TX_START);
+	minic_writel(nic, MINIC_REG_MCR, mcr | MINIC_MCR_TX_START);
 
 	/* wait for the DMA to finish */
 	for (i = 0; i < 1000; ++i) {
-		mcr = minic_readl(MINIC_REG_MCR);
+		mcr = minic_readl(nic, MINIC_REG_MCR);
 		if ((mcr & MINIC_MCR_TX_IDLE) != 0) break;
 		timer_delay_ms(1);
 	}
@@ -322,7 +331,7 @@ int minic_tx_frame(struct wr_ethhdr_vlan *hdr, uint8_t *payload, uint32_t size,
 
 		/* wait for the timestamp */
 		for (i = 0; i < 100; ++i) {
-			mcr = minic_readl(MINIC_REG_MCR);
+			mcr = minic_readl(nic, MINIC_REG_MCR);
 			if ((mcr & MINIC_MCR_TX_TS_READY) != 0) break;
 			timer_delay_ms(1);
 		}
@@ -337,11 +346,11 @@ int minic_tx_frame(struct wr_ethhdr_vlan *hdr, uint8_t *payload, uint32_t size,
 
 
 		if(ts_valid)
-			ts_valid = minic_readl(MINIC_REG_TSR0)
+			ts_valid = minic_readl(nic, MINIC_REG_TSR0)
 					     & MINIC_TSR0_VALID;
 
-		raw_ts = minic_readl(MINIC_REG_TSR1);
-		fid = MINIC_TSR0_FID_R(minic_readl(MINIC_REG_TSR0));
+		raw_ts = minic_readl(nic, MINIC_REG_TSR1);
+		fid = MINIC_TSR0_FID_R(minic_readl(nic, MINIC_REG_TSR0));
 
 		if (fid != WRPC_FID) {
 			wrc_verbose("minic_tx_frame: unmatched fid %d vs %d\n",
@@ -360,16 +369,16 @@ int minic_tx_frame(struct wr_ethhdr_vlan *hdr, uint8_t *payload, uint32_t size,
 		hwts->ahead = 0;
 		hwts->nsec = counter_r * (REF_CLOCK_PERIOD_PS / 1000);
 		
-		minic.tx_count++;
+		nic->tx_count++;
         }
         
 	return size;
 }
 
-void minic_get_stats(int *tx_frames, int *rx_frames, int *rx_errors)
+void minic_get_stats(struct wr_minic *nic, int *tx_frames, int *rx_frames, int *rx_errors)
 {
-	*tx_frames = minic.tx_count;
-	*rx_frames = minic.rx_count;
+	*tx_frames = nic->tx_count;
+	*rx_frames = nic->rx_count;
 	if(rx_errors)
-		*rx_errors = minic.rx_errors;
+		*rx_errors = nic->rx_errors;
 }

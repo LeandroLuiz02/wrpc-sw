@@ -6,14 +6,15 @@
  *
  * Released according to the GNU GPL, version 2 or any later version.
  */
-#include <wrc.h>
-#include <wrpc.h>
-#include <net.h>
-#include <shell.h>
+#include "wrc.h"
+#include "wrpc.h"
+#include "net.h"
+#include "shell.h"
 #include "ipv4.h"
-#include <dev/endpoint.h> /* get_mac_addr() */
-#include <ppsi/jiffies.h> /* time_before() */
-#include <lib/syslog.h>
+#include "dev/endpoint.h" /* get_mac_addr() */
+#include "ppsi/jiffies.h" /* time_before() */
+#include "dev/netif.h"
+#include "lib/syslog.h"
 #define jiffies timer_get_tics()
 
 #ifdef CONFIG_LATENCY_SYSLOG
@@ -39,10 +40,12 @@ static struct wr_sockaddr latency_addr = {
 
 void latency_init(void)
 {
+	struct wrc_netif_device *nif = netif_get_device(0);
+
 	latency_addr.ethertype = htons(CONFIG_LATENCY_ETHTYPE);
 	latency_socket = ptpd_netif_create_socket
 	  (GET_WRPC_SOCKET(latency_socket), LEN_WRPC_SOCKET(latency_socket),
-	   &latency_addr, PTPD_SOCK_RAW_ETHERNET, 0);
+	   &latency_addr, PTPD_SOCK_RAW_ETHERNET, 0, nif);
 }
 
 static struct latency_frame {

@@ -114,14 +114,14 @@ static void wrc_initialize(void)
 #ifndef BOARD_HAS_CUSTOM_NETWORK_INIT
 	net_rst();
 	ep_init( &wrc_endpoint_dev, (void *) BASE_EP );
-	netif_register_device(&wrc_endpoint_dev );
+	netif_register_device(&wrc_endpoint_dev, &minic);
 	/* Sleep for 1s to make sure WRS v4.2 always realizes that
 	 * the link is down */
 	timer_delay_ms(200);
 	ep_enable( &wrc_endpoint_dev, 1, 1 );
 #endif
 
-	minic_init();
+	minic_init(&minic, (void *)BASE_MINIC);
 	shw_pps_gen_init();
 
 	/* initialize w1 temp sensor.  Note that w1 must have been initialized

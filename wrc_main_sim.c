@@ -90,7 +90,7 @@ static void wrc_sim_initialize(void)
 	ep_init(&wrc_endpoint_dev, (void *) BASE_EP);
 	ep_enable(&wrc_endpoint_dev, 1, 1);
 
-	minic_init();
+	minic_init(&minic, &wrc_endpoint_dev);
 	shw_pps_gen_init();
 	spll_very_init();
   /* wait for link up before enabling tm_time_valid_o */
@@ -161,10 +161,10 @@ int wrpc_test_1(void)
 
 		/* A frame is sent out with sequenceID (firt octet) and awaited
 		 * reception. */
-		minic_tx_frame(&tx_hdr, tx_payload, 62, &hwts);
+		minic_tx_frame(&minic, &tx_hdr, tx_payload, 62, &hwts);
 		tx_cnt++;
-		ret = minic_rx_frame(&rx_hdr, rx_payload, NET_MAX_SKBUF_SIZE,
-				&hwts);
+		ret = minic_rx_frame(&minic, &rx_hdr, rx_payload,
+				     NET_MAX_SKBUF_SIZE, &hwts);
 
 		/** check whether the received value is OK */
 		if (ret == 0) {

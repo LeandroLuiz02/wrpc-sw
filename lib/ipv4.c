@@ -58,23 +58,24 @@ unsigned int ipv4_checksum(unsigned short *buf, int shorts)
 void ipv4_init(void)
 {
 	struct wr_sockaddr saddr;
+	struct wrc_netif_device *nif = netif_get_device(0);
 
 	/* Bootp: use UDP engine activated by function arguments  */
 	bootp_socket = ptpd_netif_create_socket
 	  (GET_WRPC_SOCKET(bootp_socket), LEN_WRPC_SOCKET(bootp_socket),
-	   NULL, PTPD_SOCK_UDP, 68 /* bootpc */);
+	   NULL, PTPD_SOCK_UDP, 68 /* bootpc */, nif);
 
 	/* time (rdate): UDP */
 	rdate_socket = ptpd_netif_create_socket
 	  (GET_WRPC_SOCKET(rdate_socket), LEN_WRPC_SOCKET(rdate_socket),
-	   NULL, PTPD_SOCK_UDP, 37 /* time */);
+	   NULL, PTPD_SOCK_UDP, 37 /* time */, nif);
 
 	/* ICMP: specify raw (not UDP), with IPV4 ethtype */
 	memset(&saddr, 0, sizeof(saddr));
 	saddr.ethertype = htons(0x0800);
 	icmp_socket = ptpd_netif_create_socket
 	  (GET_WRPC_SOCKET(icmp_socket), LEN_WRPC_SOCKET(icmp_socket),
-	   &saddr, PTPD_SOCK_RAW_ETHERNET, 0);
+	   &saddr, PTPD_SOCK_RAW_ETHERNET, 0, nif);
 
 	syslog_init();
 }

@@ -26,6 +26,7 @@ uint32_t wrc_stats_last;
 
 int wrc_log_stats(void)
 {
+	struct wrc_netif_device *ndev = netif_get_device(0);
 	int tx, rx, rx_err;
 	struct spll_aux_clock_status aux_stat;
 	uint64_t sec;
@@ -61,7 +62,7 @@ int wrc_log_stats(void)
 	wrc_stats_last = s->update_count;
 
 	shw_pps_gen_get_time(&sec, &nsec);
-	minic_get_stats(&tx, &rx, &rx_err);
+	minic_get_stats(ndev->nic, &tx, &rx, &rx_err);
 
 	pp_printf("lnk:%d rx:%d tx:%d ", (wrc_global_link.link_up == NETIF_LINK_UP), rx, tx);
 	pp_printf("lock:%d ", spll_check_lock(0) ? 1 : 0);
