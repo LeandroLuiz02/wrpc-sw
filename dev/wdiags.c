@@ -152,7 +152,7 @@ int wdiags_init(void)
 		dev_dbg("wdiags: base addr = 0x%x.\n", wdiags_base );
 	}
 
-	for( i = 0; i < 64; i++ )
+	for( i = 0; i < WRC_DIAGS_SIZE / 4; i++ )
 		wdiag_write( i * 4, 0 );
 
 	wdiag_write( WRC_DIAGS_VER, WDIAGS_VERSION );
