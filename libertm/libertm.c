@@ -1390,7 +1390,7 @@ int ertm_read_spll_debug_data( struct ertm_status *handle, uint32_t *buf, size_t
 		return ERTM_UART_PROTO_ERR;
 	}
 
-	dbgdata = &pkt->payload;
+	dbgdata = (void *)&pkt->payload;
 	dbgdata->flags = ntohl( dbgdata->flags );
 	int cnt = pkt->length / sizeof(uint32_t) - 1;
 

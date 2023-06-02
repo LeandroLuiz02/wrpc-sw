@@ -18,23 +18,10 @@
 #include "private.h"
 #include "display.h"
 
-/*
-    char *ertm_perror(int error)
- */
-static uint64_t get_tics(void)
-{
-	struct timezone tz = {0, 0};
-	struct timeval tv;
-	gettimeofday(&tv, &tz);
-
-	return (uint64_t) tv.tv_sec * 1000000ULL + (uint64_t) tv.tv_usec;
-}
-
 int main(int argc, char *argv[])
 {
 	static char usb[] = "/dev/ttyUSB2";
 	struct ertm_status *handle = ertm_init(NULL);
-	int attempt;
 
 	if (handle == NULL) {
 		fprintf(stderr, "could not open %s\n", usb);
