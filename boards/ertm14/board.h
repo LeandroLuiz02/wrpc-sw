@@ -73,6 +73,8 @@
 
 #define ERTM14_MAX_CONFIGS 8
 
+#define CONFIG_SPLL_DEGLITCH_THR 700
+
 #define SDBFS_REC 5
 
 #define BASE_ERTM_CLOCK_MONITOR          (BASE_AUXWB + 0x100)

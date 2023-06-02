@@ -43,6 +43,8 @@
 #define BOARD_MAX_CHAN_AUX		0 /* No extra vcxo */
 #define BOARD_MAX_PTRACKERS		1
 
+#define CONFIG_SPLL_DEGLITCH_THR 550
+
 #define SDB_ADDRESS 0x50000
 
 #define SDBFS_REC 5

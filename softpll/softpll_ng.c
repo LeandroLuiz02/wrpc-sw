@@ -323,7 +323,10 @@ void spll_init(int mode, int slave_ref_channel, int flags)
 	SPLL->RCER = 0;
 	SPLL->ECCR = 0;
 	SPLL->OCCR = 0;
-	SPLL->DEGLITCH_THR = 700;
+#ifndef CONFIG_SPLL_DEGLITCH_THR
+#define CONFIG_SPLL_DEGLITCH_THR 1000
+#endif
+	SPLL->DEGLITCH_THR = CONFIG_SPLL_DEGLITCH_THR;
 
 	PPSG->CR |= PPSG_CR_CNT_EN;
 
