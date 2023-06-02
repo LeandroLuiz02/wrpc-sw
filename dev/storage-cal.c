@@ -65,13 +65,32 @@ int storage_set_calibration_parameter( int id, uint32_t val )
 	}
 
 	if( cal_data.param_count >= CAL_MAX_PARAMS )
+	{
+		storage_dbg("can't save due to too many calibration parameters, please increase CAL_MAX_PARAMS!");
 		return -1;
+	}
 
 	cal_data.params[cal_data.param_count].id = id;
 	cal_data.params[cal_data.param_count].value = val;
 	cal_data.param_count ++;
 
 	return 0;
+}
+
+int storage_remove_calibration_parameter( int id )
+{
+	int i;
+	for(i = 0; i < cal_data.param_count; i++)
+	{
+		if ( id == cal_data.params[i].id )
+		{
+			memmove( &cal_data.params[i], &cal_data.params[i+1], sizeof( struct wrc_cal_param ) * ( cal_data.param_count - i - 1 ) );
+			cal_data.param_count--;
+			return 0;
+		}
+	}
+
+	return -1;
 }
 
 int storage_set_calibration_parameter_and_save( int id, uint32_t val )

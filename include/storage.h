@@ -14,7 +14,8 @@
 #include "dev/w1.h"
 
 // calibration parameter definitions. Board-specific.
-#define CAL_MAX_PARAMS 8
+// fixme: move MAX_CAL_PARAMS to BSP
+#define CAL_MAX_PARAMS 12
 #define CAL_FILE_MAGIC 0xcafebabe
 
 #define ASCII_TO_U32(a, b, c, d) ((((uint32_t)(a)&0xff) << 24) |     \
@@ -52,16 +53,18 @@
 
 struct storage_device;
 
+struct wrc_cal_param 
+{
+	uint32_t id;
+	uint32_t value;
+};
+
 typedef struct
 {
 	uint32_t magic;
 	uint32_t param_count;
 	uint32_t checksum;
-	struct
-	{
-		uint32_t id;
-		uint32_t value;
-	} params[CAL_MAX_PARAMS];
+	struct wrc_cal_param params[CAL_MAX_PARAMS];
 } __attribute__ ((__packed__)) wrc_cal_data_t;
 
 struct spi_flash_device;
@@ -113,6 +116,7 @@ void storage_sdbfs_list(void);
 int storage_is_calibration_loaded(void);
 int storage_get_calibration_parameter( int id, uint32_t *valp );
 int storage_set_calibration_parameter( int id, uint32_t val );
+int storage_remove_calibration_parameter( int id );
 int storage_set_calibration_parameter_and_save( int id, uint32_t val );
 wrc_cal_data_t* storage_get_calibration_data(void);
 int storage_load_calibration(void);

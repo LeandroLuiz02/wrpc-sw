@@ -220,9 +220,7 @@ int measure_t24p(void)
 	if (rv < 0)
 	  return rv;
 
-	/* TODO: also apply ? */
-
-	return storage_save_t24p(value);
+	return storage_set_calibration_parameter_and_save(CAL_PARAM_T24P, value);
 }
 
 /* Delays for master must have been calibrated while running as slave */
@@ -230,9 +228,9 @@ static int calib_t24p_load_verbose(uint32_t *value)
 {
 	int rv;
 
-	rv = storage_load_t24p(value);
+	rv = storage_get_calibration_parameter( CAL_PARAM_T24P, value );
 	if(rv < 0) {
-		pp_printf("Error %d while reading t24p from storage\n", rv);
+		phy_dbg("Error %d while reading t24p from storage\n", rv);
 		return rv;
 	}
 	phy_dbg("t24p read from storage: %d ps\n", *value);
@@ -261,11 +259,11 @@ static int calib_t24p_process(uint32_t *value)
 	 * Let's see if we have a matching value in EEPROM:
 	 * accept a 200ps difference, otherwise rewrite eeprom
 	 */
-	rv = storage_load_t24p(&prev);
+	rv = storage_get_calibration_parameter(CAL_PARAM_T24P, &prev);
 	if (rv < 0
 	    || (prev < *value - CALIB_T24P_RECALIBRATE_THRESHOLD)
 	    || (prev > *value + CALIB_T24P_RECALIBRATE_THRESHOLD)) {
-		rv = storage_save_t24p(*value);
+		rv = storage_set_calibration_parameter_and_save(CAL_PARAM_T24P, *value);
 		phy_dbg("Wrote new t24p value: %d ps (%s)\n", *value,
 			  rv < 0 ? "Failed" : "Success");
 	}
