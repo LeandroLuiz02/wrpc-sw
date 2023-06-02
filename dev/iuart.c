@@ -21,8 +21,8 @@
 
 #include <stdint.h>
 #include <string.h>
-
 #include "board.h"
+#include "hw/rawmem.h"
 #include "dev/iuart.h"
 
 // bare-metal version with real HW iuart

@@ -1,9 +1,10 @@
 #include "board.h"
 #include "pp-printf.h"
 #include "dev/clock_monitor.h"
+#include "hw/rawmem.h"
 #include "util.h"
 
-#include <hw/clock_monitor_regs.h>
+#include "hw/clock_monitor_regs.h"
 
 int wb_cm_init(struct wb_clock_monitor_device *dev, uint32_t base_addr, unsigned n_channels )
 {

@@ -7,9 +7,8 @@
  * Released according to the GNU LGPL, version 2.1 or any later version.
  */
 
-#include <stdio.h>
 #include <string.h>
-#include <wrc.h>
+#include "wrc.h"
 
 #include "board.h"
 #include "dev/syscon.h"
@@ -19,8 +18,8 @@
 #include "shell.h"
 #include "ppsi/lib.h"
 
-#include <hw/endpoint_regs.h>
-#include <hw/ep_mdio_regs.h>
+#include "hw/endpoint_regs.h"
+#include "hw/ep_mdio_regs.h"
 
 #include <wrc_global.h>
 

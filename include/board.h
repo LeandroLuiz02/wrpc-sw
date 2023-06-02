@@ -12,8 +12,6 @@
 #ifndef __BOARD_H
 #define __BOARD_H
 
-#include <hw/rawmem.h>
-
 #ifdef CONFIG_ARCH_RISCV
     #define DEV_BASE	0x100000
 #elif defined CONFIG_ARCH_LM32

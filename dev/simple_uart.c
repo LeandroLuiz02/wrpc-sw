@@ -12,8 +12,8 @@
 #include "wrc.h"
 #include "board.h"
 #include "dev/simple_uart.h"
-
-#include <hw/wb_uart.h>
+#include "hw/rawmem.h"
+#include "hw/wb_uart.h"
 
 #define SUART_CALC_BAUD(baudrate) \
     ( ((( (unsigned long long)baudrate * 8ULL) << (16 - 7)) + \

@@ -6,6 +6,8 @@
 #ifndef __I2C_H
 #define __I2C_H
 
+#include <stdint.h>
+
 uint8_t mi2c_devprobe(uint8_t i2cif, uint8_t i2c_addr);
 void mi2c_init(uint8_t i2cif);
 void mi2c_start(uint8_t i2cif);

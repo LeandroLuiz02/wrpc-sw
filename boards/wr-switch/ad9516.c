@@ -12,14 +12,14 @@
  * Trivial pll programmer using an spi controller.
  * PLL is AD9516, SPI is opencores
  */
-#include <stdio.h>
 #include <stdint.h>
-#include <wrc.h>
+#include "wrc.h"
 
 #include "board.h"
 #include "dev/syscon.h"
 #include "dev/gpio.h"
 #include "gpio-wrs.h"
+#include "hw/rawmem.h"
 
 #include "rt_ipc.h"
 

@@ -23,6 +23,7 @@
 #include <string.h>
 
 #include "board.h"
+#include "hw/rawmem.h"
 #include "wrc-debug.h"
 #include "dev/syscon.h"
 
