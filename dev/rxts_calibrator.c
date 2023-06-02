@@ -266,9 +266,11 @@ static int calib_t24p_process(uint32_t *value)
 		rv = storage_set_calibration_parameter_and_save(CAL_PARAM_T24P, *value);
 		phy_dbg("Wrote new t24p value: %d ps (%s)\n", *value,
 			  rv < 0 ? "Failed" : "Success");
+	} else {
+		*value = prev;
+		phy_dbg("Using stored t24p value: %d ps\n", *value );
 	}
 
-	phy_dbg("Using t24p value = %d ps\n", *value );
 	return 0;
 }
 
