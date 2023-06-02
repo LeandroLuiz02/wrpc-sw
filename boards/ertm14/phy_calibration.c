@@ -325,20 +325,20 @@ static int tx_fsm_update(struct wrc_lpdc_state *lpdc)
 
         if (!fsm->expected_phase_valid)
         {
-            if (0) //fsm->cal_saved_phase_valid )
+            if ( fsm->cal_saved_phase_valid )
             {
                 if ( within_range( fsm->cal_saved_phase, LPDC_COARSE_PHASE_MIN_PS, LPDC_COARSE_PHASE_MAX_PS, 16000 ) )
                 {
                     fsm->expected_phase = fsm->cal_saved_phase;
                     fsm->tollerance = LPDC_FINE_PHASE_TOLLERANCE_PS;
-
-                    phy_dbg("[lpdc] Using the previous phase setpoint as the target with tollerance = %d ps\n", fsm->tollerance );
-                //	fsm->cal_saved_phase);
+                    phy_dbg("[lpdc] Using the previous phase setpoint = %d ps as the target with tollerance = %d ps\n",
+                            fsm->cal_saved_phase,
+                            fsm->tollerance);
                 } else {
                     fsm->expected_phase = (LPDC_COARSE_PHASE_MAX_PS + LPDC_COARSE_PHASE_MIN_PS) / 2;
                     fsm->tollerance = (LPDC_COARSE_PHASE_MAX_PS - LPDC_COARSE_PHASE_MIN_PS) / 2;
                     fsm->cal_saved_phase_valid = 0;
-                    phy_dbg("[lpdc] Previous phase setpoint (%d ps) out of range. Old calibration algorithm? Restarting from scratch.\n", fsm->cal_saved_phase );
+                    phy_dbg("[lpdc] Previous phase setpoint (%d ps) out of range. Old calibration algorithm? Restarting from scratch.\n", fsm->cal_saved_phase);
                 }
             }
             else // find a sane default
@@ -456,7 +456,6 @@ static int update_comma_histogram( struct comma_histogram *hist, uint16_t *patte
             //pp_printf("Found Comma [%c] @ %d\n", comma_found_minus ? '-' : '+', i);
             hist->bins[ i ]++;
             hist->total_samples++;
-            return 1;
         }
     }
 
@@ -482,7 +481,10 @@ int check_histogram_threshold_hit(struct comma_histogram *hist, int threshold_sa
     }
 
     if (max_bin_value > 0 && abs(max_bin_idx - target_comma_pos) > bins_filled - 1)
+    {
+        *comma_pos = max_bin_idx;
         return LPDC_HIST_COMMA_POS_OUT_OF_RANGE;
+    }
 
     if (max_bin_value < threshold_samples)
         return LPDC_HIST_INSUFFICIENT_SAMPLES;
@@ -639,7 +641,7 @@ s                timer_delay_ms(2000);
                 fsm->state = RX_SETUP_STATE_WAIT_GEARBOX_PLL_LOCKED;
             } else if (tmo_expired( &fsm->link_timeout ))
             {
-                pp_printf("timeout waiting for rx reset done\n");
+                phy_dbg("[lpdc] timeout waiting for rx reset done\n");
                 fsm->state = RX_SETUP_STATE_RESET_PCS;
             }
             break;
@@ -653,7 +655,7 @@ s                timer_delay_ms(2000);
                 fsm->state = RX_SETUP_STATE_BUILD_COMMA_HISTOGRAM;
             }else if (tmo_expired( &fsm->link_timeout ))
             {
-                pp_printf("timeout waiting for rx gearbox PLL\n");
+                phy_dbg("[lpdc] timeout waiting for rx gearbox PLL\n");
                 fsm->state = RX_SETUP_STATE_RESET_PCS;
             }
             break;
@@ -691,50 +693,58 @@ s                timer_delay_ms(2000);
             int comma_pos;
             int status = check_histogram_threshold_hit( &fsm->comma_hist, 50, 10, 4, LPDC_TARGET_COMMA_POS, &comma_pos );
 
-            if( status == LPDC_HIST_HIT )
+            switch( status )
             {
-                if (comma_pos != LPDC_TARGET_COMMA_POS)
-                {
-                    pp_printf("Comma @ %d (miss)\n", comma_pos );
-                    fsm->state = RX_SETUP_STATE_RESET_PCS;
-                }
-                else
-                {
-                    int i;
-                    pp_printf("Comma @ %d (hit)\n", comma_pos );
-                    pp_printf("latched pattern: ");
-            for(i=LPDC_NUM_PATTERN_WORDS-1; i>=0; i--)
+            case LPDC_HIST_COMMA_POS_OUT_OF_RANGE:
+#ifdef LPDC_EXTRA_DEBUG
+                pp_printf("[lpdc] Comma @ %d (miss)\n", comma_pos);
+#endif
+                fsm->state = RX_SETUP_STATE_RESET_PCS;
+                break;
+            case LPDC_HIST_HIT:
             {
-                if(i==LPDC_NUM_PATTERN_WORDS-1) // pattern is 120 bits
+                int i;
+#ifdef LPDC_EXTRA_DEBUG
+                pp_printf("Comma @ %d (hit)\n", comma_pos);
+                pp_printf("latched pattern: ");
+                for (i = LPDC_NUM_PATTERN_WORDS - 1; i >= 0; i--)
+                {
+                if (i == LPDC_NUM_PATTERN_WORDS - 1) // pattern is 120 bits
                     pp_printf("%02x", pattern[i] & 0xff);
                 else
                     pp_printf("%04x", pattern[i] & 0xffff);
-            }
-                    pp_printf("\n");
-                    fsm->state = RX_SETUP_STATE_MEASURE_PHASE;
-                    pp_printf("histogram: ");
-                    for(i=0;i<LPDC_NUM_COMMA_POSITIONS;i++)
-                        pp_printf("%d ", fsm->comma_hist.bins[i]);
-                    pp_printf("\n");
                 }
-            } else if ( status == LPDC_HIST_TOO_WIDE )
+                pp_printf("\n");
+                pp_printf("histogram: ");
+                for (i = 0; i < LPDC_NUM_COMMA_POSITIONS; i++)
+                pp_printf("%d ", fsm->comma_hist.bins[i]);
+                pp_printf("\n");
+#endif
+
+                fsm->state = RX_SETUP_STATE_MEASURE_PHASE;
+                break;
+            }
+            case LPDC_HIST_TOO_WIDE:
             {
                 int i;
+#ifdef LPDC_EXTRA_DEBUG
                 pp_printf("Too wide: ");
-                for(i=0; i < LPDC_NUM_COMMA_POSITIONS; i++)
+                for (i = 0; i < LPDC_NUM_COMMA_POSITIONS; i++)
                 {
-                    if( fsm->comma_hist.bins[i] )
-                    pp_printf( "%-2d:%-4d ", i, fsm->comma_hist.bins[i] );
+                if (fsm->comma_hist.bins[i])
+                    pp_printf("%-2d:%-4d ", i, fsm->comma_hist.bins[i]);
                 }
 
                 pp_printf("\n");
+#endif
                 fsm->state = RX_SETUP_STATE_RESET_PCS;
-            }else if ( status == LPDC_HIST_COMMA_POS_OUT_OF_RANGE )
-            {
-                fsm->state = RX_SETUP_STATE_RESET_PCS;
+                break;
+            }
+            default:
+                break;
             }
 
-	        if (!early_link_up)
+            if (!early_link_up)
             {
                 fsm->state = RX_SETUP_STATE_INIT;
             }
@@ -755,7 +765,7 @@ s                timer_delay_ms(2000);
 
 	        ep_pcs_write(lpdc->endpoint,  EP_MDIO_MCR, EP_MDIO_MCR_SPEED1000 | EP_MDIO_MCR_FULLDPLX | EP_MDIO_MCR_ANENABLE | EP_MDIO_MCR_ANRESTART  );
             fsm->state = RX_SETUP_DONE;
-            pp_printf("RX Cal Done!\n");
+            phy_dbg("[lpdc] RX Calibration Done!\n");
 
             //mdio_lpdc_set_bits( lpdc, LPDC_MDIO_CTRL, LPDC_MDIO_CTRL_RX_ENABLE );
             break;
