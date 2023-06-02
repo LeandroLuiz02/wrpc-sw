@@ -207,6 +207,8 @@ spll_gain_schedule_t spll_main_ocxo_gain_sched;
 #define ERTM14_BIST_MMC_15 13
 #define ERTM14_BIST_ERTM15_PRESENCE 14
 #define ERTM14_BIST_PLL_LOCK 15
+#define ERTM14_BIST_LOAD_CALIBRATION 16
+#define ERTM14_BIST_CHECK_CALIBRATION 17
 
 #define BIST_STATUS_DONE (1<<0)
 #define BIST_STATUS_ERROR (1<<1)
@@ -234,7 +236,8 @@ static struct bist_stage ertm_bist[] = {
     {ERTM14_BIST_MMC_14, "MMC Link (eRTM14)", 1},
     {ERTM14_BIST_MMC_15, "MMC Link (eRTM15)", 1},
     {ERTM14_BIST_PLL_LOCK, "PLL Lock", 1},
-
+    {ERTM14_BIST_LOAD_CALIBRATION, "Load caldata from flash", 1},
+    {ERTM14_BIST_CHECK_CALIBRATION, "Check caldata validity", 1},
     {0, NULL}};
 
 
@@ -372,6 +375,8 @@ static void mmc_show_version_info( const char *brdname, struct ertm14_mmc_state 
 static void streamers_init(void);
 static void streamers_set_rx_latency( uint32_t lat );
 static void streamers_set_rx_timeout( uint32_t tmo );
+static int check_calibration_version(void);
+
 void streamers_reset_rx_stats(void);
 
 int mmc_link_request_state(struct ertm14_mmc_link *link);
@@ -2484,7 +2489,11 @@ int wrc_board_early_init()
     int rv = storage_mount( &wrc_storage_dev );
     bist_checkpoint( ertm_bist, ERTM14_BIST_FLASH_FS_MOUNT, 0, rv == 0 );
 
-    storage_load_calibration();
+    rv = storage_load_calibration();
+    bist_checkpoint( ertm_bist, ERTM14_BIST_LOAD_CALIBRATION, 0, rv == 0 );
+
+    rv = check_calibration_version();
+    bist_checkpoint( ertm_bist, ERTM14_BIST_CHECK_CALIBRATION, 0, rv == 0 );
 
     uint32_t cd;
 
@@ -2856,7 +2865,7 @@ int ertm14_update_leds( void )
 /* Read DNA and commit id from HW and calibration storage.
    If they don't match, invalidate lptp calibration parameter (as it is
    highly dependent on the bitstream. */
-static void check_calibration_version(void)
+static int check_calibration_version(void)
 {
 	volatile unsigned *dna = (volatile unsigned *)BASE_ERTM14_DNA;
 	const char *bi;
@@ -2914,10 +2923,16 @@ static void check_calibration_version(void)
 	if (valid == 1) {
 		/* Everything is OK. */
 		board_dbg("calibration data are valid\n");
-		return;
+		return 0;
 	}
-	/* Clear lptp. */
-	storage_set_calibration_parameter(CAL_PARAM_PHY_TARGET_TX_PHASE, ~0);
+	
+	/* Clear all bitstream/board-specific calibration data. */
+	storage_remove_calibration_parameter(CAL_PARAM_PHY_TARGET_TX_PHASE);
+	storage_remove_calibration_parameter(CAL_PARAM_T24P);
+	storage_remove_calibration_parameter(CAL_PARAM_CLKA_SYNC_DELAY_PS);
+	storage_remove_calibration_parameter(CAL_PARAM_CLKB_SYNC_DELAY_PS);
+
+	storage_save_calibration();
 
 	if (valid == 0) {
 		/* Values are too old. */
@@ -2927,8 +2942,12 @@ static void check_calibration_version(void)
 		err |= storage_set_calibration_parameter(CAL_PARAM_COMMIT_SHA_0, sha_0);
 		/* Will be written when lptp is updated.  */
 		if (err != 0)
-			board_dbg("cannot set dna/sha calibration\n");
+        {
+		board_dbg("cannot set dna/sha calibration\n");
+        }
 	}
+
+    return -1;
 }
 
 int wrc_board_init()
@@ -2959,8 +2978,6 @@ int wrc_board_init()
     memset(&mask, 0xff, sizeof( struct ertm14_board_state )); // make sure we commit everything to HW
 
     ertm14_apply_config( ertm14_current_state, &mask, 1 );
-
-    check_calibration_version();
 
     return 0;
 }
