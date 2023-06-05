@@ -67,7 +67,7 @@ static int cmd_calibration(const char *args[])
 
 		pp_printf("Setting calibration parameter %s [0x%x] to %d\n",
 			  args[1], (unsigned int)param, value);
-		storage_set_calibration_parameter(param, value);
+		storage_set_calibration_parameter_and_save(param, value);
 		return 0;
 	}
 #ifdef CONFIG_CMD_CALIBRATION_SHOW
