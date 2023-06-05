@@ -470,7 +470,7 @@ static int update_comma_histogram( struct comma_histogram *hist, uint16_t *patte
 int check_histogram_threshold_hit(struct comma_histogram *hist, int threshold_samples, int border_discount_percent, int bins_filled, int target_comma_pos, int *comma_pos)
 {
     int i;
-    int max_bin_idx, max_bin_value = 0;
+    int max_bin_idx = 0, max_bin_value = 0;
     for (i = 0; i < LPDC_NUM_COMMA_POSITIONS; i++)
     {
         if (hist->bins[i] > max_bin_value)
