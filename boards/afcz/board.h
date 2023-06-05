@@ -86,8 +86,6 @@
 
 #define CONSOLE_UART_BAUDRATE 115200
 
-#define SDB_ADDRESS 0x30000
-
 #define SDBFS_REC 5
  
 #endif /* __BOARD_WRC_H */

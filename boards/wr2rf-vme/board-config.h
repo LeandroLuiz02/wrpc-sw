@@ -45,8 +45,6 @@
 
 #define CONFIG_SPLL_DEGLITCH_THR 550
 
-#define SDB_ADDRESS 0x50000
-
 #define SDBFS_REC 5
 
 #endif /* __BOARD_CONFIG_WR2RF_VME_H */
