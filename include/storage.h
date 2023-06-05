@@ -102,9 +102,6 @@ int storage_sfpdb_erase(void);
 int storage_match_sfp(struct s_sfpinfo *sfp);
 int storage_get_sfp(struct s_sfpinfo *sfp, int add, int pos);
 
-int storage_load_t24p(uint32_t *valp);
-int storage_save_t24p(uint32_t val);
-
 int storage_init_erase(void);
 int storage_init_add(const char *args[]);
 int storage_init_show(void);
@@ -114,10 +111,10 @@ int storage_sdbfs_format( struct storage_device *dev, uint32_t addr, int force_b
 void storage_sdbfs_list(void);
 
 int storage_is_calibration_loaded(void);
-int storage_get_calibration_parameter( int id, uint32_t *valp );
-int storage_set_calibration_parameter( int id, uint32_t val );
-int storage_remove_calibration_parameter( int id );
-int storage_set_calibration_parameter_and_save( int id, uint32_t val );
+int storage_get_calibration_parameter(uint32_t id, uint32_t *valp );
+int storage_set_calibration_parameter(uint32_t id, uint32_t val );
+int storage_remove_calibration_parameter(uint32_t id );
+int storage_set_calibration_parameter_and_save(uint32_t id, uint32_t val );
 wrc_cal_data_t* storage_get_calibration_data(void);
 int storage_load_calibration(void);
 int storage_save_calibration(void);

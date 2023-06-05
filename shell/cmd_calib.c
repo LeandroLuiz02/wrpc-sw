@@ -37,7 +37,7 @@ static int cmd_calibration(const char *args[])
 	if (!args[0]) {
 		uint32_t trans;
 
-		if (storage_load_t24p(&trans) > 0) {
+		if (storage_get_calibration_parameter(CAL_PARAM_T24P, &trans) == 0) {
 			pp_printf("Found phase transition in EEPROM: %dps\n",
 				  (unsigned int) trans);
 			return 0;

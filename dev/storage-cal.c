@@ -35,7 +35,7 @@ static int calc_checksum( wrc_cal_data_t* cal )
 	return cksum;
 }
 
-int storage_get_calibration_parameter( int id, uint32_t *valp )
+int storage_get_calibration_parameter(uint32_t id, uint32_t *valp )
 {
 	int i;
 
@@ -51,7 +51,7 @@ int storage_get_calibration_parameter( int id, uint32_t *valp )
 	return -1;
 }
 
-int storage_set_calibration_parameter( int id, uint32_t val )
+int storage_set_calibration_parameter(uint32_t id, uint32_t val )
 {
 	int i;
 
@@ -77,15 +77,16 @@ int storage_set_calibration_parameter( int id, uint32_t val )
 	return 0;
 }
 
-int storage_remove_calibration_parameter( int id )
+int storage_remove_calibration_parameter(uint32_t id )
 {
 	int i;
 	for(i = 0; i < cal_data.param_count; i++)
 	{
 		if ( id == cal_data.params[i].id )
 		{
-			memmove( &cal_data.params[i], &cal_data.params[i+1], sizeof( struct wrc_cal_param ) * ( cal_data.param_count - i - 1 ) );
+			/* If i is the last index, at worst we overwrite it */
 			cal_data.param_count--;
+			cal_data.params[i] = cal_data.params[cal_data.param_count];
 			return 0;
 		}
 	}
@@ -93,7 +94,7 @@ int storage_remove_calibration_parameter( int id )
 	return -1;
 }
 
-int storage_set_calibration_parameter_and_save( int id, uint32_t val )
+int storage_set_calibration_parameter_and_save(uint32_t id, uint32_t val )
 {
 	int res = storage_set_calibration_parameter(id, val);
 
@@ -108,7 +109,7 @@ wrc_cal_data_t* storage_get_calibration_data(void)
 	return &cal_data;
 }
 
-static int calibration_loaded = 0;
+static uint8_t calibration_loaded = 0;
 
 int storage_is_calibration_loaded(void)
 {
@@ -224,14 +225,4 @@ int storage_save_calibration(void)
 out_close:
 	sdbfs_close(&wrc_sdbfs);
 	return ret;
-}
-
-int storage_load_t24p(uint32_t *valp)
-{
-	return storage_get_calibration_parameter(CAL_PARAM_T24P, valp);
-}
-
-int storage_save_t24p(uint32_t val)
-{
-	return storage_set_calibration_parameter(CAL_PARAM_T24P, val);
 }
