@@ -41,43 +41,23 @@ extern int usleep(unsigned usec);
 
 #ifdef CONFIG_WR_NODE
 
-#undef PACKED /* if we already included a regs file, we'd get a warning */
-#include <hw/wrc_syscon_regs.h>
-
-struct SYSCON_WB {
-	uint32_t RSTR;		/*Syscon Reset Register */
-	uint32_t GPSR;		/*GPIO Set/Readback Register */
-	uint32_t GPCR;		/*GPIO Clear Register */
-	uint32_t HWFR;		/*Hardware Feature Register */
-	uint32_t HWIR;		/*Hardware Info Register */
-	uint32_t SDBFS;		/*Flash SDBFS Info Register */
-	uint32_t TCR;		/*Timer Control Register */
-	uint32_t TVR;		/*Timer Counter Value Register */
-	uint32_t DIAG_INFO;
-	uint32_t DIAG_NW;
-	uint32_t DIAG_CR;
-	uint32_t DIAG_DAT;
-};
-
 /* GPIO pins */
 
-extern const struct gpio_pin pin_sysc_led_link;
-extern const struct gpio_pin pin_sysc_led_stat;
 extern const struct gpio_pin pin_sysc_btn1;
 extern const struct gpio_pin pin_sysc_btn2;
-extern const struct gpio_pin pin_sysc_sfp_det;
+extern const struct gpio_pin pin_sysc_sfp1_det;
 extern const struct gpio_pin pin_sysc_spi_sclk;
 extern const struct gpio_pin pin_sysc_spi_ncs;
 extern const struct gpio_pin pin_sysc_spi_mosi;
 extern const struct gpio_pin pin_sysc_spi_miso;
 extern const struct gpio_pin pin_sysc_fmc_scl;
 extern const struct gpio_pin pin_sysc_fmc_sda;
-extern const struct gpio_pin pin_sysc_sfp_scl;
-extern const struct gpio_pin pin_sysc_sfp_sda;
+extern const struct gpio_pin pin_sysc_sfp1_scl;
+extern const struct gpio_pin pin_sysc_sfp1_sda;
 extern const struct gpio_pin pin_sysc_net_rst;
 
 extern const struct i2c_bus dev_i2c_fmc;
-extern const struct i2c_bus dev_i2c_sfp;
+extern const struct i2c_bus dev_i2c_sfp1;
 extern struct spi_flash_device wrc_flash_dev;
 
 #define FMC_I2C_DELAY 15

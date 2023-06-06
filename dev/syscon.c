@@ -14,8 +14,9 @@
 #include "pp-printf.h"
 #include "dev/gpio.h"
 #include "dev/bb_i2c.h"
+#include "hw/wrc_syscon_regs.h"
 
-#define SYSCON  ((volatile struct SYSCON_WB *)BASE_SYSCON)
+#define SYSCON  ((volatile struct SYSC_WB *)BASE_SYSCON)
 
 static void sysc_gpio_set_dir(const struct gpio_pin *pin, int dir)
 {
@@ -42,33 +43,33 @@ static const struct gpio_device syscon_gpio = {
 };
 
 // fixme: use indices for GPIO pins in the WB file, not masks
-const struct gpio_pin pin_sysc_led_link = { &syscon_gpio, 1 };
-const struct gpio_pin pin_sysc_led_stat = { &syscon_gpio, 0 };
+const struct gpio_pin pin_sysc_fmc_scl = { &syscon_gpio, 2 };
+const struct gpio_pin pin_sysc_fmc_sda = { &syscon_gpio, 3 };
+const struct gpio_pin pin_sysc_net_rst = { &syscon_gpio, 4 };
 const struct gpio_pin pin_sysc_btn1 = { &syscon_gpio, 5 };
 const struct gpio_pin pin_sysc_btn2 = { &syscon_gpio, 6 };
-const struct gpio_pin pin_sysc_sfp_det = { &syscon_gpio, 7 };
+const struct gpio_pin pin_sysc_sfp1_det = { &syscon_gpio, 7 };
+const struct gpio_pin pin_sysc_sfp1_scl = { &syscon_gpio, 8 };
+const struct gpio_pin pin_sysc_sfp1_sda = { &syscon_gpio, 9 };
 const struct gpio_pin pin_sysc_spi_sclk = { &syscon_gpio, 10 };
 const struct gpio_pin pin_sysc_spi_ncs = { &syscon_gpio, 11 };
 const struct gpio_pin pin_sysc_spi_mosi = { &syscon_gpio, 12 };
 const struct gpio_pin pin_sysc_spi_miso = { &syscon_gpio, 13 };
-const struct gpio_pin pin_sysc_fmc_scl = { &syscon_gpio, 2 };
-const struct gpio_pin pin_sysc_fmc_sda = { &syscon_gpio, 3 };
-const struct gpio_pin pin_sysc_sfp_scl = { &syscon_gpio, 8 };
-const struct gpio_pin pin_sysc_sfp_sda = { &syscon_gpio, 9 };
-const struct gpio_pin pin_sysc_net_rst = { &syscon_gpio, 4 };
 
 #define FMC_I2C_DELAY 15
 #define SFP_I2C_DELAY 300
 
-const struct i2c_bus dev_i2c_fmc =
-	{ (struct gpio_pin*) &pin_sysc_fmc_scl,
-	  (struct gpio_pin*) &pin_sysc_fmc_sda,
-	  FMC_I2C_DELAY };
+const struct i2c_bus dev_i2c_fmc = {
+	(struct gpio_pin*) &pin_sysc_fmc_scl,
+	(struct gpio_pin*) &pin_sysc_fmc_sda,
+	FMC_I2C_DELAY
+};
 
-const struct i2c_bus dev_i2c_sfp =
-	{ (struct gpio_pin*) &pin_sysc_sfp_scl,
-	  (struct gpio_pin*) &pin_sysc_sfp_sda,
-	  SFP_I2C_DELAY };
+const struct i2c_bus dev_i2c_sfp1 = {
+	(struct gpio_pin*) &pin_sysc_sfp1_scl,
+	(struct gpio_pin*) &pin_sysc_sfp1_sda,
+	SFP_I2C_DELAY
+};
 
 
 int sysc_get_memsize(void)

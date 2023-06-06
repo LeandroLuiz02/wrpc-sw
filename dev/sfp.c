@@ -38,34 +38,35 @@ struct sfp_info sfp_info = {
 
 static int sfp_present(void)
 {
-	return !gen_gpio_in(&pin_sysc_sfp_det);
+	return !gen_gpio_in(&pin_sysc_sfp1_det);
 }
 
-static void sfp_read_i2c(int addr, uint8_t *mem, int start,  int size)
+static void sfp_read_i2c(int addr, uint8_t *mem, int start, int size)
 {
+	const struct i2c_bus *dev = &dev_i2c_sfp1;
 	int i = start;
 	uint8_t data;
 
-	bb_i2c_init( &dev_i2c_sfp );
+	bb_i2c_init(dev);
 
-	bb_i2c_start( &dev_i2c_sfp );
-	bb_i2c_put_byte(&dev_i2c_sfp, addr << 1);
-	bb_i2c_put_byte(&dev_i2c_sfp, start);
-	bb_i2c_repeat_start(&dev_i2c_sfp);
-	bb_i2c_put_byte(&dev_i2c_sfp, addr << 1 | BB_I2C_WRITE);
-	bb_i2c_get_byte(&dev_i2c_sfp, &data, 1);
-	bb_i2c_stop(&dev_i2c_sfp);
+	bb_i2c_start(dev);
+	bb_i2c_put_byte(dev, addr << 1);
+	bb_i2c_put_byte(dev, start);
+	bb_i2c_repeat_start(dev);
+	bb_i2c_put_byte(dev, addr << 1 | BB_I2C_WRITE);
+	bb_i2c_get_byte(dev, &data, 1);
+	bb_i2c_stop(dev);
 	*(mem + i) = data;
 
-	bb_i2c_start( &dev_i2c_sfp );
-	bb_i2c_put_byte(&dev_i2c_sfp, addr << 1 | BB_I2C_WRITE);
+	bb_i2c_start(dev);
+	bb_i2c_put_byte(dev, addr << 1 | BB_I2C_WRITE);
 	for (i++; i < start + size - 1; ++i) {
-		bb_i2c_get_byte(&dev_i2c_sfp, &data, 0);
+		bb_i2c_get_byte(dev, &data, 0);
 		*(mem + i) = data;
 	}
-	bb_i2c_get_byte(&dev_i2c_sfp, &data, 1);	//final word, checksum
+	bb_i2c_get_byte(dev, &data, 1);	//final word, checksum
 	*(mem + i) = data;
-	bb_i2c_stop(&dev_i2c_sfp);
+	bb_i2c_stop(dev);
 }
 
 static int verify_checksum(uint8_t *mem, int from, int to)

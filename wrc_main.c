@@ -167,7 +167,6 @@ static int wrc_check_link(void)
 	if (!prev_state && state) {
 		wrc_verbose("Link up.\n");
 		event_post( WRC_EVENT_LINK_UP );
-		gen_gpio_out(&pin_sysc_led_link, 1);
 		sfp_match(0);
 		wrc_ptp_start();
 		link_status = NETIF_LINK_WENT_UP;
@@ -176,7 +175,6 @@ static int wrc_check_link(void)
 		wrc_verbose("Link down.\n");
 		wrc_events_ptp_link_down();
 		event_post( WRC_EVENT_LINK_DOWN );
-		gen_gpio_out(&pin_sysc_led_link, 0);
 		link_status = NETIF_LINK_WENT_DOWN;
 		wrc_ptp_stop();
 		wrc_ptp_link_down();

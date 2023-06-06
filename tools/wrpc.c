@@ -1372,7 +1372,7 @@ static int do_info(int argc, char *argv[])
 	if (board_open(&argc, argv) < 0)
 		return 1;
 
-	hwfr = board->readl(board, OFFSET_SYSCON + SYSC_REG_HWFR);
+	hwfr = board->readl(board, OFFSET_SYSCON + offsetof(struct SYSC_WB, HWFR));
 	printf ("hwfr=%08x:  "
 		"memsize: %ukB,  storage: %u, storage sector size: %ukB\n",
 		hwfr,
@@ -1380,7 +1380,7 @@ static int do_info(int argc, char *argv[])
 		SYSC_HWFR_STORAGE_TYPE_R(hwfr),
 		SYSC_HWFR_STORAGE_SEC_R(hwfr));
 
-	hwir = board->readl(board, OFFSET_SYSCON + SYSC_REG_HWIR);
+	hwir = board->readl(board, OFFSET_SYSCON + offsetof(struct SYSC_WB, HWIR));
 	printf ("hwir=%08x:  ", hwir);
         for (unsigned i = 0; i < 4; i++) {
                 unsigned c = (hwir >> (24 - i * 8)) & 0xff;
