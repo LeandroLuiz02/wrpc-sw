@@ -7,38 +7,36 @@
  *
  * Released according to the GNU GPL, version 2 or any later version.
  */
-#include <stdio.h>
 #include <inttypes.h>
-
 #include <stdarg.h>
 
-#include <wrc.h>
-#include <dev/w1.h>
-#include <dev/syscon.h>
-#include <dev/console.h>
-#include <dev/endpoint.h>
-#include <dev/minic.h>
-#include <dev/pps_gen.h>
-#include <dev/gpio.h>
-#include <dev/simple_uart.h>
-#include <dev/netif.h>
+#include "wrc.h"
+#include "dev/w1.h"
+#include "dev/syscon.h"
+#include "dev/console.h"
+#include "dev/endpoint.h"
+#include "dev/minic.h"
+#include "dev/pps_gen.h"
+#include "dev/gpio.h"
+#include "dev/simple_uart.h"
+#include "dev/netif.h"
 #include "net.h"
-#include <dev/i2c.h>
-#include <storage.h>
-#include <softpll_ng.h>
-#include <dev/pps_gen.h>
-#include <shell.h>
-#include <lib/ipv4.h>
-#include <lib/events-ptp.h>
-#include <dev/rxts_calibrator.h>
-#include <dev/flash.h>
-#include <dev/gpio.h>
-#include <netconsole.h>
-#include <dev/wdiags.h>
+#include "dev/i2c.h"
+#include "storage.h"
+#include "softpll_ng.h"
+#include "dev/pps_gen.h"
+#include "shell.h"
+#include "lib/ipv4.h"
+#include "lib/events-ptp.h"
+#include "dev/rxts_calibrator.h"
+#include "dev/flash.h"
+#include "dev/gpio.h"
+#include "netconsole.h"
+#include "dev/wdiags.h"
 
-#include <wrc_ptp.h>
-#include <system_checks.h>
-#include <ppsi/ppsi.h>
+#include "wrpc.h"
+#include "system_checks.h"
+#include "ppsi/ppsi.h"
 #include "wrc_global.h"
 #include "dev/w1.h"
 #include "dev/temp-fake.h"

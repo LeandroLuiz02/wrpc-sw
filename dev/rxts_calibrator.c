@@ -6,14 +6,12 @@
  *
  * Released according to the GNU GPL, version 2 or any later version.
  */
-#include <stdio.h>
 #include <inttypes.h>
-#include <stdarg.h>
-#include <wrc.h>
+#include "wrc.h"
 
 #include "board.h"
 #include "softpll_ng.h"
-#include "wrc_ptp.h"
+#include "wrpc.h"
 #include "storage.h"
 #include "net.h"
 

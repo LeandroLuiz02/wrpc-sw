@@ -6,8 +6,8 @@
  *
  * Released according to the GNU GPL, version 2 or any later version.
  */
-#include <wrc.h>
 #include <string.h>
+#include "wrc.h"
 
 #include "dev/endpoint.h"
 #include "ipv4.h"
@@ -15,8 +15,7 @@
 #include "dev/pps_gen.h"
 #include "dev/netif.h"
 #include "hw/etherbone-config.h"
-#include "endianness.h"
-#include "wrc_ptp.h"
+#include "wrpc.h"
 #include "wrc_global.h"
 
 #define myIP      wrc_global_link.ip_addr

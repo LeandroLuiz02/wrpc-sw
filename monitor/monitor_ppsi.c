@@ -8,21 +8,20 @@
  */
 
 #include <inttypes.h>
-#include <wrc.h>
-#include <dev/w1.h>
-#include <ppsi/ppsi.h>
-#include <wrpc.h>
+#include "wrc.h"
+#include "dev/w1.h"
+#include "ppsi/ppsi.h"
+#include "wrpc.h"
 #include "proto-ext-whiterabbit/wr-api.h"
 #include "proto-ext-l1sync/l1e-api.h"
-#include <dev/minic.h>
-#include <softpll_ng.h>
-#include <dev/syscon.h>
-#include <dev/pps_gen.h>
-#include <dev/endpoint.h>
-#include <dev/netif.h>
-#include <dev/wdiags.h>
+#include "dev/minic.h"
+#include "softpll_ng.h"
+#include "dev/syscon.h"
+#include "dev/pps_gen.h"
+#include "dev/endpoint.h"
+#include "dev/netif.h"
+#include "dev/wdiags.h"
 #include "sensors.h"
-#include "wrc_ptp.h"
 #include "hal_exports.h"
 #include "lib/ipv4.h"
 #include "shell.h"

@@ -8,7 +8,7 @@
  */
 
 #include <limits.h>
-#include <wrc_ptp.h>
+#include "wrpc.h"
 #include "libertm.h"
 #include "board-state.h"
 

@@ -20,8 +20,7 @@
 
 
 #include <stdint.h>
-#include <stdio.h>
-#include <ppsi/ppsi.h>
+#include "ppsi/ppsi.h"
 
 #include "wrc-debug.h"
 #include "dev/syscon.h"
@@ -45,8 +44,8 @@
 #include "dev/minic.h"
 
 #include "storage.h"
-#include "wrc_ptp.h"
-#include <wrc-event.h>
+#include "wrpc.h"
+#include "wrc-event.h"
 #include "wrc-task.h"
 
 static struct i2c_bus i2c_mac_bus[2];

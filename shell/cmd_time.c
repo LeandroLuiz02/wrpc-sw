@@ -14,14 +14,11 @@
 
     Description: (re)starts/stops the PTP session. */
 
-#include <errno.h>
-#include <string.h>
-#include <stdlib.h>
-#include <wrc.h>
+#include "wrc.h"
+#include "wrpc.h"
 
 #include "shell.h"
 #include "util.h"
-#include "wrc_ptp.h"
 #include "dev/pps_gen.h"
 
 static const char * const time_cmds[] =

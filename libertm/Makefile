@@ -10,6 +10,7 @@ WRC_INCLUDES = ../include
 
 CFLAGS += -I $(ERTM_UART_LOCATION) -I $(ERTM_BOARD_LOCATION)
 CFLAGS += -I $(WRC_INCLUDES)
+CFLAGS += -I../ppsi/arch-wrpc -I../ppsi/arch-wrpc/include -I../ppsi/include
 
 GIT_VER ?= $(shell git describe --always --dirty | sed  's;^wr-switch-sw-;;')
 GIT_USR ?= $(shell git config --get-all user.name)
