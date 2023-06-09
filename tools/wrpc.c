@@ -39,11 +39,14 @@
 #include "hw/wrc_syscon_regs.h"
 #include "hw/wb_uart.h"
 #include "hw/softpll_regs.h"
+#include "hw/wrc_diags_regs.h"
 
+/* From include/boards.h */
+#define OFFSET_SOFTPLL		0x200
 #define OFFSET_SYSCON		0x400
 #define OFFSET_UART		0x500
+#define OFFSET_WDIAGS		0x900
 #define OFFSET_CPU_CSR		0xb00
-#define OFFSET_SOFTPLL      0x200
 
 #define VUART_EOL 13
 #define VUART_CMD_USLEEP 1000000
@@ -2904,6 +2907,267 @@ out_sock:
         return ret_exit;
 }
 
+static void help_wdiags(void)
+{
+	printf("usage: %s wdiags\n", progname);
+	printf("display diagnostic registers\n");
+}
+
+#define WDIAG_REG(R) (OFFSET_WDIAGS + offsetof(struct wrc_diags, R))
+
+static void unlock_diag(void)
+{
+        unsigned v;
+
+	//reset snapshot bit & keep valid bit as it is
+        v = board->readl(board, WDIAG_REG(CTRL));
+        board->writel(board, WDIAG_REG(CTRL), v & WRC_DIAGS_CTRL_DATA_VALID);
+}
+
+static int lock_diag(void)
+{
+        unsigned v;
+
+	//snapshot diag ( just raise snapshot bit)
+        v = board->readl(board, WDIAG_REG(CTRL));
+        if (0)
+                printf("ctrl @%08x = %08x\n", (unsigned)WDIAG_REG(CTRL), v);
+        board->writel(board, WDIAG_REG(CTRL), v | WRC_DIAGS_CTRL_DATA_SNAPSHOT);
+        for (unsigned i = 10; i > 0; i--) {
+                v = board->readl(board, WDIAG_REG(CTRL));
+                if (v & WRC_DIAGS_CTRL_DATA_VALID)
+                        return 0;
+		usleep(1000);
+        }
+	fprintf(stderr, "timeout(10ms) expired while waiting for the valid bit "
+		"for snapshot\n");
+	return 1;
+}
+
+static void print_servo_status(uint32_t val)
+{
+	static char *sstat_str[] = {
+		"Not initialized",
+		"Sync ns",
+		"Sync TAI",
+		"Sync phase",
+		"Track phase",
+		"Wait offset stable",
+	};
+
+	fprintf(stderr, "servo status:\t\t%s\n",
+		sstat_str[val >> WRC_DIAGS_WDIAG_SSTAT_SERVOSTATE_SHIFT]);
+}
+
+static void print_port_status(uint32_t val)
+{
+	static int nbits = 2;
+	static char *pstat_str[][2] = {
+		//bit = 0     	 	bit = 1
+		{"Link down", 		"Link up",},
+		{"PLL not locked",	"PLL locked",},
+	};
+	int i, idx;
+
+	fprintf(stderr, "Port status:\t\t");
+	for (i = 0; i < nbits; ++i) {
+		idx = (val & (1 << i)) ? 1 : 0;
+		fprintf(stderr, "%s, ", pstat_str[i][idx]);
+	}
+	fprintf(stderr, "\n");
+}
+
+static void print_ptp_state(uint32_t val)
+{
+	static char *ptpstat_str[] = {
+		"None",
+		"PPS initializing",
+		"PPS faulty",
+		"disabled",
+		"PPS listening",
+		"PPS pre-master",
+		"PPS master",
+		"PPS passive",
+		"PPS uncalibrated",
+		"PPS slave",
+	};
+
+	fprintf(stderr, "PTP state:\t\t");
+	if (val <= 9)
+		fprintf(stderr, "%s", ptpstat_str[val]);
+	else if (val >= 100 && val <= 116)
+		fprintf(stderr, "WR STATES(see ppsi/ieee1588_types.h): %d", val);
+	else
+		fprintf(stderr, "Unknown");
+	fprintf(stderr, "\n");
+}
+
+static void print_aux_state(uint32_t val)
+{
+	int nch = 8; //should be retrieved from a register
+	int i;
+
+	fprintf(stderr, "Aux state:\t\t");
+	for (i = 0; i < nch; i++) {
+		if (val & (1 << i))
+			fprintf(stderr, "ch%d:enabled ", i);
+	}
+	fprintf(stderr, "\n");
+}
+
+static void print_tx_frame_count(uint32_t val)
+{
+	fprintf(stderr, "TX frame count:\t\t%d\n", val);
+}
+
+static void print_rx_frame_count(uint32_t val)
+{
+	fprintf(stderr, "RX frame count:\t\t%d\n", val);
+}
+
+static void print_rx_error_count(uint32_t val)
+{
+	fprintf(stderr, "RX error count:\t\t%d\n", val);
+}
+
+static void print_local_time(uint32_t sec_msw, uint32_t sec_lsw, uint32_t ns)
+{
+	uint64_t sec = (uint64_t)(sec_msw) << 32 | sec_lsw;
+//	fprintf(stderr, "TAI time:\t\t %" PRIu64 "sec %d nsec\n",
+//		sec, ns);
+	fprintf(stderr, "TAI time:\t\t%s", ctime((time_t *)&sec));
+}
+
+static void print_roundtrip_time(uint32_t msw, uint32_t lsw)
+{
+	uint64_t val = (uint64_t)(msw) << 32 | lsw;
+	fprintf(stderr, "Round trip time:\t%" PRIu64 " ps\n", val);
+}
+
+static void print_master_slave_delay(uint32_t msw, uint32_t lsw)
+{
+	uint64_t val = (uint64_t)(msw) << 32 | lsw;
+	fprintf(stderr, "Master slave delay:\t%" PRIu64 " ps\n", val);
+}
+
+static void print_link_asym(uint32_t val)
+{
+	fprintf(stderr, "Total Link asymmetry:\t%d ps\n", val);
+}
+
+static void print_clock_offset(uint32_t val)
+{
+	fprintf(stderr, "Clock offset:\t\t%d ps\n", val);
+}
+
+static void print_phase_setpoint(uint32_t val)
+{
+	fprintf(stderr, "Phase setpoint:\t\t%d ps\n", val);
+}
+
+static void print_update_counter(uint32_t val)
+{
+	fprintf(stderr, "Update counter:\t\t%d\n", val);
+}
+
+static void print_board_temp(uint32_t val)
+{
+	 fprintf(stderr, "temp:\t\t\t%d.%04d C\n", val >> 16,
+                 (int)((val & 0xffff) * 10 * 1000 >> 16));
+}
+
+static void print_aux_clock_status_single( int index, uint32_t r )
+{
+	int mode = (r & WRC_DIAGS_WDIAG_AUX0_DETAIL_STAT_MODE_MASK) >> WRC_DIAGS_WDIAG_AUX0_DETAIL_STAT_MODE_SHIFT;
+
+	char *mode_str = (mode == 0 ? "slave" : "phase monitor");
+
+	int enabled = ( r & WRC_DIAGS_WDIAG_AUX0_DETAIL_STAT_ENABLED) ? 1 : 0;
+	int ready = ( r & WRC_DIAGS_WDIAG_AUX0_DETAIL_STAT_LOCKED) ? 1 : 0;
+
+	int phase = (r & WRC_DIAGS_WDIAG_AUX0_DETAIL_STAT_PHASE_MASK) >> WRC_DIAGS_WDIAG_AUX0_DETAIL_STAT_PHASE_SHIFT;
+
+	fprintf(stderr,"AUX%d: mode %s enabled %d locked %d phase %d ps\n", index, mode_str, enabled, ready, phase );
+}
+
+static void print_aux_clock_status(void)
+{
+        unsigned v;
+
+        v = board->readl(board, WDIAG_REG(WDIAG_AUX0_DETAIL_STAT));
+	print_aux_clock_status_single(0, v);
+
+        v = board->readl(board, WDIAG_REG(WDIAG_AUX1_DETAIL_STAT));
+	print_aux_clock_status_single(1, v);
+
+        v = board->readl(board, WDIAG_REG(WDIAG_AUX2_DETAIL_STAT));
+	print_aux_clock_status_single(2, v);
+
+        v = board->readl(board, WDIAG_REG(WDIAG_AUX3_DETAIL_STAT));
+	print_aux_clock_status_single(3, v);
+}
+
+#define WDIAG_READ(REG) board->readl(board, WDIAG_REG(REG))
+
+static int read_diags(unsigned reg_version)
+{
+	int res;
+
+	res = lock_diag();
+	if (res)
+                return -1;
+
+        printf("Diag registers layout version: %d\n", reg_version );
+        print_servo_status(WDIAG_READ(WDIAG_SSTAT));
+        print_port_status(WDIAG_READ(WDIAG_PSTAT));
+        print_ptp_state(WDIAG_READ(WDIAG_PTPSTAT));
+        print_aux_state(WDIAG_READ(WDIAG_ASTAT));
+        print_tx_frame_count(WDIAG_READ(WDIAG_TXFCNT));
+        print_rx_frame_count(WDIAG_READ(WDIAG_RXFCNT));
+        if( reg_version >= 2 )
+                print_rx_error_count(WDIAG_READ(WDIAG_RX_ERR_CNT));
+        print_local_time(WDIAG_READ(WDIAG_SEC_MSB),
+                         WDIAG_READ(WDIAG_SEC_LSB),
+                         WDIAG_READ(WDIAG_NS));
+        print_roundtrip_time(WDIAG_READ(WDIAG_MU_MSB),
+                             WDIAG_READ(WDIAG_MU_LSB));
+        print_master_slave_delay(WDIAG_READ(WDIAG_DMS_MSB),
+                                 WDIAG_READ(WDIAG_DMS_LSB));
+        print_link_asym(WDIAG_READ(WDIAG_ASYM));
+        print_clock_offset(WDIAG_READ(WDIAG_CKO));
+        print_phase_setpoint(WDIAG_READ(WDIAG_SETP));
+        print_update_counter(WDIAG_READ(WDIAG_UCNT));
+        print_board_temp(WDIAG_READ(WDIAG_TEMP));
+
+        if (reg_version >= 2)
+                print_aux_clock_status();
+
+	unlock_diag();
+
+	return 0;
+}
+
+static int do_wdiags(int argc, char *argv[])
+{
+	unsigned ver;
+
+	if (board_open(&argc, argv) < 0)
+		return 1;
+
+	ver = board->readl(board, WDIAG_REG(VER));
+	if (ver != 1 && ver != 2) {
+		fprintf (stderr, "incorrect wdiag verion (read %08x)\n", ver);
+		board->fini(board);
+		return 1;
+	}
+
+        read_diags(ver);
+
+	board->fini(board);
+
+	return 0;
+}
+
 static const struct tool_base tool_help = {
         "help",
         "display list of commands (this help), or help for a command",
@@ -2960,6 +3224,13 @@ static const struct tool_base tool_gdbserver = {
         help_gdbserver
 };
 
+static const struct tool_base tool_wdiags = {
+        "wdiags",
+        "WR diags dumper",
+        do_wdiags,
+        help_wdiags
+};
+
 static const struct tool_base *tools[] = {
 	&tool_help,
 	&tool_version,
@@ -2969,6 +3240,7 @@ static const struct tool_base *tools[] = {
 	&tool_info,
 	&tool_spll_recorder,
 	&tool_gdbserver,
+	&tool_wdiags,
 	NULL
 };
 
