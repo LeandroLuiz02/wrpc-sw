@@ -76,6 +76,32 @@ static void wr2rf_spll_setup(void)
     spll_set_gain_schedule( gs );
 }
 
+/* Check if calibration values correspond to the bitstream.
+   If not, remove them. */
+
+static void wr2rf_check_hw_change(void)
+{
+    uint32_t hw_date, cal_date;
+
+    storage_load_calibration();
+
+    hw_date = sysc_get_hwbuild_date();
+    if (hw_date == 0) {
+	pp_printf("invalid hwbuild date! calibration status unknown\n");
+	return;
+    }
+
+    /* Check if up to date. */
+    if (storage_get_calibration_parameter(CAL_PARAM_CALIBRATION_DATE,
+					  &cal_date) == 0
+	&& cal_date == hw_date)
+	return;
+
+    storage_remove_calibration_parameter(CAL_PARAM_T24P);
+    storage_remove_calibration_parameter(CAL_PARAM_PHY_TARGET_TX_PHASE);
+    storage_set_calibration_parameter(CAL_PARAM_CALIBRATION_DATE, hw_date);
+}
+
 
 int wrc_board_early_init(void)
 {
@@ -114,6 +140,8 @@ int wrc_board_early_init(void)
 
     storage_mount( &wrc_storage_dev );
 
+    wr2rf_check_hw_change();
+
     /* reset the networking part of the WRCore and start the WR Endpoint */
     net_rst();
 
@@ -128,6 +156,8 @@ int wrc_board_early_init(void)
     timer_delay_ms(200);
 
     wr2rf_spll_setup();
+
+    spll_set_aux_mode(0, SPLL_AUX_MODE_PHASE_MONITOR);
 
     return 0;
 }

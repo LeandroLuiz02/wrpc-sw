@@ -77,6 +77,10 @@ int sysc_get_memsize(void)
 	return (SYSC_HWFR_MEMSIZE_R(SYSCON->HWFR) + 1) * 16;
 }
 
+unsigned sysc_get_hwbuild_date(void)
+{
+	return SYSCON->HWBLD;
+}
 
 /****************************
  *       BOARD NAME

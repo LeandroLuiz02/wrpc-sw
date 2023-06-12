@@ -73,6 +73,8 @@ void get_hw_name(char *str);
 void get_storage_info(int *memtype, uint32_t *sdbfs_baddr, uint32_t *blocksize);
 int sysc_get_memsize(void);
 
+unsigned sysc_get_hwbuild_date(void);
+
 #define DIAG_RW_BANK 0
 #define DIAG_RO_BANK 1
 void diag_read_info(uint32_t *id, uint32_t *ver, uint32_t *nrw, uint32_t *nro);
