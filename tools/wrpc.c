@@ -3189,6 +3189,75 @@ static int do_wdiags(int argc, char *argv[])
 	return 0;
 }
 
+static void help_aux_logger(void)
+{
+	printf("usage: %s aux-logger\n", progname);
+}
+
+static int do_aux_logger(int argc, char *argv[])
+{
+	unsigned ver;
+        unsigned timeout = 120;
+        unsigned good_samples = 0;
+	if (board_open(&argc, argv) < 0)
+		return 1;
+
+	ver = board->readl(board, WDIAG_REG(VER));
+	if (ver != 1 && ver != 2) {
+		fprintf (stderr, "incorrect wdiag verion (read %08x)\n", ver);
+		board->fini(board);
+		return 1;
+	}
+
+	while (1)
+	{
+                int res = lock_diag();
+                if (res)
+                        return -1;
+
+		uint32_t aux0_stat = board->readl(board, WDIAG_REG(WDIAG_AUX0_DETAIL_STAT));
+
+                if (aux0_stat & WRC_DIAGS_WDIAG_AUX0_DETAIL_STAT_LOCKED)
+		{
+			unsigned phase = aux0_stat & 0xffffff;
+                        unsigned long long mu, dms;
+
+                        mu = ((uint64_t)WDIAG_READ(WDIAG_MU_MSB) << 32)
+                                | WDIAG_READ(WDIAG_MU_LSB);
+
+                        dms = ((uint64_t)WDIAG_READ(WDIAG_DMS_MSB) << 32)
+                                | WDIAG_READ(WDIAG_DMS_LSB);
+
+			if(good_samples == 3 )
+			{
+				printf("[%d,%lld,%lld,%d,%d,%d]\n", phase,
+                                       mu, dms,
+                                       WDIAG_READ(WDIAG_ASYM),
+                                       WDIAG_READ(WDIAG_CKO),
+                                       WDIAG_READ(WDIAG_SETP));
+				break;
+			}
+
+			good_samples++;
+                }
+                timeout--;
+                if(!timeout)
+                {
+                        printf("Timeout!\n");
+                        break;
+                }
+
+                unlock_diag();
+		sleep(1);
+	}
+
+        unlock_diag();
+
+	board->fini(board);
+
+	return 0;
+}
+
 static const struct tool_base tool_help = {
         "help",
         "display list of commands (this help), or help for a command",
@@ -3252,6 +3321,13 @@ static const struct tool_base tool_wdiags = {
         help_wdiags
 };
 
+static const struct tool_base tool_aux_logger = {
+        "aux-logger",
+        "display wdiag AUX0 value for logging",
+        do_aux_logger,
+        help_aux_logger
+};
+
 static const struct tool_base *tools[] = {
 	&tool_help,
 	&tool_version,
@@ -3262,6 +3338,7 @@ static const struct tool_base *tools[] = {
 	&tool_spll_recorder,
 	&tool_gdbserver,
 	&tool_wdiags,
+        &tool_aux_logger,
 	NULL
 };
 
