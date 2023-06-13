@@ -20,6 +20,7 @@
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #include <poll.h>
+#include <sys/time.h>
 #include <stdbool.h>
 #include <time.h>
 #include <limits.h>
@@ -1184,19 +1185,32 @@ static void wrpc_vuart_restore_tty(struct termios *old_termios)
 	tcsetattr(STDIN_FILENO, TCSANOW, old_termios);
 }
 
+static time_t get_running_secs(void)
+{
+        struct timeval now;
 
-static void wrpc_vuart_term(struct board *board, int keep_term)
+        gettimeofday(&now, NULL);
+        return now.tv_sec;
+}
+
+static void wrpc_vuart_term(struct board *board,
+                            int keep_term,
+                            unsigned timeout)
 {
 	struct termios oldkey;
 	int need_exit = 0;
 	fd_set fds;
 	int ret;
 	int rx, tx;
+        time_t start_time;
 
 	fprintf(stderr, "[press C-a to exit]\n");
 
 	if(!keep_term)
 		wrpc_vuart_set_tty_raw(&oldkey);
+
+        if (timeout)
+                start_time = get_running_secs();
 
 	while(!need_exit) {
 		struct timeval tv = {0, 10000};
@@ -1241,6 +1255,9 @@ static void wrpc_vuart_term(struct board *board, int keep_term)
 			putchar(rx);
 		}
 		fflush(stdout);
+
+                if (timeout && get_running_secs() >= start_time + timeout)
+                        break;
 	}
 
 	if(!keep_term)
@@ -1307,12 +1324,13 @@ static int do_vuart(int argc, char *argv[])
 	char c;
 	int keep_term = 0;
 	char *cmd = NULL;
+        unsigned timeout = 0;
 
 	if (board_open(&argc, argv) < 0)
 		return 1;
 
 	/* Parse specific args */
-	while ((c = getopt (argc, argv, "c:k")) != -1) {
+	while ((c = getopt (argc, argv, "c:kt:")) != -1) {
 		switch (c) {
 		case 'c':
 			/* Enable command mode */
@@ -1321,6 +1339,9 @@ static int do_vuart(int argc, char *argv[])
 		case 'k':
 			keep_term = 1;
 			break;
+                case 't':
+                        timeout = atoi(optarg);
+                        break;
 		case '?':
 			break;
 		}
@@ -1329,7 +1350,7 @@ static int do_vuart(int argc, char *argv[])
 	if (cmd)
 		wrpc_vuart_command(board, cmd);
 	else
-		wrpc_vuart_term(board, keep_term);
+		wrpc_vuart_term(board, keep_term, timeout);
 
 	board->fini(board);
 
