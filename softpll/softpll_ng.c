@@ -801,6 +801,7 @@ int spll_update(void)
 	}
 	ret += spll_update_aux_clocks();
 
+#ifdef CONFIG_TARGET_WR_SWITCH
 	/* store statistics */
 	stats.sequence++;
 	stats.mode  = softpll.mode;
@@ -813,6 +814,7 @@ int spll_update(void)
 	stats.M_y = softpll.mpll.pi.y;
 	stats.del_cnt = softpll.delock_count;
 	stats.sequence++;
+#endif
 
 	return ret != 0;
 }

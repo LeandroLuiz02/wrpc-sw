@@ -456,15 +456,15 @@ static const struct snmp_oid oid_array_wrpcTemperatureTable[] = {
 
 /* wrpcSpllStatusGroup */
 static const struct snmp_oid oid_array_wrpcSpllStatusGroup[] = {
-	OID_FIELD_VAR(   oid_wrpcSpllMode,           get_p,        NO_SET,   ASN_INTEGER,   &stats.mode),
-	OID_FIELD_VAR(   oid_wrpcSpllIrqCnt,         get_p,        NO_SET,   ASN_COUNTER,   &stats.irq_cnt),
-	OID_FIELD_VAR(   oid_wrpcSpllSeqState,       get_p,        NO_SET,   ASN_INTEGER,   &stats.seq_state),
-	OID_FIELD_VAR(   oid_wrpcSpllAlignState,     get_p,        NO_SET,   ASN_INTEGER,   &stats.align_state),
-	OID_FIELD_VAR(   oid_wrpcSpllHlock,          get_p,        NO_SET,   ASN_COUNTER,   &stats.H_lock),
-	OID_FIELD_VAR(   oid_wrpcSpllMlock,          get_p,        NO_SET,   ASN_COUNTER,   &stats.M_lock),
-	OID_FIELD_VAR(   oid_wrpcSpllHY,             get_p,        NO_SET,   ASN_INTEGER,   &stats.H_y),
-	OID_FIELD_VAR(   oid_wrpcSpllMY,             get_p,        NO_SET,   ASN_INTEGER,   &stats.M_y),
-	OID_FIELD_VAR(   oid_wrpcSpllDelCnt,         get_p,        NO_SET,   ASN_COUNTER,   &stats.del_cnt),
+	OID_FIELD_VAR(   oid_wrpcSpllMode,           get_p,        NO_SET,   ASN_INTEGER,   (void *)&softpll.mode),
+	OID_FIELD_VAR(   oid_wrpcSpllIrqCnt,         get_p,        NO_SET,   ASN_COUNTER,   (void *)&softpll.irq_count),
+	OID_FIELD_VAR(   oid_wrpcSpllSeqState,       get_p,        NO_SET,   ASN_INTEGER,   (void *)&softpll.seq_state),
+	OID_FIELD_VAR(   oid_wrpcSpllAlignState,     get_p,        NO_SET,   ASN_INTEGER,   (void *)&softpll.ext.align_state),
+	OID_FIELD_VAR(   oid_wrpcSpllHlock,          get_p,        NO_SET,   ASN_COUNTER,   (void *)&softpll.helper.ld.locked),
+	OID_FIELD_VAR(   oid_wrpcSpllMlock,          get_p,        NO_SET,   ASN_COUNTER,   (void *)&softpll.mpll.locked),
+	OID_FIELD_VAR(   oid_wrpcSpllHY,             get_p,        NO_SET,   ASN_INTEGER,   (void *)&softpll.helper.pi.y),
+	OID_FIELD_VAR(   oid_wrpcSpllMY,             get_p,        NO_SET,   ASN_INTEGER,   (void *)&softpll.mpll.pi.y),
+	OID_FIELD_VAR(   oid_wrpcSpllDelCnt,         get_p,        NO_SET,   ASN_COUNTER,   (void *)&softpll.delock_count),
 	{ 0, }
 };
 

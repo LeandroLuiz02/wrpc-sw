@@ -30,10 +30,6 @@ wrc_global_addr:
 ppg_static_addr:
 	.word  ppg_static
 #endif
-	
-	.org STATS_PADDR
-stats_addr:
-	.word  stats
 
 	.org UPTIME_SEC_ADDR
 	.global uptime_sec
