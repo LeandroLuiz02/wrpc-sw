@@ -56,7 +56,7 @@ static volatile int ptracker_mask = 0;
 static inline int aux_locking_enabled(int channel)
 {
 	uint32_t occr_aux_en = SPLL_OCCR_OUT_EN_R(SPLL->OCCR);
-	
+
 	return occr_aux_en & (1 << channel);
 }
 
@@ -114,7 +114,7 @@ static inline void sequencing_fsm(struct softpll_state *s, int tag_value, int ta
 
 			/* Main starts at midscale */
 			SPLL->DAC_MAIN = (s->mpll.pi.y_max + s->mpll.pi.y_min) / 2;
-			
+
 			/* we need tags from at least one channel, so that the IRQ that calls this function
 			   gets called again */
 			spll_enable_tagger(MAIN_CHANNEL, 1);
@@ -122,10 +122,10 @@ static inline void sequencing_fsm(struct softpll_state *s, int tag_value, int ta
 			s->dac_timeout = timer_get_tics()
 				+ TICS_PER_SECOND / 20;
 			s->seq_state = SEQ_WAIT_CLEAR_DACS;
-			
+
 			break;
 		}
-		
+
 		/* State "Wait until DACs have been cleared". Makes sure the VCO control inputs have stabilized before starting the PLL. */
 		case SEQ_WAIT_CLEAR_DACS:
 		{
@@ -182,7 +182,7 @@ static inline void sequencing_fsm(struct softpll_state *s, int tag_value, int ta
 					s->seq_state = SEQ_START_MAIN;
 				} else {
 					start_ptrackers(s);
-					s->seq_state = SEQ_READY;	
+					s->seq_state = SEQ_READY;
 					set_channel_status(s->mpll.id_ref, 1);
 				}
 			}
@@ -336,7 +336,7 @@ void spll_init(int mode, int slave_ref_channel, int flags)
 		s->seq_state = SEQ_CLEAR_DACS;
 
 	int helper_ref;
-	
+
 	if( mode == SPLL_MODE_SLAVE)
 		helper_ref = slave_ref_channel; // Slave mode: lock the helper to an uplink port
 	else
@@ -374,7 +374,7 @@ void spll_init(int mode, int slave_ref_channel, int flags)
 		dummy = SPLL->TRR_R0;
 		(void) dummy;
 	}
-	
+
 
 	/* Purge debug queue */
 	if ( SPLL->CSR & SPLL_CSR_DBG_SUPPORTED )
@@ -391,7 +391,7 @@ void spll_init(int mode, int slave_ref_channel, int flags)
 
 	SPLL->EIC_IER = 1;
 	SPLL->OCER |= 1;
-	
+
 	enable_irq();
 }
 
@@ -433,7 +433,7 @@ int spll_start_channel(int channel)
 void spll_stop_channel(int channel)
 {
 	struct softpll_state *s = (struct softpll_state *) &softpll;
-	
+
 	if (!channel)
 		return;
 
@@ -627,107 +627,100 @@ int spll_get_delock_count(void)
 	return softpll.delock_count;
 }
 
-static int spll_update_aux_clocks(void)
+static int spll_update_aux_clock(int ch)
 {
-	int ch;
 	int done_sth = 0;
+	struct spll_aux_state *s = (struct spll_aux_state *)&softpll.aux[ch - 1];
 
-	for (ch = 1; ch < spll_n_chan_out; ch++) 
+	if(s->seq_state != AUX_DISABLED && !aux_locking_enabled(ch))
 	{
-		struct spll_aux_state *s = (struct spll_aux_state *) &softpll.aux[ch - 1];
+		pll_verbose("softpll: disabled aux channel %d\n", ch);
+		spll_stop_channel(ch);
+		set_channel_status(ch, 0);
+		s->seq_state = AUX_DISABLED;
+		return 1;
+	}
 
-		if(s->seq_state != AUX_DISABLED && !aux_locking_enabled(ch))
+	switch (s->seq_state) {
+	case AUX_DISABLED:
+		if (softpll.mpll.locked && aux_locking_enabled(ch)) {
+			if( s->mode == SPLL_AUX_MODE_SLAVE )
+			{
+				pll_verbose("softpll: enabled slave aux channel %d\n", ch);
+				if( !spll_start_channel(ch) )
+				{
+					s->seq_state = AUX_LOCK_PLL;
+				}
+			}
+			else if ( s->mode == SPLL_AUX_MODE_PHASE_MONITOR )
+			{
+				pll_verbose("softpll: enabled phase monitor on aux channel %d\n", ch);
+				s->seq_state = AUX_WAIT_MONITOR_LOCK;
+				ptracker_init( &s->pll.tracker, ch + spll_n_chan_ref, PTRACKER_AVERAGE_SAMPLES );
+				ptracker_start( &s->pll.tracker );
+			}
+			done_sth = 1;
+		}
+		break;
+
+	case AUX_WAIT_MONITOR_LOCK:
+		if( s->pll.tracker.ready )
 		{
-			pll_verbose("softpll: disabled aux channel %d\n", ch);
-			spll_stop_channel(ch);
-			set_channel_status(ch, 0);
-			s->seq_state = AUX_DISABLED;
-			done_sth++;
+			s->seq_state = AUX_MONITOR_READY;
+			s->phase_value = s->pll.tracker.phase_val;
+			set_channel_status(ch, 1);
+			done_sth = 1;
+			break;
 		}
 
-		switch (s->seq_state) {
-			case AUX_DISABLED:
-				if (softpll.mpll.locked && aux_locking_enabled(ch)) {
-					if( s->mode == SPLL_AUX_MODE_SLAVE )
-					{
-						pll_verbose("softpll: enabled slave aux channel %d\n", ch);
-						if( !spll_start_channel(ch) )
-						{
-						s->seq_state = AUX_LOCK_PLL;
-						}
-						done_sth++;
-					}
-					else if ( s->mode == SPLL_AUX_MODE_PHASE_MONITOR )
-					{
-						pll_verbose("softpll: enabled phase monitor on aux channel %d\n", ch);
-						s->seq_state = AUX_WAIT_MONITOR_LOCK;
-						ptracker_init( &s->pll.tracker, ch + spll_n_chan_ref, PTRACKER_AVERAGE_SAMPLES );
-						ptracker_start( &s->pll.tracker );
-						done_sth++;
+	case AUX_MONITOR_READY:
+		if (!softpll.mpll.locked)
+		{
+			pll_verbose("softpll: aux phase monitor channel %d disabled due to PLL LOS\n", ch);
+			set_channel_status(ch, 0);
+			s->seq_state = AUX_DISABLED;
+			done_sth = 1;
+		}
+		else
+		{
+			s->phase_value = s->pll.tracker.phase_val;
+		}
+		break;
 
-					}
-				}
-				break;
+	case AUX_LOCK_PLL:
+		if (s->pll.dmtd.ld.locked) {
+			pll_verbose ("softpll: channel %d locked [aligning @ %d ps]\n", ch, softpll.mpll_shift_ps);
+			set_phase_shift(ch, softpll.mpll_shift_ps);
+			s->seq_state = AUX_ALIGN_PHASE;
+			done_sth = 1;
+		}
+		break;
 
-			case AUX_WAIT_MONITOR_LOCK:
-				if( s->pll.tracker.ready )
-				{
-					s->seq_state = AUX_MONITOR_READY;
-					s->phase_value = s->pll.tracker.phase_val;
-					set_channel_status(ch, 1);
-					done_sth++;
-					break;
-				}
-	
-			case AUX_MONITOR_READY:
-				if (!softpll.mpll.locked) 
-				{
-					pll_verbose("softpll: aux phase monitor channel %d disabled due to PLL LOS\n", ch);
-					set_channel_status(ch, 0);
-					s->seq_state = AUX_DISABLED;
-					done_sth++;
-				}
-				else
-				{
-					s->phase_value = s->pll.tracker.phase_val;
-				}
-				break;
+	case AUX_ALIGN_PHASE:
+		if (!mpll_shifter_busy(&s->pll.dmtd)) {
+			pll_verbose("softpll: channel %d phase aligned\n", ch);
+			set_channel_status(ch, 1);
+			s->seq_state = AUX_SLAVE_READY;
+			done_sth = 1;
+		}
+		break;
 
-			case AUX_LOCK_PLL:
-				if (s->pll.dmtd.ld.locked) {
-					pll_verbose ("softpll: channel %d locked [aligning @ %d ps]\n", ch, softpll.mpll_shift_ps);
-					set_phase_shift(ch, softpll.mpll_shift_ps);
-					s->seq_state = AUX_ALIGN_PHASE;
-					done_sth++;
-				}
-				break;
-
-			case AUX_ALIGN_PHASE:
-				if (!mpll_shifter_busy(&s->pll.dmtd)) {
-					pll_verbose("softpll: channel %d phase aligned\n", ch);
-					set_channel_status(ch, 1);
-					s->seq_state = AUX_SLAVE_READY;
-					done_sth++;
-				}
-				break;
-
-			case AUX_SLAVE_READY:
-				if (!softpll.mpll.locked || !s->pll.dmtd.ld.locked) {
-					pll_verbose("softpll: aux channel %d or mpll lost lock\n", ch);
-					set_channel_status(ch, 0); 
-					s->seq_state = AUX_DISABLED;
-					done_sth++;
-				}
-				break;
-			}
+	case AUX_SLAVE_READY:
+		if (!softpll.mpll.locked || !s->pll.dmtd.ld.locked) {
+			pll_verbose("softpll: aux channel %d or mpll lost lock\n", ch);
+			set_channel_status(ch, 0);
+			s->seq_state = AUX_DISABLED;
+			done_sth = 1;
+		}
+		break;
 	}
-	return done_sth != 0;
+	return done_sth;
 }
 
 struct spll_aux_clock_status spll_get_aux_status(int channel )
 {
 	struct spll_aux_clock_status rval;
-	
+
 	rval.flags = 0;
 	rval.mode = 0;
 	rval.phase = 0;
@@ -750,7 +743,7 @@ struct spll_aux_clock_status spll_get_aux_status(int channel )
 		case AUX_WAIT_MONITOR_LOCK:
 			rval.flags = SPLL_AUX_MONITOR_ENABLED;
 			break;
-		case AUX_MONITOR_READY: 
+		case AUX_MONITOR_READY:
 			rval.flags = SPLL_AUX_MONITOR_ENABLED | SPLL_AUX_MONITOR_READY;
 			break;
 		case AUX_SLAVE_READY:
@@ -793,13 +786,16 @@ void spll_set_dac(int index, int value)
 int spll_update(void)
 {
 	int ret = 0;
+	int ch;
 
 	switch(softpll.mode) {
 		case SPLL_MODE_GRAND_MASTER:
 			ret = external_align_fsm(&softpll.ext);
 			break;
 	}
-	ret += spll_update_aux_clocks();
+
+	for (ch = 1; ch < spll_n_chan_out; ch++)
+	  ret |= spll_update_aux_clock(ch);
 
 #ifdef CONFIG_TARGET_WR_SWITCH
 	/* store statistics */
@@ -849,7 +845,7 @@ void spll_set_gain_schedule( spll_gain_schedule_t* sch )
 }
 
 
-static struct spll_debug_queue_state 
+static struct spll_debug_queue_state
 {
 	int undersample_ratio;
 	uint8_t undersample_count[SPLL_DBG_MAX_SOURCES];
@@ -869,7 +865,7 @@ void spll_debug_queue_configure( int undersample, int coalsesce_threshold )
 
 	dbg_state.undersample_ratio = undersample;
 	dbg_state.coalesce_threshold = coalsesce_threshold * undersample;
-	
+
 	for(i=0;i<SPLL_DBG_MAX_SOURCES;i++)
 	{
 		dbg_state.undersample_count[i] = 0;
