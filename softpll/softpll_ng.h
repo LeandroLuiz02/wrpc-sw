@@ -47,10 +47,13 @@
 
 
 /* Note on channel naming:
- - ref_channel means a PHY recovered clock input. There can be one (as in WR core) or more (WR switch).
- - out_channel means an output channel, which represents PLL feedback signal from a local, tunable oscillator. Every SPLL implementation
-   has at least one output channel, connected to the 125 / 62.5 MHz transceiver (WR) reference. This channel has always 
-   index 0 and is compared against all reference channels by the phase tracking mechanism.
+ - ref_channel means a PHY recovered clock input. There can be one (as in
+   WR core) or more (WR switch).
+ - out_channel means an output channel, which represents PLL feedback signal
+   from a local, tunable oscillator. Every SPLL implementation has at least
+   one output channel, connected to the 125 / 62.5 MHz transceiver (WR)
+   reference. This channel has always index 0 and is compared against all
+   reference channels by the phase tracking mechanism.
 */
 
 struct spll_aux_clock_status

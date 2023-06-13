@@ -21,6 +21,6 @@ struct spll_ptracker_state {
 
 void ptracker_init(struct spll_ptracker_state *s, int id, int num_avgs);
 void ptracker_start(struct spll_ptracker_state *s);
-int ptrackers_update(struct spll_ptracker_state *ptrackers, int tag, int source);
+void ptrackers_update(struct spll_ptracker_state *ptrackers, int tag, int source);
 
 #endif // __SPLL_PTRACKER_H

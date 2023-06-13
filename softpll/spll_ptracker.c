@@ -33,12 +33,13 @@ void ptracker_start(struct spll_ptracker_state *s)
 	s->avg_count = 0;
 
 	spll_enable_tagger(s->id, 1);
-	spll_enable_tagger(spll_n_chan_ref, 1);
+	spll_enable_tagger(MAIN_CHANNEL, 1);
 }
 
-int ptrackers_update(struct spll_ptracker_state *ptrackers, int tag,
-			   int source)
+void ptrackers_update(struct spll_ptracker_state *ptrackers, int tag,
+		      int source)
 {
+	/* Adjustment for wrap-arounds.  */
 	static const int adj_tab[16] = {
 		/* psign */
 		/* 0   - 1/4   */  0, 0, 0, -(1<<HPLL_N),
@@ -46,17 +47,17 @@ int ptrackers_update(struct spll_ptracker_state *ptrackers, int tag,
 		/* 1/2 - 3/4  */   0, 0, 0, 0,
 		/* 3/4 - 1   */    (1<<HPLL_N), 0, 0, 0};
 
-	if(source == spll_n_chan_ref)
+	if(source == MAIN_CHANNEL)
 	{
 		tag_ref = tag;
-		return 0;
+		return;
 	}
 
 
 	register struct spll_ptracker_state *s = ptrackers + source;
 
 	if(!s->enabled)
-		return 0;
+		return;
 #if defined(CONFIG_WR_NODE)
 	register int delta = (tag - tag_ref) & ((1 << HPLL_N) - 1);
 #else
@@ -84,6 +85,4 @@ int ptrackers_update(struct spll_ptracker_state *ptrackers, int tag,
 			s->avg_count = 0;
 		}
 	}
-
-	return 0;
 }

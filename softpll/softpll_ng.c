@@ -31,8 +31,6 @@
 unsigned char spll_n_chan_ref, spll_n_chan_out;
 unsigned char spll_ljd_present = 0;
 
-#define MAIN_CHANNEL (spll_n_chan_ref)
-
 static const char * const seq_states[] =
 {
 	[SEQ_START_EXT] = "start-ext",
@@ -83,9 +81,11 @@ static inline void update_ptrackers(struct softpll_state *s, int tag_value, int 
 {
 	int i;
 
+	/* Ptracker for reference channels */
 	if(tag_source <= spll_n_chan_ref)
 		ptrackers_update(s->ptrackers, tag_value, tag_source);
 
+	/* Ptracker for auxilliary channels (monitor only) */
 	for( i = 0; i < spll_n_chan_out - 1; i++ )
 	{
 		struct spll_aux_state *aux = &s->aux[i];
