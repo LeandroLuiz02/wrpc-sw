@@ -612,7 +612,7 @@ static int board_wr2rf_init(struct board *board_base,
                 return -1;
         }
 
-        return cernvme_map(board, 0x39, 32, vme_addr, 0x2000);
+        return cernvme_map(board, 0x39, 16, vme_addr, 0x2000);
 }
 
 static void board_wr2rf_help(void)
