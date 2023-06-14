@@ -254,7 +254,7 @@ distclean: clean
 liblinux:
 	$(MAKE) -C liblinux CC=cc
 
-libertm:
+libertm: $(AUTOCONF)
 	$(MAKE) -C $@ CC=cc
 
 extest:
