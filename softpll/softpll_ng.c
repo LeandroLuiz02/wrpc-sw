@@ -105,6 +105,10 @@ static inline void sequencing_fsm(struct softpll_state *s, int tag_value, int ta
 		s->ref_count++;
 
 	switch (s->seq_state) {
+		/* State "Disabled". Entered when the whole PLL is off */
+		case SEQ_DISABLED:
+			break;
+
 		/* State "Clear DACs": initial SPLL sequnencer state. Brings both DACs (not the AUXs) to the default values
 		   prior to starting the SPLL. */
 		case SEQ_CLEAR_DACS:
@@ -119,8 +123,7 @@ static inline void sequencing_fsm(struct softpll_state *s, int tag_value, int ta
 			   gets called again */
 			spll_enable_tagger(MAIN_CHANNEL, 1);
 
-			s->dac_timeout = timer_get_tics()
-				+ TICS_PER_SECOND / 20;
+			s->dac_timeout = timer_get_tics() + TICS_PER_SECOND / 20;
 			s->seq_state = SEQ_WAIT_CLEAR_DACS;
 
 			break;
@@ -138,11 +141,6 @@ static inline void sequencing_fsm(struct softpll_state *s, int tag_value, int ta
 			}
 			break;
 		}
-
-		/* State "Disabled". Entered when the whole PLL is off */
-		case SEQ_DISABLED:
-			break;
-
 
 		/* State "Start external reference PLL": starts up BB PLL for locking local reference to 10 MHz input */
 		case SEQ_START_EXT:
@@ -165,6 +163,7 @@ static inline void sequencing_fsm(struct softpll_state *s, int tag_value, int ta
 			break;
 		}
 
+		/* Once the DAC are on and stable, start helper PLL */
 		case SEQ_START_HELPER:
 		{
 			helper_start(&s->helper);
@@ -181,6 +180,8 @@ static inline void sequencing_fsm(struct softpll_state *s, int tag_value, int ta
 				{
 					s->seq_state = SEQ_START_MAIN;
 				} else {
+					/* Free running master, no need to
+					   lock the main clock */
 					start_ptrackers(s);
 					s->seq_state = SEQ_READY;
 					set_channel_status(s->mpll.id_ref, 1);
@@ -270,7 +271,7 @@ void spll_irq_entry(void)
 	clear_irq();
 }
 
-void spll_very_init()
+void spll_very_init(void)
 {
 	PPSG->ESCR = 0;
 	PPSG->CR = PPSG_CR_CNT_EN | PPSG_CR_CNT_RST | PPSG_CR_PWIDTH_W(PPS_WIDTH);
@@ -365,8 +366,8 @@ void spll_init(int mode, int slave_ref_channel, int flags)
 	}
 
 	pll_verbose
-	    ("softpll: mode %s, %d ref channels, %d out channels\n",
-	     modes[mode], spll_n_chan_ref, spll_n_chan_out);
+	    ("softpll: mode %s, %d ref channels, %d out channels, ref: %d\n",
+	     modes[mode], spll_n_chan_ref, spll_n_chan_out, slave_ref_channel);
 
 	/* Purge tag buffer */
 	while (!(SPLL->TRR_CSR & SPLL_TRR_CSR_EMPTY))
@@ -395,7 +396,7 @@ void spll_init(int mode, int slave_ref_channel, int flags)
 	enable_irq();
 }
 
-void spll_shutdown()
+void spll_shutdown(void)
 {
 	disable_irq();
 
@@ -467,6 +468,9 @@ static void set_phase_shift(int channel, int32_t value_picoseconds)
 void spll_set_phase_shift(int channel, int32_t value_picoseconds)
 {
 	int i;
+
+	pll_verbose("set_phase_shift %d %ld\n", channel, value_picoseconds);
+
 	if (channel == SPLL_ALL_CHANNELS) {
 		set_phase_shift(0, value_picoseconds);
 		for (i = 0; i < spll_n_chan_out - 1; i++)
@@ -608,17 +612,16 @@ int spll_shifter_busy(int channel)
 void spll_enable_ptracker(int ref_channel, int enable)
 {
 	if (enable) {
-		spll_enable_tagger(ref_channel, 1);
+		pll_verbose("Enabling ptracker channel: %d\n", ref_channel);
 		ptracker_start((struct spll_ptracker_state *)&softpll.
 			       ptrackers[ref_channel]);
 		ptracker_mask |= (1 << ref_channel);
-		pll_verbose("Enabling ptracker channel: %d\n", ref_channel);
 
 	} else {
+		pll_verbose("Disabling ptracker tagger: %d\n", ref_channel);
 		ptracker_mask &= ~(1 << ref_channel);
 		if (ref_channel != softpll.mpll.id_ref)
 			spll_enable_tagger(ref_channel, 0);
-		pll_verbose("Disabling ptracker tagger: %d\n", ref_channel);
 	}
 }
 
@@ -717,6 +720,39 @@ static int spll_update_aux_clock(int ch)
 	return done_sth;
 }
 
+/* Bottom half of the interrupt handler  */
+int spll_update(void)
+{
+	int ret = 0;
+	int ch;
+
+	switch(softpll.mode) {
+		case SPLL_MODE_GRAND_MASTER:
+			ret = external_align_fsm(&softpll.ext);
+			break;
+	}
+
+	for (ch = 1; ch < spll_n_chan_out; ch++)
+	  ret |= spll_update_aux_clock(ch);
+
+#ifdef CONFIG_TARGET_WR_SWITCH
+	/* store statistics */
+	stats.sequence++;
+	stats.mode  = softpll.mode;
+	stats.irq_cnt = softpll.irq_count;
+	stats.seq_state = softpll.seq_state;
+	stats.align_state = softpll.ext.align_state;
+	stats.H_lock = softpll.helper.ld.locked;
+	stats.M_lock = softpll.mpll.locked;
+	stats.H_y = softpll.helper.pi.y;
+	stats.M_y = softpll.mpll.pi.y;
+	stats.del_cnt = softpll.delock_count;
+	stats.sequence++;
+#endif
+
+	return ret != 0;
+}
+
 struct spll_aux_clock_status spll_get_aux_status(int channel )
 {
 	struct spll_aux_clock_status rval;
@@ -781,38 +817,6 @@ void spll_set_dac(int index, int value)
 		else if (index > 0)
 			softpll.aux[index - 1].pll.dmtd.pi.y = value;
 	}
-}
-
-int spll_update(void)
-{
-	int ret = 0;
-	int ch;
-
-	switch(softpll.mode) {
-		case SPLL_MODE_GRAND_MASTER:
-			ret = external_align_fsm(&softpll.ext);
-			break;
-	}
-
-	for (ch = 1; ch < spll_n_chan_out; ch++)
-	  ret |= spll_update_aux_clock(ch);
-
-#ifdef CONFIG_TARGET_WR_SWITCH
-	/* store statistics */
-	stats.sequence++;
-	stats.mode  = softpll.mode;
-	stats.irq_cnt = softpll.irq_count;
-	stats.seq_state = softpll.seq_state;
-	stats.align_state = softpll.ext.align_state;
-	stats.H_lock = softpll.helper.ld.locked;
-	stats.M_lock = softpll.mpll.locked;
-	stats.H_y = softpll.helper.pi.y;
-	stats.M_y = softpll.mpll.pi.y;
-	stats.del_cnt = softpll.delock_count;
-	stats.sequence++;
-#endif
-
-	return ret != 0;
 }
 
 int spll_measure_frequency(int osc)
