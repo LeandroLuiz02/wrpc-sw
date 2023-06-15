@@ -49,9 +49,9 @@ int main(int argc, char *argv[])
 			uint32_t phase = aux0_stat & 0xffffff;
 			if(good_samples == 3 )
 			{
-				printf("[%d,%lld,%lld,%d,%d,%d]\n", phase,
-					(( uint64_t) st->WDIAG_MU_MSB << 32 ) | st->WDIAG_MU_LSB,
-					(( uint64_t) st->WDIAG_DMS_MSB << 32 ) | st->WDIAG_DMS_LSB,
+				printf("[%d,%llu,%llu,%d,%d,%d]\n", phase,
+					((unsigned long long) st->WDIAG_MU_MSB << 32 ) | st->WDIAG_MU_LSB,
+					((unsigned long long) st->WDIAG_DMS_MSB << 32 ) | st->WDIAG_DMS_LSB,
 					st->WDIAG_ASYM,
 					st->WDIAG_CKO,
 					st->WDIAG_SETP );
