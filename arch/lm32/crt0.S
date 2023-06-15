@@ -122,9 +122,12 @@ _true_reset:
 .org PPG_STATIC_PADDR
 	.word ppg_static
 #endif
+
+#ifdef CONFIG_TARGET_WR_SWITCH
 .org STATS_PADDR
 	.word stats
-
+#endif
+	
 .org UPTIME_SEC_ADDR
 .global uptime_sec
 uptime_sec:

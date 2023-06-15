@@ -70,6 +70,7 @@ SECTIONS
 	 */
 	.stats : {
 		*(.stats)
+		*(.build_id)
 	} > stats
 
 	/*

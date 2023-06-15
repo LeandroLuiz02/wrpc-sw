@@ -15,19 +15,19 @@
  * Thus, we place this structure at a known address in the linker script
  */
 #ifdef CONFIG_TARGET_WR_SWITCH
-#define STATS_SECTION __attribute__((section(".stats")))
+#define STATS_SECTION(NAME) __attribute__((section(NAME)))
 #else
-#define STATS_SECTION
+#define STATS_SECTION(NAME)
 #endif
 
 #ifdef CONFIG_TARGET_WR_SWITCH
-struct spll_stats stats STATS_SECTION = {
+struct spll_stats stats STATS_SECTION(".stats") = {
 	.magic = 0x5b1157a7,
 	.ver = SPLL_STATS_VER
 };
 #endif
 
-const struct spll_build_id build_id STATS_SECTION = {
+const struct spll_build_id build_id STATS_SECTION(".build_id") = {
 #ifdef CONFIG_DETERMINISTIC_BINARY
 	.build_date = "",
 	.build_time = "",
