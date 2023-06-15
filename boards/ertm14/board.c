@@ -60,11 +60,11 @@
 #include "softpll_ng.h"
 #include "storage.h"
 #include "net.h"
-#include "wrc_ptp.h"
+#include "wrpc.h"
 
-#include <hw/wr_streamers.h>
-#include <wrc-event.h>
-#include <lib/events-ptp.h>
+#include "hw/wr_streamers.h"
+#include "wrc-event.h"
+#include "lib/events-ptp.h"
 
 #include "ertm15_rf_distr.h"
 #include "rf_frame_transceiver.h"

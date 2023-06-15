@@ -23,11 +23,11 @@
 #include "dev/endpoint.h"
 #include "ipv4.h"
 #include "shell.h"
-#include "wrc_ptp.h"
 #include "wrc_global.h"
 #include "dev/netif.h"
 #include "dev/syscon.h"
 #include "softpll_ng.h"
+#include "wrpc.h"
 
 static uint8_t lldpdu[LLDP_MAX_PKT_LEN];
 static uint16_t lldpdu_len;

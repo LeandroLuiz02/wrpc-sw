@@ -16,12 +16,11 @@
 #include <errno.h>
 #include <string.h>
 #include <stdlib.h>
-#include <wrc.h>
-#include <wrpc.h>
+#include "wrc.h"
+#include "wrpc.h"
 
 #include "shell.h"
 #include "util.h"
-#include "wrc_ptp.h"
 
 /* Setting leap second makes sense only for GM. For other modes leap seconds
  * counter is received from a master (slave) or is hardcoded in PPSI (master).

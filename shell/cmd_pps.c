@@ -16,12 +16,11 @@
 #include <errno.h>
 #include <string.h>
 #include <stdlib.h>
-#include <wrc.h>
-#include <wrpc.h>
+#include "wrc.h"
+#include "wrpc.h"
 
 #include "shell.h"
 #include "util.h"
-#include "wrc_ptp.h"
 
 static const char * const pps_force_map[] = {
 	[pps_force_off] = "off",

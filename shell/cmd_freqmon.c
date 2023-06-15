@@ -10,7 +10,6 @@
 #include <string.h>
 #include <errno.h>
 #include "wrpc.h"
-#include "wrc_ptp.h"
 
 #include "board.h"
 
