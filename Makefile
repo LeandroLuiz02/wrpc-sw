@@ -255,7 +255,9 @@ liblinux:
 	$(MAKE) -C liblinux CC=cc
 
 libertm: $(AUTOCONF)
+ifneq ($(CONFIG_TARGET_WR_SWITCH),y)
 	$(MAKE) -C $@ CC=cc
+endif
 
 extest:
 	$(MAKE) -C liblinux/extest CC=cc

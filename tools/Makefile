@@ -20,7 +20,9 @@ ALL   += wrpc-load
 ALL   += wr-streamers
 ALL   += wrpc-diags
 ALL   += gensdbfs
+ifneq ($(CONFIG_TARGET_WR_SWITCH),y)
 ALL   += wrpc
+endif
 ALL-$(CONFIG_WRPC_PPSI)  += wrpc-dump
 
 ALL+= $(ALL-y)
