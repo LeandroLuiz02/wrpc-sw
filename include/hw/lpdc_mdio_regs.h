@@ -8,8 +8,8 @@
 #define LPDC_MDIO_CTRL_TX_ENABLE 0x2UL
 #define LPDC_MDIO_CTRL_RX_ENABLE 0x4UL
 #define LPDC_MDIO_CTRL_RX_SW_RESET 0x8UL
-#define LPDC_MDIO_CTRL_QPLL_SW_RESET 0x10UL
-#define LPDC_MDIO_CTRL_TXUSRPLL_RESET 0x20UL
+#define LPDC_MDIO_CTRL_PLL_SW_RESET 0x10UL
+#define LPDC_MDIO_CTRL_AUX_RESET 0x20UL
 #define LPDC_MDIO_CTRL_COMMA_TARGET_POS_MASK 0x3fc0UL
 #define LPDC_MDIO_CTRL_COMMA_TARGET_POS_SHIFT 6
 #define LPDC_MDIO_CTRL_DMTD_CLK_SEL_MASK 0xc000UL
@@ -17,7 +17,7 @@
 
 /* Low Phase Drift Calibration Status Register */
 #define LPDC_MDIO_STAT 0x4UL
-#define LPDC_MDIO_STAT_QPLL_LOCKED 0x1UL
+#define LPDC_MDIO_STAT_PLL_LOCKED 0x1UL
 #define LPDC_MDIO_STAT_LINK_UP 0x2UL
 #define LPDC_MDIO_STAT_LINK_ALIGNED 0x4UL
 #define LPDC_MDIO_STAT_TX_RST_DONE 0x8UL
@@ -48,6 +48,7 @@
 #define ADDR_MASK_LPDC_MDIO_DRP_REGS 0x1000UL
 #define LPDC_MDIO_DRP_REGS_SIZE 4096 /* 0x1000 = 4KB */
 
+#ifndef __ASSEMBLER__
 struct lpdc_mdio {
   /* [0x0]: REG (rw) Low Phase Drift Calibration Control Register */
   uint32_t CTRL;
@@ -76,5 +77,6 @@ struct lpdc_mdio {
   /* [0x1000]: SUBMAP Xilinx DRP registers, specific to the transceiver */
   uint32_t drp_regs[1024];
 };
+#endif /* !__ASSEMBLER__*/
 
 #endif /* __CHEBY__LPDC_MDIO__H__ */

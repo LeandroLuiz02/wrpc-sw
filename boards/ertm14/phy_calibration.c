@@ -244,16 +244,16 @@ static int tx_fsm_update(struct wrc_lpdc_state *lpdc)
         spll_enable_ptracker(0, 0);
 
         // reset everything
-        mdio_lpdc_set_bits(lpdc, LPDC_MDIO_CTRL, LPDC_MDIO_CTRL_TX_SW_RESET | LPDC_MDIO_CTRL_RX_SW_RESET | LPDC_MDIO_CTRL_QPLL_SW_RESET | LPDC_MDIO_CTRL_TXUSRPLL_RESET );
+        mdio_lpdc_set_bits(lpdc, LPDC_MDIO_CTRL, LPDC_MDIO_CTRL_TX_SW_RESET | LPDC_MDIO_CTRL_RX_SW_RESET | LPDC_MDIO_CTRL_PLL_SW_RESET | LPDC_MDIO_CTRL_AUX_RESET );
         // release QPLL reset
-        mdio_lpdc_clear_bits(lpdc, LPDC_MDIO_CTRL, LPDC_MDIO_CTRL_QPLL_SW_RESET );
+        mdio_lpdc_clear_bits(lpdc, LPDC_MDIO_CTRL, LPDC_MDIO_CTRL_PLL_SW_RESET );
         // wait for QPLL lock
         
         tmo_init(&qpll_tmo, 5);
         for(;;) {
             uint16_t stat = mdio_lpdc_read( lpdc, LPDC_MDIO_STAT);
             
-            if( stat & LPDC_MDIO_STAT_QPLL_LOCKED )
+            if( stat & LPDC_MDIO_STAT_PLL_LOCKED )
                 break;
             
             if( tmo_expired( &qpll_tmo ) )
@@ -268,7 +268,7 @@ static int tx_fsm_update(struct wrc_lpdc_state *lpdc)
         mdio_lpdc_clear_bits( lpdc, LPDC_MDIO_CTRL, LPDC_MDIO_CTRL_TX_SW_RESET );
         usleep(100);
         // TX path ready, enable TXUSRPLL
-        mdio_lpdc_clear_bits( lpdc, LPDC_MDIO_CTRL, LPDC_MDIO_CTRL_TXUSRPLL_RESET );
+        mdio_lpdc_clear_bits( lpdc, LPDC_MDIO_CTRL, LPDC_MDIO_CTRL_AUX_RESET );
 
         tmo_init( &fsm->phy_lock_timeout, FSM_PHY_LOCK_TIMEOUT_MS );
         fsm->state = TX_SETUP_STATE_WAIT_TX_PLL_LOCK;
