@@ -1,7 +1,7 @@
 /*
  * This work is part of the White Rabbit project
  *
- * Copyright (C) 2021 CERN
+ * Copyright (C) 2021-2023 CERN
  * Author: Adam Wujek
  *
  * Released according to the GNU GPL, version 2 or any later version.
@@ -33,6 +33,11 @@
 #error ("WRPC monitor requires full version of pp_printf implementation")
 #endif
 
+#ifdef CONFIG_CMD_MONITOR_SERVO_ERR
+#define HAS_MONITOR_SERVO_ERR 1
+#else
+#define HAS_MONITOR_SERVO_ERR 0
+#endif
 
 #define WRC_MONITOR_REFRESH_PERIOD (1 * TICS_PER_SECOND)
 
@@ -467,11 +472,12 @@ static void print_aux_data(void)
 
 static void print_servo_description(void)
 {
-#if CONFIG_MONITOR_SERVO_ERR
-	pcprintf(19, 45, C_BLUE, "err state:");
-	pprintf(20, 45, "err offset:");
-	pprintf(21, 45, "err delta:");
-#endif
+
+	if (HAS_MONITOR_SERVO_ERR) {
+		pcprintf(19, 45, C_BLUE, "err state:");
+		pprintf(20, 45, "err offset:");
+		pprintf(21, 45, "err delta:");
+	}
 
 	pcprintf(16, 1, C_BLUE, "Servo state:\n");
 
@@ -552,13 +558,11 @@ static void print_servo_data(struct pp_instance *ppi)
 	if (wrh_servo && !wrh_servo->tracking_enabled)
 		cprintf(C_RED, "Tracking forcibly disabled\n");
 
-#if CONFIG_MONITOR_SERVO_ERR
-	if (wrh_servo) {
+	if (HAS_MONITOR_SERVO_ERR && wrh_servo) {
 		pcprintf(19, 60, C_WHITE, " %u ", wrh_servo->n_err_state);
 		pprintf(20, 60, " %u ", wrh_servo->n_err_offset);
 		pprintf(21, 60, " %u ", wrh_servo->n_err_delta_rtt);
 	}
-#endif
 
 	/* +- Timing parameters --------------------------------------------------------- */
 

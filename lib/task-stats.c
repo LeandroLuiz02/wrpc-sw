@@ -1,7 +1,7 @@
 /*
  * This work is part of the White Rabbit project
  *
- * Copyright (C) 2021 CERN
+ * Copyright (C) 2021-2023 CERN
  * Author: Wesley W. Terpstra <w.terpstra@gsi.de>
  *
  * Released according to the GNU GPL, version 2 or any later version.
@@ -20,6 +20,13 @@
 #include "dev/temperature.h"
 #include "wrc_global.h"
 #include "shell.h"
+
+#ifdef CONFIG_CMD_MONITOR_SERVO_ERR
+#define HAS_MONITOR_SERVO_ERR 1
+#else
+#define HAS_MONITOR_SERVO_ERR 0
+#endif
+
 
 /* internal "last", exported to shell command */
 uint32_t wrc_stats_last;
@@ -119,6 +126,11 @@ int wrc_log_stats(void)
 		pp_printf("setp:%d ", (int) wrh_servo->cur_setpoint_ps);
 		pp_printf("ucnt:%d ", (int) s->update_count);
 		pp_printf("bslide:%d ", ep_get_bitslide(&wrc_endpoint_dev));
+		if (HAS_MONITOR_SERVO_ERR) {
+			pp_printf("ses:%u ", wrh_servo->n_err_state);
+			pp_printf("seo:%u ", wrh_servo->n_err_offset);
+			pp_printf("sedr:%u ", wrh_servo->n_err_delta_rtt);
+		}
 	}
 
 	pp_printf("hd:%d md:%d ad:%d ", spll_get_dac(-1), spll_get_dac(0),
