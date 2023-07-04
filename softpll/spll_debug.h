@@ -31,6 +31,7 @@ integral/proportional gains on the response of the system.
 #define SPLL_DBG_SIGNAL_TIME_MS 7
 #define SPLL_DBG_SIGNAL_PHASE_CURRENT 8
 #define SPLL_DBG_SIGNAL_PHASE_TARGET 9
+#define SPLL_DBG_SIGNAL_SRC 10
 
 #define SPLL_DBG_MAX_SOURCES 8 // maximum number of "source" PLLs
 
@@ -38,6 +39,7 @@ integral/proportional gains on the response of the system.
 #define SPLL_DBG_SRC_MAIN   1
 #define SPLL_DBG_SRC_EXT    2
 #define SPLL_DBG_SRC_AUX(n) (3 + ((n)&0x3))		/* ...          : Main PLL aux clock N */
+#define SPLL_DBG_SRC_RAW    7
 
 #define SPLL_DBG_LAST_FLAG   0x80
 

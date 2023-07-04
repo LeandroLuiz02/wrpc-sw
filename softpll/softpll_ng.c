@@ -266,6 +266,11 @@ void spll_irq_entry(void)
 		tag_source = SPLL_TRR_R0_CHAN_ID_R(trr);
 		tag_value  = SPLL_TRR_R0_VALUE_R(trr);
 
+		if (0) {
+			spll_debug(SPLL_DBG_SRC_RAW, SPLL_DBG_SIGNAL_SRC, tag_source, 0);
+			spll_debug(SPLL_DBG_SRC_RAW, SPLL_DBG_SIGNAL_TAG, tag_value, 1);
+		}
+
 		sequencing_fsm(s, tag_value, tag_source);
 		update_loops(s, tag_value, tag_source);
 	}

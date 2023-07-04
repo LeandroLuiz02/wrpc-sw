@@ -1438,6 +1438,8 @@ static const char *dbg_source_to_string(int src)
 		return "aux3";
 	case SPLL_DBG_SRC_EXT:
 		return "ext";
+	case SPLL_DBG_SRC_RAW:
+		return "raw";
 	default:
 		return "<unknown?>";
 	}
@@ -1465,6 +1467,8 @@ static const char *dbg_signal_to_string(int src)
 		return "phase_current";
 	case SPLL_DBG_SIGNAL_PHASE_TARGET:
 		return "phase_target";
+	case SPLL_DBG_SIGNAL_SRC:
+		return "source";
 	default:
 		return "<unknown?>";
 	}
@@ -1533,7 +1537,7 @@ void spll_dump_debug_data(const uint32_t *buf, size_t size)
 
 		if (sig == SPLL_DBG_SIGNAL_EVENT)
 		{
-			printf(" event=%s", dbg_event_to_string(value));
+			printf("event=%s ", dbg_event_to_string(value));
 		}
 
 		printf("%s=%d ", dbg_signal_to_string(sig),
