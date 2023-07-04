@@ -17,6 +17,10 @@
 
 /* SoftPLL operating modes, for mode parameter of spll_init(). */
 
+/* Disabled mode: SoftPLL inactive.
+   Previously it was 4, but this was not very intuitive */
+#define SPLL_MODE_DISABLED 0
+
 /* Grand Master - lock to 10 MHz external reference */
 #define SPLL_MODE_GRAND_MASTER 1
 
@@ -25,9 +29,6 @@
 
 /* Slave mode - 125 MHz reference locked to one of the input clocks */
 #define SPLL_MODE_SLAVE 3
-
-/* Disabled mode: SoftPLL inactive */
-#define SPLL_MODE_DISABLED 4
 
 #define SEQ_START_EXT 1
 #define SEQ_WAIT_EXT 2
