@@ -411,7 +411,7 @@ comment "commands"
 
 config CMD_CONFIG
 	depends on WR_NODE
-	boolean "Include configuration in the output binary"
+	boolean "Add 'config' command to display this configuration"
 	help
 	  This options adds the "config" command to the shell, which
 	  reports the current configuration.  This adds half a kilobyte
@@ -420,7 +420,7 @@ config CMD_CONFIG
 config BUILD_INIT
 	depends on WR_NODE
 	default n
-	boolean "Include an init command in the binary (build-time)"
+	boolean "Add 'init' command in the binary (build-time)"
 
 config INIT_COMMAND
 	depends on BUILD_INIT
@@ -440,7 +440,7 @@ config FLASH_INIT
 
 config CMD_CALIBRATION_SHOW
 	depends on WR_NODE
-	boolean "Add command to print all calibration values"
+	boolean "Add 'calibration show' command to print all calibration values"
 	default n
 	help
 	  Adds an "show" to the calibration command to print all
@@ -448,7 +448,7 @@ config CMD_CALIBRATION_SHOW
 
 config CMD_REFRESH
 	depends on WR_NODE
-	boolean "Include refresh command"
+	boolean "Add 'refresh' command"
 	default n
 	help
 	  This enables refresh command, which can be used to change the refresh
@@ -456,7 +456,7 @@ config CMD_REFRESH
 
 config CMD_PPS
 	depends on WR_NODE
-	boolean "Include PPS command"
+	boolean "Add 'pps' command"
 	default n
 	help
 	  This enables pps command, which can be used to force PPS output
@@ -464,7 +464,7 @@ config CMD_PPS
 
 config CMD_SFP_INFO
 	depends on WR_NODE
-	boolean "Add command to print info about SFP"
+	boolean "Add 'sfp info' command to print info about SFP"
 	default n
 	help
 	  Adds an "info" parameter to the sfp command to print information about
@@ -474,7 +474,7 @@ config CMD_SFP_INFO
 
 config SFP_DOM
 	depends on WR_NODE
-	boolean "Extend sfp info command with SFP monitoring info"
+	boolean "Extend 'sfp info' command with SFP monitoring info"
 	default n
 	help
 	  This enables extensions to sfp command, which allows read of
@@ -484,7 +484,7 @@ config SFP_DOM
 
 config CMD_LEAPSEC
 	depends on WR_NODE
-	boolean "Include command to control leapsecond value"
+	boolean "Add 'leapsec' command to control leapsecond value"
 	default n
 	help
 	  This enables leapsec command, which can be used to adjust leap seconds
@@ -492,7 +492,7 @@ config CMD_LEAPSEC
 
 config CMD_PTP_ADV
 	depends on WRPC_PPSI
-	boolean "Extend ptp command with extra subcommands"
+	boolean "Extend 'ptp' command with extra subcommands"
 	default n
 	help
 	  Extend ptp command with extra subcommands:
@@ -505,15 +505,25 @@ config CMD_PTP_ADV
 
 config CMD_NETCONSOLE
 	depends on NETCONSOLE
-	boolean "Include shell command to configure netconsole"
+	boolean "Add 'netconsole' command to configure netconsole"
 	default y
 	help
 	  Include command to configure netconsole
 
 config CMD_MONITOR_SERVO_ERR
        depends on WR_NODE
-       boolean "Extend monitor command with stats for servo errors"
+       boolean "Extend 'gui' and 'stat' commands with stats for servo errors"
        default n
+
+config FREQUENCY_MONITOR
+	boolean "Add 'freqmon' command for built-on clock frequency monitor"
+	default n
+	help
+	  Enables the "freqmon" command in the WRC shell which lets
+	  the user check all relevant clock frequencies (REF, DMTD,
+	  RX, AUX, EXT) as well as the oscillators' tuning range.
+	  Requires g_with_clock_freq_monitor to be enabled in the HDL
+	  IP instantiation.
 
 comment "wrpc-sw is tainted if you change the following options"
 config DEVELOPER
@@ -524,16 +534,6 @@ config DEVELOPER
 	  special customizations not normally useful for people not
 	  directly working on this package.  Please don't use unless
 	  you are a developer of wrpc-sw.
-
-config FREQUENCY_MONITOR
-	boolean "Add support for built-on clock frequency monitor"
-	default n
-	help
-	  Enables the "freqmon" command in the WRC shell which lets
-	  the user check all relevant clock frequencies (REF, DMTD,
-	  RX, AUX, EXT) as well as the oscillators' tuning range.
-	  Requires g_with_clock_freq_monitor to be enabled in the HDL
-	  IP instantiation.
 
 #
 # This is a set of configuration options that should not be changed by
@@ -672,7 +672,7 @@ config CMD_LL
 
 config CMD_SDB_RDUMP
        depends on DEVELOPER && WR_NODE
-       bool "Add sdb rdump command"
+       bool "Add 'sdb rdump' command"
        help
          This enables the 'sdb rdump' command to raw dump a storage area
 
