@@ -20,9 +20,11 @@
 
 static const char * const ptrack_cmds[] =
 {
-	 "enable",
-	 "ps-freeze",
-	 "vco-freeze"
+	"unfreeze",
+	"ps-freeze",
+	"vco-freeze",
+	"channel",
+	"stat",
 };
 
 
@@ -37,7 +39,7 @@ static int cmd_ptrack(const char *args[])
 		spll_pshifter_freeze(0);
 		break;
 	case 1:
-		if (args[0]) {
+		if (args[1]) {
 			int ps = atoi(args[1]);
 			pp_printf("Freezing SPLL phase shifter at phase %d ps\n", ps);
 			spll_set_phase_shift(0, ps);
@@ -51,6 +53,18 @@ static int cmd_ptrack(const char *args[])
 	case 2:
 		pp_printf("Freezing SPLL VCO control");
 		spll_vco_freeze(1);
+		break;
+	case 3:
+		if (args[1]) {
+			int ch = atoi(args[1]);
+			pp_printf("enable ptracker %d\n", ch);
+			spll_enable_ptracker(ch, 1);
+		}
+		else
+			return -1;
+		break;
+	case 4:
+		ptracker_show_stats();
 		break;
 	}
 	return 0;

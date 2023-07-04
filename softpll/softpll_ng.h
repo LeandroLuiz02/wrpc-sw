@@ -119,6 +119,7 @@ struct spll_aux_clock_status spll_get_aux_status(int channel );
 int spll_get_delock_count(void);
 
 void spll_show_stats(void);
+void ptracker_show_stats(void);
 
 /* Sets VCXO tuning DAC corresponding to output (out_channel) to a given value */
 void spll_set_dac(int out_channel, int value);

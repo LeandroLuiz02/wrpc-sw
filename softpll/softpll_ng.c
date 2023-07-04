@@ -546,6 +546,21 @@ void spll_get_num_channels(int *n_ref, int *n_out)
 		*n_out = spll_n_chan_out;
 }
 
+void ptracker_show_stats(void)
+{
+	int ch;
+
+	for (ch = 0; ch < MAX_PTRACKERS; ch++) {
+		struct spll_ptracker_state *s =
+			(struct spll_ptracker_state *)&softpll.ptrackers[ch];
+		int32_t phase;
+		spll_read_ptracker(ch, &phase, NULL);
+		pp_printf("ptrack %d: en %d id %d ready %d phase %d (%d ps) avg %d\n",
+			  ch, s->enabled, s->id, s->ready,
+			  s->phase_val, (int)phase, s->n_avg);
+	}
+}
+
 void spll_show_stats(void)
 {
 	struct softpll_state *s = (struct softpll_state *)&softpll;
