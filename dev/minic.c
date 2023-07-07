@@ -138,7 +138,7 @@ int minic_rx_frame(struct wr_minic *nic, struct wr_ethhdr *hdr,
 	pp_printf("RX@%x:", (unsigned)nic->base);
 #endif
 
-	do {
+	while (1) {
 		unsigned rx;
 
 		rx = minic_readl(nic, MINIC_REG_RX_FIFO);
@@ -151,6 +151,9 @@ int minic_rx_frame(struct wr_minic *nic, struct wr_ethhdr *hdr,
 		rx_type = MINIC_RX_FIFO_TYPE_R(rx);
 		rx_data = MINIC_RX_FIFO_DAT_R(rx);
 		rx_empty = (rx & MINIC_RX_FIFO_EMPTY);
+
+		if (rx_empty)
+			break;
 
 		if (rx_type == WRF_DATA && hdr_size < ETH_HEADER_SIZE) {
 			/* reading header */
@@ -195,7 +198,7 @@ int minic_rx_frame(struct wr_minic *nic, struct wr_ethhdr *hdr,
 
 			oob_cnt++;
 		}
-	} while (!rx_empty);
+	}
 
 
 #ifdef RX_DUMP
