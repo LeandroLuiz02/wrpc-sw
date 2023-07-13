@@ -93,7 +93,10 @@ static inline void update_ptrackers(struct softpll_state *s, int tag_value, int 
 			continue;
 
 		if( tag_source == spll_n_chan_ref + i + 1)
+		{
+			aux->pll.tracker.dbg_channel = i;
 			ptrackers_update( &aux->pll.tracker, tag_value, 0 );
+		}
 	}
 }
 
