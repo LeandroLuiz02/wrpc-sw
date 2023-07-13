@@ -61,6 +61,7 @@
 #include "storage.h"
 #include "net.h"
 #include "wrpc.h"
+#include "shell.h"
 
 #include "hw/wr_streamers.h"
 #include "wrc-event.h"
@@ -1453,8 +1454,13 @@ static int ertm_process_psnmp(struct uart_packet *rx_pkt, struct uart_packet *tx
 		} else if (mode == WRC_MODE_UNKNOWN)
 			wrc_ptp_stop();
 		break;
-
-	case 0x5a:
+        case ertm14_exec_shell_command:
+                {
+                        struct ertm14_shell_command *cmd = (struct ertm14_shell_command *)&rx_pkt->payload[op->offset1];
+                        shell_exec(cmd->cmd);
+                        break;
+                }
+    case 0x5a:
 		tx_pkt->length = rx_pkt->length;
 		tx_pkt->length = 1;	/* no time to reply */
 		memcpy(tx_pkt->payload, rx_pkt->payload, rx_pkt->length);
