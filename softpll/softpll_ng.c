@@ -556,13 +556,20 @@ void spll_show_stats(void)
 	if (softpll.mode > 0)
 	{
 		    pp_printf("softpll: irqs:%d seq:%s mode:%d "
-		     "alignment_state:%d HL%d ML%d HY=%d MY=%d DelCnt=%d setpoint:%d refcnt:%d tagcnt:%d",
+		     "alignment_state:%d HL%d ML%d HY=%d MY=%d DelCnt=%d setpoint:%d refcnt:%d tagcnt:%d h_kp:%d h_ki:%d h_shift:%d m_kp:%d m_ki:%d m_shift:%d",
 		      s->irq_count, statename,
 			      s->mode, s->ext.align_state,
 			      s->helper.ld.locked, s->mpll.locked,
 			      s->helper.pi.y, s->mpll.pi.y,
 			      s->delock_count, s->mpll.phase_shift_current,
-				  s->ref_count, s->tag_count);
+				  s->ref_count, s->tag_count,
+				  s->helper.pi.kp,
+				  s->helper.pi.ki,
+				  s->helper.pi.shift,
+				  s->mpll.pi.kp,
+				  s->mpll.pi.ki,
+				  s->mpll.pi.shift
+				);
 
 		if( softpll.mpll.gain_sched )
 		{
@@ -606,6 +613,16 @@ void spll_show_stats(void)
 				s->pll.dmtd.pi.y );
 #endif
 	}
+
+	for (ch = 0; ch < spll_n_chan_ref; ch++)
+		{
+			pp_printf( "softpll: ptracker%d: enabled %d n_avg %d value %d\n", ch,
+			softpll.ptrackers[ch].enabled ? 1 : 0,
+			softpll.ptrackers[ch].n_avg,
+			softpll.ptrackers[ch].phase_val );
+		}
+
+	
 }
 
 int spll_shifter_busy(int channel)
