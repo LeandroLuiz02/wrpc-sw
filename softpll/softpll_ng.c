@@ -291,6 +291,10 @@ void spll_very_init(void)
 		spll_n_chan_out = 3;
 
 	softpll.mpll.gain_sched = NULL;
+
+
+	helper_very_init((struct spll_helper_state *) &softpll.helper); // set up default PI gains/lock thresholds
+	
 }
 
 void spll_init(int mode, int slave_ref_channel, int flags)

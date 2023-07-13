@@ -9,13 +9,11 @@
 
 /* spll_helper.c - implmentation of the Helper PLL servo algorithm. */
 
-#include <wrc.h>
 #include "softpll_ng.h"
 
-void helper_init(struct spll_helper_state *s, int ref_channel)
+void helper_very_init( struct spll_helper_state *s )
 {
-
-	/* Phase branch PI controller */
+/* Phase branch PI controller */
 	s->pi.y_min = 5;
 	s->pi.y_max = (1 << DAC_BITS) - 5;
 #if defined(CONFIG_WR_NODE)
@@ -32,6 +30,10 @@ void helper_init(struct spll_helper_state *s, int ref_channel)
 	s->ld.threshold = 200;
 	s->ld.lock_samples = 10000;
 	s->ld.delock_samples = 100;
+}
+
+void helper_init(struct spll_helper_state *s, int ref_channel)
+{
 	s->ref_src = ref_channel;
 }
 
@@ -106,7 +108,6 @@ void helper_start(struct spll_helper_state *s)
 	s->sample_n = 0;
 	s->tag_d0 = -1;
 
-	board_dbg("Helper PLL PI Values: Kp %i\t Ki %i\n",s->pi.kp,s->pi.ki);
 	pi_init((spll_pi_t *)&s->pi);
 	ld_init((spll_lock_det_t *)&s->ld);
 
