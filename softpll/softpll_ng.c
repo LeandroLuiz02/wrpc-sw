@@ -848,6 +848,40 @@ void spll_set_gain_schedule( spll_gain_schedule_t* sch )
 	enable_irq();
 }
 
+void spll_set_pi_gain( int loop, int sched_stage, int kp, int ki )
+{
+	pll_verbose("set_pi_gain loop=%d stage=%d kp=%d ki=%d\n", loop, sched_stage, kp, ki);
+	disable_irq();
+	switch(loop)
+	{
+		case SPLL_LOOP_HELPER:
+			softpll.helper.pi.kp = kp;
+			softpll.helper.pi.ki = ki;
+			break;
+		case SPLL_LOOP_MAIN:
+			if( softpll.mpll.gain_sched && sched_stage < softpll.mpll.gain_sched->n_stages )
+			{
+				softpll.mpll.gain_sched->stages[sched_stage].ki = ki;
+				softpll.mpll.gain_sched->stages[sched_stage].kp = kp;
+				if( softpll.mpll.gain_sched->current_stage == sched_stage )
+				{
+					softpll.mpll.pi.kp = kp;
+					softpll.mpll.pi.ki = ki;
+				}
+			}
+			else
+			{
+				softpll.mpll.pi.kp = kp;
+				softpll.mpll.pi.ki = ki;
+			}
+			break;
+		default:
+			break;
+	}
+	enable_irq();
+}
+
+
 
 static struct spll_debug_queue_state
 {
