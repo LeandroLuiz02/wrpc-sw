@@ -31,7 +31,7 @@ void mpll_init(struct spll_main_state *s, int id_ref, int id_out)
 	s->pi.y_min = 5;
 	s->pi.y_max = (1 << DAC_BITS) - 5;
 	s->pi.anti_windup = 1;
-	s->pi.bias = 30000;
+	s->pi.bias = (1 << (DAC_BITS - 1) ); // midscale
 	s->pi.shift = PI_FRACBITS;
 #if defined(CONFIG_TARGET_WR_SWITCH)
 	if (spll_ljd_present) {
