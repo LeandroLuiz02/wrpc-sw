@@ -148,7 +148,7 @@ CONFIG_FLASH_INIT=y
 # CONFIG_SFP_DOM is not set
 # CONFIG_CMD_LEAPSEC is not set
 # CONFIG_CMD_PTP_ADV is not set
-# CONFIG_CMD_MONITOR_SERVO_ERR is not set
+CONFIG_CMD_MONITOR_SERVO_ERR=y
 
 #
 # wrpc-sw is tainted if you change the following options

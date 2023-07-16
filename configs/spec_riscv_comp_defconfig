@@ -56,6 +56,7 @@ CONFIG_LLDP=y
 # CONFIG_SFP_DOM is not set
 # CONFIG_CMD_LEAPSEC is not set
 # CONFIG_CMD_PTP_ADV is not set
+CONFIG_CMD_MONITOR_SERVO_ERR=y
 # CONFIG_NETCONSOLE is not set
 # CONFIG_TEMP_SENSORS is not set
 # CONFIG_W1 is not set
