@@ -64,11 +64,11 @@ SECTIONS
 	*(.sdata)
 	*(.sdata.*)
 	*(.gnu.linkonce.s.*)
+	. = ALIGN(4);
     } > ram
 
     /* Bounds of data segment.  Be sure the end is aligned.  */
     _fdata = ADDR(.data);
-    . = ALIGN(4);
     _edata = .;
 
     /*--------------------------------------------------------------------*/
