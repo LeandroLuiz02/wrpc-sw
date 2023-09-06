@@ -43,6 +43,12 @@
 #define BOARD_MAX_CHAN_AUX		1 /* No extra vcxo */
 #define BOARD_MAX_PTRACKERS		1
 
+/* Hardware dithering: wrc_dac_dither convert from 24b to 16b.
+   DIV_BITS is the number of bits eaten by hardware dithering,
+   DAC_BITS is the number of virtual dac bits (before hw dithering). */
+#define BOARD_SPLL_DIV_BITS      8
+#define BOARD_SPLL_DAC_BITS     (16 + BOARD_SPLL_DIV_BITS)
+
 #define CONFIG_SPLL_DEGLITCH_THR 550
 
 #define SDBFS_REC 5

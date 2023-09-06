@@ -50,8 +50,8 @@ WARNING: These parameters must be in sync with the generics of the HDL instantia
 /* Maximum MPLL loop gain scheduler levels */
 #define SPLL_GAIN_SCHED_MAX 2
 
-#if defined( BOARD_SPLL_DAC_BITS )
-   #define DAC_BITS BOARD_SPLL_DAC_BITS
-#else
-   #define DAC_BITS 16
+/* Default number of DAC bits, no hardware dithering. */
+#ifndef BOARD_SPLL_DAC_BITS
+# define BOARD_SPLL_DAC_BITS 16
+# define BOARD_SPLL_DIV_BITS  0
 #endif

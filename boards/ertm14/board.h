@@ -71,6 +71,7 @@
 #define BOARD_MAX_CHAN_AUX		2
 #define BOARD_MAX_PTRACKERS		1
 
+#define BOARD_SPLL_DIV_BITS      8
 #define BOARD_SPLL_DAC_BITS     24
 
 #define ERTM14_MAX_CONFIGS 8
