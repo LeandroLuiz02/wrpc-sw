@@ -1209,7 +1209,8 @@ static void wrpc_vuart_term(struct board *board,
 	int need_exit = 0;
 	fd_set fds;
 	int ret;
-	int rx, tx;
+	unsigned char tx;
+	int rx;
         time_t start_time;
 
 	fprintf(stderr, "[press C-a to exit]\n");
