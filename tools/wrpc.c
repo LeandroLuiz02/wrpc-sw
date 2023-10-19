@@ -33,7 +33,11 @@
 #include <libvmebus.h>
 #endif
 
+#define SUPPORT_ERTM
+
+#ifdef SUPPORT_ERTM
 #include "libertm.h"
+#endif
 #include "spll_debug.h"
 
 #include "hw/wrc_cpu_csr.h"
@@ -231,6 +235,7 @@ static int board_pci_init(struct board *board_base,
 	return 0;
 }
 
+#ifdef SUPPORT_ERTM
 static void board_ertm14_help(void)
 {
         printf("eRTM14/15 board\n");
@@ -280,6 +285,21 @@ static int board_ertm14_init(struct board *board_base,
 
 	return 0;
 }
+
+static struct board_ertm14 board_ertm14 =
+{
+		{
+			"ertm14",
+			board_ertm14_init,
+			board_ertm14_fini,
+			board_ertm14_help,
+			NULL,
+			NULL
+		},
+		NULL,
+		NULL
+};
+#endif /* SUPPORT_ERTM */
 
 static int board_pci_fini(struct board *base_board)
 {
@@ -338,20 +358,6 @@ static struct board_pci board_pci =
 	},
 	NULL,
 	0
-};
-
-static struct board_ertm14 board_ertm14 =
-{
-		{
-			"ertm14",
-			board_ertm14_init,
-			board_ertm14_fini,
-			board_ertm14_help,
-			NULL,
-			NULL
-		},
-		NULL,
-		NULL
 };
 
 
@@ -643,7 +649,9 @@ static struct board_cernvme board_wr2rf =
 static struct board *boards[] = {
         &board_pci.parent.parent,
         &board_spec.parent.parent,
+#ifdef SUPPORT_ERTM
 	&board_ertm14.parent,
+#endif
 #ifdef SUPPORT_CERN_VMEBRIDGE
         &board_cernvme.parent.parent,
         &board_wr2rf.parent.parent,
@@ -1551,6 +1559,7 @@ void spll_dump_debug_data(const uint32_t *buf, size_t size)
 	}
 }
 
+#ifdef SUPPORT_ERTM
 void spll_readout_ertm14(struct board_ertm14* board, int undersample )
 {
 
@@ -1578,6 +1587,7 @@ void spll_readout_ertm14(struct board_ertm14* board, int undersample )
 
 	fprintf(stderr, "ertm14: stopping SPLL logging...\n");
 }
+#endif
 
 void spll_readout_direct(struct board* board )
 {
@@ -1624,7 +1634,8 @@ static int do_spll_recorder(int argc, char *argv[])
 {
 	int is_ertm = 0;
 	int c;
-	int undersample = 20;
+	int undersample __attribute__((unused)) = 20;
+
 
 	if (board_open(&argc, argv) < 0)
 		return 1;
@@ -1648,10 +1659,12 @@ static int do_spll_recorder(int argc, char *argv[])
 	is_ertm = !strcmp( board->name, "ertm14" );
 	if(is_ertm)
 	{
+#ifdef SUPPORT_ERTM
 		signal(SIGINT, spll_sighandler);
 		signal(SIGTERM, spll_sighandler);
 
 		spll_readout_ertm14( (struct board_ertm14*) board, undersample );
+#endif
 	}
 	else
 	{
