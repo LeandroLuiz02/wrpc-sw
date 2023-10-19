@@ -115,6 +115,8 @@ struct pci_slot {
 	unsigned bus;
 	unsigned slot;
 	unsigned func;
+
+	unsigned bar;
 };
 
 static int parse_pci_slot(struct pci_slot *res, const char *s)
@@ -138,6 +140,10 @@ static int parse_pci_slot(struct pci_slot *res, const char *s)
 		res->func = strtoul (e + 1, &e, 16);
 	else
 		res->func = 0;
+	if (*e == '@')
+		res->bar = strtoul (e + 1, &e, 10);
+	else
+		res->bar = 0;
 	if (*e != 0) {
 		fprintf (stderr, "incorrect pci slot format in '%s'\n", s);
 		return -1;
@@ -199,12 +205,13 @@ static int parse_pci_board(struct board_pci *board, int *argc, char *argv[])
 			return -1;
 		remove_arg1(argc, argv);
 		snprintf (pci_file, sizeof(pci_file),
-			  "/sys/bus/pci/devices/%04x:%02x:%02x.%x/resource0",
-			  slot.domain, slot.bus, slot.slot, slot.func);
+			  "/sys/bus/pci/devices/%04x:%02x:%02x.%x/resource%u",
+			  slot.domain, slot.bus, slot.slot, slot.func,
+			  slot.bar);
 		board->resource_file = pci_file;
 	}
 	else {
-		fprintf(stderr, "missing '-f resource-file' or '-s [dom:]bus:slot[.fn]' for pci\n");
+		fprintf(stderr, "missing '-f resource-file' or '-s [dom:]bus:slot[.fn][@bar]' for pci\n");
 		return -1;
 	}
 
@@ -233,6 +240,24 @@ static int board_pci_init(struct board *board_base,
 	if (board_pci_common_open(board) < 0)
 		return -1;
 	return 0;
+}
+
+
+static int board_pci_fini(struct board *base_board)
+{
+	struct board_pci *board = (struct board_pci *)base_board;
+	munmap(board->parent.map_addr, board->parent.map_length);
+
+	return 0;
+}
+
+static void board_pci_help(void)
+{
+        printf("Generic PCI board\n");
+        printf(" -f resource-file\n");
+        printf(" -s [domain:]bus:slot[.func][@bar]\n");
+        printf(" -o offset\n");
+        printf("One of -f or -s is required to identify the board\n");
 }
 
 #ifdef SUPPORT_ERTM
@@ -300,23 +325,6 @@ static struct board_ertm14 board_ertm14 =
 		NULL
 };
 #endif /* SUPPORT_ERTM */
-
-static int board_pci_fini(struct board *base_board)
-{
-	struct board_pci *board = (struct board_pci *)base_board;
-	munmap(board->parent.map_addr, board->parent.map_length);
-
-	return 0;
-}
-
-static void board_pci_help(void)
-{
-        printf("Generic PCI board\n");
-        printf(" -f resource-file\n");
-        printf(" -s [domain:]bus:slot[.func]\n");
-        printf(" -o offset\n");
-        printf("One of -f or -s is required to identify the board\n");
-}
 
 static uint32_t mem_readl(struct board *base_board, unsigned reg)
 {
