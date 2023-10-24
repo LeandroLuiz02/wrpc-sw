@@ -12,6 +12,7 @@
 #include <wrc.h>
 #include "softpll_ng.h"
 
+#define MPLL_DISCARD_EARLY_TAGS 10
 #define MPLL_TAG_WRAPAROUND 100000000
 
 #undef WITH_SEQUENCING
@@ -126,6 +127,7 @@ void mpll_start(struct spll_main_state *s)
 {
 	pll_verbose("MPLL_Start [dac %d]\n", s->dac_index);
 
+	s->discard_early_cnt = MPLL_DISCARD_EARLY_TAGS;
 	s->ps_freeze = 0;
 	s->vco_freeze = 0;
 
@@ -293,6 +295,33 @@ int mpll_update(struct spll_main_state *s, int tag, int source)
 	}
 
 	if (s->tag_ref >= 0 && s->tag_out >= 0) {
+
+#ifndef CONFIG_FRAC_SPLL
+           if(s->discard_early_cnt == 1)
+        {
+            int adj_ref = s->tag_ref + s->adder_ref;
+            int adj_out = s->tag_out + s->adder_out;
+            if( adj_ref > adj_out )
+            {
+                int delta = adj_ref - adj_out;
+                s->adder_ref -= (delta >> HPLL_N) << HPLL_N;
+            }
+            else
+            {
+                int delta = adj_out - adj_ref;
+                s->adder_out -= (delta >> HPLL_N) << HPLL_N;
+            }
+            if (s->adder_ref < 0 || s->adder_out < 0)
+            {
+                s->adder_ref += MPLL_TAG_WRAPAROUND;
+                s->adder_out += MPLL_TAG_WRAPAROUND;
+            }
+        }
+
+        if( s->discard_early_cnt > 0 )
+            s->discard_early_cnt--;
+
+#endif
 
 #ifdef CONFIG_FRAC_SPLL
 		if( abs(s->dout_dt - s->dref_dt) > s->frequency_lock_threshold )

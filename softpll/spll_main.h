@@ -34,7 +34,7 @@ struct spll_main_state {
 	int dref_dt, dout_dt, tag_ref_raw_d, tag_out_raw_d2;
 	int frequency_lock_threshold;
 #endif
-
+	int discard_early_cnt;
 	int adder_ref, adder_out;
 	int tag_ref, tag_ref_d;
 	int tag_out, tag_out_d;
