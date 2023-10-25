@@ -304,7 +304,7 @@ void spll_very_init(void)
 
 void spll_init(int mode, int slave_ref_channel, int flags)
 {
-	static const char * const modes[] = { "", "grandmaster", "freemaster", "slave", "disabled" };
+	static const char * const modes[] = { "disabled", "grandmaster", "freemaster", "slave"  };
 	int dummy;
 	int i;
 
@@ -571,28 +571,32 @@ void spll_show_stats(void)
 	else
 		statename = seq_states[s->seq_state];
 
-	pp_printf("softpll: n_ref %d n_out %d\n", spll_n_chan_ref, spll_n_chan_out);
+	pp_printf("softpll: mode:%d seq:%s n_ref %d n_out %d\n",
+		  s->mode, statename,
+		  spll_n_chan_ref, spll_n_chan_out);
 
-	if (softpll.mode > 0)
+	if (s->mode > 0)
 	{
-		    pp_printf("softpll: irqs:%d seq:%s mode:%d "
-		     "alignment_state:%d HL%d ML%d HY=%d MY=%d DelCnt=%d setpoint:%d refcnt:%d tagcnt:%d h_kp:%d h_ki:%d h_shift:%d m_kp:%d m_ki:%d m_shift:%d h_lock_duration:%d m_freq_lock_duration:%d m_phase_lock_duration:%d",
-		      s->irq_count, statename,
-			      s->mode, s->ext.align_state,
-			      s->helper.ld.locked, s->mpll.locked,
-			      s->helper.pi.y, s->mpll.pi.y,
-			      s->delock_count, s->mpll.phase_shift_current,
-				  s->ref_count, s->tag_count,
-				  s->helper.pi.kp,
-				  s->helper.pi.ki,
-				  s->helper.pi.shift,
-				  s->mpll.pi.kp,
-				  s->mpll.pi.ki,
-				  s->mpll.pi.shift,
-				  s->helper.last_lock_duration_ms,
-				  s->mpll.last_freq_lock_duration_ms,
-				  s->mpll.last_phase_lock_duration_ms
-				);
+		/* Needs 2 pp_printf to avoid buffer overflow on printf
+		   buffer. */
+	  pp_printf("irqs:%d "
+		    "alignment_state:%d HL%d ML%d HY=%d MY=%d DelCnt=%d setpoint:%d refcnt:%d tagcnt:%d h_kp:%d h_ki:%d h_shift:%d ",
+		    s->irq_count, s->ext.align_state,
+		    s->helper.ld.locked, s->mpll.locked,
+		    s->helper.pi.y, s->mpll.pi.y,
+		    s->delock_count, s->mpll.phase_shift_current,
+		    s->ref_count, s->tag_count,
+		    s->helper.pi.kp,
+		    s->helper.pi.ki,
+		    s->helper.pi.shift);
+	  pp_printf("m_kp:%d m_ki:%d m_shift:%d h_lock_duration:%d m_freq_lock_duration:%d m_phase_lock_duration:%d",
+		    s->mpll.pi.kp,
+		    s->mpll.pi.ki,
+		    s->mpll.pi.shift,
+		    s->helper.last_lock_duration_ms,
+		    s->mpll.last_freq_lock_duration_ms,
+		    s->mpll.last_phase_lock_duration_ms
+		    );
 
 		if( softpll.mpll.gain_sched )
 		{
@@ -640,9 +644,9 @@ void spll_show_stats(void)
 	for (ch = 0; ch < spll_n_chan_ref; ch++)
 		{
 			pp_printf( "softpll: ptracker%d: enabled %d n_avg %d value %d\n", ch,
-			softpll.ptrackers[ch].enabled ? 1 : 0,
-			softpll.ptrackers[ch].n_avg,
-			softpll.ptrackers[ch].phase_val );
+			s->ptrackers[ch].enabled ? 1 : 0,
+			s->ptrackers[ch].n_avg,
+			s->ptrackers[ch].phase_val );
 		}
 
 	
