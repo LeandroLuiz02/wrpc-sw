@@ -1010,7 +1010,7 @@ static const char *get_basename(const char *name)
 
 static int do_help(int argc, char *argv[])
 {
-	printf ("usage: %s [command] [OPTIONS...]\n", progname);
+	printf ("usage: %s [command] [-b BOARD] [OPTIONS...]\n", progname);
 	printf ("command is one of:\n");
 	for (unsigned i = 0; tools[i]; i++)
 		printf(" %-18s - %s\n", tools[i]->name, tools[i]->short_help);
