@@ -209,6 +209,7 @@ static int tx_fsm_update(struct wrc_lpdc_state *lpdc)
          	spll_init( SPLL_MODE_FREE_RUNNING_MASTER, 0, 0 );
             spll_set_ptracker_average_samples( 0, LPDC_NUM_PTRACKER_SAMPLES );
             tmo_init(&fsm->spll_lock_timeout, FSM_SPLL_LOCK_TIMEOUT_MS);
+            ep_sfp_enable( lpdc->endpoint, 0 );
             fsm->state = TX_SETUP_STATE_WAIT_SPLL_LOCK;
             break;
         }
@@ -378,7 +379,6 @@ static int tx_fsm_update(struct wrc_lpdc_state *lpdc)
 
         // enable the PCS+SFP on the port
         mdio_lpdc_write( lpdc, LPDC_MDIO_CTRL, LPDC_MDIO_CTRL_TX_ENABLE | LPDC_MDIO_CTRL_DMTD_SOURCE_RXRECCLK );
-        ep_sfp_enable( lpdc->endpoint, 1 );
 
         if( !fsm->cal_saved_phase_valid )
         {
@@ -770,6 +770,7 @@ s                timer_delay_ms(2000);
             sfp_info.sfp_params.dRx = 1000 + 0;
             sfp_info.sfp_params.dTx = 1000 + fsm_tx->tx_delta_correction;
 
+            ep_sfp_enable( lpdc->endpoint, 1 );
 	        ep_pcs_write(lpdc->endpoint,  EP_MDIO_MCR, EP_MDIO_MCR_SPEED1000 | EP_MDIO_MCR_FULLDPLX | EP_MDIO_MCR_ANENABLE | EP_MDIO_MCR_ANRESTART  );
             fsm->state = RX_SETUP_DONE;
             phy_dbg("[lpdc] RX Calibration Done!\n");
@@ -812,6 +813,9 @@ void phy_calibration_init(void)
 	timer_delay_ms(200);
 	ep_pcs_write(lpdc.endpoint, EP_MDIO_MCR, EP_MDIO_MCR_RESET);	/* reset the PHY */
 	ep_pcs_write(lpdc.endpoint, EP_MDIO_MCR, 0);	/* reset the PHY */
+
+    mdio_lpdc_write( &lpdc, LPDC_MDIO_CTRL, 0 );
+    mdio_lpdc_write( &lpdc, LPDC_MDIO_CTRL2, 0 );
 
     tx_fsm_init(&lpdc.tx_state);
     rx_fsm_init(&lpdc.rx_state);
