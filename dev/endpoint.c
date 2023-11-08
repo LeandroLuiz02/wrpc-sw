@@ -100,9 +100,13 @@ void ep_reset_phy(struct wr_endpoint_device* dev)
    we start up the software, otherwise the calibration RX/TX deltas may not be correct */
 	ep_pcs_write(dev, EP_MDIO_MCR, EP_MDIO_MCR_PDOWN);	/* reset the PHY */
 	
-	phy_dbg("Running long PHY reset...\n");
-	timer_delay_ms(1000);
-	phy_dbg("PHY reset complete\n");
+	/* Don't have delay in simulations */
+	#ifndef CONFIG_WR_NODE_SIM 
+		phy_dbg("Running long PHY reset...\n");
+		timer_delay_ms(1000);
+		phy_dbg("PHY reset complete\n");		 
+	#endif
+	
 	ep_pcs_write(dev, EP_MDIO_MCR, EP_MDIO_MCR_RESET);	/* reset the PHY */
 	ep_pcs_write(dev, EP_MDIO_MCR, 0);	/* reset the PHY */
 

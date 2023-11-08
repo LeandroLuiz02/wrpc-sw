@@ -39,9 +39,13 @@
 #define TESTBENCH_RET_OK 1
 #define TESTBENCH_RET_ERROR 2
 
+#define HDL_TESTBENCH_PADDR 0x4000
+
+/* used for synchronization with testbench */
+#define TESTBENCH_FLAG 0x12345678
 
 /*
- * This is a structure to pass information from the testbench to lm32's
+ * This is a structure to pass information from the testbench to risc-v's
  * software. hdl_testbench structure is meant to be set by testbench through
  * memory-manipulation.
  *
@@ -59,14 +63,11 @@ struct hdl_testbench_t {
 	uint32_t magic;
 	uint32_t version;
 	uint32_t test_num;
+	uint32_t flag;
 	uint32_t return_val;
 };
 
-struct hdl_testbench_t hdl_testbench = {
-	.magic = TESTBENCH_MAGIC,
-	.version = TESTBENCH_VERSION,
-	.test_num = 0,
-};
+volatile struct hdl_testbench_t *ptr_hdl_testbench;
 
 int wrpc_test_1(void);
 
@@ -88,9 +89,11 @@ static void wrc_sim_initialize(void)
 	mac_addr[5] = 0xBE;
 
 	ep_init(&wrc_endpoint_dev, (void *) BASE_EP);
+	ep_set_mac_addr( &wrc_endpoint_dev, mac_addr );
+
 	ep_enable(&wrc_endpoint_dev, 1, 1);
 
-	minic_init(&minic, &wrc_endpoint_dev);
+	minic_init(&minic, (void *) BASE_MINIC);
 	shw_pps_gen_init();
 	spll_very_init();
   /* wait for link up before enabling tm_time_valid_o */
@@ -114,7 +117,7 @@ static void wrc_sim_initialize(void)
  *     0xAA: this is the first frame (no previous frames)
  *     0xBB: previous frame was successfully received
  *     0xE*: something was wrong with the previously received frame
- *   # return value - it is the value returned by the reception funcation
+ *   # return value - it is the value returned by the reception function
  *
  */
 int wrpc_test_1(void)
@@ -145,7 +148,7 @@ int wrpc_test_1(void)
 	memcpy(tx_hdr.dstmac, "\x01\x1B\x19\x00\x00\x00", 6);
 	tx_hdr.ethtype = htons(0x88f7);
 
-	hdl_testbench.return_val = TESTBENCH_RET_OK;
+	ptr_hdl_testbench->return_val = TESTBENCH_RET_OK;
 	/** main loop, send test frames */
 	for (;;) {
 		/* seqID */
@@ -163,28 +166,32 @@ int wrpc_test_1(void)
 		 * reception. */
 		minic_tx_frame(&minic, &tx_hdr, tx_payload, 62, &hwts);
 		tx_cnt++;
-		ret = minic_rx_frame(&minic, &rx_hdr, rx_payload,
+		/* Whait until there is something in the Rx FIFO */
+		while (ret == 0)
+		{
+			ret = minic_rx_frame(&minic, &rx_hdr, rx_payload,
 				     NET_MAX_SKBUF_SIZE, &hwts);
+		}
 
 		/** check whether the received value is OK */
 		if (ret == 0) {
 			code = 0xE0; /* Error: returned zero value */
-			hdl_testbench.return_val = TESTBENCH_RET_ERROR;
+			ptr_hdl_testbench->return_val = TESTBENCH_RET_ERROR;
 		}
 		else if (ret > 0) {
 			pl_cnt = 0xFFFF & ((tx_payload[0] << 8) | tx_payload[1]);
 			if (pl_cnt == rx_cnt) {
 				rx_cnt++;
 				code = 0xBB; /* OK */
-				hdl_testbench.return_val = TESTBENCH_RET_OK;
+				ptr_hdl_testbench->return_val = TESTBENCH_RET_OK;
 			} else {
 				rx_cnt = pl_cnt+1;
 				code = 0xE1; /* Error: wrong seqID */
-				hdl_testbench.return_val = TESTBENCH_RET_ERROR;
+				ptr_hdl_testbench->return_val = TESTBENCH_RET_ERROR;
 			}
 		} else {
 			code = 0xE2; /* Error: error of rx */
-			hdl_testbench.return_val = TESTBENCH_RET_ERROR;
+			ptr_hdl_testbench->return_val = TESTBENCH_RET_ERROR;
 		}
 	}
 
@@ -192,19 +199,25 @@ int wrpc_test_1(void)
 
 void main(void)
 {
+	/* Initialize HDL testbench structure */
+	ptr_hdl_testbench = (struct hdl_testbench_t *) HDL_TESTBENCH_PADDR;
+
+	/* Check if testbench wrote data */
+	while (ptr_hdl_testbench->flag != TESTBENCH_FLAG);
+	
 	wrc_sim_initialize();
 
-	if (hdl_testbench.magic != TESTBENCH_MAGIC
-	    || hdl_testbench.magic != TESTBENCH_VERSION) {
+	if (ptr_hdl_testbench->magic != TESTBENCH_MAGIC
+	    || ptr_hdl_testbench->version != TESTBENCH_VERSION) {
 		/* Wrong testbench structure */
-		hdl_testbench.return_val = TESTBENCH_RET_ERROR;
+		ptr_hdl_testbench->return_val = TESTBENCH_RET_ERROR;
 		while (1)
 			;
 	}
-	switch (hdl_testbench.test_num) {
+	switch (ptr_hdl_testbench->test_num) {
 	case 0:
 		/* for simulations that just need link-up */
-		hdl_testbench.return_val = TESTBENCH_RET_NO_TEST;
+		ptr_hdl_testbench->return_val = TESTBENCH_RET_NO_TEST;
 		while (1)
 			;
 	case 1:
@@ -212,7 +225,7 @@ void main(void)
 		break;
 	default:
 		/* Wrong test number */
-		hdl_testbench.return_val = TESTBENCH_RET_ERROR;
+		ptr_hdl_testbench->return_val = TESTBENCH_RET_ERROR;
 		while (1)
 			;
 	}

@@ -19,6 +19,4 @@
 #define VERSION_WRPC_ADDR	0x28
 #define VERSION_PPSI_ADDR	0x29
 
-#define HDL_TESTBENCH_PADDR	0x38
-
 #endif /* __RISCV_CRT0_H__ */

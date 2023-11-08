@@ -44,15 +44,6 @@ version_wrpc:
 version_ppsi:
 	.byte  WRS_PPSI_SHMEM_VERSION
 	.byte 0, 0
-	
-#ifdef CONFIG_WR_NODE_SIM
-/* Pointer to a structure used by testbenches, use only when
- * CONFIG_WR_NODE_SIM is set */
-	.org HDL_TESTBENCH_PADDR
-	.global hdl_testbench_p
-hdl_testbench_p:
-	.word  hdl_testbench
-#endif
 
     .global _reset_handler
     .type   _reset_handler, @function
