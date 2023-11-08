@@ -19,7 +19,8 @@ struct spll_main_state {
 	int state;
 
 	spll_pi_t pi;
-	spll_lock_det_t ld;
+	spll_lock_det_t phase_ld;
+	spll_lock_det_t freq_ld;
 	spll_gain_schedule_t* gain_sched;
 
 #ifdef CONFIG_FRAC_SPLL
@@ -31,9 +32,13 @@ struct spll_main_state {
 
 	int tag_out_raw_d, tag_out_raw;
 	int tag_out_interp;
+#endif
+
 	int dref_dt, dout_dt, tag_ref_raw_d, tag_out_raw_d2;
 	int frequency_lock_threshold;
-#endif
+	int frequency_delock_threshold;
+	int freq_locked;
+
 	int discard_early_cnt;
 	int adder_ref, adder_out;
 	int tag_ref, tag_ref_d;
@@ -47,6 +52,10 @@ struct spll_main_state {
 	int enabled;
 	int ps_freeze, vco_freeze;
 	int dbg_src_id;
+
+	uint32_t lock_start_ms;
+	int last_phase_lock_duration_ms;
+	int last_freq_lock_duration_ms;
 };
 
 void mpll_init(struct spll_main_state *s, int id_ref,

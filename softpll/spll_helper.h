@@ -33,6 +33,8 @@ struct spll_helper_state {
 	int sample_n;
 	spll_pi_t pi;
 	spll_lock_det_t ld;
+	uint32_t lock_start_ms;
+	int last_lock_duration_ms;
 };
 
 void helper_very_init( struct spll_helper_state *s );

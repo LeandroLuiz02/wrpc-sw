@@ -13,6 +13,7 @@
 #include "softpll_ng.h"
 
 #define MPLL_DISCARD_EARLY_TAGS 10
+#define MPLL_FREQ_LOCK_SAMPLES 6000
 #define MPLL_TAG_WRAPAROUND 100000000
 
 #undef WITH_SEQUENCING
@@ -51,16 +52,20 @@ void mpll_init(struct spll_main_state *s, int id_ref, int id_out)
 	s->enabled = 0;
 
 	/* Freqency branch lock detection */
-	s->ld.threshold = 1200;
-	s->ld.lock_samples = 1000;
-	s->ld.delock_samples = 100;
+	s->freq_ld.threshold = 100;
+	s->freq_ld.lock_samples = 50;
+	s->freq_ld.delock_samples = 1000;
+
+	s->phase_ld.threshold = 1200;
+	s->phase_ld.lock_samples = 1000;
+	s->phase_ld.delock_samples = 100;
+
 	s->id_ref = id_ref;
 	s->id_out = id_out;
 	s->dac_index = id_out - spll_n_chan_ref;
 	s->dbg_src_id = (s->dac_index == 0) ? SPLL_DBG_SRC_MAIN : SPLL_DBG_SRC_AUX( s->dac_index - 1 );
 #ifdef CONFIG_FRAC_SPLL
 	s->div_ref = s->div_fb = 0;
-	s->frequency_lock_threshold = 1000;
 #endif
 
 	if( s->gain_sched )
@@ -71,7 +76,8 @@ void mpll_init(struct spll_main_state *s, int id_ref, int id_out)
 
 	pi_init((spll_pi_t *)&s->pi);
 	s->pi.dithered = 0;
-	ld_init((spll_lock_det_t *)&s->ld);
+	ld_init((spll_lock_det_t *)&s->freq_ld);
+	ld_init((spll_lock_det_t *)&s->phase_ld);
 }
 
 static inline void mpll_handle_gain_schedule( struct spll_main_state *s )
@@ -80,17 +86,17 @@ static inline void mpll_handle_gain_schedule( struct spll_main_state *s )
 
 	if (!s->gain_sched)
 	{
-		s->locked = s->ld.locked;
+		s->locked = s->phase_ld.locked;
 		return;
 	}
 
-	if( s->gain_sched->locked_d && !s->ld.locked ) // Pll out-of-lock? restart
+	if( s->gain_sched->locked_d && !s->phase_ld.locked ) // Pll out-of-lock? restart
 	{
 		s->gain_sched->current_stage = 0;
 		s->locked = 0;
 		do_update = 1;
 	}
-	else if ( !s->gain_sched->locked_d && s->ld.locked ) // PLL lock acquired? advance stage
+	else if ( !s->gain_sched->locked_d && s->phase_ld.locked ) // PLL lock acquired? advance stage
 	{
 		spll_debug(s->dbg_src_id, SPLL_DBG_SIGNAL_EVENT, SPLL_DBG_EVT_GAIN_SWITCH, 0);
 		if ( s->gain_sched->current_stage == s->gain_sched->n_stages - 1 )
@@ -113,14 +119,14 @@ static inline void mpll_handle_gain_schedule( struct spll_main_state *s )
 		s->pi.kp = stage->kp;
 		s->pi.ki = stage->ki;
 		s->pi.shift = stage->shift;
-		s->ld.lock_samples = stage->lock_samples;
-		s->ld.lock_cnt = 0;
-		s->ld.lock_changed = 0;
-		s->ld.locked = 0;
+		s->phase_ld.lock_samples = stage->lock_samples;
+		s->phase_ld.lock_cnt = 0;
+		s->phase_ld.lock_changed = 0;
+		s->phase_ld.locked = 0;
 		s->gain_sched->locked_d = 0;
 	}
 
-	s->gain_sched->locked_d = s->ld.locked;
+	s->gain_sched->locked_d = s->phase_ld.locked;
 }
 
 void mpll_start(struct spll_main_state *s)
@@ -136,6 +142,10 @@ void mpll_start(struct spll_main_state *s)
 	s->tag_out = -1;
 	s->tag_ref_d = -1;
 	s->tag_out_d = -1;
+	s->tag_ref_raw_d = -1;
+	s->tag_out_raw_d2 = -1;
+
+	s->freq_locked = 0;
 
 	s->phase_shift_target = 0;
 	s->phase_shift_current = 0;
@@ -150,6 +160,9 @@ void mpll_start(struct spll_main_state *s)
 	s->div_cnt = 0;
 #endif
 
+	s->last_freq_lock_duration_ms = -1;
+	s->last_phase_lock_duration_ms = -1;
+
 	if( s->gain_sched )
 	{
 		s->gain_sched->current_stage = 0;
@@ -157,13 +170,16 @@ void mpll_start(struct spll_main_state *s)
 		s->pi.kp = s->gain_sched->stages[0].kp;
 		s->pi.ki = s->gain_sched->stages[0].ki;
 		s->pi.shift = s->gain_sched->stages[0].shift;
-		s->ld.lock_samples = s->gain_sched->stages[0].lock_samples;
-		s->ld.lock_cnt = 0;
+		s->phase_ld.lock_samples = s->gain_sched->stages[0].lock_samples;
+		s->phase_ld.lock_cnt = 0;
 	}
 
 	pi_init((spll_pi_t *)&s->pi);
 	s->pi.dithered = 0;
-	ld_init((spll_lock_det_t *)&s->ld);
+	ld_init((spll_lock_det_t *)&s->phase_ld);
+	ld_init((spll_lock_det_t *)&s->freq_ld);
+
+	s->lock_start_ms = timer_get_tics();
 
 	spll_enable_tagger(s->id_ref, 1);
 	spll_enable_tagger(s->id_out, 1);
@@ -176,7 +192,7 @@ void mpll_stop(struct spll_main_state *s)
 	s->enabled = 0;
 }
 
-#ifdef CONFIG_FRAC_SPLL
+//#ifdef CONFIG_FRAC_SPLL
 static inline void update_dtag_dt( int *dtag_dt, int tag, int *tag_d )
 {
 	if( tag == *tag_d )
@@ -187,7 +203,7 @@ static inline void update_dtag_dt( int *dtag_dt, int tag, int *tag_d )
 			*dtag_dt += (1<<TAG_BITS);
 	*tag_d = tag;
 }
-#endif
+//#endif
 
 int mpll_update(struct spll_main_state *s, int tag, int source)
 {
@@ -272,9 +288,7 @@ int mpll_update(struct spll_main_state *s, int tag, int source)
 	}
 
 	if (s->tag_ref >= 0) {
-#ifdef CONFIG_FRAC_SPLL
 		update_dtag_dt( &s->dref_dt, s->tag_ref, &s->tag_ref_raw_d );
-#endif
 
 		if(s->tag_ref_d >= 0 && s->tag_ref_d > s->tag_ref)
 			s->adder_ref += (1 << TAG_BITS);
@@ -284,9 +298,7 @@ int mpll_update(struct spll_main_state *s, int tag, int source)
 
 
 	if (s->tag_out >= 0) {
-#ifdef CONFIG_FRAC_SPLL
 		update_dtag_dt( &s->dout_dt, s->tag_out, &s->tag_out_raw_d2 );
-#endif
 
 		if(s->tag_out_d >= 0 && s->tag_out_d > s->tag_out)
 			s->adder_out += (1 << TAG_BITS);
@@ -323,15 +335,22 @@ int mpll_update(struct spll_main_state *s, int tag, int source)
 
 #endif
 
-#ifdef CONFIG_FRAC_SPLL
-		if( abs(s->dout_dt - s->dref_dt) > s->frequency_lock_threshold )
+		int freq_error = s->dout_dt - s->dref_dt;
+
+		ld_update((spll_lock_det_t *)&s->freq_ld, freq_error);
+
+		if ( s->freq_ld.lock_changed && s->freq_ld.locked )
 		{
-			err = s->dref_dt - s->dout_dt;
+			s->last_freq_lock_duration_ms = timer_get_tics() - s->lock_start_ms;
+		}
+
+		if( !s->freq_ld.locked )
+		{
+			err = freq_error;
 		}
 		else
-#endif
 		{
-		err = s->adder_ref + s->tag_ref - s->adder_out - s->tag_out;
+			err = s->adder_ref + s->tag_ref - s->adder_out - s->tag_out;
 		}
 
 #ifndef WITH_SEQUENCING
@@ -345,7 +364,8 @@ int mpll_update(struct spll_main_state *s, int tag, int source)
 		   2**HPLL_N.
 
 		   Proper solution: tag sequence numbers */
-		if (s->locked) {
+		if (s->freq_ld.locked)
+		{
 			err &= (1 << HPLL_N) - 1;
 			if (err & (1 << (HPLL_N - 1)))
 				err |= ~((1 << HPLL_N) - 1);
@@ -365,8 +385,8 @@ int mpll_update(struct spll_main_state *s, int tag, int source)
 		spll_debug(s->dbg_src_id, SPLL_DBG_SIGNAL_PHASE_CURRENT, s->phase_shift_current, 0);
 		spll_debug(s->dbg_src_id, SPLL_DBG_SIGNAL_PHASE_TARGET, s->phase_shift_target, 0);
 		spll_debug(s->dbg_src_id, SPLL_DBG_SIGNAL_TIME_MS, timer_get_tics(), 0);
-		spll_debug(s->dbg_src_id, SPLL_DBG_SIGNAL_REF, s->tag_ref + s->adder_ref, 0);
-		spll_debug(s->dbg_src_id, SPLL_DBG_SIGNAL_TAG, s->tag_out + s->adder_out, 0);
+		spll_debug(s->dbg_src_id, SPLL_DBG_SIGNAL_REF, s->dref_dt, 0);
+		spll_debug(s->dbg_src_id, SPLL_DBG_SIGNAL_TAG, s->dout_dt, 0);
 		spll_debug(s->dbg_src_id, SPLL_DBG_SIGNAL_ERR, err, 0);
 		spll_debug(s->dbg_src_id, SPLL_DBG_SIGNAL_SAMPLE_ID, s->sample_n++, 0);
 		spll_debug(s->dbg_src_id, SPLL_DBG_SIGNAL_Y, y, 1);
@@ -399,14 +419,26 @@ int mpll_update(struct spll_main_state *s, int tag, int source)
 			}
 		}
 
-		ld_update((spll_lock_det_t *)&s->ld, err);
-		if( s->ld.lock_changed) 
-			spll_debug(s->dbg_src_id, SPLL_DBG_SIGNAL_EVENT, SPLL_DBG_EVT_LOCK_ACQUIRED, 1);
+		if(s->freq_ld.locked)
+		{
 
-		mpll_handle_gain_schedule(s);
+			ld_update((spll_lock_det_t *)&s->phase_ld, err);
+			if( s->phase_ld.lock_changed) 
+			{
+				spll_debug(s->dbg_src_id, SPLL_DBG_SIGNAL_EVENT, 
+				s->phase_ld.locked ? SPLL_DBG_EVT_LOCK_ACQUIRED : SPLL_DBG_EVT_LOCK_LOSS, 1);
 
-		if(s->locked)
-			return SPLL_LOCKED;
+				if( s->phase_ld.locked )
+				{
+					s->last_phase_lock_duration_ms = timer_get_tics() - s->lock_start_ms;
+				}
+			}
+
+			mpll_handle_gain_schedule(s);
+
+			if(s->locked)
+				return SPLL_LOCKED;
+		}
 	}
 
 	return SPLL_LOCKING;

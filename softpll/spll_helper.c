@@ -46,8 +46,8 @@ void helper_update(struct spll_helper_state *s, int tag,
 	if (source != s->ref_src)
 		return;
 	
-	spll_debug(SPLL_DBG_SRC_HELPER, SPLL_DBG_SIGNAL_TAG, tag, 0);
-	spll_debug(SPLL_DBG_SRC_HELPER, SPLL_DBG_SIGNAL_REF, s->p_setpoint, 0);
+	//spll_debug(SPLL_DBG_SRC_HELPER, SPLL_DBG_SIGNAL_TAG, tag, 0);
+	//spll_debug(SPLL_DBG_SRC_HELPER, SPLL_DBG_SIGNAL_REF, s->p_setpoint, 0);
 
 	if (s->tag_d0 < 0) {
 		/* First tag. */
@@ -86,12 +86,17 @@ void helper_update(struct spll_helper_state *s, int tag,
 	y = pi_update((spll_pi_t *)&s->pi, err);
 	SPLL->DAC_HPLL = y;
 
-	spll_debug(SPLL_DBG_SRC_HELPER, SPLL_DBG_SIGNAL_TIME_MS, timer_get_tics(), 0);
-	spll_debug(SPLL_DBG_SRC_HELPER, SPLL_DBG_SIGNAL_SAMPLE_ID, s->sample_n++, 0);
-	spll_debug(SPLL_DBG_SRC_HELPER, SPLL_DBG_SIGNAL_Y, y, 0);
-	spll_debug(SPLL_DBG_SRC_HELPER, SPLL_DBG_SIGNAL_ERR, err, 1);
+	//spll_debug(SPLL_DBG_SRC_HELPER, SPLL_DBG_SIGNAL_TIME_MS, timer_get_tics(), 0);
+	//spll_debug(SPLL_DBG_SRC_HELPER, SPLL_DBG_SIGNAL_SAMPLE_ID, s->sample_n++, 0);
+	//spll_debug(SPLL_DBG_SRC_HELPER, SPLL_DBG_SIGNAL_Y, y, 0);
+	//spll_debug(SPLL_DBG_SRC_HELPER, SPLL_DBG_SIGNAL_ERR, err, 1);
 
 	ld_update((spll_lock_det_t *)&s->ld, err);
+
+	if( s->ld.lock_changed && s->ld.locked )
+	{
+		s->last_lock_duration_ms = timer_get_tics() - s->lock_start_ms;
+	}
 }
 
 void helper_start(struct spll_helper_state *s)
@@ -107,12 +112,15 @@ void helper_start(struct spll_helper_state *s)
 	s->p_adder = 0;
 	s->sample_n = 0;
 	s->tag_d0 = -1;
+	s->last_lock_duration_ms = -1;
 
 	pi_init((spll_pi_t *)&s->pi);
 	ld_init((spll_lock_det_t *)&s->ld);
 
+	s->lock_start_ms = timer_get_tics();
+
 	spll_enable_tagger(s->ref_src, 1);
-	spll_debug(SPLL_DBG_SRC_HELPER, SPLL_DBG_SIGNAL_EVENT, SPLL_DBG_EVT_START, 1);
+	//spll_debug(SPLL_DBG_SRC_HELPER, SPLL_DBG_SIGNAL_EVENT, SPLL_DBG_EVT_START, 1);
 }
 
 void helper_switch_reference(struct spll_helper_state *s, int new_ref)

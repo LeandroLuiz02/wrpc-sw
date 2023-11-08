@@ -459,7 +459,7 @@ int spll_check_lock(int channel)
 		return (softpll.seq_state == SEQ_READY);
 	else
 		return (softpll.seq_state == SEQ_READY)
-		    && softpll.aux[channel - 1].pll.dmtd.ld.locked;
+		    && softpll.aux[channel - 1].pll.dmtd.phase_ld.locked;
 }
 
 static int32_t to_picos(int32_t units)
@@ -576,7 +576,7 @@ void spll_show_stats(void)
 	if (softpll.mode > 0)
 	{
 		    pp_printf("softpll: irqs:%d seq:%s mode:%d "
-		     "alignment_state:%d HL%d ML%d HY=%d MY=%d DelCnt=%d setpoint:%d refcnt:%d tagcnt:%d h_kp:%d h_ki:%d h_shift:%d m_kp:%d m_ki:%d m_shift:%d",
+		     "alignment_state:%d HL%d ML%d HY=%d MY=%d DelCnt=%d setpoint:%d refcnt:%d tagcnt:%d h_kp:%d h_ki:%d h_shift:%d m_kp:%d m_ki:%d m_shift:%d h_lock_duration:%d m_freq_lock_duration:%d m_phase_lock_duration:%d",
 		      s->irq_count, statename,
 			      s->mode, s->ext.align_state,
 			      s->helper.ld.locked, s->mpll.locked,
@@ -588,7 +588,10 @@ void spll_show_stats(void)
 				  s->helper.pi.shift,
 				  s->mpll.pi.kp,
 				  s->mpll.pi.ki,
-				  s->mpll.pi.shift
+				  s->mpll.pi.shift,
+				  s->helper.last_lock_duration_ms,
+				  s->mpll.last_freq_lock_duration_ms,
+				  s->mpll.last_phase_lock_duration_ms
 				);
 
 		if( softpll.mpll.gain_sched )
@@ -735,7 +738,7 @@ static int spll_update_aux_clock(int ch)
 		break;
 
 	case AUX_LOCK_PLL:
-		if (s->pll.dmtd.ld.locked) {
+		if (s->pll.dmtd.phase_ld.locked) {
 			pll_verbose ("softpll: channel %d locked [aligning @ %d ps]\n", ch, softpll.mpll_shift_ps);
 			set_phase_shift(ch, softpll.mpll_shift_ps);
 			s->seq_state = AUX_ALIGN_PHASE;
@@ -753,7 +756,7 @@ static int spll_update_aux_clock(int ch)
 		break;
 
 	case AUX_SLAVE_READY:
-		if (!softpll.mpll.locked || !s->pll.dmtd.ld.locked) {
+		if (!softpll.mpll.locked || !s->pll.dmtd.phase_ld.locked) {
 			pll_verbose("softpll: aux channel %d or mpll lost lock\n", ch);
 			set_channel_status(ch, 0);
 			s->seq_state = AUX_DISABLED;
