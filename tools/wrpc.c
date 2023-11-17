@@ -1099,8 +1099,12 @@ static int do_load(int argc, char *argv[])
 
 static void help_vuart(void)
 {
-	fprintf(stderr, "%s BOARD-OPTIONS [-k]\n", progname);
+	fprintf(stderr, "%s BOARD-OPTIONS [-k] [-c <cmd>] [-r] [-t <timeout>]\n", progname);
 	fprintf(stderr, " -k keep terminal\n");
+	fprintf(stderr, " -c <cmd> execute command\n");
+	fprintf(stderr, " -t <timeout> set a timeout to execute a command\n");
+	fprintf(stderr, " -r do not expect stdin (may be useful for scripts),"
+                        "    conflicts with -c\n");
 }
 
 static uint32_t vuart_readl(struct board *board, int reg)
@@ -1281,6 +1285,31 @@ static void wrpc_vuart_term(struct board *board,
 		wrpc_vuart_restore_tty(&oldkey);
 }
 
+static void wrpc_vuart_only_read(struct board *board,
+                            unsigned timeout)
+{
+	int need_exit = 0;
+	int rx;
+	time_t start_time;
+
+	fprintf(stderr, "[press C-a to exit]\n");
+
+	if (timeout)
+		start_time = get_running_secs();
+
+	while(!need_exit) {
+		/* Print all the incoming characters */
+		while((rx = wr_vuart_rx(board)) > 0) {
+			putchar(rx);
+		}
+		fflush(stdout);
+		usleep(10);
+
+		if (timeout && get_running_secs() >= start_time + timeout)
+			break;
+	}
+}
+
 static void wrpc_vuart_command(struct board *board, char *command)
 {
 	//above is place for old and new port settings for keyboard teletype
@@ -1342,12 +1371,13 @@ static int do_vuart(int argc, char *argv[])
 	int keep_term = 0;
 	char *cmd = NULL;
         unsigned timeout = 0;
+	int read_only = 0;
 
 	if (board_open(&argc, argv) < 0)
 		return 1;
 
 	/* Parse specific args */
-	while ((c = getopt (argc, argv, "c:kt:")) != -1) {
+	while ((c = getopt (argc, argv, "c:kt:r")) != -1) {
 		switch (c) {
 		case 'c':
 			/* Enable command mode */
@@ -1359,12 +1389,22 @@ static int do_vuart(int argc, char *argv[])
                 case 't':
                         timeout = atoi(optarg);
                         break;
+		case 'r':
+			read_only = 1;
+                        break;
 		case '?':
 			break;
 		}
 	}
 
-	if (cmd)
+	if (cmd && read_only) {
+		perror("-r conficts with -c\n");
+		return 1;
+	}
+
+	if (read_only)
+		wrpc_vuart_only_read(board, timeout);
+	else if (cmd)
 		wrpc_vuart_command(board, cmd);
 	else
 		wrpc_vuart_term(board, keep_term, timeout);
