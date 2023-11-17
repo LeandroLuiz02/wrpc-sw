@@ -1623,10 +1623,19 @@ void spll_readout_direct(struct board* board )
 
 		while( cnt < buf_size - max_record_size )
 		{
+
 			uint32_t fifo_sr = board->readl(board, OFFSET_SOFTPLL + offsetof( struct SPLL_WB, DFR_HOST_CSR ) );
+
+
 
 			if( got_a_full_record && ( fifo_sr & SPLL_DFR_HOST_CSR_EMPTY ) )
 				break;
+			else
+			{
+				do {
+					fifo_sr = board->readl(board, OFFSET_SOFTPLL + offsetof( struct SPLL_WB, DFR_HOST_CSR ) );
+				} while( fifo_sr & SPLL_DFR_HOST_CSR_EMPTY );
+			}
 
 			uint32_t r = board->readl(board, OFFSET_SOFTPLL + offsetof( struct SPLL_WB, DFR_HOST_R0 ) );
 			buf[cnt++] = r;
