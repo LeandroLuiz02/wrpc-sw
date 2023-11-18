@@ -13,8 +13,8 @@
 #include "softpll_ng.h"
 
 #define MPLL_DISCARD_EARLY_TAGS 10
-#define MPLL_FREQ_LOCK_SAMPLES 6000
 #define MPLL_TAG_WRAPAROUND 100000000
+#define MPLL_FREQ_PRELOCK_GAIN_BOOST 20
 
 #undef WITH_SEQUENCING
 
@@ -52,9 +52,11 @@ void mpll_init(struct spll_main_state *s, int id_ref, int id_out)
 	s->enabled = 0;
 
 	/* Freqency branch lock detection */
-	s->freq_ld.threshold = 100;
+	s->freq_ld.threshold = 50;
 	s->freq_ld.lock_samples = 50;
-	s->freq_ld.delock_samples = 1000;
+	s->freq_ld.delock_samples = 20000;
+
+	s->freq_prelock_gain_boost = MPLL_FREQ_PRELOCK_GAIN_BOOST;
 
 	s->phase_ld.threshold = 1200;
 	s->phase_ld.lock_samples = 1000;
@@ -144,8 +146,6 @@ void mpll_start(struct spll_main_state *s)
 	s->tag_out_d = -1;
 	s->tag_ref_raw_d = -1;
 	s->tag_out_raw_d2 = -1;
-
-	s->freq_locked = 0;
 
 	s->phase_shift_target = 0;
 	s->phase_shift_current = 0;
@@ -346,7 +346,7 @@ int mpll_update(struct spll_main_state *s, int tag, int source)
 
 		if( !s->freq_ld.locked )
 		{
-			err = freq_error;
+			err = -s->freq_prelock_gain_boost * freq_error;
 		}
 		else
 		{
