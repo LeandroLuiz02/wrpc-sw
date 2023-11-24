@@ -202,10 +202,10 @@ void main(void)
 	/* Initialize HDL testbench structure */
 	ptr_hdl_testbench = (struct hdl_testbench_t *) HDL_TESTBENCH_PADDR;
 
+	wrc_sim_initialize();
+
 	/* Check if testbench wrote data */
 	while (ptr_hdl_testbench->flag != TESTBENCH_FLAG);
-	
-	wrc_sim_initialize();
 
 	if (ptr_hdl_testbench->magic != TESTBENCH_MAGIC
 	    || ptr_hdl_testbench->version != TESTBENCH_VERSION) {
