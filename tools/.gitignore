@@ -1,6 +1,7 @@
 genraminit
 genramvhd
 genrammif
+genrammem
 wrpc-uart-sw
 wrpc-w1-read
 wrpc-w1-write
