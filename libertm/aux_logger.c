@@ -194,8 +194,6 @@ void spll_readout_ertm14( struct ertm_status *handle, FILE* f_out, int undersamp
 
 void linspace( double start, double stop, int n, double *out )
 {
-	double step = (stop - start) / (double)(n - 1);
-
 	int i;
 	for(i=0;i<n;i++)
 	{
@@ -231,7 +229,7 @@ int wait_wdiag_bits( struct ertm_status *handle, uint32_t mask, int timeout_secs
 	return 0;
 }
 
-main()
+int main(void)
 {
 	static char usb[] = "/dev/ttyUSB2";
 	struct ertm_status *handle = ertm_init(NULL);
@@ -269,8 +267,8 @@ main()
 	for(pp=0;pp<n_kp_gains;pp++)
 	{
 		char cmd[64],fname[64];
-		printf("Try kp=%d,ki=%d\n", -kp_gains[pp], -ki_gains[ii] );
-		sprintf(cmd,"pll gain 0 0 %d %d\n", -kp_gains[pp], -ki_gains[ii] );
+		printf("Try kp=%f,ki=%f\n", -kp_gains[pp], -ki_gains[ii] );
+		sprintf(cmd,"pll gain 0 0 %f %f\n", -kp_gains[pp], -ki_gains[ii] );
 		ertm_execute_shell_command( handle, cmd);
 		usleep(100000);
 		ertm_execute_shell_command( handle, "pll init 4 0 0");
@@ -285,9 +283,9 @@ main()
 		}
 
 		total_samples = 0;
-		sprintf(fname,"spll-helper-kp-%d-ki-%d.dat", kp_gains[pp],ki_gains[ii]);
+		sprintf(fname,"spll-helper-kp-%f-ki-%f.dat", kp_gains[pp],ki_gains[ii]);
 		FILE *f_out=fopen(fname,"wb");
-		fprintf(f_out,"main kp=%d ki=%d\n", -kp_gains[pp],-ki_gains[ii]);
+		fprintf(f_out,"main kp=%f ki=%f\n", -kp_gains[pp],-ki_gains[ii]);
 		spll_readout_ertm14( handle, f_out, 3 );
 		fclose(f_out);
 		fflush(stdout);
