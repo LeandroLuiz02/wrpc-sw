@@ -130,17 +130,6 @@ config TEMP_HIGH_RAPPEL
 	int
 	default 60
 
-config PLL_VERBOSE
-	boolean
-	default y if TARGET_WR_SWITCH
-
-config PFILTER_VERBOSE
-	boolean
-
-config WRC_VERBOSE
-	boolean
-	default y if TARGET_WR_SWITCH
-
 config VLAN
 	boolean
 
@@ -787,6 +776,7 @@ config NET_VERBOSE
 config PLL_VERBOSE
 	depends on DEVELOPER
 	boolean "Verbose messages in softpll"
+	default y if TARGET_WR_SWITCH
 	help
 	  Outputs additional debugging messages in the softpll. Off by default.
 
@@ -802,6 +792,9 @@ config SNMP_VERBOSE
 	boolean "More verbose messages in SNMP"
 	help
 	  This enables some more diagnostic messages. Normally off.
+
+config PFILTER_VERBOSE
+	boolean
 
 config TEMP_FAKE
 	depends on DEVELOPER && TEMP_SENSORS
