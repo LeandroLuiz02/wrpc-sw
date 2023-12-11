@@ -435,7 +435,6 @@ int spll_start_channel(int channel)
 	m->div_cnt = 0;
 	m->div_ref = a->div_ref;
 	m->div_fb = a->div_fb;
-	m->frequency_lock_threshold = 100; // HACK: make this programmable (we need higher threshold for the main VCO than for the AUXes, esp. silabs)
 #endif
 
 	mpll_start(m);
