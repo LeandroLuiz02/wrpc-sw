@@ -485,6 +485,9 @@ void shell_register_commands(void)
 	REGISTER_WRC_COMMAND(pll);
 	if (HAS_CMD_PPS)
 		REGISTER_WRC_COMMAND(pps);
+#ifdef CONFIG_CMD_EP
+	REGISTER_WRC_COMMAND(ep);
+#endif
 	REGISTER_WRC_COMMAND(ps);
 	REGISTER_WRC_COMMAND(ptp);
 	REGISTER_WRC_COMMAND(ptrack);
