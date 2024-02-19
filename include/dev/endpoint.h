@@ -46,7 +46,6 @@ int ep_is_mac_addr_set(struct wr_endpoint_device* dev);
 int ep_enable(struct wr_endpoint_device* dev, int enabled, int autoneg);
 int ep_link_up(struct wr_endpoint_device* dev, uint16_t * lpa);
 int ep_get_bitslide(struct wr_endpoint_device* dev);
-int ep_get_deltas(struct wr_endpoint_device *dev, int *delta_tx, int *delta_rx);
 int ep_timestamper_cal_pulse(struct wr_endpoint_device* dev);
 int ep_sfp_enable(struct wr_endpoint_device* dev, int ena);
 

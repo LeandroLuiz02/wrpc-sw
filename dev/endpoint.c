@@ -179,14 +179,6 @@ int ep_get_bitslide(struct wr_endpoint_device* dev)
 	    (( ep_pcs_read(dev, EP_MDIO_WR_SPEC) & EP_MDIO_WR_SPEC_BSLIDE_MASK) >> EP_MDIO_WR_SPEC_BSLIDE_SHIFT);
 }
 
-/* Returns the TX/RX latencies. They are valid only when the link is up. */
-int ep_get_deltas(struct wr_endpoint_device* dev, int *delta_tx, int *delta_rx)
-{
-	/* fixme: RX/TX delays related to HW (except SFP) should be stored in
-	 * calibration block in the EEPROM on the FMC. */
-	return 0;
-}
-
 int ep_timestamper_cal_pulse(struct wr_endpoint_device* dev)
 {
 	ep_write(dev, EP_REG_TSCR, ep_read(dev, EP_REG_TSCR) | EP_TSCR_RX_CAL_START );
