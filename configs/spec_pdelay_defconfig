@@ -140,6 +140,7 @@ CONFIG_BUILD_INIT=y
 CONFIG_INIT_COMMAND="vlan off;ptp stop;sfp match;mode slave;ptp start"
 CONFIG_HAS_FLASH_INIT=1
 CONFIG_FLASH_INIT=y
+CONFIG_AUX_DIAG=y
 # CONFIG_CMD_CALIBRATION_SHOW is not set
 # CONFIG_CMD_REFRESH is not set
 # CONFIG_CMD_PPS is not set

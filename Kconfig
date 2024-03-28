@@ -297,6 +297,14 @@ config SNMP_AUX_DIAG
 	help
 	  This option adds a branch wrpcAuxDiag to the SNMP
 
+config AUX_DIAG
+	depends on WR_NODE
+	default n
+	boolean "Add support for auxiliary diagnostics registers"
+	help
+	  This option adds support for read/write of aux diag registers and
+	  the diag command.
+
 config WR_DIAG
 	depends on WR_NODE
 	boolean "Write of WRPC diagnostics to dedicated WB registers"
