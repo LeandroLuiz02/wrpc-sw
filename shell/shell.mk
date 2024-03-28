@@ -31,3 +31,4 @@ obj-$(CONFIG_CMD_EP) +=				shell/cmd_ep.o
 obj-$(CONFIG_FLASH_INIT) +=			shell/cmd_init.o
 obj-$(CONFIG_VLAN) +=				shell/cmd_vlan.o
 obj-$(CONFIG_FREQUENCY_MONITOR) +=	shell/cmd_freqmon.o
+obj-$(CONFIG_AUX_DIAG) += 			shell/cmd_diag.o
