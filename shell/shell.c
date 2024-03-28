@@ -64,6 +64,12 @@
 #define HAS_CMD_LL 0
 #endif
 
+#ifdef CONFIG_AUX_DIAG
+#define HAS_CMD_DIAG 1
+#else
+#define HAS_CMD_DIAG 0
+#endif
+
 #ifdef CONFIG_CMD_NETCONSOLE
 #define HAS_CMD_NETCONSOLE 1
 #else
@@ -466,7 +472,8 @@ void shell_register_commands(void)
 		REGISTER_WRC_COMMAND(delays);
 	if (HAS_CMD_LL)
 		REGISTER_WRC_COMMAND(devmem);
-	REGISTER_WRC_COMMAND(diag);
+	if (HAS_CMD_DIAG)
+		REGISTER_WRC_COMMAND(diag);
 	if (HAS_TEMP_FAKE)
 		REGISTER_WRC_COMMAND(faketemp);
 	REGISTER_WRC_COMMAND(gui);
