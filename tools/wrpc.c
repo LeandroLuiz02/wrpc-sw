@@ -446,8 +446,8 @@ static int cernvme_map(struct board_cernvme *board,
         return 0;
 }
 
-static int board_cernvme_init(struct board *board_base,
-                              int *argc, char *argv[])
+static int board_cernvme_init_common(struct board *board_base,
+				     int *argc, char *argv[])
 {
 	struct board_cernvme *board = (struct board_cernvme *)board_base;
 
@@ -539,6 +539,19 @@ static int board_cernvme_init(struct board *board_base,
         return cernvme_map (board, am, data_width, vme_addr, offset);
 }
 
+static int board_cernvme_init(struct board *board_base,
+                              int *argc, char *argv[])
+{
+	struct board_cernvme *board = (struct board_cernvme *)board_base;
+
+	int res = board_cernvme_init_common(board_base, argc, argv);
+	if (res < 0)
+		return res;
+
+	board->parent.is_be = 1;
+	return 0;
+}
+
 static int board_cernvme_fini(struct board *base_board)
 {
 	struct board_cernvme *board = (struct board_cernvme *)base_board;
@@ -547,7 +560,7 @@ static int board_cernvme_fini(struct board *base_board)
 	return 0;
 }
 
-static void board_cernvme_help(void)
+static void board_cernvme_help_common(void)
 {
         printf("VME board (using CERN-vme bridge)\n");
         printf(" -a, --address ADDR   board address\n");
@@ -556,6 +569,12 @@ static void board_cernvme_help(void)
         printf(" -m, --am AM          address modified\n");
         printf(" -o, --offset OFF     offset\n");
         printf("One of -a or -s is required\n");
+}
+
+static void board_cernvme_help(void)
+{
+	printf("VME board (using CERN-vme bridge)\n");
+	board_cernvme_help_common();
 }
 
 static struct board_cernvme board_cernvme =
@@ -576,13 +595,50 @@ static struct board_cernvme board_cernvme =
 	},
 };
 
+static int board_cernvme_le_init(struct board *board_base,
+				  int *argc, char *argv[])
+{
+	struct board_cernvme *board = (struct board_cernvme *)board_base;
+
+	int res = board_cernvme_init_common(board_base, argc, argv);
+	if (res < 0)
+		return res;
+
+	board->parent.is_be = 0;
+	return 0;
+}
+
+static void board_cernvme_le_help(void)
+{
+	printf("VME little-endian board (using CERN-vme bridge)\n");
+	board_cernvme_help_common();
+}
+
+static struct board_cernvme board_cernvme_le =
+{
+	{
+		{
+			"vme",
+			board_cernvme_le_init,
+			board_cernvme_fini,
+			board_cernvme_le_help,
+			mem_readl,
+			mem_writel
+		},
+		NULL,
+		0,
+		NULL,
+		0
+	},
+};
+
 static uint32_t wr2rf_readl(struct board *base_board, unsigned reg)
 {
 	struct board_mem *board = (struct board_mem *)base_board;
-        volatile uint16_t *addr = (volatile uint16_t *)(board->base + reg);
-        uint32_t l, h, res;
+	volatile uint16_t *addr = (volatile uint16_t *)(board->base + reg);
+	uint32_t l, h, res;
 
-        /* A 16b VME bus with special circuitery to get an atomic 32b value */
+	/* A 16b VME bus with special circuitery to get an atomic 32b value */
 	l = addr[0];
 	h = addr[1];
 	res = (l << 16) | h;
@@ -655,16 +711,17 @@ static struct board_cernvme board_wr2rf =
 #endif
 
 static struct board *boards[] = {
-        &board_pci.parent.parent,
-        &board_spec.parent.parent,
+	&board_pci.parent.parent,
+	&board_spec.parent.parent,
 #ifdef SUPPORT_ERTM
 	&board_ertm14.parent,
 #endif
 #ifdef SUPPORT_CERN_VMEBRIDGE
-        &board_cernvme.parent.parent,
-        &board_wr2rf.parent.parent,
+	&board_cernvme.parent.parent,
+	&board_cernvme_le.parent.parent,
+	&board_wr2rf.parent.parent,
 #endif
-        NULL
+	NULL
 };
 
 static struct board *find_board(const char *name)
