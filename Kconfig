@@ -185,12 +185,6 @@ config LATENCY_SYSLOG
 
 comment "features"
 
-menu "PPSI config"
-	depends on WRPC_PPSI
-	source "ppsi/Kconfig_ppsi"
-
-endmenu
-
 config IPMI_CONSOLE
 	bool "Support for IPMI remote console"
 	depends on TARGET_ERTM14
@@ -875,3 +869,10 @@ config PRINTF_NONE
 	boolean
 	default PRINTF_IS_NONE
 
+comment "PTP configuration"
+
+menu "PPSI config"
+	depends on WRPC_PPSI
+	source "ppsi/Kconfig_ppsi"
+
+endmenu
