@@ -93,14 +93,16 @@ int suart_get_tx_fifo_count( struct simple_uart_device *dev )
 
 int suart_purge_tx_fifo( struct simple_uart_device *dev )
 {
-	// fixme
-	return -1;
+	uint32_t r = readl( dev->base + UART_REG_CR );
+	writel((r | UART_CR_TX_FIFO_PURGE), dev->base + UART_REG_CR );
+	return 0;
 }
 
 int suart_purge_rx_fifo( struct simple_uart_device *dev )
 {
-	// fixme
-	return -1;
+	uint32_t r = readl( dev->base + UART_REG_CR );
+	writel((r | UART_CR_RX_FIFO_PURGE), dev->base + UART_REG_CR );
+	return 0;
 }
 
 int suart_is_fifo_supported( struct simple_uart_device *dev )
