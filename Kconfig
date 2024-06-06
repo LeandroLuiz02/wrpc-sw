@@ -86,6 +86,11 @@ config TARGET_WR2RF_VME
 config TARGET_SPEC_SILABS
 	bool "SPEC Board with a silabs aux oscillator (TEST)"
 
+config TARGET_AMD_DEVBOARD
+	bool "AMD Development Board"
+	help
+	  Currently supported: ZC706, ZCU102, ZCU106
+
 endchoice
 
 config WR_NODE_SIM
