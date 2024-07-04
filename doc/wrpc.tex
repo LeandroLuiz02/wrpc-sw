@@ -282,27 +282,19 @@ designs does not differ between Xilinx and Altera/Intel based boards. The tool c
 synthesis Makefile as well as ISE/Quartus project file based on a set of
 Manifest.py files that you will find in the \textit{wr-cores} repository.\\
 
-First, please clone the \textit{hdlmake} repository from its location given in
+Please clone the \textit{hdlmake} repository from its location given in
 section \ref{Repositories and Releases}:
 \begin{lstlisting}
-$ git clone https://ohwr.org/project/hdl-make.git <your_location>/hdl-make
-$ cd <your_location>/hdl-make
-$ git checkout c4789c4
-\end{lstlisting}
-This checks out \textit{hdlmake} version 2.1 patched with the Arria V FPGA
-support (VFC-HD board).
-
-Then, using your favorite editor, you should create an \textit{hdlmake} script in
-/usr/bin to be able to call it from any directory. The script should have the
-following content:
-\begin{lstlisting}
-#!/usr/bin/env bash
-python2.7 <path_to_hdlmake_sources>/hdl-make/hdlmake/__main__.py $@
+$ cd <your-location>
+$ git clone https://ohwr.org/project/hdl-make.git
+$ cd hdl-make
+$ pip install .
 \end{lstlisting}
 
-Please, make your script executable:
+The last command install \textit{hdlmake} system wide.  You might prefer
+to do a user install:
 \begin{lstlisting}
-$ chmod a+x /usr/bin/hdlmake
+$ pip install --user .
 \end{lstlisting}
 
 Having all the tools in place, you can now clone the main WR PTP Core git
@@ -310,16 +302,16 @@ repository for the v5 release. The set of commands below clones the WR PTP Core
 repository, checks out the release tag, and downloads other HDL repositories
 (submodules) needed to synthesize the core:
 \begin{lstlisting}
-$ git clone https://ohwr.org/project/wr-cores.git <your_location>/wr-cores
-$ cd <your_location>/wr-cores
+$ cd <your-location>
+$ git clone https://ohwr.org/project/wr-cores.git
+$ cd wr-cores
 $ git checkout wrpc-v5
-$ git submodule init
-$ git submodule update
+$ git submodule init --update
 \end{lstlisting}
 
 The local copies of the submodules are stored to:
 
-\texttt{<your\_location>/wr-cores/ip\_cores}
+\texttt{<your-location>/wr-cores/ip\_cores}
 
 \vspace{1em}
 \textbf{Note:} If you use the WRPC within another project (like
