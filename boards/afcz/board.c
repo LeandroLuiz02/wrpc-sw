@@ -843,7 +843,9 @@ int afcz_check_clocks()
 
 int wrc_board_init()
 {
-    static int32_t flash_entry_points[2];
+	static int32_t flash_entry_points[2];
+	static struct spi_bus spi_wrc_flash;
+	static struct spi_flash_device wrc_flash_dev;
 
 	/* initialize I2C bus */
 	bb_i2c_init(&dev_i2c_fmc);

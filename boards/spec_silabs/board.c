@@ -5,7 +5,7 @@
 #include "dev/endpoint.h"
 #include "dev/si57x.h"
 #include "storage.h"
-#include "../generic/board-decl.h"
+#include "../generic/generic-storage.h"
 
 #include <wrc-debug.h>
 
@@ -43,7 +43,7 @@ static void wrc_board_si57x_init(void)
 
 int wrc_board_early_init(void)
 {
-	wrc_generic_board_storage_init();
+	generic_board_storage_init();
 	wrc_board_si57x_init();
 
 	return 0;

@@ -8,7 +8,7 @@
 
 int wrc_board_early_init(void)
 {
-	wrc_generic_board_storage_init();
+	generic_board_storage_init();
 	return 0;
 }
 

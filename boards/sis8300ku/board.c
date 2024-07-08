@@ -47,6 +47,9 @@ static void sis83k_read_persistent_mac( uint8_t *mac )
 
 int wrc_board_early_init()
 {
+	static struct spi_bus spi_wrc_flash;
+	static struct spi_flash_device wrc_flash_dev;
+
 	/*
 	 * declare GPIO pins and configure their directions for bit-banging SPI
 	 * limit SPI speed to 10MHz by setting bit_delay = CPU_CLOCK / 10^6

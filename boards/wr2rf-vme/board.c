@@ -109,6 +109,8 @@ static void wr2rf_check_hw_change(void)
 
 int wrc_board_early_init(void)
 {
+    static struct spi_bus spi_wrc_flash;
+    static struct spi_flash_device wrc_flash_dev;
     int32_t flash_entry_points[64];
     uint8_t board_mac_addr[6];
     int i;

@@ -58,19 +58,15 @@ extern const struct gpio_pin pin_sysc_net_rst;
 
 extern const struct i2c_bus dev_i2c_fmc;
 extern const struct i2c_bus dev_i2c_sfp1;
-extern struct spi_flash_device wrc_flash_dev;
 
 #define FMC_I2C_DELAY 15
 #define SFP_I2C_DELAY 300
 
 void timer_init(uint32_t enable);
 
-extern struct spi_bus spi_wrc_flash;
-extern struct spi_flash_device wrc_flash_dev;
-
 #define HW_NAME_LENGTH 5 /* 4 letters + '\0' */
 void get_hw_name(char *str);
-void get_storage_info(int *memtype, uint32_t *sdbfs_baddr, uint32_t *blocksize);
+void get_storage_info(uint32_t *sdbfs_baddr, uint32_t *blocksize);
 int sysc_get_memsize(void);
 
 unsigned sysc_get_hwbuild_date(void);

@@ -7,6 +7,6 @@
 #ifndef __BOARD_DECL_H
 #define __BOARD_DECL_H
 
-int wrc_generic_board_storage_init(void);
+#include "generic-storage.h"
 
 #endif /* __BOARD_DECL_H */

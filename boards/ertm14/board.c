@@ -2437,6 +2437,8 @@ int ertm14_get_supported_clkab_freqs( int *freqs, int max_count )
 int wrc_board_early_init()
 {
     static int32_t flash_entry_points[64];
+    static struct spi_bus spi_wrc_flash;
+    static struct spi_flash_device wrc_flash_dev;
     int i;
 
     console_ertm14_init();
