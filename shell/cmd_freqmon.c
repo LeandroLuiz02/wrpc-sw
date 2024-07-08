@@ -31,7 +31,7 @@
 
 static struct wb_clock_monitor_device cmon_dev;
 static uint8_t cmon_initialized = 0;
-static uint8_t cmon_ref_is_rx = 0;
+static uint8_t cmon_ref = CM_CHANNEL_REF;
 
 struct cm_clock_desc
 {
@@ -101,9 +101,10 @@ static int cm_get_clock_count(void)
 static void cmon_init(void)
 {
     int n_clks = cm_get_clock_count();
+
     wb_cm_init(&cmon_dev, BASE_CLOCK_MONITOR, n_clks);
     wb_cm_set_ref_frequency(&cmon_dev, REF_CLOCK_FREQ_HZ);
-    wb_cm_configure(&cmon_dev, cmon_ref_is_rx ? CM_CHANNEL_RX : CM_CHANNEL_REF, CM_DEFAULT_PRESCALER, CM_DEFAULT_GATE_FREQ);
+    wb_cm_configure(&cmon_dev, cmon_ref, CM_DEFAULT_PRESCALER, CM_DEFAULT_GATE_FREQ);
     wb_cm_restart(&cmon_dev);
     pp_printf("CMON initialized\n");
 }
@@ -225,7 +226,8 @@ void cm_show_clocks(void)
 
     cmon_update();
 
-    pp_printf("Reference clock for frequency measurement: %s\n", cmon_ref_is_rx ? "RX" : "REF");
+    cm_get_clock_desc(cmon_ref, &desc);
+    pp_printf("Reference clock for frequency measurement: %s\n", desc.name);
     for (i = 0; cm_get_clock_desc(i, &desc) >= 0; i++)
     {
         char freq_str[32];
@@ -296,12 +298,17 @@ static int cmd_freqmon(const char *args[])
     }
     else if (!strcasecmp(args[0], "rx"))
     {
-        cmon_ref_is_rx = 1;
+        cmon_ref = CM_CHANNEL_RX;
         cmon_init();
     }
     else if (!strcasecmp(args[0], "ref"))
     {
-        cmon_ref_is_rx = 0;
+        cmon_ref = CM_CHANNEL_REF;
+        cmon_init();
+    }
+    else if (!strcasecmp(args[0], "sys"))
+    {
+        cmon_ref = CM_CHANNEL_SYS;
         cmon_init();
     }
 
