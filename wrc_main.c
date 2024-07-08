@@ -29,7 +29,6 @@
 #include "lib/ipv4.h"
 #include "lib/events-ptp.h"
 #include "dev/rxts_calibrator.h"
-#include "dev/flash.h"
 #include "dev/gpio.h"
 #include "netconsole.h"
 #include "dev/wdiags.h"

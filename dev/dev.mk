@@ -11,7 +11,6 @@ obj-$(CONFIG_EMBEDDED_NODE) += \
 	dev/syscon.o \
 	dev/sfp.o \
 	dev/rxts_calibrator.o \
-	dev/flash.o \
 	dev/gpio.o \
 	dev/bb_spi.o \
 	dev/bb_i2c.o \

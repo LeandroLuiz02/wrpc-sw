@@ -9,7 +9,6 @@
 #include "shell.h"
 #include "dev/syscon.h"
 #include "storage.h"
-#include "dev/flash.h"
 #include "libsdbfs.h"
 #include "util.h"
 #include "wrc.h"
