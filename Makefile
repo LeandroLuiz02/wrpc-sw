@@ -113,8 +113,8 @@ ldflags-$(CONFIG_ARCH_LM32) = -mmultiply-enabled -mbarrel-shift-enabled \
 ldflags-$(CONFIG_ARCH_RISCV) = -march=rv32im$(USE-COMP-INSTR-y) -mabi=ilp32 \
 	-nostdlib -T $(LDS-y)
 asflags-$(CONFIG_ARCH_RISCV) += -march=rv32im$(USE-COMP-INSTR-y)_zicsr -mabi=ilp32
-arch-files-$(CONFIG_ARCH_LM32) = $(OUTPUT).bram $(OUTPUT).vhd $(OUTPUT).mif
-arch-files-$(CONFIG_ARCH_RISCV) = $(OUTPUT).bram $(OUTPUT).vhd $(OUTPUT).mif
+arch-files-$(CONFIG_ARCH_LM32) = $(OUTPUT).bram $(OUTPUT).vhd $(OUTPUT).mif $(OUTPUT).mem
+arch-files-$(CONFIG_ARCH_RISCV) = $(OUTPUT).bram $(OUTPUT).vhd $(OUTPUT).mif $(OUTPUT).mem
 
 
 # packet-filter rules: for CONFIG_VLAN we use both sets
@@ -230,6 +230,9 @@ GENRAM_ENDIAN_FLAG-$(CONFIG_ARCH_RISCV) = -l
 %.mif: %.bin tools/genrammif
 	./tools/genrammif $(GENRAM_ENDIAN_FLAG-y) $*.bin $(CONFIG_RAMSIZE) > $@
 
+%.mem: %.bin tools/genrammem
+	./tools/genrammem $(GENRAM_ENDIAN_FLAG-y) $*.bin $(CONFIG_RAMSIZE) > $@
+
 clean: boards-clean
 	rm -f $(OBJS) config.o pconfig.o revision.o $(OUTPUT).elf \
 		$(LDS) \
@@ -262,7 +265,7 @@ endif
 extest:
 	$(MAKE) -C liblinux/extest CC=cc
 
-tools/gensdbfs tools/pfilter-builder tools/genraminit tools/genramvhd tools/genrammif tools: .config $(AUTOCONF) gitmodules liblinux extest libertm
+tools/gensdbfs tools/pfilter-builder tools/genraminit tools/genramvhd tools/genrammif tools/genrammem tools: .config $(AUTOCONF) gitmodules liblinux extest libertm
 	$(MAKE) -C tools
 
 tools-diag: liblinux extest

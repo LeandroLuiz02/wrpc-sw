@@ -5,6 +5,7 @@
 *.bin
 *.map
 *.mif
+*.mem
 *~
 *_disasm.S
 *.vhd

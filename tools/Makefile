@@ -11,7 +11,7 @@ CFLAGS += -I../boards/ertm14
 CFLAGS += -I../softpll
 
 LDFLAGS = $(TOOLS_LDFLAGS) -lutil -L../liblinux -ldevmap -L../liblinux/extest -lextest
-ALL    = genraminit genramvhd genrammif
+ALL    = genraminit genramvhd genrammif genrammem
 #ALL   += wrpc-w1-read wrpc-w1-write
 ALL   += pfilter-builder
 ALL   += mapper
