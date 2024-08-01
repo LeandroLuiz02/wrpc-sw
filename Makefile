@@ -178,12 +178,12 @@ ifeq ($(GIT_USR),)
 GIT_USR = $(shell whoami)@$(shell hostname)
 endif
 
-all: libertm
+all:
 all: tools $(OUTPUT).elf $(arch-files-y)
 
 .PRECIOUS: %.elf %.bin
 .PHONY: all tools clean extest liblinux
-.PHONY: libertm boards-clean
+.PHONY: boards-clean
 
 # we need to remove "ptpdump" support for ppsi if RAM size is small and
 # we include etherbone
@@ -243,7 +243,9 @@ clean: boards-clean
 	$(MAKE) -C tools clean
 	$(MAKE) -C liblinux clean
 	$(MAKE) -C liblinux/extest clean
+ifneq ($(CONFIG_TARGET_ERTM14),y)
 	$(MAKE) -C libertm clean
+endif
 
 distclean: clean
 	rm -rf include/config
@@ -258,14 +260,13 @@ liblinux:
 	$(MAKE) -C liblinux CC=cc
 
 libertm: $(AUTOCONF)
-ifneq ($(CONFIG_TARGET_WR_SWITCH),y)
 	$(MAKE) -C $@ CC=cc
-endif
 
 extest:
 	$(MAKE) -C liblinux/extest CC=cc
 
-tools/gensdbfs tools/pfilter-builder tools/genraminit tools/genramvhd tools/genrammif tools/genrammem tools: .config $(AUTOCONF) gitmodules liblinux extest libertm
+tools-dependencies-$(CONFIG_TARGET_ERTM14) +=  libertm
+tools/gensdbfs tools/pfilter-builder tools/genraminit tools/genramvhd tools/genrammif tools/genrammem tools: .config $(AUTOCONF) gitmodules liblinux extest $(tools-dependencies-y)
 	$(MAKE) -C tools
 
 tools-diag: liblinux extest

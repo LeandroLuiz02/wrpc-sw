@@ -49,6 +49,12 @@ STRIP		= strip
 OBJCOPY		= objcopy
 OBJDUMP		= objdump
 
+
+
+ifeq ($(CONFIG_TARGET_ERTM14), y)
+SUPPORT_ERTM=y
+endif
+
 ifeq ($(SUPPORT_ERTM), y)
 WRPC_ERTM_LIBS=../libertm/libertm.a -ludev
 WRPC_ERTM_FLAGS=-DSUPPORT_ERTM
