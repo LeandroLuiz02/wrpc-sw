@@ -6,8 +6,6 @@ CFLAGS = -Wall -Werror -ggdb -I../include -I../liblinux -I../liblinux/extest
 CFLAGS += -D__GIT_VER__="\"$(GIT_VER)\"" -D__GIT_USR__="\"$(GIT_USR)\""
 CFLAGS += -DBUILD_HOST
 CFLAGS += --std=gnu99
-CFLAGS += -I../libertm
-CFLAGS += -I../boards/ertm14
 CFLAGS += -I../softpll
 
 LDFLAGS = $(TOOLS_LDFLAGS) -lutil -L../liblinux -ldevmap -L../liblinux/extest -lextest
@@ -50,6 +48,12 @@ NM		= nm
 STRIP		= strip
 OBJCOPY		= objcopy
 OBJDUMP		= objdump
+
+ifeq ($(SUPPORT_ERTM), y)
+WRPC_ERTM_LIBS=../libertm/libertm.a -ludev
+WRPC_ERTM_FLAGS=-DSUPPORT_ERTM
+CFLAGS += -I../libertm -I../boards/ertm14
+endif
 
 all:	$(ALL)
 
@@ -100,7 +104,7 @@ wrpc-load: wrpc-load.o
 	$(CC) $(CFLAGS) $^ $(LDFLAGS) -o $@
 
 wrpc: wrpc.o
-	$(CC) $(CFLAGS) $^ $(TOOL_LDFLAGS) $(LIBVME_LDFLAGS) -o $@  ../libertm/libertm.a -ludev -lm
+	$(CC) $(CFLAGS) $(WRPC_ERTM_FLAGS) $^ $(TOOL_LDFLAGS) $(LIBVME_LDFLAGS) -o $@ $(WRPC_ERTM_LIBS) -lm
 
 wrpc.o: wrpc.c
 	$(CC) -c $(CFLAGS) $< $(LIBVME_CFLAGS) -o $@

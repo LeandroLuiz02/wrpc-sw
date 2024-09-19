@@ -33,11 +33,10 @@
 #include <libvmebus.h>
 #endif
 
-#define SUPPORT_ERTM
-
 #ifdef SUPPORT_ERTM
 #include "libertm.h"
 #endif
+
 #include "spll_debug.h"
 
 #include "hw/wrc_cpu_csr.h"
@@ -117,6 +116,10 @@ struct pci_slot {
 	unsigned func;
 
 	unsigned bar;
+};
+
+struct board_host {
+	struct board_mem parent;
 };
 
 static int parse_pci_slot(struct pci_slot *res, const char *s)
@@ -347,6 +350,103 @@ static void mem_writel(struct board *base_board, unsigned reg, uint32_t value)
 
 	*(volatile uint32_t *)(board->base + reg ) = value;
 }
+
+static void board_host_help(void)
+{
+	printf("host (WRPC on an AXI bus)\n");
+	printf(" -b BASE      address of wrpc (required)\n");
+	printf(" -f /dev/mem  (default)\n");
+}
+
+static int board_host_fini(struct board *base_board)
+{
+	struct board_host *board = (struct board_host *)base_board;
+	munmap(board->parent.map_addr, board->parent.map_length);
+	return 0;
+}
+
+static int board_host_init(struct board *board_base,
+			   int *argc, char *argv[])
+{
+	struct board_host *board = (struct board_host *)board_base;
+	const char *mem_file = "/dev/mem";
+	unsigned long base = 0;
+	int fd;
+	unsigned pg = getpagesize();
+
+	while (*argc != 1) {
+		if (*argc > 2 && !strcmp (argv[1], "-b")) {
+			char *e;
+			remove_arg1(argc, argv);
+			base = strtoul(argv[1], &e, 0);
+			if (*e != 0) {
+				fprintf (stderr, "bad base '%s'\n", argv[1]);
+				return -1;
+			}
+			remove_arg1(argc, argv);
+		}
+		else if (*argc > 2 && !strcmp (argv[1], "-f")) {
+			remove_arg1(argc, argv);
+			mem_file = argv[1];
+			remove_arg1(argc, argv);
+		}
+		else {
+			fprintf(stderr, "unhandled option '%s'\n", argv[1]);
+			return -1;
+		}
+	}
+
+	if (base == 0) {
+		fprintf(stderr, "option '-b BASE' is required\n");
+		return -1;
+	}
+
+	fd = open(mem_file, O_RDWR | O_SYNC);
+	if (fd < 0) {
+		fprintf(stderr, "cannot open resource file '%s': %s\n",
+			mem_file, strerror(errno));
+		return -1;
+	}
+
+	board->parent.map_addr = mmap(NULL, pg, PROT_READ | PROT_WRITE,
+				      MAP_SHARED, fd, base);
+
+
+	if (board->parent.map_addr == MAP_FAILED) {
+		fprintf(stderr, "cannot map resource file '%s': %s\n",
+			mem_file, strerror(errno));
+		close(fd);
+		return -1;
+	}
+	close(fd);
+
+	board->parent.map_length = pg;
+	board->parent.base = board->parent.map_addr;
+
+	board->parent.is_be = 0;
+
+	return 0;
+
+}
+
+static struct board_host board_host =
+{
+	{
+		{
+			"host",
+			board_host_init,
+			board_host_fini,
+			board_host_help,
+			mem_readl,
+			mem_writel
+		},
+		NULL,
+		0,
+		NULL,
+		0
+	},
+};
+
 
 static struct board_pci board_pci =
 {
@@ -713,6 +813,7 @@ static struct board_cernvme board_wr2rf =
 static struct board *boards[] = {
 	&board_pci.parent.parent,
 	&board_spec.parent.parent,
+	&board_host.parent.parent,
 #ifdef SUPPORT_ERTM
 	&board_ertm14.parent,
 #endif
@@ -755,6 +856,8 @@ static int board_open(int *argc, char *argv[])
 	return board->init(board, argc, argv);
 }
 
+
+/* URV PART */
 static void wrc_cpu_reset(struct board *board, unsigned int rst)
 {
 	board->writel (board, OFFSET_CPU_CSR + WRC_CPU_CSR_REG_RESET, rst);
@@ -1518,7 +1621,7 @@ static int do_board(int argc, char *argv[])
                 b->help();
         }
         else {
-                printf ("List of boards:\n");
+                printf ("List of supported boards (or access methods):\n");
                 for (unsigned i = 0; (b = boards[i]); i++)
                         printf(" %s\n", b->name);
         }
