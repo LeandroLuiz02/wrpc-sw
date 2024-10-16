@@ -52,6 +52,8 @@
 #define OFFSET_WDIAGS		0x900
 #define OFFSET_CPU_CSR		0xb00
 
+#define WRPCV4_BASE_SYSCON 0x20400
+
 #define VUART_EOL 13
 #define VUART_CMD_USLEEP 1000000
 #define VUART_CMD_PROMPT "wrc#"
@@ -316,16 +318,16 @@ static int board_ertm14_init(struct board *board_base,
 
 static struct board_ertm14 board_ertm14 =
 {
-		{
-			"ertm14",
-			board_ertm14_init,
-			board_ertm14_fini,
-			board_ertm14_help,
-			NULL,
-			NULL
-		},
+	{
+		"ertm14",
+		board_ertm14_init,
+		board_ertm14_fini,
+		board_ertm14_help,
 		NULL,
 		NULL
+	},
+	NULL,
+	NULL
 };
 #endif /* SUPPORT_ERTM */
 
@@ -858,27 +860,59 @@ static int board_open(int *argc, char *argv[])
 
 
 /* URV PART */
-static void wrc_cpu_reset(struct board *board, unsigned int rst)
+struct wrc_cpu {
+	void (*reset)(struct board *board, unsigned int rst);
+	void (*writel)(struct board *board, unsigned int addr, uint32_t data);
+	uint32_t (*readl)(struct board *board, unsigned int addr);
+};
+
+static void wrpc_v5_reset(struct board *board, unsigned int rst)
 {
 	board->writel (board, OFFSET_CPU_CSR + WRC_CPU_CSR_REG_RESET, rst);
 }
 
-static void wrc_write_uaddr(struct board *board, unsigned int addr)
+static void wrpc_v5_writel(struct board *board, unsigned int addr, uint32_t data)
 {
 	board->writel(board, OFFSET_CPU_CSR + WRC_CPU_CSR_REG_UADDR, addr >> 2);
-}
-
-static void wrc_write_udata(struct board *board, uint32_t data)
-{
 	board->writel(board, OFFSET_CPU_CSR + WRC_CPU_CSR_REG_UDATA, data);
 }
 
-static uint32_t wrc_read_udata(struct board *board)
+static uint32_t wrpc_v5_readl(struct board *board, unsigned int addr)
 {
+	board->writel(board, OFFSET_CPU_CSR + WRC_CPU_CSR_REG_UADDR, addr >> 2);
 	return board->readl(board, OFFSET_CPU_CSR + WRC_CPU_CSR_REG_UDATA);
 }
 
-static int wrc_write_buf(struct board *board,
+
+static void wrpc_v4_reset(struct board *board, unsigned int rst)
+{
+	board->writel (board, WRPCV4_BASE_SYSCON + 0, (rst << 28) |  0x0deadbee);
+}
+
+static void wrpc_v4_writel(struct board *board, unsigned int addr, uint32_t data)
+{
+	board->writel(board, addr, data);
+}
+
+static uint32_t wrpc_v4_readl(struct board *board, unsigned int addr)
+{
+	return board->readl(board, addr);
+}
+
+static const struct wrc_cpu wrpc_v5_cpu = {
+	wrpc_v5_reset,
+	wrpc_v5_writel,
+	wrpc_v5_readl
+};
+
+static const struct wrc_cpu wrpc_v4_cpu = {
+	wrpc_v4_reset,
+	wrpc_v4_writel,
+	wrpc_v4_readl
+};
+
+static int wrc_write_buf(const struct wrc_cpu *cpu,
+			 struct board *board,
                          const unsigned char *buf,
                          unsigned len,
                          unsigned addr)
@@ -889,22 +923,20 @@ static int wrc_write_buf(struct board *board,
 	while (len > 0) {
 		uint32_t v;
 
-		wrc_write_uaddr(board, addr);
 
 		/* Use BE.  */
 		v = (buf[3] << 0)
 			| (buf[2] << 8)
 			| (buf[1] << 16)
 			| (buf[0] << 24);
-		wrc_write_udata(board, v);
+		cpu->writel(board, addr, v);
 
 		if (verbose)
 			printf ("Write %08x at %08x\n", v, addr);
 
                 if (flag_check) {
                         uint32_t r;
-                        wrc_write_uaddr(board, addr);
-                        r = wrc_read_udata(board);
+                        r = cpu->readl(board, addr);
                         if (r != v) {
                                 printf ("Error at %08x: "
                                         "read %08x instead of %08x\n",
@@ -933,7 +965,7 @@ static Elf32_Word read_elf_word (const Elf32_Word *v)
   return p[0] | (p[1] << 8) | (p[2] << 16) | (p[3] << 24);   /* LE  */
 }
 
-static int wrc_load_elf(struct board *board, const char *filename, int fd)
+static int wrc_load_elf(const struct wrc_cpu *cpu, struct board *board, const char *filename, int fd)
 {
         Elf32_Ehdr ehdr;
         unsigned poff;
@@ -1027,7 +1059,7 @@ static int wrc_load_elf(struct board *board, const char *filename, int fd)
                                 return -1;
                         }
 
-                        if (wrc_write_buf(board, buf, l, vaddr + len) < 0)
+                        if (wrc_write_buf(cpu, board, buf, l, vaddr + len) < 0)
                                 return -1;
                         len += l;
                 }
@@ -1037,7 +1069,7 @@ static int wrc_load_elf(struct board *board, const char *filename, int fd)
         return 0;
 }
 
-static int wrc_load_firmware(struct board *board, const char *filename)
+static int wrc_load_firmware(const struct wrc_cpu *cpu, struct board *board, const char *filename)
 {
 	int fd;
 	unsigned char hdr[4];
@@ -1059,12 +1091,12 @@ static int wrc_load_firmware(struct board *board, const char *filename)
 
 	if (hdr[0] == 0x7f
 	    && hdr[1] == 'E' && hdr[2] == 'L' && hdr[3] == 'F') {
-                if (wrc_load_elf(board, filename, fd) < 0)
+                if (wrc_load_elf(cpu, board, filename, fd) < 0)
                         goto err_close;
 	}
         else {
                 addr = 0;
-                if (wrc_write_buf(board, hdr, sizeof(hdr), addr) != 0)
+                if (wrc_write_buf(cpu, board, hdr, sizeof(hdr), addr) != 0)
                         goto err_close;
                 addr += sizeof (hdr);
 
@@ -1072,7 +1104,7 @@ static int wrc_load_firmware(struct board *board, const char *filename)
                         res = read(fd, buf, sizeof(buf));
                         if (res <= 0)
                                 break;
-                        if (wrc_write_buf(board, buf, res, addr) != 0)
+                        if (wrc_write_buf(cpu, board, buf, res, addr) != 0)
                                 goto err_close;
                         addr += res;
                 }
@@ -1087,7 +1119,8 @@ err_close:
 	return -1;
 }
 
-static int wrc_save_firmware(struct board *board, const char *filename)
+static int wrc_save_firmware(const struct wrc_cpu *cpu, struct board *board,
+			     const char *filename)
 {
 	int fd;
 	unsigned length = 0x20000;
@@ -1109,8 +1142,7 @@ static int wrc_save_firmware(struct board *board, const char *filename)
 
 		for (off = 0; off < l; off += 4) {
 			unsigned int v;
-			wrc_write_uaddr(board, addr);
-			v = wrc_read_udata(board);
+			v = cpu->readl(board, addr);
 			/* Use BE */
 			buf[off + 0] = v >> 24;
 			buf[off + 1] = v >> 16;
@@ -1132,7 +1164,7 @@ static int wrc_save_firmware(struct board *board, const char *filename)
 	return 0;
 }
 
-static void wrc_dump(struct board *board, unsigned addr, unsigned len)
+static void wrc_dump(const struct wrc_cpu *cpu, struct board *board, unsigned addr, unsigned len)
 {
 	unsigned off;
 
@@ -1143,9 +1175,7 @@ static void wrc_dump(struct board *board, unsigned addr, unsigned len)
 		if ((off & 0x0f) == 0)
 			printf ("%08x:", addr + off);
 
-		wrc_write_uaddr(board, addr + off);
-
-		v = wrc_read_udata(board);
+		v = cpu->readl(board, addr + off);
 		printf (" %08x", v);
 		if ((off & 0x0f) == 0xc)
 			printf ("\n");
@@ -1185,8 +1215,10 @@ static int do_version(int argc, char *argv[])
 
 static void help_load(void)
 {
-        printf("usage: %s load BOARD-OPTIONS FILENAME\n", progname);
+        printf("usage: %s load BOARD-OPTIONS [-m MODULE] FILENAME\n", progname);
         printf("Load FILENAME into WR cpu and restart the code\n");
+	printf("Option:\n"
+	       " -m MODULE   select wrpc core (wrpc-v5 or wrpc-v4)\n");
 }
 
 static int do_load(int argc, char *argv[])
@@ -1195,6 +1227,7 @@ static int do_load(int argc, char *argv[])
         int status;
 	const char *filename;
 	enum { CMD_LOAD, CMD_DUMP, CMD_SAVE } cmd;
+	const struct wrc_cpu *cpu = &wrpc_v5_cpu;
 
 	/* Decode board options and open the board. */
 	if (board_open(&argc, argv) < 0)
@@ -1203,8 +1236,19 @@ static int do_load(int argc, char *argv[])
 	status = 0;
 
 	cmd = CMD_LOAD;
-	while ((c = getopt(argc, argv, "vdsc")) != -1) {
+	while ((c = getopt(argc, argv, "vdscm:")) != -1) {
 		switch (c) {
+		case 'm':
+			if (!strcmp(optarg, "wrpc-v5"))
+				cpu = &wrpc_v5_cpu;
+			else if (!strcmp(optarg, "wrpc-v4"))
+				cpu = &wrpc_v4_cpu;
+			else {
+				printf("unknown module '%s', try help load\n",
+				       optarg);
+				return 1;
+			}
+			break;
 		case 'd':
 			cmd = CMD_DUMP;
 			break;
@@ -1231,26 +1275,26 @@ static int do_load(int argc, char *argv[])
 	filename = argv[optind];
 
 	/* Reset */
-	wrc_cpu_reset(board, 1 << 0);
+	cpu->reset(board, 1);
 
 	switch (cmd) {
 	case CMD_LOAD:
 		/* Load */
-		if (wrc_load_firmware (board, filename) < 0)
+		if (wrc_load_firmware (cpu, board, filename) < 0)
                         status = 1;
 		break;
 	case CMD_SAVE:
 		/* Save */
-		wrc_save_firmware (board, filename);
+		wrc_save_firmware (cpu, board, filename);
 		break;
 	case CMD_DUMP:
 		/* TODO: specify offset and length */
-		wrc_dump(board, 0, 0x200);
+		wrc_dump(cpu, board, 0, 0x200);
 		break;
 	}
 
 	/* Start */
-	wrc_cpu_reset(board, 0);
+	cpu->reset(board, 0);
 
         board->fini(board);
 
