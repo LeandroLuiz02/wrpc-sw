@@ -62,7 +62,6 @@ struct wr_endpoint_device wrc_endpoint_dev;
 int wrc_wr_diags(void); // fixme: move the header
 
 extern char _binary__config_bin_start[];
-extern struct spll_fifo_log fifo_log[];
 
 struct wrc_global_link wrc_global_link = {
 	.version = WRC_G_LINK_VERSION,
@@ -81,9 +80,6 @@ const struct wrc_global wrc_global = {
 	.temp_group_list = temp_sensors,
 #endif
 	.softpll = &softpll,
-#ifdef CONFIG_SPLL_FIFO_LOG
-	.pll_fifo = fifo_log,
-#endif
 #ifdef CONFIG_CMD_CONFIG
 	.config = _binary__config_bin_start,
 #endif

@@ -20,14 +20,6 @@
 
 #include "irq.h"
 
-#ifdef CONFIG_SPLL_FIFO_LOG
-  struct spll_fifo_log fifo_log[FIFO_LOG_LEN];
-  #define HAS_FIFO_LOG 1
-#else
-  #define HAS_FIFO_LOG 0
-  extern struct spll_fifo_log fifo_log[];
-#endif
-
 unsigned char spll_n_chan_ref, spll_n_chan_out;
 unsigned char spll_ljd_present = 0;
 

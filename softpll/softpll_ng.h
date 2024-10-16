@@ -179,16 +179,6 @@ struct softpll_state {
 	struct spll_ptracker_state ptrackers[MAX_PTRACKERS];
 };
 
-/* NOTE: Please increment WRPC_SHMEM_VERSION if you change this structure */
-struct spll_fifo_log {
-	uint32_t trr;
-	uint32_t tstamp;
-	uint32_t duration;
-	uint16_t irq_count;
-	uint16_t tag_count;
-};
-#define FIFO_LOG_LEN 16
-
 extern unsigned char spll_ljd_present;
 
 extern volatile struct softpll_state softpll;

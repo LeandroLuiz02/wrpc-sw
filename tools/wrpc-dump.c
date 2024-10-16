@@ -735,7 +735,7 @@ void dump_mem_wrpc_sfp(void *mapaddr, unsigned long wrc_global_off)
 
 void dump_mem_wrpc_global(void *mapaddr, unsigned long wrc_global_off)
 {
-	unsigned long tmp_off, spll_off, fifo_off;
+	unsigned long tmp_off, spll_off;
 	uint32_t expected_magic;
 	uint32_t expected_version;
 	char *prefix;
@@ -799,21 +799,6 @@ void dump_mem_wrpc_global(void *mapaddr, unsigned long wrc_global_off)
 
 	/* dump SFP info */
 	dump_mem_wrpc_sfp(mapaddr, wrc_global_off);
-
-	fifo_off = wrpc_get_pointer(mapaddr + wrc_global_off, "wrc_global",
-				   "pll_fifo");
-	if (fifo_off) {
-		int i;
-		int pll_log_struct_size;
-
-		printf("fifo log at 0x%lx\n", fifo_off);
-		pll_log_struct_size = wrpc_get_struct_size("struct_pll_fifo");
-		for (i = 0; i < FIFO_LOG_LEN; i++)
-			dump_many_fields(mapaddr + fifo_off
-					 + i * pll_log_struct_size,
-					 "struct_pll_fifo",
-					 "wrc_global.spll_fifo");
-	}
 
 	/* dump config */
 	tmp_off = wrpc_get_pointer(mapaddr + wrc_global_off, "wrc_global",

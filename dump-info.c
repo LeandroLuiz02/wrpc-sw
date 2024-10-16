@@ -24,7 +24,6 @@ struct dump_info  dump_wrpc_info[] = {
 	DUMP_FIELD(pointer, temp_group_list),
 	DUMP_FIELD(pointer, config),
 	DUMP_FIELD(pointer, softpll),
-	DUMP_FIELD(pointer, pll_fifo),
 	DUMP_FIELD(pointer, sfp_info),
 
 #undef DUMP_STRUCT
@@ -100,17 +99,6 @@ struct dump_info  dump_wrpc_info[] = {
 	DUMP_FIELD(int, mpll.sample_n),
 	DUMP_FIELD(int, mpll.dac_index),
 	DUMP_FIELD(yes_no, mpll.enabled),
-
-#undef DUMP_STRUCT
-#define DUMP_STRUCT struct spll_fifo_log
-
-	DUMP_HEADER_SIZE("struct_pll_fifo", sizeof(struct spll_fifo_log)),
-	DUMP_FIELD(uint32_t, trr),
-	DUMP_FIELD(uint32_t, tstamp),
-	DUMP_FIELD(uint32_t, duration),
-	DUMP_FIELD(uint16_t, irq_count),
-	DUMP_FIELD(uint16_t, tag_count),
-	/* FIXME: aux_state and ptracker_state -- variable-len arrays */
 
 #undef DUMP_STRUCT
 #define DUMP_STRUCT struct spll_stats

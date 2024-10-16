@@ -27,7 +27,6 @@ struct wrc_global {
 	int temp_group_list_max;
 	struct wrc_temp_group *temp_group_list;
 	volatile struct softpll_state *softpll;
-	struct spll_fifo_log *pll_fifo;
 	struct sfp_info *sfp_info;
 	void * config;
 };

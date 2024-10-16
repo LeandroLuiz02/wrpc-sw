@@ -86,8 +86,7 @@ SECTIONS
 		*(.mbox)
 	} > mbox
 
-	/* We have no ppi_static nor fifo_log in wrs builds */
+	/* We have no ppi_static in wrs builds */
 	PROVIDE(ppi_static = 0);
-	PROVIDE(fifo_log = 0);
 }
 
