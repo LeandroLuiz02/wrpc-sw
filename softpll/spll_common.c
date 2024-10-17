@@ -50,7 +50,6 @@ void pi_init(spll_pi_t *pi)
 {
 	pi->integrator = 0;
 	pi->y = pi->bias;
-	pi->dithered = 0;
 }
 
 /* Lock detector state machine. Takes an error sample (y) and checks

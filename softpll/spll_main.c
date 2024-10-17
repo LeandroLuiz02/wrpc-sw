@@ -78,7 +78,6 @@ void mpll_init(struct spll_main_state *s, int id_ref, int id_out)
 	}
 
 	pi_init((spll_pi_t *)&s->pi);
-	s->pi.dithered = 0;
 	ld_init((spll_lock_det_t *)&s->freq_ld);
 	ld_init((spll_lock_det_t *)&s->phase_ld);
 }
@@ -176,7 +175,6 @@ void mpll_start(struct spll_main_state *s)
 	}
 
 	pi_init((spll_pi_t *)&s->pi);
-	s->pi.dithered = 0;
 	ld_init((spll_lock_det_t *)&s->phase_ld);
 	ld_init((spll_lock_det_t *)&s->freq_ld);
 
