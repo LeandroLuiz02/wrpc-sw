@@ -205,15 +205,9 @@ static inline void sequencing_fsm(struct softpll_state *s, int tag_value, int ta
 
 		case SEQ_READY:
 		{
-			if (s->mode == SPLL_MODE_GRAND_MASTER && !external_locked(&s->ext)) {
-				s->delock_count++;
-				s->seq_state = SEQ_CLEAR_DACS;
-				set_channel_status(s->mpll.id_ref, 0);
-			} else if (!s->helper.ld.locked) {
-				s->delock_count++;
-				s->seq_state = SEQ_CLEAR_DACS;
-				set_channel_status(s->mpll.id_ref, 0);
-			} else if (s->mode == SPLL_MODE_SLAVE && !s->mpll.locked) {
+			if ((s->mode == SPLL_MODE_GRAND_MASTER && !external_locked(&s->ext))
+			    || !s->helper.ld.locked
+			    || (s->mode == SPLL_MODE_SLAVE && !s->mpll.locked)) {
 				s->delock_count++;
 				s->seq_state = SEQ_CLEAR_DACS;
 				set_channel_status(s->mpll.id_ref, 0);
@@ -604,32 +598,23 @@ void spll_show_stats(void)
 	{
 		struct spll_aux_state *s = (struct spll_aux_state *) &softpll.aux[ch - 1];
 
+		pp_printf("softpll: AUX%d:", ch-1);
 #ifdef CONFIG_FRAC_SPLL
-		pp_printf("softpll: AUX%d [ratio %d/%d = %d Hz]: ph %ld seq %d en %d lock %d samples %d nref %d nout %d ERR=%d Y=%d\n",
-				ch-1,
-				s->div_fb,
-				s->div_ref,
-				REF_CLOCK_FREQ_HZ * s->div_fb / s->div_ref,
-				s->phase_value,
-				s->seq_state,
-				s->pll.dmtd.enabled,
-				s->pll.dmtd.locked,
-				s->pll.dmtd.sample_n,
-				s->pll.dmtd.n_ref,
-				s->pll.dmtd.n_out,
-				s->pll.dmtd.pi.x,
-				s->pll.dmtd.pi.y );
-#else
-		pp_printf("softpll: AUX%d: ph %d seq %d en %d lock %d samples %d ERR=%d Y=%d\n",
-				ch-1,
-                                (int)s->phase_value,
-				s->seq_state,
-				s->pll.dmtd.enabled,
-				s->pll.dmtd.locked,
-				s->pll.dmtd.sample_n,
-				s->pll.dmtd.pi.x,
-				s->pll.dmtd.pi.y );
+		pp_printf(" [ratio %d/%d = %d Hz]"
+			  s->div_fb,
+			  s->div_ref,
+			  REF_CLOCK_FREQ_HZ * s->div_fb / s->div_ref);
 #endif
+		pp_printf(" ph %d seq %d en %d lock %d samples %d ref %d out %d ERR=%d Y=%d\n",
+			  (int)s->phase_value,
+			  s->seq_state,
+			  s->pll.dmtd.enabled,
+			  s->pll.dmtd.locked,
+			  s->pll.dmtd.sample_n,
+			  s->pll.dmtd.id_ref,
+			  s->pll.dmtd.id_out,
+			  s->pll.dmtd.pi.x,
+			  s->pll.dmtd.pi.y );
 	}
 
 	for (ch = 0; ch < spll_n_chan_ref; ch++)
