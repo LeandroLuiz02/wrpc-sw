@@ -83,6 +83,9 @@ static const struct tool_base *tools[];
 static int verbose;
 static int flag_check;
 
+/* How much memory to map  */
+static unsigned map_size = 4 << 10;
+
 static void remove_arg1(int *argc, char *argv[])
 {
 	for (unsigned i = 2; i < *argc; i++)
@@ -160,7 +163,6 @@ static int board_pci_common_open(struct board_pci *board)
 {
 	int fd;
 	unsigned pg = getpagesize();
-	unsigned map_len = pg;
 	unsigned pa_offset;
 
 	fd = open(board->resource_file, O_RDWR | O_SYNC);
@@ -171,8 +173,8 @@ static int board_pci_common_open(struct board_pci *board)
 	}
 
 	/* offset is page aligned */
-	pa_offset = board->offset & ~(getpagesize() - 1);
-	board->parent.map_addr = mmap(NULL, map_len,
+	pa_offset = board->offset & ~(pg - 1);
+	board->parent.map_addr = mmap(NULL, map_size,
 			   PROT_READ | PROT_WRITE,
 			   MAP_SHARED, fd, pa_offset);
 	if (board->parent.map_addr == MAP_FAILED) {
@@ -183,7 +185,7 @@ static int board_pci_common_open(struct board_pci *board)
 	}
 	close(fd);
 
-	board->parent.map_length = pg;
+	board->parent.map_length = map_size;
 	board->parent.base =
 		board->parent.map_addr + (board->offset - pa_offset);
 
@@ -374,7 +376,6 @@ static int board_host_init(struct board *board_base,
 	const char *mem_file = "/dev/mem";
 	unsigned long base = 0;
 	int fd;
-	unsigned pg = getpagesize();
 
 	while (*argc != 1) {
 		if (*argc > 2 && !strcmp (argv[1], "-b")) {
@@ -410,7 +411,7 @@ static int board_host_init(struct board *board_base,
 		return -1;
 	}
 
-	board->parent.map_addr = mmap(NULL, pg, PROT_READ | PROT_WRITE,
+	board->parent.map_addr = mmap(NULL, map_size, PROT_READ | PROT_WRITE,
 				      MAP_SHARED, fd, base);
 
 
@@ -422,7 +423,7 @@ static int board_host_init(struct board *board_base,
 	}
 	close(fd);
 
-	board->parent.map_length = pg;
+	board->parent.map_length = map_size;
 	board->parent.base = board->parent.map_addr;
 
 	board->parent.is_be = 0;
@@ -532,7 +533,7 @@ static int cernvme_map(struct board_cernvme *board,
         memset(&board->map, 0, sizeof(struct vme_mapping));
         board->map.am = am;
         board->map.data_width = dw;
-        board->map.sizel = pg;
+        board->map.sizel = map_size;
         board->map.vme_addrl = vme_addr | (offset & ~(pg - 1));
 
         board->parent.map_addr = vme_map(&board->map, 1);
@@ -540,7 +541,7 @@ static int cernvme_map(struct board_cernvme *board,
                 fprintf(stderr, "cannot map vme: %s\n", strerror(errno));
                 return -1;
         }
-        board->parent.map_length = pg;
+        board->parent.map_length = map_size;
 	board->parent.base = board->parent.map_addr + (offset & (pg - 1));
 
         board->parent.is_be = 1;
@@ -720,7 +721,7 @@ static struct board_cernvme board_cernvme_le =
 {
 	{
 		{
-			"vme",
+			"vme-le",
 			board_cernvme_le_init,
 			board_cernvme_fini,
 			board_cernvme_le_help,
@@ -852,8 +853,10 @@ static int board_open(int *argc, char *argv[])
                 board = b;
 		remove_arg1(argc, argv);
 	}
-	else
+	else {
+		/* Default is pci */
 		board = &board_pci.parent.parent;
+	}
 
 	return board->init(board, argc, argv);
 }
@@ -861,6 +864,7 @@ static int board_open(int *argc, char *argv[])
 
 /* URV PART */
 struct wrc_cpu {
+	const char *name;
 	void (*reset)(struct board *board, unsigned int rst);
 	void (*writel)(struct board *board, unsigned int addr, uint32_t data);
 	uint32_t (*readl)(struct board *board, unsigned int addr);
@@ -900,12 +904,14 @@ static uint32_t wrpc_v4_readl(struct board *board, unsigned int addr)
 }
 
 static const struct wrc_cpu wrpc_v5_cpu = {
+	"wrpc-v5",
 	wrpc_v5_reset,
 	wrpc_v5_writel,
 	wrpc_v5_readl
 };
 
 static const struct wrc_cpu wrpc_v4_cpu = {
+	"wrpc-v4",
 	wrpc_v4_reset,
 	wrpc_v4_writel,
 	wrpc_v4_readl
@@ -1198,12 +1204,38 @@ static const char *get_basename(const char *name)
 		return name;
 }
 
+static const struct tool_base *
+find_tool(const char *name)
+{
+	const struct tool_base *tool;
+
+	for (unsigned i = 0; (tool = tools[i]); i++) {
+		if (strcmp (tool->name, name) == 0)
+			return tool;
+	}
+	return NULL;
+}
+
 static int do_help(int argc, char *argv[])
 {
-	printf ("usage: %s [command] [-b BOARD] [OPTIONS...]\n", progname);
-	printf ("command is one of:\n");
-	for (unsigned i = 0; tools[i]; i++)
-		printf(" %-18s - %s\n", tools[i]->name, tools[i]->short_help);
+	if (argc == 1) {
+		printf ("usage: %s [command] [-b BOARD] [OPTIONS...]\n", progname);
+		printf ("command is one of:\n");
+		for (unsigned i = 0; tools[i]; i++)
+			printf(" %-18s - %s\n", tools[i]->name, tools[i]->short_help);
+	}
+	else {
+		for (unsigned i = 1; i < argc; i++) {
+			const struct tool_base *tool;
+
+			tool = find_tool(argv[i]);
+			if (tool == NULL) {
+				printf("tool '%s' does not exist\n", argv[i]);
+				return 1;
+			}
+			tool->help();
+		}
+	}
 	return 0;
 }
 
@@ -1215,10 +1247,10 @@ static int do_version(int argc, char *argv[])
 
 static void help_load(void)
 {
-        printf("usage: %s load BOARD-OPTIONS [-m MODULE] FILENAME\n", progname);
+        printf("usage: %s load [-c CORE] BOARD-OPTIONS FILENAME\n", progname);
         printf("Load FILENAME into WR cpu and restart the code\n");
 	printf("Option:\n"
-	       " -m MODULE   select wrpc core (wrpc-v5 or wrpc-v4)\n");
+	       " -c CORE   select wrpc core (wrpc-v5 or wrpc-v4)\n");
 }
 
 static int do_load(int argc, char *argv[])
@@ -1226,29 +1258,41 @@ static int do_load(int argc, char *argv[])
 	int c;
         int status;
 	const char *filename;
+	int reset;
 	enum { CMD_LOAD, CMD_DUMP, CMD_SAVE } cmd;
 	const struct wrc_cpu *cpu = &wrpc_v5_cpu;
+
+	if (argc > 2 && !strcmp(argv[1], "-c")) {
+		const char *core_name = argv[2];
+
+		remove_arg1(&argc, argv);
+		remove_arg1(&argc, argv);
+
+		if (!strcmp(core_name, "wrpc-v5")) {
+			cpu = &wrpc_v5_cpu;
+			map_size = 4 << 10;
+		}
+		else if (!strcmp(core_name, "wrpc-v4")) {
+			cpu = &wrpc_v4_cpu;
+			map_size = 256 << 10;
+		}
+		else {
+			printf("unknown core name '%s', try help load\n",
+			       core_name);
+			return 1;
+		}
+	}
 
 	/* Decode board options and open the board. */
 	if (board_open(&argc, argv) < 0)
 		return 1;
 
 	status = 0;
+	reset = 1;
 
 	cmd = CMD_LOAD;
-	while ((c = getopt(argc, argv, "vdscm:")) != -1) {
+	while ((c = getopt(argc, argv, "vdskr")) != -1) {
 		switch (c) {
-		case 'm':
-			if (!strcmp(optarg, "wrpc-v5"))
-				cpu = &wrpc_v5_cpu;
-			else if (!strcmp(optarg, "wrpc-v4"))
-				cpu = &wrpc_v4_cpu;
-			else {
-				printf("unknown module '%s', try help load\n",
-				       optarg);
-				return 1;
-			}
-			break;
 		case 'd':
 			cmd = CMD_DUMP;
 			break;
@@ -1258,9 +1302,12 @@ static int do_load(int argc, char *argv[])
 		case 'v':
 			verbose++;
 			break;
-                case 'c':
+                case 'k':
                         flag_check++;
                         break;
+		case 'r':
+			reset = 0;
+			break;
 		case '?':
                         printf("%s: unknown option, try -h\n", argv[0]);
                         exit(1);
@@ -1274,8 +1321,16 @@ static int do_load(int argc, char *argv[])
 	}
 	filename = argv[optind];
 
+	if (verbose)
+		printf("load '%s' using board %s and core %s\n",
+		       filename, board->name, cpu->name);
+
 	/* Reset */
-	cpu->reset(board, 1);
+	if (reset) {
+		if (verbose)
+			printf("Reset the cpu\n");
+		cpu->reset(board, 1);
+	}
 
 	switch (cmd) {
 	case CMD_LOAD:
@@ -1294,7 +1349,11 @@ static int do_load(int argc, char *argv[])
 	}
 
 	/* Start */
-	cpu->reset(board, 0);
+	if (reset) {
+		if (verbose)
+			printf("Un-reset the cpu\n");
+		cpu->reset(board, 0);
+	}
 
         board->fini(board);
 
@@ -1303,7 +1362,7 @@ static int do_load(int argc, char *argv[])
 
 static void help_vuart(void)
 {
-	fprintf(stderr, "%s BOARD-OPTIONS [-k] [-c <cmd>] [-r] [-t <timeout>]\n", progname);
+	fprintf(stderr, "usage: %s vuart BOARD-OPTIONS [-k] [-c <cmd>] [-r] [-t <timeout>]\n", progname);
 	fprintf(stderr, " -k keep terminal\n");
 	fprintf(stderr, " -c <cmd> execute command\n");
 	fprintf(stderr, " -t <timeout> set a timeout to execute a command\n");
@@ -3096,7 +3155,8 @@ static int debugger_run(struct dbg_port *dbg)
 
 static void help_gdbserver(void)
 {
-	fprintf(stderr, "%s BOARD-OPTIONS [options]\n", progname);
+	fprintf(stderr, "usage: %s gdbserver BOARD-OPTIONS [options]\n",
+		progname);
 	fprintf(stderr, " -p PORT       listen on tcp port PORT\n");
 	fprintf(stderr, " -v            verbose\n");
 	fprintf(stderr, " -t            enable terminal\n");
