@@ -1696,7 +1696,7 @@ static int do_info(int argc, char *argv[])
 	printf ("hwfr=%08x:  "
 		"memsize: %ukB,  storage: %u, storage sector size: %ukB\n",
 		hwfr,
-		SYSC_HWFR_MEMSIZE_R(hwfr) * 16,
+		(SYSC_HWFR_MEMSIZE_R(hwfr) + 1) * 16,
 		SYSC_HWFR_STORAGE_TYPE_R(hwfr),
 		SYSC_HWFR_STORAGE_SEC_R(hwfr));
 
