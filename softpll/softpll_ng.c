@@ -600,7 +600,7 @@ void spll_show_stats(void)
 
 		pp_printf("softpll: AUX%d:", ch-1);
 #ifdef CONFIG_FRAC_SPLL
-		pp_printf(" [ratio %d/%d = %d Hz]"
+		pp_printf(" [ratio %d/%d = %d Hz]",
 			  s->div_fb,
 			  s->div_ref,
 			  REF_CLOCK_FREQ_HZ * s->div_fb / s->div_ref);
