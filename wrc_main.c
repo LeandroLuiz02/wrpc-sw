@@ -57,6 +57,10 @@
 #include "lib/lldp.h"
 #endif
 
+#ifndef CONFIG_LPDC_NONE
+#include "lpdc.h"
+#endif
+
 struct wr_endpoint_device wrc_endpoint_dev;
 
 int wrc_wr_diags(void); // fixme: move the header
@@ -282,6 +286,10 @@ static void create_tasks(void)
 	/* Read DOM data from SFP even if the link is down or/and SFP
 	 * unplugged */
 	wrc_task_create("sfp_dom", NULL, sfp_dom_update);
+#endif
+
+#ifndef CONFIG_LPDC_NONE
+	wrc_task_create("phy-cal", phy_calibration_init, phy_calibration_poll);
 #endif
 }
 

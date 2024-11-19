@@ -9,13 +9,14 @@
 #include <stdlib.h>
 #include <string.h>
 #include <errno.h>
-#include <wrc.h>
+#include "wrc.h"
 
 #include "board.h"
 #include "dev/clock_monitor.h"
 #include "dev/console.h"
 #include "softpll_ng.h"
 #include "shell.h"
+#include "lpdc.h"
 
 #include "ertm15_rf_distr.h"
 #include "board-aux.h"
@@ -234,7 +235,6 @@ static void ertm14_dna_cmd(void)
 }
 
 /* FIXME: this should be in a .h file */
-extern void phy_calibration_disable(void);
 extern void streamers_reset_rx_stats(void);
 extern int streamers_get_rx_latency(void);
 extern int streamers_get_rx_timeout(void);

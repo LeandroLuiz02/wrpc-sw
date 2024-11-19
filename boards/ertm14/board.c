@@ -2538,10 +2538,6 @@ int wrc_board_early_init()
     return ll;
 }
 
-/* FIXME: these should be in a .h file */
-extern int phy_calibration_poll(void);
-extern void phy_calibration_init(void);
-
 
 static void mmc_show_version_info( const char *brdname, struct ertm14_mmc_state *st )
 {
@@ -2971,7 +2967,6 @@ int wrc_board_init()
     wrc_task_create( "control-uart", NULL, control_uart_poll );
     wrc_task_create( "mmc14", mmc14_link_init, mmc14_link_poll );
     wrc_task_create( "leds", NULL, ertm14_update_leds );
-    wrc_task_create( "phy-cal", phy_calibration_init, phy_calibration_poll );
 
     if( ! ( board.mode & ERTM14_MODE_WITHOUT_ERTM15 ) )
     {

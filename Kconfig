@@ -104,6 +104,29 @@ config WR_NODE
 	bool
 	default !TARGET_WR_SWITCH
 
+choice
+	prompt "LPDC (low-phase drift calibration) transceiver"
+	default LPDC_GTHE4 if TARGET_BABYWR
+	default LPDC_GTX if (TARGET_ERTM14 || TARGET_WR2RF_VME)
+	default LPDC_NONE
+
+config LPDC_NONE
+	bool "No lpdc transceiver"
+	help
+	  The transceiver does not support LPDC
+
+config LPDC_GTX
+	bool "Xilinx GTX with LPDC"
+	help
+	  The transceiver is family7-gtx-lp
+
+config LPDC_GTHE4
+	bool "Xilinx GTHE4 with LPDC"
+	help
+	  The transceiver is family7-gthe4-lp
+
+endchoice
+
 # most options with no prompt here are prompted-for in the "advanced" section
 
 config STACKSIZE

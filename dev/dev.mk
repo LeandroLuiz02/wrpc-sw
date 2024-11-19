@@ -56,6 +56,9 @@ obj-$(CONFIG_ETHERBONE) += dev/etherbone.o
 
 obj-$(CONFIG_IPMI_CONSOLE) += dev/console-ipmi.o
 
+obj-$(CONFIG_LPDC_GTX) += dev/lpdc_gtx.o
+obj-$(CONFIG_LPDC_GTHE4) += dev/lpdc_gthe4.o
+
 # board specific dev
 obj-$(CONFIG_TARGET_GENERIC_PHY_8BIT) += \
 

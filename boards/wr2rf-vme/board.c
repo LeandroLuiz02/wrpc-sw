@@ -166,13 +166,8 @@ int wrc_board_early_init(void)
     return 0;
 }
 
-extern int phy_calibration_poll(void);
-extern void phy_calibration_init(void);
-
 int wrc_board_init()
 {
-    wrc_task_create( "phy-cal", phy_calibration_init, phy_calibration_poll );
-
     return 0;
 }
 

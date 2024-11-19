@@ -329,6 +329,5 @@ int wrc_board_init()
 
 int wrc_board_create_tasks()
 {
-   wrc_task_create( "phy-cal", phy_calibration_init, phy_calibration_poll );
    return 0;
 }

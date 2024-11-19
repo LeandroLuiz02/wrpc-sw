@@ -103,8 +103,5 @@ int  babywr_init(void);
 void read_sitime (void);
 void write_sitime (int dev, int val);
 uint16_t temp_poll(void);
-extern int phy_calibration_poll(void);
-extern void phy_calibration_init(void);
-extern void phy_calibration_disable(void);
 
 #endif /* __BOARD_BABYWR_H */
