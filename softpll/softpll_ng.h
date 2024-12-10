@@ -23,6 +23,35 @@
 #include "spll_ptracker.h"
 #include "spll_external.h"
 
+/* Note on channel naming:
+
+ - ref_channel means a PHY recovered clock input. There can be one (as in
+   WR core) or more (WR switch).
+
+ - out_channel means an output channel, which represents PLL feedback signal
+   from a local, tunable oscillator. Every SPLL implementation has at least
+   one output channel, connected to the 125 / 62.5 MHz transceiver (WR)
+   reference. This channel (MAIN_CHANNEL) has always out index 0 and is
+   compared against all reference channels by the phase tracking mechanism.
+*/
+
+/* Number of reference/output channels. We don't plan to have more than one
+   SoftPLL instantiation per project, so these can remain global. */
+extern unsigned char spll_n_chan_ref, spll_n_chan_out;
+
+/* Channels id:
+   -1                                    : helper clock (for dmtd)
+   0 - (n_chan_ref-1)                    : reference clocks (from RX)
+   n_chan_ref .. n_chan_ref+n_chan_out-1 : main clock + auxilliary clocks
+
+   So for WR-Core,
+   0 : rxclk
+   1 : ref_clk
+   2.. : aux clocks
+*/
+/* So the main clock channel id is spll_n_chan_ref. */
+#define MAIN_CHANNEL (spll_n_chan_ref)
+
 /* Shortcut for 'channels' parameter in various API functions to perform
    operation on all channels */
 #define SPLL_ALL_CHANNELS 0xffffffff
@@ -42,17 +71,6 @@
 /* flags passed to spll_init() */
 #define SPLL_FLAG_ALIGN_PPS (1<<0) /* enables rephasing of the local oscillator to the external PPS signal */
 
-
-/* Note on channel naming:
- - ref_channel means a PHY recovered clock input. There can be one (as in
-   WR core) or more (WR switch).
- - out_channel means an output channel, which represents PLL feedback signal
-   from a local, tunable oscillator. Every SPLL implementation has at least
-   one output channel, connected to the 125 / 62.5 MHz transceiver (WR)
-   reference. This channel has always index 0 and is compared against all
-   reference channels by the phase tracking mechanism.
-*/
-
 /* For the result of spll_get_aux_status. */
 struct spll_aux_clock_status
 {
@@ -60,8 +78,6 @@ struct spll_aux_clock_status
 	uint16_t mode;
 	int phase;
 };
-
-/* PUBLIC API */
 
 /* 
 Initializes the SoftPLL to work in mode (mode). Extra parameters depend on choice of the mode:
