@@ -27,7 +27,7 @@
    operation on all channels */
 #define SPLL_ALL_CHANNELS 0xffffffff
 
-/* Auxilliary input clocks can be configured in two modes:
+/* Auxilliary input clocks can be configured in two modes: */
 /* Aux clock is disciplined from the local WR time base */
 #define SPLL_AUX_MODE_SLAVE 0
 /* Aux clock phase is monitored by the softPLL using another reference clock */
@@ -38,11 +38,6 @@
 #define SPLL_AUX_SLAVE_LOCKED (1<<1)  /* The particular aux clock is already locked to WR reference */
 #define SPLL_AUX_MONITOR_ENABLED (1<<2) /* The particilar aux clock phase is monitored against the local WR reference */
 #define SPLL_AUX_MONITOR_READY (1<<3)
-
-/* Channels for spll_measure_frequency() */
-#define SPLL_OSC_REF 0
-#define SPLL_OSC_DMTD 1
-#define SPLL_OSC_EXT 2
 
 /* flags passed to spll_init() */
 #define SPLL_FLAG_ALIGN_PPS (1<<0) /* enables rephasing of the local oscillator to the external PPS signal */
