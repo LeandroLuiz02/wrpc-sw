@@ -787,7 +787,7 @@ int spll_update(void)
 	return ret != 0;
 }
 
-struct spll_aux_clock_status spll_get_aux_status(int channel )
+struct spll_aux_clock_status spll_get_aux_status(int channel)
 {
 	struct spll_aux_clock_status rval;
 

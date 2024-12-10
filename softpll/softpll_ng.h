@@ -23,18 +23,21 @@
 #include "spll_ptracker.h"
 #include "spll_external.h"
 
-/* Shortcut for 'channels' parameter in various API functions to perform operation on all channels */
+/* Shortcut for 'channels' parameter in various API functions to perform
+   operation on all channels */
 #define SPLL_ALL_CHANNELS 0xffffffff
 
-#define SPLL_AUX_MODE_SLAVE 0 /* Aux clock is disciplined from the local WR time base */
-#define SPLL_AUX_MODE_PHASE_MONITOR 1 /* Aux clock phase is monitored by this softPLL using another reference clock */
+/* Auxilliary input clocks can be configured in two modes:
+/* Aux clock is disciplined from the local WR time base */
+#define SPLL_AUX_MODE_SLAVE 0
+/* Aux clock phase is monitored by the softPLL using another reference clock */
+#define SPLL_AUX_MODE_PHASE_MONITOR 1
 
 /* Aux clock flags */
 #define SPLL_AUX_SLAVE_ENABLED (1<<0) /* Locking the particular aux channel to the WR reference is enabled */
 #define SPLL_AUX_SLAVE_LOCKED (1<<1)  /* The particular aux clock is already locked to WR reference */
 #define SPLL_AUX_MONITOR_ENABLED (1<<2) /* The particilar aux clock phase is monitored against the local WR reference */
 #define SPLL_AUX_MONITOR_READY (1<<3)
-
 
 /* Channels for spll_measure_frequency() */
 #define SPLL_OSC_REF 0
@@ -55,10 +58,11 @@
    reference channels by the phase tracking mechanism.
 */
 
+/* For the result of spll_get_aux_status. */
 struct spll_aux_clock_status
 {
-	uint32_t flags;
-	int mode;
+	uint16_t flags;
+	uint16_t mode;
 	int phase;
 };
 
