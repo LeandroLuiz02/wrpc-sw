@@ -928,7 +928,7 @@ static int get_value(uint8_t *buf, uint8_t asn, void *p)
 		/* There is no support for 64bit counters in SNMPv1 */
 		return 0;
 	    }
-	    tmp_uint64 = *(uint64_t *)p;
+	    tmp_uint64 = htonll(*(uint64_t *)p);
 	    memcpy(oid_data, &tmp_uint64, sizeof(tmp_uint64));
 	    *len = sizeof(tmp_uint64);
 	    /* Our printf has disabled printing of 64bit values */
