@@ -24,6 +24,7 @@
 #include "net.h"
 #include "dev/netif.h"
 #include "dev/pps_gen.h"
+#include "dev/temperature.h"
 #include "hw/etherbone-config.h"
 #include "revision.h"
 #include "softpll_ng.h"
@@ -1000,7 +1001,6 @@ static int get_i32sat_pp(uint8_t *buf, struct snmp_oid *obj)
 
 static int get_temp(uint8_t *buf, struct snmp_oid *obj)
 {
-	#if 0
 	struct wrc_temp_sensor *p;
 	int l = 0, i = TABLE_FIRST_ROW;
 	int32_t t;
@@ -1038,7 +1038,6 @@ static int get_temp(uint8_t *buf, struct snmp_oid *obj)
 		/* data found return it */
 		return get_value(buf, obj->asn, buffer);
 	}
-	#endif
 
 	return 0;
 }
