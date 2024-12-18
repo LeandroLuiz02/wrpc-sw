@@ -1,12 +1,13 @@
 /*
  * This work is part of the White Rabbit project
  *
- * Copyright (C) 2012,2015 CERN (www.cern.ch)
+ * Copyright (C) 2012, 2015, 2024 CERN (www.cern.ch)
  * Author: Tomasz Wlostowski <tomasz.wlostowski@cern.ch>
  * Author: Adam Wujek <adam.wujek@cern.ch>
  *
  * Released according to the GNU GPL, version 2 or any later version.
  */
+#include <string.h>
 #include <wrc.h>
 #include "dev/console.h"
 #include "softpll_ng.h"
@@ -16,9 +17,8 @@
 #include "gpio-wrs.h"
 
 int scb_ver = 33;		/* SCB version */
-int scb_ljd_present = 0; /* LJD presence */
 
-extern struct spll_stats stats;
+extern struct spll_stats *stats;
 
 /* dump of structures is not supported for switch */
 int wrc_global = 0xDEADADA5;
@@ -30,35 +30,90 @@ void init_hw_after_reset(void)
 	console_init();
 }
 
+static int lj_periph_id_read(void)
+{
+	int periph_id;
+
+	periph_id  =  gen_gpio_in(&gpio_pin_ljd_periph_id_0);
+	periph_id += (gen_gpio_in(&gpio_pin_ljd_periph_id_1) << 1);
+	periph_id += (gen_gpio_in(&gpio_pin_ljd_periph_id_2) << 2);
+	stats->lj_periph_id = periph_id;
+
+	return periph_id;
+}
+
+static int lj_periph_type_read(int ljd_present, int periph_id)
+{
+	int osc_freq  = 0;
+
+	if (ljd_present == 0) {
+		pp_printf("\n--- WRS without Low jitter peripherial detected.\n");
+		return PERIPH_WRS_STD_NO_LJ;
+    }
+
+	osc_freq   =  gen_gpio_in(&gpio_pin_ljd_osc_freq_0);
+	osc_freq  += (gen_gpio_in(&gpio_pin_ljd_osc_freq_1) << 1);
+	osc_freq  += (gen_gpio_in(&gpio_pin_ljd_osc_freq_2) << 2);
+	stats->lj_osc_freq_type = osc_freq;
+
+	pp_printf("\n--- WRS Low jitter peripherial detected. "
+		  "OSC FREQ is %d LJ_PERIPH_ID is %d ---\n",
+		  osc_freq, periph_id);
+	pp_printf("Allow 1 hour of warming up before starting measurements\n");
+	pp_printf("Derived LJ Peripherial type: ");
+	if (osc_freq == OSC_FREQ_WRS_LJ_INT && periph_id == PERIPH_ID_WRS_FL_SYNCTECHv1_0) {
+		pp_printf("WRS-FL from SyncTech 1.0\n");
+		return PERIPH_WRS_FL_SYNCTECH;
+	}
+        if (osc_freq == OSC_FREQ_WRS_LJ_INT && periph_id == PERIPH_ID_WRS_FL_SYNCTECHv1_5) {
+                pp_printf("WRS-FL from SyncTech 1.5\n");
+                return PERIPH_WRS_FL_SYNCTECH;
+        }
+	if (osc_freq == OSC_FREQ_WRS_LJ_INT && periph_id == PERIPH_ID_WRS_LJ_SAFRAN) {
+		pp_printf("WRS-LJ from Safran\n");
+		return PERIPH_WRS_LJ_SAFRAN;
+	}
+
+	pp_printf("WRS with plugged Low Jitter Daughterboard\n");
+	return PERIPH_WRS_STD_WITH_LJD;
+}
+
+
 int main(void)
 {
 	uint32_t start_tics = timer_get_tics();
+	int lj_periph_type;
 
 	check_reset();
-	stats.start_cnt++;
+	stats->magic=SPLL_STATS_MAGIC;
+	stats->ver=SPLL_STATS_VER;
+	stats->start_cnt++;
 	_endram = ENDRAM_MAGIC;
 	wrs_gpio_init();
 	console_init();
 	pp_printf("\n");
-	pp_printf("WR Switch Real Time Subsystem (c) CERN 2011 - 2020\n");
-	pp_printf("Commit: %s, built: %s %s.\n",
-	      build_id.commit_id, build_id.build_date, build_id.build_time);
+	pp_printf("WR Switch Real Time Subsystem (c) CERN 2011 - 2024\n");
+	memcpy(&stats->build_id, &build_id, sizeof (build_id));
+	pp_printf("Commit: %s, built: %s %s by %s.\n",
+		  build_id.commit_id, build_id.build_date, build_id.build_time,
+		  build_id.build_by);
 	pp_printf("SCB version: %d. %s\n", scb_ver,(scb_ver>=34)?"10 MHz SMC Output.":"" );
-	pp_printf("Start counter %d\n", stats.start_cnt);
+	pp_printf("Start counter %d\n", stats->start_cnt);
 	/* Low-jitter Daughterboard detection */
-	scb_ljd_present = gen_gpio_in(&gpio_pin_ljd_board_detect);
-	if (scb_ljd_present) {
-		pp_printf("\n--- WRS Low jitter board detected. ---\n");
-		pp_printf("Allow 1 hour of warming up before starting measurements\n");
-	}
-	pp_printf("--\n");
+	scb_ljd_present_global = gen_gpio_in(&gpio_pin_ljd_board_detect);
+	stats->ljd_present = scb_ljd_present_global;
+	periph_id_global = lj_periph_id_read();
+	lj_periph_type = lj_periph_type_read(scb_ljd_present_global, periph_id_global);
+	stats->lj_wrs_type = lj_periph_type;
 
-	if (stats.start_cnt > 1) {
+	if (stats->start_cnt > 1) {
 		pp_printf("!!spll does not work after restart!!\n");
 		/* for sure problem is in calling second time ad9516_init,
 		 * but not only */
 	}
-	ad9516_init(scb_ver, scb_ljd_present);
+
+	ad9516_init(scb_ver, lj_periph_type, scb_ljd_present_global);
+
 	rts_init();
 	rtipc_init();
 	spll_very_init();

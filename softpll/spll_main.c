@@ -25,6 +25,22 @@ extern void spll_log_dac(int y);
 static inline void spll_log_dac(int y) {}
 #endif
 
+#if defined(CONFIG_TARGET_WR_SWITCH)
+/* Standard WRS version */
+#define MPLL_KP_DEFAULT		1100
+#define MPLL_KI_DEFAULT		30
+/* WRS LJD version */
+#define MPLL_LJD_KP_DEFAULT	2000
+#define MPLL_LJD_KI_DEFAULT	15
+/* WRS LJD version from Safrane */
+#define MPLL_LJD_KP_SAFRANE	1100
+#define MPLL_LJD_KI_SAFRANE	30
+
+/* Force varaibles below in .sdata section so can be updated at load time */
+int main_pll_kp __attribute__((section(".sdata.main_pll_kp"))) = 0;
+int main_pll_ki __attribute__((section(".sdata.main_pll_ki"))) = 0;
+#endif
+
 void mpll_init(struct spll_main_state *s, int id_ref, int id_out)
 {
 	/* Frequency branch PI controller */
@@ -37,13 +53,32 @@ void mpll_init(struct spll_main_state *s, int id_ref, int id_out)
 	s->pi.bias = (1 << (BOARD_SPLL_DAC_BITS - 1)); // midscale
 	s->pi.shift = PI_FRACBITS - BOARD_SPLL_DIV_BITS;
 #if defined(CONFIG_TARGET_WR_SWITCH)
-	if (spll_ljd_present) {
-		s->pi.kp = 2000;
-		s->pi.ki = 15;
-	} else {
-		s->pi.kp = 1100;		// / 2;
-		s->pi.ki = 30;			// / 2;
+	static int init = 1;
+	if (init) { /* Avoid overwriting pi values when e.g change timing mode */
+		s->pi.kp = main_pll_kp;
+		s->pi.ki = main_pll_ki;
+		if (scb_ljd_present_global
+		    && periph_id_global == PERIPH_ID_WRS_LJ_SAFRAN) {
+			/* LJD version from Safrane */
+			if (s->pi.kp == 0) /* 0 means not changed at load */
+				s->pi.kp = MPLL_LJD_KP_SAFRANE;
+			if (s->pi.ki == 0) /* 0 means not changed at load */
+				s->pi.ki = MPLL_LJD_KI_SAFRANE;
+		} else if (scb_ljd_present_global) {
+			/* LJD version */
+			if (s->pi.kp == 0) /* 0 means not changed at load */
+				s->pi.kp = MPLL_LJD_KP_DEFAULT;
+			if (s->pi.ki == 0) /* 0 means not changed at load */
+				s->pi.ki = MPLL_LJD_KI_DEFAULT;
+		} else {
+			/* Standard version */
+			if (s->pi.kp == 0) /* 0 means not changed at load */
+				s->pi.kp = MPLL_KP_DEFAULT;
+			if (s->pi.ki == 0) /* 0 means not changed at load */
+				s->pi.ki = MPLL_KI_DEFAULT;
+		}
 	}
+	init = 0;
 #elif defined(CONFIG_WR_NODE)
 	s->pi.kp = -1100;		// / 2;
 	s->pi.ki = -30;			// / 2;

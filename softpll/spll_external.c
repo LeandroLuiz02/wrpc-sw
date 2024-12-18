@@ -14,29 +14,32 @@
 #include "softpll_ng.h"
 #include "irq.h"
 
-#define ALIGN_SAMPLE_PERIOD 100000
+#define ALIGN_SAMPLE_PERIOD 10000000
 #define ALIGN_TARGET 0
 
 #define EXT_PERIOD_NS 100
 #define EXT_FREQ_HZ 10000000
-// fixme: make configurable
-#define EXT_PPS_LATENCY_PS 30000	// for regular ext channel
-#define EXT_PPS_LATENCY_LJD_PS 63000	// for low-jitter daughterboard
 
+int ext_pps_latency[] = {
+	37300, // PERIPH_WRS_STD_NO_LJ
+	-4500, // PERIPH_WRS_STD_WITH_LJD
+	111395,// PERIPH_WRS_FL_SYNCTECH
+	16000  // PERIPH_WRS_LJ_SAFRAN
+};
 
 void external_init(volatile struct spll_external_state *s, int ext_ref,
 			  int realign_clocks)
 {
-    int idx = spll_n_chan_ref + spll_n_chan_out;
+	int idx = spll_n_chan_ref + spll_n_chan_out;
 
-    if (spll_ljd_present)
-      idx++;
+	if (scb_ljd_present_global)
+		idx++;
 
-    helper_init(s->helper, idx);
-    mpll_init(s->main, idx, spll_n_chan_ref);
+	helper_init(s->helper, idx);
+	mpll_init(s->main, idx, spll_n_chan_ref);
 
-    s->align_state = ALIGN_STATE_EXT_OFF;
-    s->enabled = 0;
+	s->align_state = ALIGN_STATE_EXT_OFF;
+	s->enabled = 0;
 }
 
 void external_start(struct spll_external_state *s)
@@ -89,29 +92,30 @@ static int align_sample(int channel, int *v)
 
 static inline int get_pps_latency(int sel)
 {
-	if (sel)
-		return EXT_PPS_LATENCY_LJD_PS;
+	if (sel >= PERIPH_END)
+		return ext_pps_latency[PERIPH_WRS_STD_NO_LJ];
 	else
-		return EXT_PPS_LATENCY_PS;
+		return ext_pps_latency[sel];
 }
 
 int external_align_fsm(volatile struct spll_external_state *s)
 {
 	int v, done_sth = 0;
 	static int timeout;
+	static int old_ext_pps_latency_ps;
 
 	switch(s->align_state) {
 		case ALIGN_STATE_EXT_OFF:
 			break;
 
 		case ALIGN_STATE_WAIT_CLKIN:
-			if(!spll_ljd_present && !(SPLL->ECCR & SPLL_ECCR_EXT_REF_STOPPED) ) {
+			if(!scb_ljd_present_global && !(SPLL->ECCR & SPLL_ECCR_EXT_REF_STOPPED) ) {
 				SPLL->ECCR |= SPLL_ECCR_EXT_REF_PLLRST;
 				s->align_state = ALIGN_STATE_WAIT_PLOCK;
 				done_sth++;
 			}
 #if defined(CONFIG_TARGET_WR_SWITCH)
-			else if (spll_ljd_present) {
+			else if (scb_ljd_present_global) {
 				uint32_t f_ext;
 				int ljd_ad9516_stat;
 				/* reset ljd ad9516 */
@@ -160,7 +164,7 @@ int external_align_fsm(volatile struct spll_external_state *s)
 			SPLL->AL_CR = 2;
 			if(s->helper->ld.locked && s->main->locked) {
 				PPSG->CR = PPSG_CR_CNT_EN | PPSG_CR_PWIDTH_W(10);
-				PPSG->ADJ_NSEC = 3;
+				PPSG->ADJ_NSEC = 5;
 				PPSG->ESCR = PPSG_ESCR_SYNC;
 				s->align_state = ALIGN_STATE_INIT_CSYNC;
 				pll_verbose("EXT: DMTD locked.\n");
@@ -192,10 +196,10 @@ int external_align_fsm(volatile struct spll_external_state *s)
 			if(align_sample(1, &v)) {
 				v %= ALIGN_SAMPLE_PERIOD;
 				if(v == 0 || v >= ALIGN_SAMPLE_PERIOD / 2) {
-					s->align_target = EXT_PERIOD_NS;
-					s->align_step = -100;
-				} else if (s > 0) {
 					s->align_target = 0;
+					s->align_step = -100;					
+				} else if (s > 0) {
+					s->align_target = ALIGN_SAMPLE_PERIOD-EXT_PERIOD_NS;
 					s->align_step = 100;
 				}
 
@@ -212,7 +216,11 @@ int external_align_fsm(volatile struct spll_external_state *s)
 					s->align_shift += s->align_step;
 					mpll_set_phase_shift(s->main, s->align_shift);
 				} else if (v == s->align_target) {
-					s->align_shift += get_pps_latency(spll_ljd_present);
+					/* Constant latency depending on a WRS type */
+					s->align_shift += get_pps_latency(scb_ljd_present_global);
+					/* Latency tuned by WRS ARM software */
+					s->align_shift += s->pps_latency_ps;
+					old_ext_pps_latency_ps = s->pps_latency_ps;
 					mpll_set_phase_shift(s->main, s->align_shift);
 					s->align_state = ALIGN_STATE_COMPENSATE_DELAY;
 				}
@@ -233,6 +241,22 @@ int external_align_fsm(volatile struct spll_external_state *s)
 				s->align_state = ALIGN_STATE_WAIT_CLKIN;
 				done_sth++;
 			}
+
+			if (old_ext_pps_latency_ps != s->pps_latency_ps) {
+				pp_printf("EXT: Align changed old %d new %d\n",
+					  old_ext_pps_latency_ps,
+					  s->pps_latency_ps);
+				s->align_shift -= old_ext_pps_latency_ps;
+				s->align_shift += s->pps_latency_ps;
+				old_ext_pps_latency_ps = s->pps_latency_ps;
+				mpll_set_phase_shift(s->main, s->align_shift);
+
+				/* Go back to ALIGN_STATE_COMPENSATE_DELAY
+				 * to make sure that shifting is finished */
+				s->align_state = ALIGN_STATE_COMPENSATE_DELAY;
+				done_sth++;
+			}
+
 			break;
 
 		default:

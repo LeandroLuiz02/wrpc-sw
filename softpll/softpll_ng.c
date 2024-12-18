@@ -21,7 +21,9 @@
 #include "irq.h"
 
 unsigned char spll_n_chan_ref, spll_n_chan_out;
-unsigned char spll_ljd_present = 0;
+int lj_periph_type = 0;
+int scb_ljd_present_global = 0;	/* Low-jitter Daughterboard presence indicator */
+int periph_id_global = 0;
 
 static const char * const seq_states[] =
 {
@@ -304,7 +306,6 @@ void spll_init(int mode, int slave_ref_channel, int flags)
 	spll_n_chan_out = SPLL_CSR_N_OUT_R(csr);
 	if( spll_n_chan_out > 3 ) // fixme: bug in HDL?
 		spll_n_chan_out = 3;
-	spll_ljd_present = (flags & SPLL_FLAG_USE_LJD ? 1 : 0);
 
 	s->mode = mode;
 	s->delock_count = 0;
@@ -764,17 +765,23 @@ int spll_update(void)
 
 #ifdef CONFIG_TARGET_WR_SWITCH
 	/* store statistics */
-	stats.sequence++;
-	stats.mode  = softpll.mode;
-	stats.irq_cnt = softpll.irq_count;
-	stats.seq_state = softpll.seq_state;
-	stats.align_state = softpll.ext.align_state;
-	stats.H_lock = softpll.helper.ld.locked;
-	stats.M_lock = softpll.mpll.locked;
-	stats.H_y = softpll.helper.pi.y;
-	stats.M_y = softpll.mpll.pi.y;
-	stats.del_cnt = softpll.delock_count;
-	stats.sequence++;
+	stats->sequence++;
+	stats->mode  = softpll.mode;
+	stats->irq_cnt = softpll.irq_count;
+	stats->seq_state = softpll.seq_state;
+	stats->align_state = softpll.ext.align_state;
+	stats->H_lock = softpll.helper.ld.locked;
+	stats->M_lock = softpll.mpll.locked;
+	stats->H_y = softpll.helper.pi.y;
+	stats->M_y = softpll.mpll.pi.y;
+	stats->del_cnt = softpll.delock_count;
+	stats->ext_pps_latency_ps = softpll.ext.pps_latency_ps;
+	stats->main_pll_kp = softpll.mpll.pi.kp;
+	stats->main_pll_ki = softpll.mpll.pi.ki;
+	stats->helper_pll_kp = softpll.helper.pi.kp;
+	stats->helper_pll_ki = softpll.helper.pi.ki;
+	
+	stats->sequence++;
 #endif
 
 	return ret != 0;
@@ -890,7 +897,26 @@ void spll_set_pi_gain( int loop, int sched_stage, int kp, int ki, int shift )
 	enable_irq();
 }
 
-
+/* Simpler version of spll_set_pi_gain */
+void spll_set_pi_gain_kp_ki(int loop, int kp, int ki)
+{
+	pll_verbose("set_pi_gain loop=%d kp=%d ki=%d\n", loop, kp, ki);
+	disable_irq();
+	switch(loop)
+	{
+		case SPLL_LOOP_HELPER:
+			softpll.helper.pi.kp = kp;
+			softpll.helper.pi.ki = ki;
+			break;
+		case SPLL_LOOP_MAIN:
+			softpll.mpll.pi.kp = kp;
+			softpll.mpll.pi.ki = ki;
+			break;
+		default:
+			break;
+	}
+	enable_irq();
+}
 
 static struct spll_debug_queue_state
 {
@@ -1002,4 +1028,10 @@ int spll_vco_freeze(int freeze)
 int spll_is_ext_supported(void)
 {
 	return (SPLL->ECCR & SPLL_ECCR_EXT_SUPPORTED) ? 1 : 0;
+}
+
+void spll_update_ext_pps_latency_ps(int offset_ps)
+{
+	struct softpll_state *s = (struct softpll_state *)&softpll;
+	s->ext.pps_latency_ps = offset_ps;
 }

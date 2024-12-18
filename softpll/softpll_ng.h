@@ -43,7 +43,6 @@
 
 /* flags passed to spll_init() */
 #define SPLL_FLAG_ALIGN_PPS (1<<0) /* enables rephasing of the local oscillator to the external PPS signal */
-#define SPLL_FLAG_USE_LJD (1<<1)   /* enables the Low Jitter Daughterboard mezzanine (WRS V3 - specific) */
 
 
 /* Note on channel naming:
@@ -129,8 +128,11 @@ int spll_get_dac(int out_channel);
 
 void spll_set_gain_schedule( spll_gain_schedule_t* sch );
 void spll_set_pi_gain( int loop, int sched_stage, int kp, int ki, int shift );
+void spll_set_pi_gain_kp_ki(int loop, int kp, int ki);
 
 void spll_set_ptracker_average_samples(int channel, int nsamples);
+
+void spll_update_ext_pps_latency_ps(int offset_ps);
 
 int spll_get_debug_queue_samples( uint32_t *buf, int *count );
 void spll_debug_queue_configure( int undersample, int coalsesce_threshold );
@@ -179,9 +181,10 @@ struct softpll_state {
 	struct spll_ptracker_state ptrackers[MAX_PTRACKERS];
 };
 
-extern unsigned char spll_ljd_present;
-
 extern volatile struct softpll_state softpll;
+extern int lj_periph_type;
+extern int scb_ljd_present_global;
+extern int periph_id_global;
 
 #endif // __SOFTPLL_NG_H
 

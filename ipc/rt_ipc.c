@@ -22,8 +22,6 @@
 
 static struct rts_pll_state pstate;
 
-extern int scb_ljd_present;
-
 static void clear_state(void)
 {
 	int i;
@@ -76,9 +74,6 @@ int rts_set_mode(int mode)
 			if(options[i].do_init)
 			{
 				uint32_t flags = SPLL_FLAG_ALIGN_PPS;
-
-				if( scb_ljd_present )
-					flags |= SPLL_FLAG_USE_LJD;
 
 				spll_init(options[i].mode_spll, 0, flags);
 			}
@@ -154,23 +149,23 @@ static int rts_get_state_func(const struct minipc_pd *pd, uint32_t *args, void *
     struct rts_pll_state *tmp = (struct rts_pll_state *)ret;
     int i;
 
-		pstate.ipc_count++;
+	pstate.ipc_count++;
 
     /* gaaaah, somebody should write a SWIG plugin for generating this stuff. */
-    tmp->current_ref = htonl(pstate.current_ref);
-    tmp->flags = htonl(pstate.flags);
-    tmp->holdover_duration = htonl(pstate.holdover_duration);
-    tmp->mode = htonl(pstate.mode);
-		tmp->delock_count = spll_get_delock_count();
-		tmp->ipc_count = pstate.ipc_count;
-		
+    tmp->current_ref = pstate.current_ref;
+    tmp->flags = pstate.flags;
+    tmp->holdover_duration = pstate.holdover_duration;
+    tmp->mode = pstate.mode;
+    tmp->delock_count = spll_get_delock_count();
+    tmp->ipc_count = pstate.ipc_count;
+
     for(i=0; i<RTS_PLL_CHANNELS;i++)
     {
-        tmp->channels[i].priority = htonl(pstate.channels[i].priority);
-        tmp->channels[i].phase_setpoint = htonl(pstate.channels[i].phase_setpoint);
-        tmp->channels[i].phase_current = htonl(pstate.channels[i].phase_current);
-        tmp->channels[i].phase_loopback = htonl(pstate.channels[i].phase_loopback);
-        tmp->channels[i].flags = htonl(pstate.channels[i].flags);
+	tmp->channels[i].priority = pstate.channels[i].priority;
+	tmp->channels[i].phase_setpoint = pstate.channels[i].phase_setpoint;
+	tmp->channels[i].phase_current = pstate.channels[i].phase_current;
+	tmp->channels[i].phase_loopback = pstate.channels[i].phase_loopback;
+	tmp->channels[i].flags = pstate.channels[i].flags;
     }
 
     return 0;
@@ -223,14 +218,31 @@ static int rts_debug_command_func(const struct minipc_pd *pd, uint32_t *args, vo
     return 0;
 }
 
+static int rts_set_pi_gain_func(const struct minipc_pd *pd, uint32_t *args, void *ret)
+{
+    pstate.ipc_count++;
+    spll_set_pi_gain_kp_ki((int)args[0], (int)args[1], (int)args[2]);
+    *(int *) ret = 0;
+    return 0;
+}
 
+static int rts_set_pps_in_out_offset_func(const struct minipc_pd *pd,
+					  uint32_t *args, void *ret)
+{
+	pstate.ipc_count++;
+	spll_update_ext_pps_latency_ps ((int)args[0]);
+	pp_printf("%s: setting offset to %d\n", __func__, (int)args[0]);
+
+	*(int *) ret = 0;
+	return 0;
+}
 
 static struct minipc_ch *server;
 
 int rtipc_init(void)
 {
 	/* The mailbox is mapped at 0xf000 in the linker script */
-	server = minipc_server_create("mem:f000", 0);
+	server = minipc_server_create("mem:100000", 0);
 	if (!server)
 		return 1;
 
@@ -241,7 +253,10 @@ int rtipc_init(void)
 	rtipc_rts_enable_ptracker_struct.f = rts_enable_ptracker_func;
 	rtipc_rts_debug_command_struct.f = rts_debug_command_func;
 	rtipc_rts_set_average_samples_struct.f = rts_set_average_samples_func;
-	
+	rtipc_rts_set_pps_in_out_offset_struct.f =
+						rts_set_pps_in_out_offset_func;
+	rtipc_rts_set_pi_gain_struct.f = rts_set_pi_gain_func;
+
 	minipc_export(server, &rtipc_rts_set_mode_struct);
 	minipc_export(server, &rtipc_rts_get_state_struct);
 	minipc_export(server, &rtipc_rts_lock_channel_struct);
@@ -249,8 +264,8 @@ int rtipc_init(void)
   minipc_export(server, &rtipc_rts_enable_ptracker_struct);
   minipc_export(server, &rtipc_rts_debug_command_struct);
   minipc_export(server, &rtipc_rts_set_average_samples_struct);
-
-
+	minipc_export(server, &rtipc_rts_set_pps_in_out_offset_struct);
+	minipc_export(server, &rtipc_rts_set_pi_gain_struct);
 	return 0;
 }
 
