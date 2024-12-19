@@ -271,7 +271,10 @@ extest:
 	$(MAKE) -C liblinux/extest CC=cc
 
 tools-dependencies-$(CONFIG_TARGET_ERTM14) +=  libertm
-tools/gensdbfs tools/pfilter-builder tools/genraminit tools/genramvhd tools/genrammif tools/genrammem tools: .config $(AUTOCONF) gitmodules liblinux extest $(tools-dependencies-y)
+tools/gensdbfs tools/pfilter-builder tools/genraminit tools/genramvhd tools/genrammif tools/genrammem: tools
+	@true
+
+tools: .config $(AUTOCONF) gitmodules liblinux extest $(tools-dependencies-y)
 	$(MAKE) -C tools
 
 tools-diag: liblinux extest
