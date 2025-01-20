@@ -14,8 +14,8 @@
 #include "softpll_ng.h"
 #include "irq.h"
 
+/* The aligner produces a sample at 100Hz, so every 10_000_000 ns */
 #define ALIGN_SAMPLE_PERIOD 10000000
-#define ALIGN_TARGET 0
 
 /* External clock frequency is 10Mhz, so its period is 100ns */
 #define EXT_PERIOD_NS 100
@@ -78,6 +78,12 @@ int external_locked(volatile struct spll_external_state *s)
 	}
 }
 
+/* 100 times per second, the spll_aligner produce a sample, which is the
+   tick number of the 10Mhz input since its pps.
+   Return the time internal since the pps input (in NS).
+   The remainder by ALIGN_SAMPLE_PERIOD of the result is computed by the caller,
+   to get the offset between the ref_clock and the ext_clock
+*/
 static int align_sample(int channel, int *v)
 {
 	int mask = (1 << channel);
@@ -220,9 +226,10 @@ int external_align_fsm(volatile struct spll_external_state *s)
 			if(!mpll_shifter_busy(s->main) && align_sample(1, &v)) {
 				v %= ALIGN_SAMPLE_PERIOD;
 				if(v != s->align_target) {
+					/* Continue to adjust the phase */
 					s->align_shift += s->align_step;
 					mpll_set_phase_shift(s->main, s->align_shift);
-				} else if (v == s->align_target) {
+				} else {
 					/* Constant latency depending on a WRS type */
 					s->align_shift += get_pps_latency(scb_ljd_present_global);
 					/* Latency tuned by WRS ARM software */
