@@ -583,6 +583,13 @@ void spll_show_stats(void)
 		    s->mpll.last_freq_lock_duration_ms,
 		    s->mpll.last_phase_lock_duration_ms
 		    );
+	  if (0)
+	    pp_printf(" main: en:%d ref:%d out:%d lck:%d freeze:%d",
+		      s->mpll.enabled,
+		      s->mpll.id_ref,
+		      s->mpll.id_out,
+		      s->mpll.locked,
+		      s->mpll.ps_freeze);
 
 		if( softpll.mpll.gain_sched )
 		{
