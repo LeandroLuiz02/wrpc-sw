@@ -10,7 +10,7 @@
 /* spll_external.h - implementation of SoftPLL servo for the 
    external (10 MHz - Grandmaster mode) reference channel */
 
-#include <wrc.h>
+#include "wrc.h"
 #include "softpll_ng.h"
 #include "irq.h"
 
@@ -20,15 +20,14 @@
 #define EXT_PERIOD_NS 100
 #define EXT_FREQ_HZ 10000000
 
-int ext_pps_latency[] = {
+static const int ext_pps_latency[] = {
 	37300, // PERIPH_WRS_STD_NO_LJ
 	-4500, // PERIPH_WRS_STD_WITH_LJD
 	111395,// PERIPH_WRS_FL_SYNCTECH
 	16000  // PERIPH_WRS_LJ_SAFRAN
 };
 
-void external_init(volatile struct spll_external_state *s, int ext_ref,
-			  int realign_clocks)
+void external_init(volatile struct spll_external_state *s, int ext_ref)
 {
 	int idx = spll_n_chan_ref + spll_n_chan_out;
 

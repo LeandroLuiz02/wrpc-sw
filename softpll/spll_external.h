@@ -20,18 +20,17 @@ struct spll_external_state {
 	struct spll_helper_state *helper;
 	struct spll_main_state *main;
 
-  int enabled;
+	int enabled;
 
 	int align_state;
 	int align_timer;
-  int align_target;
-  int align_step;
-  int align_shift;
+	int align_target;
+	int align_step;
+	int align_shift;
 	int pps_latency_ps;
 };
 
-void external_init(volatile struct spll_external_state *s, int ext_ref,
-			  int realign_clocks);
+void external_init(volatile struct spll_external_state *s, int ext_ref);
 
 void external_start(struct spll_external_state *s);
 

@@ -357,7 +357,7 @@ void spll_init(int mode, int slave_ref_channel, int flags)
 		if(SPLL->ECCR & SPLL_ECCR_EXT_SUPPORTED) {
 			s->ext.helper = &s->helper;
 			s->ext.main = &s->mpll;
-			external_init(&s->ext, spll_n_chan_ref + spll_n_chan_out, flags & SPLL_FLAG_ALIGN_PPS ? 1 : 0);
+			external_init(&s->ext, spll_n_chan_ref + spll_n_chan_out);
 		} else {
 			pll_verbose("softpll: attempting to enable GM mode on non-GM hardware.\n");
 			return;
