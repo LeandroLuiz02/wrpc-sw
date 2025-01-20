@@ -9,8 +9,9 @@
 #include <stdlib.h>
 #include <string.h>
 #include <errno.h>
-#include <wrc.h>
+#include "wrc.h"
 
+#include "hw/softpll_regs.h"
 #include "softpll_ng.h"
 #include "shell.h"
 
@@ -24,8 +25,9 @@
 #define CMD_SDAC 7
 #define CMD_GDAC 8
 #define CMD_GAIN 9
-
-
+#if 0
+#define CMD_REGS 10
+#endif
 
 /* The sub-commands.  */
 static const char * const pll_menu[] =
@@ -39,7 +41,10 @@ static const char * const pll_menu[] =
 	[CMD_STOP] = "stop",
 	[CMD_SDAC] = "sdac",
 	[CMD_GDAC] = "gdac",
-	[CMD_GAIN] = "gain"
+	[CMD_GAIN] = "gain",
+#ifdef CMD_REGS
+	[CMD_REGS] = "regs",
+#endif
 };
 
 /* Number of arguments for the sub-commands.  Mind the order!  */
@@ -54,7 +59,10 @@ static const unsigned char nargs[] =
 	[CMD_STOP] = 1,
 	[CMD_SDAC] = 2,
 	[CMD_GDAC] = 1,
-	[CMD_GAIN] = 5
+	[CMD_GAIN] = 5,
+#ifdef CMD_REGS
+	[CMD_REGS] = 0,
+#endif
 };
 
 static int cmd_pll(const char *args[])
@@ -108,10 +116,16 @@ static int cmd_pll(const char *args[])
 		pp_printf("%d\n", spll_get_dac(vals[1]));
 		return 0;
 	case CMD_GAIN:
-	{
 		spll_set_pi_gain( vals[1], vals[2], vals[3], vals[4], vals[5] );
 		return 0;
-	}
+#ifdef CMD_REGS
+	case CMD_REGS:
+		pp_printf("OCCR: %08x\n", SPLL->OCCR);
+		pp_printf("OCER: %08x\n", SPLL->OCER);
+		pp_printf("ECCR: %08x\n", SPLL->ECCR);
+		pp_printf("RCER: %08x\n", SPLL->RCER);
+		return 0;
+#endif
 	default:
 		return 0;
 	}
