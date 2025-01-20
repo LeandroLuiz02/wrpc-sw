@@ -17,6 +17,7 @@
 #define ALIGN_SAMPLE_PERIOD 10000000
 #define ALIGN_TARGET 0
 
+/* External clock frequency is 10Mhz, so its period is 100ns */
 #define EXT_PERIOD_NS 100
 #define EXT_FREQ_HZ 10000000
 
@@ -31,10 +32,13 @@ void external_init(volatile struct spll_external_state *s, int ext_ref)
 {
 	int idx = spll_n_chan_ref + spll_n_chan_out;
 
+	/* If the LJD board is present, use the 10Mhz from it */
 	if (scb_ljd_present_global)
 		idx++;
 
+	/* Helper now tracks the external clock */
 	helper_init(s->helper, idx);
+	/* So does main clock */
 	mpll_init(s->main, idx, spll_n_chan_ref);
 
 	s->align_state = ALIGN_STATE_EXT_OFF;
@@ -55,9 +59,9 @@ void external_start(struct spll_external_state *s)
 
 int external_locked(volatile struct spll_external_state *s)
 {
-	if (!s->helper->ld.locked || !s->main->locked ||
-			!(SPLL->ECCR & SPLL_ECCR_EXT_REF_LOCKED) ||  // ext PLL became unlocked
-			(SPLL->ECCR & SPLL_ECCR_EXT_REF_STOPPED))   // 10MHz unplugged (only SPEC)
+	if (!s->helper->ld.locked || !s->main->locked
+	    || !(SPLL->ECCR & SPLL_ECCR_EXT_REF_LOCKED)  // ext PLL became unlocked
+	    || (SPLL->ECCR & SPLL_ECCR_EXT_REF_STOPPED))   // 10MHz unplugged (only SPEC)
 		return 0;
 	
 	switch(s->align_state) {
@@ -79,6 +83,7 @@ static int align_sample(int channel, int *v)
 	int mask = (1 << channel);
 
 	if(SPLL->AL_CR & mask) {
+		/* Got a sample */
 		SPLL->AL_CR = mask; // ack
 		int ci = SPLL->AL_CIN;
 		if(ci > 100 && ci < (EXT_FREQ_HZ - 100) ) { // give some metastability margin, when the counter transitions from EXT_FREQ_HZ-1 to 0
@@ -109,6 +114,7 @@ int external_align_fsm(volatile struct spll_external_state *s)
 
 		case ALIGN_STATE_WAIT_CLKIN:
 			if(!scb_ljd_present_global && !(SPLL->ECCR & SPLL_ECCR_EXT_REF_STOPPED) ) {
+				/* If 10Mhz is present, reset PLL */
 				SPLL->ECCR |= SPLL_ECCR_EXT_REF_PLLRST;
 				s->align_state = ALIGN_STATE_WAIT_PLOCK;
 				done_sth++;
@@ -134,6 +140,7 @@ int external_align_fsm(volatile struct spll_external_state *s)
 			break;
 
 		case ALIGN_STATE_WAIT_PLOCK:
+			/* Wait for 10Mhz PLL lock */
 			SPLL->ECCR &= (~SPLL_ECCR_EXT_REF_PLLRST);
 			if(SPLL->ECCR & SPLL_ECCR_EXT_REF_STOPPED )
 				s->align_state = ALIGN_STATE_WAIT_CLKIN;
@@ -143,7 +150,9 @@ int external_align_fsm(volatile struct spll_external_state *s)
 			break;
 
 		case ALIGN_STATE_START:
+			/* Wait for helper PLL lock */
 			if(s->helper->ld.locked) {
+				/* Start mpll */
 				disable_irq();
 				mpll_start(s->main);
 				enable_irq();
@@ -158,8 +167,10 @@ int external_align_fsm(volatile struct spll_external_state *s)
 		case ALIGN_STATE_START_MAIN:
 			SPLL->AL_CR = 2;
 			if(s->helper->ld.locked && s->main->locked) {
+				/* Start PPS output generation */
 				PPSG->CR = PPSG_CR_CNT_EN | PPSG_CR_PWIDTH_W(10);
 				PPSG->ADJ_NSEC = 5;
+				/* Synchronize with PPS input */
 				PPSG->ESCR = PPSG_ESCR_SYNC;
 				s->align_state = ALIGN_STATE_INIT_CSYNC;
 				pll_verbose("EXT: DMTD locked.\n");
@@ -172,6 +183,7 @@ int external_align_fsm(volatile struct spll_external_state *s)
 
 		case ALIGN_STATE_INIT_CSYNC:
 			if (PPSG->ESCR & PPSG_ESCR_SYNC) {
+				/* Synchronized with PPS */
 				s->align_timer = timer_get_tics() + 2 * TICS_PER_SECOND;
 				s->align_state = ALIGN_STATE_WAIT_CSYNC;
 				done_sth++;
@@ -193,7 +205,7 @@ int external_align_fsm(volatile struct spll_external_state *s)
 				if(v == 0 || v >= ALIGN_SAMPLE_PERIOD / 2) {
 					s->align_target = 0;
 					s->align_step = -100;					
-				} else if (s > 0) {
+				} else if (s > 0) { /* FIXME ?? */
 					s->align_target = ALIGN_SAMPLE_PERIOD-EXT_PERIOD_NS;
 					s->align_step = 100;
 				}

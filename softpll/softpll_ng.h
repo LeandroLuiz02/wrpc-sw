@@ -43,6 +43,7 @@ extern unsigned char spll_n_chan_ref, spll_n_chan_out;
    -1                                    : helper clock (for dmtd)
    0 - (n_chan_ref-1)                    : reference clocks (from RX)
    n_chan_ref .. n_chan_ref+n_chan_out-1 : main clock + auxilliary clocks
+   n_chan_ref + n_chan_out ..            : external clocks (10Mhz)
 
    So for WR-Core,
    0 : rxclk
