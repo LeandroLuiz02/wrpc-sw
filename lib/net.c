@@ -95,10 +95,11 @@ int ptpd_netif_close_socket(struct wrpc_socket *s)
  *
  * Have a look at the note at http://ohwr.org/documents/xxx for details.
  */
-void ptpd_netif_linearize_rx_timestamp(struct wr_timestamp *ts,
-				       int32_t dmtd_phase,
-				       int cntr_ahead, int transition_point,
-				       int clock_period)
+static void ptpd_netif_linearize_rx_timestamp(struct wr_timestamp *ts,
+					      int32_t dmtd_phase,
+					      int cntr_ahead,
+					      int transition_point,
+					      int clock_period)
 {
 	int nsec_f, nsec_r;
 
