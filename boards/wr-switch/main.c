@@ -16,7 +16,7 @@
 #include "system_checks.h"
 #include "gpio-wrs.h"
 
-int scb_ver = 33;		/* SCB version */
+uint32_t scb_ver = SCB_VER_SET_A(3) | SCB_VER_SET_B(3); /* SCB version */
 
 extern struct spll_stats *stats;
 
@@ -97,7 +97,13 @@ int main(void)
 	pp_printf("Commit: %s, built: %s %s by %s.\n",
 		  build_id.commit_id, build_id.build_date, build_id.build_time,
 		  build_id.build_by);
-	pp_printf("SCB version: %d. %s\n", scb_ver,(scb_ver>=34)?"10 MHz SMC Output.":"" );
+	pp_printf("SCB version: %d.%d", SCB_VER_A(scb_ver), SCB_VER_B(scb_ver));
+	if (SCB_VER_C(scb_ver) | SCB_VER_D(scb_ver))
+		pp_printf(".%d.%d", SCB_VER_C(scb_ver), SCB_VER_D(scb_ver));
+	pp_printf(". %s\n",
+		  ((SCB_VER_A(scb_ver) > 3)
+		   || ((SCB_VER_A(scb_ver) == 3) && (SCB_VER_B(scb_ver) >= 4)))
+		  ? "10 MHz SMC Output.":"");
 	pp_printf("Start counter %d\n", stats->start_cnt);
 	/* Low-jitter Daughterboard detection */
 	scb_ljd_present_global = gen_gpio_in(&gpio_pin_ljd_board_detect);

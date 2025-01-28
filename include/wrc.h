@@ -69,6 +69,15 @@
 #define HAS_LL 0
 #endif
 
+#define SCB_VER_SET_A(x) (x<<24)
+#define SCB_VER_SET_B(x) (x<<16)
+#define SCB_VER_SET_C(x) (x<<8)
+#define SCB_VER_SET_D(x) (x)
+#define SCB_VER_A(x) ((x>>24) & 0xff)
+#define SCB_VER_B(x) ((x>>16) & 0xff)
+#define SCB_VER_C(x) ((x>>8) & 0xff)
+#define SCB_VER_D(x) ((x) & 0xff)
+
 int wrc_mon_gui(void);
 void redraw_gui(void);
 int wrc_log_stats(void);

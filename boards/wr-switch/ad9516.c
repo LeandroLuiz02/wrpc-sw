@@ -234,7 +234,8 @@ int ad9516_init(int scb_version, int lj_periph_type, int ljd_present)
 
 	if (lj_periph_type == PERIPH_WRS_LJ_SAFRAN)
 		ad9516_load_regset(spi_base, ad9516_base_config_safran, ARRAY_SIZE(ad9516_base_config_safran), 0);
-	else if (scb_version >= 34)
+	else if (((SCB_VER_A(scb_version) > 3)
+		   || ((SCB_VER_A(scb_version) == 3) && (SCB_VER_B(scb_version) >= 4))))
 		ad9516_load_regset(spi_base, ad9516_base_config_34, ARRAY_SIZE(ad9516_base_config_34), 0);
 	else 				//Old one
 		ad9516_load_regset(spi_base, ad9516_base_config_33, ARRAY_SIZE(ad9516_base_config_33), 0);
@@ -252,7 +253,8 @@ int ad9516_init(int scb_version, int lj_periph_type, int ljd_present)
 
 	if (lj_periph_type == PERIPH_WRS_LJ_SAFRAN) {
 		/* Do nothing */
-	} else if (scb_version >= 34) {	//New SCB v3.4. 10MHz Output.
+	} else if (((SCB_VER_A(scb_version) > 3)
+		   || ((SCB_VER_A(scb_version) == 3) && (SCB_VER_B(scb_version) >= 4)))) {	//New SCB v3.4. 10MHz Output.
 
 		ad9516_set_output_divider(spi_base, 2, 4, 0);  	// OUT2. 187.5 MHz. - not anymore
 		ad9516_set_output_divider(spi_base, 3, 4, 0);  	// OUT3. 187.5 MHz. - not anymore
