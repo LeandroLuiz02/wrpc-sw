@@ -410,8 +410,8 @@ static int board_host_init(struct board *board_base,
 			remove_arg1(argc, argv);
 		}
 		else {
-			fprintf(stderr, "unhandled option '%s'\n", argv[1]);
-			return -1;
+			/* Not handled by board, pass it to the tool */
+			break;
 		}
 	}
 
@@ -736,8 +736,10 @@ static int board_cernvme_init_common(struct board *board_base,
                         }
                         remove_arg1(argc, argv);
                 }
-                else
+                else {
+			/* Option not handled by vme, pass it to the tool */
                         break;
+		}
 
         }
 
