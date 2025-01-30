@@ -3,6 +3,9 @@ variables:
 
 before_script:
   - PATH=/compilers/riscv-11.2-small/bin:/compilers/lm32-gcc-4.5.3/bin:$PATH
+  # use the user who triggered a job to appear in binaries
+  - echo "[user]" >  ~/.gitconfig
+  - echo "    name = CI ${GITLAB_USER_NAME}" >>  ~/.gitconfig
 
 stages:
 - compile
