@@ -625,6 +625,7 @@ void spll_show_stats(void)
 			  s->pll.dmtd.pi.y );
 	}
 
+#ifndef CONFIG_TARGET_WR_SWITCH
 	for (ch = 0; ch < spll_n_chan_ref; ch++)
 		{
 			pp_printf( "softpll: ptracker%d: enabled %d n_avg %d value %d\n", ch,
@@ -632,8 +633,8 @@ void spll_show_stats(void)
 			s->ptrackers[ch].n_avg,
 			s->ptrackers[ch].phase_val );
 		}
+#endif
 
-	
 }
 
 int spll_shifter_busy(int channel)
