@@ -478,7 +478,7 @@ static void amd_devboard_si5324_init(void)
 	switch (this_board) {
 		case ZC706:
 			// Si4324 as bypass for main -> GT
-			si5324_set_bypass(&si5324_if_dev);
+			si5324_set_125m_clean(&si5324_if_dev);
 			break;
 
 		default:

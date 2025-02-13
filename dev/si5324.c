@@ -137,7 +137,57 @@ int si5324_set_bypass( struct wr_si5324_interface_device *dev )
 	return 0;
 }
 
-int si5324_set_125m( struct wr_si5324_interface_device *dev )
+int si5324_set_125m_clean( struct wr_si5324_interface_device *dev )
+{
+	board_dbg("Si5324: Setting clean 125m fout\n" );
+
+	// Values taken from DSPLLsim
+	si5324_setreg(dev, 0, 0, SI5324_REG0_FREE_RUN | SI5324_REG0_BYPASS_REG | SI5324_REG0_CKOUT_ALWAYS_ON);
+	/*
+	 * 9 (BWSEL_REG = 10)
+	 * 18 (BWSEL_REG = 9)
+	 * 36 (BWSEL_REG = 8)
+	 * 71 (BWSEL_REG = 7)
+	 * 144 (BWSEL_REG = 6)
+	 * 293 (BWSEL_REG = 5)
+	 * 606 (BWSEL_REG = 4)
+	 */
+	si5324_setreg(dev, 2, 5 << 4, SI5324_REG2_BWSEL_REG); // 293Hz bandwith
+	si5324_setreg(dev, 1, SI5324_REG1_CK_PRIOR1_CKIN1 | SI5324_REG1_CK_PRIOR2_CKIN2, SI5324_REG1_CK_PRIOR1_MASK | SI5324_REG1_CK_PRIOR2_MASK);
+	si5324_setreg(dev, 3, SI5324_REG3_CLKSEL_REG_CKIN1, SI5324_REG3_CLKSEL_REG_MASK);
+	si5324_setreg(dev, 4, SI5324_REG4_AUTOSEL_AUTO_REV, SI5324_REG4_AUTOSEL_REG_MASK);
+	si5324_setreg(dev, 10, SI5324_REG10_DSBL2_REG, SI5324_REG10_DSBL1_REG);
+	si5324_setreg(dev, 11, SI5324_REG11_PD_CKIN2, SI5324_REG11_PD_CKIN1);
+
+	si5324_setreg(dev, 25, (5-4) << 5, SI5324_REG25_N1HS_MASK); // N1_HS = 5
+	si5324_setreg(dev, 31, (8-1) >> 16, SI5324_REG3x_NCxLS_MASK); // NC1_LS = 8, must be even or 1
+	si5324_setreg(dev, 32, (8-1) >> 8, 0xff); // NC1_LS = 8, must be even or 1
+	si5324_setreg(dev, 33, (8-1) >> 0, 0xff); // NC1_LS = 8, must be even or 1
+	si5324_setreg(dev, 34, (8-1) >> 16, SI5324_REG3x_NCxLS_MASK); // NC2_LS = 8, must be even or 1
+	si5324_setreg(dev, 35, (8-1) >> 8, 0xff); // NC2_LS = 8, must be even or 1
+	si5324_setreg(dev, 36, (8-1) >> 0, 0xff); // NC2_LS = 8, must be even or 1
+
+	si5324_setreg(dev, 40, (7-4) << 5, SI5324_REG40_N2HS_MASK);
+	si5324_setreg(dev, 40, (360-1) >> 16, SI5324_REG40_N2LS_MASK); // N2_LS = 360, must be even
+	si5324_setreg(dev, 41, ((360-1) >> 8) & 0xff, 0xff); // N2_LS = 360, must be even
+	si5324_setreg(dev, 42, ((360-1) >> 0) & 0xff, 0xff); // N2_LS = 360, must be even
+
+	si5324_setreg(dev, 43, (63-1) >> 16, SI5324_REG4x_N3x_MASK); // N31 = 63
+	si5324_setreg(dev, 44, ((63-1) >> 8) & 0xff, 0xff); // N31 = 63
+	si5324_setreg(dev, 45, ((63-1) >> 0) & 0xff, 0xff); // N31 = 63
+	si5324_setreg(dev, 46, (63-1) >> 16, SI5324_REG4x_N3x_MASK); // N32 = 63
+	si5324_setreg(dev, 47, ((63-1) >> 8) & 0xff, 0xff); // N32 = 63
+	si5324_setreg(dev, 48, ((63-1) >> 0) & 0xff, 0xff); // N32 = 63
+
+	si5324_setreg(dev, 136, SI5324_REG136_ICAL, 0);
+	timer_delay_ms(100);
+
+	board_dbg("Wait 1 seconds for clock to settle ...\n");
+	timer_delay_ms(1000);
+	return 0;
+}
+
+int si5324_set_125m_freerun( struct wr_si5324_interface_device *dev )
 {
 	board_dbg("Si5324: Setting freerun 125m fout\n");
 
