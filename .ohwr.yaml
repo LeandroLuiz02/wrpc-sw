@@ -14,4 +14,5 @@ issues: 'https://ohwr.org/project/wrpc-sw/issues'
 licenses:
   - 'GPL-3.0'
   - 'GPL-3.0-or-later'
+  - 'LGPL-2.1-or-later'
 forum: 'https://forums.ohwr.org/c/wrpc-sw'
