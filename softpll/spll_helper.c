@@ -12,8 +12,8 @@
 #include "softpll_ng.h"
 
 #if defined(CONFIG_TARGET_WR_SWITCH)
-static volatile int helper_pll_kp = 150;
-static volatile int helper_pll_ki = 2;
+volatile int helper_pll_kp = 150;
+volatile int helper_pll_ki = 2;
 extern int reverse_spll;
 #endif
 

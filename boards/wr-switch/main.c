@@ -19,7 +19,11 @@
 uint32_t scb_ver = SCB_VER_SET_A(3) | SCB_VER_SET_B(3); /* SCB version */
 
 extern struct spll_stats *stats;
-
+extern int main_pll_kp;
+extern int main_pll_ki;
+extern int helper_pll_kp;
+extern int helper_pll_ki;
+extern int reverse_spll;
 /* dump of structures is not supported for switch */
 int wrc_global = 0xDEADADA5;
 
@@ -104,6 +108,10 @@ int main(void)
 		   || ((SCB_VER_A(scb_ver) == 3) && (SCB_VER_B(scb_ver) >= 4)))
 		  ? "10 MHz SMC Output.":"");
 	pp_printf("Start counter %d\n", stats->start_cnt);
+	pp_printf("main_pll_kp %d, main_pll_ki %d, helper_pll_kp %d, "
+		  "helper_pll_ki %d, reverse_spll %d\n",
+		  main_pll_kp, main_pll_ki, helper_pll_kp,
+		  helper_pll_ki, reverse_spll);
 	/* Low-jitter Daughterboard detection */
 	scb_ljd_present_global = gen_gpio_in(&gpio_pin_ljd_board_detect);
 	stats->ljd_present = scb_ljd_present_global;
