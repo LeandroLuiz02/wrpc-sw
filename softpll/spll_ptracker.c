@@ -13,6 +13,11 @@
 
 static int tag_ref = -1;
 
+#if defined(CONFIG_TARGET_WR_SWITCH)
+extern int reverse_spll;
+#endif
+
+
 void ptracker_init(struct spll_ptracker_state *s, int id, int num_avgs)
 {
 	s->id = id;
@@ -61,7 +66,11 @@ void ptrackers_update(struct spll_ptracker_state *ptrackers, int tag,
 #if defined(CONFIG_WR_NODE)
 	register int delta = (tag - tag_ref) & ((1 << HPLL_N) - 1);
 #else
-	register int delta = (tag_ref - tag) & ((1 << HPLL_N) - 1);
+	register int delta;
+	if (!reverse_spll)
+		delta = (tag_ref - tag) & ((1 << HPLL_N) - 1);
+	else
+		delta = (tag - tag_ref) & ((1 << HPLL_N) - 1);
 #endif
 	register int index = delta >> (HPLL_N - 2);
 
