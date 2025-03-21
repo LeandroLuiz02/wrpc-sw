@@ -12,10 +12,18 @@
 #include "softpll_ng.h"
 
 #if defined(CONFIG_TARGET_WR_SWITCH)
-volatile int helper_pll_kp = 150;
-volatile int helper_pll_ki = 2;
-extern int reverse_spll;
+/* All not defined WRS versions */
+#define HPLL_KP_DEFAULT		150
+#define HPLL_KI_DEFAULT		2
+/* WRS LJD version from SyncTech */
+#define HPLL_LJD_KP_SYNCTECH	-150
+#define HPLL_LJD_KI_SYNCTECH	-2
+
+int helper_pll_kp __attribute__((section(".sdata.main_pll_kp"))) = 0;
+int helper_pll_ki __attribute__((section(".sdata.main_pll_kp"))) = 0;
 #endif
+
+extern int reverse_spll;
 
 void helper_very_init( struct spll_helper_state *s )
 {
@@ -26,8 +34,25 @@ void helper_very_init( struct spll_helper_state *s )
 	s->pi.kp = -150;
 	s->pi.ki = -2;
 #elif defined(CONFIG_TARGET_WR_SWITCH)
-	s->pi.kp = helper_pll_kp;
-	s->pi.ki = helper_pll_ki;
+	static int init = 1;
+	if (init) { /* Avoid overwriting pi values when e.g change timing mode */
+		s->pi.kp = helper_pll_kp;
+		s->pi.ki = helper_pll_ki;
+		if (lj_periph_type_global == PERIPH_WRS_FL_SYNCTECH) {
+			/* SyncTech */
+			if (s->pi.kp == 0) /* 0 means not changed at load */
+				s->pi.kp = HPLL_LJD_KP_SYNCTECH;
+			if (s->pi.ki == 0) /* 0 means not changed at load */
+				s->pi.ki = HPLL_LJD_KI_SYNCTECH;
+		} else {
+			/* Other versions */
+			if (s->pi.kp == 0) /* 0 means not changed at load */
+				s->pi.kp = HPLL_KP_DEFAULT;
+			if (s->pi.ki == 0) /* 0 means not changed at load */
+				s->pi.ki = HPLL_KI_DEFAULT;
+		}
+	}
+	init = 0;
 #else
 #error "Please set CONFIG for wr switch or wr node"
 #endif

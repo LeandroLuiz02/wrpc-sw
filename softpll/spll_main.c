@@ -35,11 +35,19 @@ static inline void spll_log_dac(int y) {}
 /* WRS LJD version from Safrane */
 #define MPLL_LJD_KP_SAFRANE	1100
 #define MPLL_LJD_KI_SAFRANE	30
+/* WRS LJD version from SyncTech */
+#define MPLL_LJD_KP_SYNCTECH	-1100
+#define MPLL_LJD_KI_SYNCTECH	-30
+
+#define REVERSE_SPLL_WRS_START_VALUE	2 /* Can be any value not used for other
+					   * cases */
+#define REVERSE_SPLL_DEFAULT_WRS	0
+#define REVERSE_SPLL_DEFAULT_SYNCTECH	1
 
 /* Force varaibles below in .sdata section so can be updated at load time */
 int main_pll_kp __attribute__((section(".sdata.main_pll_kp"))) = 0;
 int main_pll_ki __attribute__((section(".sdata.main_pll_ki"))) = 0;
-int reverse_spll __attribute__((section(".sdata.reverse_spll"))) = 0;
+int reverse_spll __attribute__((section(".sdata.reverse_spll"))) = REVERSE_SPLL_WRS_START_VALUE;
 #else
 int reverse_spll = 1;
 #endif
@@ -67,6 +75,16 @@ void mpll_init(struct spll_main_state *s, int id_ref, int id_out)
 				s->pi.kp = MPLL_LJD_KP_SAFRANE;
 			if (s->pi.ki == 0) /* 0 means not changed at load */
 				s->pi.ki = MPLL_LJD_KI_SAFRANE;
+		} else if (lj_periph_type_global == PERIPH_WRS_FL_SYNCTECH) {
+			/* SyncTech */
+			if (s->pi.kp == 0) /* 0 means not changed at load */
+				s->pi.kp = MPLL_LJD_KP_SYNCTECH;
+			if (s->pi.ki == 0) /* 0 means not changed at load */
+				s->pi.ki = MPLL_LJD_KI_SYNCTECH;
+			/* If not changed at load, set to the default for
+			 * SyncTech */
+			if (reverse_spll == REVERSE_SPLL_WRS_START_VALUE)
+				reverse_spll = REVERSE_SPLL_DEFAULT_SYNCTECH;
 		} else if (scb_ljd_present_global) {
 			/* LJD version */
 			if (s->pi.kp == 0) /* 0 means not changed at load */
@@ -80,6 +98,9 @@ void mpll_init(struct spll_main_state *s, int id_ref, int id_out)
 			if (s->pi.ki == 0) /* 0 means not changed at load */
 				s->pi.ki = MPLL_KI_DEFAULT;
 		}
+		/* Set reverse_spll if was not set before */
+		if (reverse_spll == REVERSE_SPLL_WRS_START_VALUE)
+			reverse_spll = REVERSE_SPLL_DEFAULT_WRS;
 	}
 	init = 0;
 #elif defined(CONFIG_WR_NODE)
