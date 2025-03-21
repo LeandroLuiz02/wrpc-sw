@@ -82,7 +82,6 @@ static int lj_periph_type_read(int ljd_present, int periph_id)
 int main(void)
 {
 	uint32_t start_tics = timer_get_tics();
-	int lj_periph_type;
 
 	check_reset();
 	stats->magic=SPLL_STATS_MAGIC;
@@ -109,8 +108,9 @@ int main(void)
 	scb_ljd_present_global = gen_gpio_in(&gpio_pin_ljd_board_detect);
 	stats->ljd_present = scb_ljd_present_global;
 	periph_id_global = lj_periph_id_read();
-	lj_periph_type = lj_periph_type_read(scb_ljd_present_global, periph_id_global);
-	stats->lj_wrs_type = lj_periph_type;
+	lj_periph_type_global = lj_periph_type_read(scb_ljd_present_global,
+						    periph_id_global);
+	stats->lj_wrs_type = lj_periph_type_global;
 
 	if (stats->start_cnt > 1) {
 		pp_printf("!!spll does not work after restart!!\n");
@@ -118,7 +118,7 @@ int main(void)
 		 * but not only */
 	}
 
-	ad9516_init(scb_ver, lj_periph_type, scb_ljd_present_global);
+	ad9516_init(scb_ver, lj_periph_type_global, scb_ljd_present_global);
 
 	rts_init();
 	rtipc_init();

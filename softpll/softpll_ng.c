@@ -21,7 +21,7 @@
 #include "irq.h"
 
 unsigned char spll_n_chan_ref, spll_n_chan_out;
-int lj_periph_type = 0;
+int lj_periph_type_global = 0;
 int scb_ljd_present_global = 0;	/* Low-jitter Daughterboard presence indicator */
 int periph_id_global = 0;
 

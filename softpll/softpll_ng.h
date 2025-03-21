@@ -198,7 +198,7 @@ struct softpll_state {
 };
 
 extern volatile struct softpll_state softpll;
-extern int lj_periph_type;
+extern int lj_periph_type_global;
 extern int scb_ljd_present_global;
 extern int periph_id_global;
 
