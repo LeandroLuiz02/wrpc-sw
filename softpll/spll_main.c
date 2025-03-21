@@ -40,6 +40,8 @@ static inline void spll_log_dac(int y) {}
 int main_pll_kp __attribute__((section(".sdata.main_pll_kp"))) = 0;
 int main_pll_ki __attribute__((section(".sdata.main_pll_ki"))) = 0;
 int reverse_spll __attribute__((section(".sdata.reverse_spll"))) = 0;
+#else
+int reverse_spll = 1;
 #endif
 
 void mpll_init(struct spll_main_state *s, int id_ref, int id_out)
@@ -437,25 +439,20 @@ int mpll_update(struct spll_main_state *s, int tag, int source)
 		if (s->locked && !s->ps_freeze) {
 			if (s->phase_shift_current < s->phase_shift_target) {
 				s->phase_shift_current++;
-#if defined(CONFIG_TARGET_WR_SWITCH)
+
 				if (!reverse_spll)
 					s->adder_ref++;
 				else
 					s->adder_ref--;
-#else
-				s->adder_ref--;
-#endif
+
 			} else if (s->phase_shift_current >
 				   s->phase_shift_target) {
 				s->phase_shift_current--;
-#if defined(CONFIG_TARGET_WR_SWITCH)
+
 				if (!reverse_spll)
 					s->adder_ref--;
 				else
 					s->adder_ref++;
-#else
-				s->adder_ref++;
-#endif
 			}
 		}
 
