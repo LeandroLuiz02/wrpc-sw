@@ -514,7 +514,7 @@ static uint32_t mem_wrsv3_readl(struct board *base_board, unsigned reg)
 
 	uint32_t r = *(volatile uint32_t *)(board->base + reg);
 	return r;
-} 
+}
 
 static void mem_wrsv3_writel(struct board *base_board, unsigned reg, uint32_t value)
 {
@@ -542,7 +542,7 @@ static struct board_host board_host =
 };
 
 #ifdef SUPPORT_WRS
-static struct board_wrs board_wrs = 
+static struct board_wrs board_wrs =
 {
 	{
 		{
@@ -661,11 +661,67 @@ static int cernvme_map(struct board_cernvme *board,
         return 0;
 }
 
+static unsigned cernvme_slot_to_addr(unsigned slot, unsigned verbose)
+{
+	struct vme_mapping map;
+	unsigned char *map_addr;
+	unsigned i;
+	unsigned res;
+
+        memset(&map, 0, sizeof(struct vme_mapping));
+        map.am = 0x2f;
+        map.data_width = 32;
+        map.sizel = 0x80000;
+        map.vme_addrl = slot << 19;
+
+        map_addr = vme_map(&map, 1);
+        if (!map_addr) {
+                fprintf(stderr, "cannot map vme CS/CSR: %s\n", strerror(errno));
+                return 0;
+        }
+
+	res = 0;
+
+	for (i = 0; i < 4; i++) {
+		unsigned adem = 0;
+		unsigned ader = 0;
+		unsigned j;
+
+		for (j = 0; j < 4; j++) {
+			adem <<= 8;
+			adem |= map_addr[0x623 + (i * 0x10) + (j << 2)];
+		}
+		if (verbose > 1)
+			printf("adem[%u] = %08x\n", i, adem);
+		if (adem == 0)
+			continue;
+		adem &= ~0xffU;
+
+		for (j = 0; j < 4; j++) {
+			ader <<= 8;
+			ader |= map_addr[0x7ff63 + (i * 0x10) + (j << 2)];
+		}
+		if (verbose > 1)
+			printf("ader[%u] = %08x, ader & adem = %08x\n",
+			       i, ader, ader & adem);
+		res = ader & adem;
+		if (res) {
+			if (verbose)
+				printf("VME slot %u: use ader %u, address: %08x\n", slot, i, res);
+			break;
+		}
+	}
+
+	vme_unmap(&map, 1);
+
+	return res;
+}
+
 static int board_cernvme_init_common(struct board *board_base,
 				     int *argc, char *argv[])
 {
 	struct board_cernvme *board = (struct board_cernvme *)board_base;
-
+	unsigned verbose = 0;
         unsigned vme_addr = ~0;
         unsigned data_width = 32;
         unsigned am = 0x39;
@@ -675,7 +731,11 @@ static int board_cernvme_init_common(struct board *board_base,
                 if (argv[1][0] != '-')
                         break;
 
-                if (!strcmp(argv[1], "-a") || !strcmp(argv[1], "--address")) {
+		if (!strcmp(argv[1], "-v")) {
+			remove_arg1(argc, argv);
+			verbose++;
+		}
+                else if (!strcmp(argv[1], "-a") || !strcmp(argv[1], "--address")) {
                         char *e;
                         remove_arg1(argc, argv);
                         vme_addr = strtoul(argv[1], &e, 0);
@@ -695,7 +755,11 @@ static int board_cernvme_init_common(struct board *board_base,
                                 fprintf(stderr, "invalid slot '%s'\n", argv[1]);
                                 return -1;
                         }
-                        vme_addr = slot << 19;
+			vme_addr = cernvme_slot_to_addr(slot, verbose);
+			if (!vme_addr) {
+				fprintf(stderr, "cannot find address for slot %u\n", slot);
+				return -1;
+			}
                         remove_arg1(argc, argv);
                 }
                 else if (!strcmp(argv[1], "-w")
@@ -781,7 +845,7 @@ static void board_cernvme_help_common(void)
 {
         printf("VME board (using CERN-vme bridge)\n");
         printf(" -a, --address ADDR   board address\n");
-        printf(" -s, --slot ADDR      board slot (512KB steps)\n");
+        printf(" -s, --slot SLOT      board slot (use vme64x CS/CSR)\n");
         printf(" -w, --data-width WD  data width\n");
         printf(" -m, --am AM          address modified\n");
         printf(" -o, --offset OFF     offset\n");
