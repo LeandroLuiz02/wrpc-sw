@@ -48,10 +48,10 @@
 
 #ifdef CONFIG_TARGET_WR_SWITCH
 /* Not all features are available when building for a switch */
-#define SUPPORT_WRS
+#define SUPPORT_WRS 1
 #endif
 
-#if SUPPORT_WRS
+#ifdef SUPPORT_WRS
 	#define BASE_FPGA		0x10000000
 	#define OFFSET_CPU_CSR  	0x00010800
 	#define SIZE_FPGA 		0x20000
@@ -452,7 +452,7 @@ static int board_host_init(struct board *board_base,
 
 }
 
-#if SUPPORT_WRS
+#ifdef SUPPORT_WRS
 
 static void board_wrs_help(void)
 {
@@ -541,7 +541,7 @@ static struct board_host board_host =
 	},
 };
 
-#if SUPPORT_WRS
+#ifdef SUPPORT_WRS
 static struct board_wrs board_wrs = 
 {
 	{
@@ -939,7 +939,7 @@ static struct board *boards[] = {
 	&board_cernvme_le.parent.parent,
 	&board_wr2rf.parent.parent,
 #endif
-#if SUPPORT_WRS
+#ifdef SUPPORT_WRS
         &board_wrs.parent.parent,
 #endif
 	NULL
@@ -1793,7 +1793,8 @@ static int do_vuart(int argc, char *argv[])
 
 	return 0;
 }
-#if !defined(SUPPORT_WRS)
+
+#ifndef SUPPORT_WRS
 
 static void help_info(void)
 {
@@ -3414,7 +3415,7 @@ out_sock:
         return ret_exit;
 }
 
-#if !defined(SUPPORT_WRS)
+#ifndef SUPPORT_WRS
 
 static void help_wdiags(void)
 {
@@ -3783,7 +3784,7 @@ static const struct tool_base tool_vuart = {
         help_vuart
 };
 
-#if !defined(SUPPORT_WRS)
+#ifndef SUPPORT_WRS
 static const struct tool_base tool_info = {
         "info",
         "display wrpc info and check board",
@@ -3814,7 +3815,7 @@ static const struct tool_base tool_gdbserver = {
 };
 
 
-#if !defined(SUPPORT_WRS)
+#ifndef SUPPORT_WRS
 static const struct tool_base tool_wdiags = {
         "wdiags",
         "WR diags dumper",
@@ -3837,13 +3838,13 @@ static const struct tool_base *tools[] = {
         &tool_board,
 	&tool_load,
 	&tool_vuart,
-#if !defined(SUPPORT_WRS)
+#ifndef SUPPORT_WRS
 	&tool_info,
 	&tool_mac,
 #endif /* !defined(SUPPORT_WRS) */
 	&tool_spll_recorder,
 	&tool_gdbserver,
-#if !defined(SUPPORT_WRS)
+#ifndef SUPPORT_WRS
 	&tool_wdiags,
         &tool_aux_logger,
 #endif /* !defined(SUPPORT_WRS) */
