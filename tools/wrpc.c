@@ -44,11 +44,14 @@
 #include "hw/wb_uart.h"
 #include "hw/softpll_regs.h"
 #include "hw/wrc_diags_regs.h"
+#include "hw/endpoint_regs.h"
 
-#define SUPPORT_WRS defined(CONFIG_TARGET_WR_SWITCH)
+#ifdef CONFIG_TARGET_WR_SWITCH
+/* Not all features are available when building for a switch */
+#define SUPPORT_WRS
+#endif
 
 #if SUPPORT_WRS
-
 	#define BASE_FPGA		0x10000000
 	#define OFFSET_CPU_CSR  	0x00010800
 	#define SIZE_FPGA 		0x20000
@@ -56,6 +59,7 @@
 	#define OFFSET_SOFTPLL  	0x00010100
 #else
 	/* From include/boards.h */
+	#define OFFSET_ENDPOINT		0x100
 	#define OFFSET_SOFTPLL		0x200
 	#define OFFSET_SYSCON		0x400
 	#define OFFSET_UART		0x500
@@ -1821,6 +1825,34 @@ static int do_info(int argc, char *argv[])
                 putchar (c >= 32 && c < 127 ? c : '.');
         }
         printf ("\n");
+
+	board->fini(board);
+
+	return 0;
+}
+
+static void help_mac(void)
+{
+	printf("usage: %s mac\n", progname);
+	printf("display mac address\n");
+}
+
+static int do_mac(int argc, char *argv[])
+{
+	unsigned mach, macl;
+
+	if (board_open(&argc, argv) < 0)
+		return 1;
+
+	mach = board->readl(board, OFFSET_ENDPOINT + EP_REG_MACH);
+	macl = board->readl(board, OFFSET_ENDPOINT + EP_REG_MACL);
+	printf ("mac: %02x:%02x:%02x:%02x:%02x:%02x\n",
+		(mach >> 8) & 0xff,
+		(mach >> 0) & 0xff,
+		(macl >> 24) & 0xff,
+		(macl >> 16) & 0xff,
+		(macl >> 8) & 0xff,
+		(macl >> 0) & 0xff);
 
 	board->fini(board);
 
@@ -3758,6 +3790,13 @@ static const struct tool_base tool_info = {
         do_info,
         help_info
 };
+
+static const struct tool_base tool_mac = {
+        "mac",
+        "display wrpc mac address",
+        do_mac,
+        help_mac
+};
 #endif /* !defined(SUPPORT_WRS) */
 
 static const struct tool_base tool_spll_recorder = {
@@ -3800,6 +3839,7 @@ static const struct tool_base *tools[] = {
 	&tool_vuart,
 #if !defined(SUPPORT_WRS)
 	&tool_info,
+	&tool_mac,
 #endif /* !defined(SUPPORT_WRS) */
 	&tool_spll_recorder,
 	&tool_gdbserver,
