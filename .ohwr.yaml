@@ -5,12 +5,12 @@
 
 version: '1.0.0'
 name: 'Software for White Rabbit PTP Core'
-description: 'https://ohwr.org/project/wrpc-sw/wikis/home'
-website: 'https://ohwr.org/project/wrpc-sw'
+description: 'https://gitlab.com/ohwr/project/wrpc-sw/wikis/home'
+website: 'https://gitlab.com/ohwr/project/wrpc-sw'
 images:
-  - 'https://ohwr.org/project/wrpc-sw/uploads/1c8f0ed88c1ede121e207ee519c029e8/wrpc-sw.png'
-documentation: 'https://ohwr.org/project/wrpc-sw/wikis'
-issues: 'https://ohwr.org/project/wrpc-sw/issues'
+  - 'https://gitlab.com/ohwr/project/wrpc-sw/uploads/1c8f0ed88c1ede121e207ee519c029e8/wrpc-sw.png'
+documentation: 'https://gitlab.com/ohwr/project/wrpc-sw/wikis'
+issues: 'https://gitlab.com/ohwr/project/wrpc-sw/issues'
 licenses:
   - 'GPL-3.0'
   - 'GPL-3.0-or-later'
