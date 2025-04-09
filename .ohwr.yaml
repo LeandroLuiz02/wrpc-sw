@@ -8,7 +8,7 @@ name: 'Software for White Rabbit PTP Core'
 description: 'https://gitlab.com/ohwr/project/wrpc-sw/wikis/home'
 website: 'https://gitlab.com/ohwr/project/wrpc-sw'
 images:
-  - 'https://gitlab.com/ohwr/project/wrpc-sw/uploads/1c8f0ed88c1ede121e207ee519c029e8/wrpc-sw.png'
+  - 'https://gitlab.com/ohwr/project/wrpc-sw/-/wikis/uploads/1c8f0ed88c1ede121e207ee519c029e8/wrpc-sw.png'
 documentation: 'https://gitlab.com/ohwr/project/wrpc-sw/wikis'
 issues: 'https://gitlab.com/ohwr/project/wrpc-sw/issues'
 licenses:
