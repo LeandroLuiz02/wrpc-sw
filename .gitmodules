@@ -1,6 +1,6 @@
 [submodule "ppsi"]
 	path = ppsi
-	url = https://ohwr.org/project/ppsi.git
+	url = ../ppsi.git
 [submodule "ual"]
 	path = ual
 	url = https://gitlab.cern.ch/cohtdrivers/ual.git
