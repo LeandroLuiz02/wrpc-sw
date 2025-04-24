@@ -103,7 +103,7 @@ static void wrc_sim_initialize(void)
 /*
  * This is a test used by:
  * - WRPC testbench located in "testbench/wrc_core" folder of the wr-cores
- *   repository (git://ohwr.org/hdl-core-lib/wr-cores.git)
+ *   repository (https://gitlab.com/ohwr/project/wr-cores)
  *
  * This test:
  * - sends min-size frames of PTP EtherType (0x88f7) and Dst MAC

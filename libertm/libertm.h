@@ -121,7 +121,7 @@ extern struct ertm_sync_states ertm_sync_states[];
 #define	ERTM_SIMULATED	4
 
 /* firmware metadata according to The Convention (see
- * https://www.ohwr.org/project/fpga-dev-id/blob/master/device-structure.rst
+ * https://gitlab.com/ohwr/project/fpga-dev-id/blob/master/device-structure.rst
  * probably, only version and source_id are useful here
  */
 struct ertm_device_metadata {

@@ -4,11 +4,11 @@
 The White Rabbit (WR) PTP core project provides board support packages (BSPs) for the following
 boards:
 \begin{itemize}
-\item \href{http://www.ohwr.org/projects/spec}{SPEC}, a PCIe single FMC carrier board based on a
+\item \href{https://gitlab.com/ohwr/project/spec/wikis}{SPEC}, a PCIe single FMC carrier board based on a
   Xilinx Spartan 6 FPGA.
-\item \href{http://www.ohwr.org/projects/svec}{SVEC}, a VME dual FMC carrier board based on a Xilinx
+\item \href{https://gitlab.com/ohwr/project/svec/wikis}{SVEC}, a VME dual FMC carrier board based on a Xilinx
   Spartan 6 FPGA.
-\item \href{http://www.ohwr.org/projects/vfc-hd}{VFC-HD}, a VME single FMC carrier board based on an
+\item \href{https://gitlab.com/ohwr/project/vfc-hd/wikis}{VFC-HD}, a VME single FMC carrier board based on an
   Altera Arria V FPGA.
 \end{itemize}
 
@@ -41,13 +41,13 @@ type with three possible values:
 \begin{description}
 \item[PLAIN:] No additional module is instantiated and the ``raw'' WRPC fabric interface (see also
   Section~\ref{sec:wrpc_fabric}) is provided on the board's ports.
-\item[STREAMERS:] A set of \href{http://www.ohwr.org/projects/wr-cores/wiki/WR_Streamers}{TX/RX
+\item[STREAMERS:] A set of \href{https://gitlab.com/ohwr/project/wr-cores/wikis/WR_Streamers}{TX/RX
   streamers} is attached to the WRPC fabric interface.\\
   \textbf{Note:} The STREAMERS interface can be synchronous to either \textit{clk\_sys\_62m5}
   or \textit{clk\_ref\_125m}. By default it is synchronous to \textit{clk\_sys\_62m5}. Generic
   can be used to provide data in the \textit{clk\_ref\_125m} clock domain (this is useful for
   fixed-latency data transmission).
-\item[ETHERBONE:] An \href{http://www.ohwr.org/projects/etherbone-core/wiki}{Etherbone} slave node
+\item[ETHERBONE:] An \href{https://gitlab.com/ohwr/project/etherbone-core/wikis}{Etherbone} slave node
   is attached to the WRPC fabric interface.
 \end{description}
 
@@ -96,7 +96,7 @@ their own BSP, can find the board-common module under:
     streamers parameters when \tts{g\_fabric\_iface = STREAMERS} (otherwise
     ignored)\footnote{See Streamers wiki page for detailed description of the
     configuration records:
-    \url{https://ohwr.org/project/wr-cores/wikis/txrx-streamers}}}\\
+    \url{https://gitlab.com/ohwr/project/wr-cores/wikis/txrx-streamers}}}\\
   \cline{1-3}
   g\_rx\_streamers\_params & record & default record & \\
   \hline
@@ -194,7 +194,7 @@ their own BSP, can find the board-common module under:
   wrs\_tx\_cfg\_i & in & rec & \multirowpar{2}{Networking configuration of Tx/Rx
   Streamers\footnote{See Streamers wiki page for detailed description of the
     network configuration:
-    \url{https://ohwr.org/project/wr-cores/wikis/txrx-streamers}}}\\
+    \url{https://gitlab.com/ohwr/project/wr-cores/wikis/txrx-streamers}}}\\
   \cline{1-3}
   wrs\_rx\_cfg\_i & in & rec & \\
   \hline
@@ -301,7 +301,7 @@ their own BSP, can find the board-common module under:
 \label{sec:hdl_board_spec}
 
 The SPEC BSP provides a ready-to-use WRPC wrapper for the
-\href{http://www.ohwr.org/projects/spec}{SPEC carrier board}.
+\href{https://gitlab.com/ohwr/project/spec/wikis}{SPEC carrier board}.
 
 The top-level VHDL module is located under: \\\hrefwrpc{board/spec/xwrc\_board\_spec.vhd}
 
@@ -400,7 +400,7 @@ Section~\ref{sec:hdl_board_common_param} for a the list of common BSP parameters
 \label{sec:hdl_board_svec}
 
 The SVEC BSP provides a ready-to-use WRPC wrapper for the
-\href{http://www.ohwr.org/projects/svec}{SVEC carrier board}.
+\href{https://gitlab.com/ohwr/project/svec/wikis}{SVEC carrier board}.
 
 The top-level VHDL module is located under: \\\hrefwrpc{board/svec/xwrc\_board\_svec.vhd}
 
@@ -501,7 +501,7 @@ Section~\ref{sec:hdl_board_common_param} for a the list of common BSP parameters
 \label{sec:hdl_board_vfchd}
 
 The VFC-HD BSP provides a ready-to-use WRPC wrapper for the
-\href{http://www.ohwr.org/projects/vfc-hd}{VFC-HD carrier board}.
+\href{https://gitlab.com/ohwr/project/vfc-hd/wikis}{VFC-HD carrier board}.
 
 The top-level VHDL module is located under: \\\hrefwrpc{board/vfchd/xwrc\_board\_vfchd.vhd}
 
