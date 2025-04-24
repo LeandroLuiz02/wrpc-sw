@@ -94,7 +94,7 @@ basicstyle=\footnotesize\ttfamily, backgroundcolor=\color{light-gray}, label=lst
 \newcommand{\ttsmall}{\ttfamily\small}
 
 \newcommand{\hrefwrpc}[1]{
-  \tts{\href{http://www.ohwr.org/projects/wr-cores/repository/entry/#1?rev=\wrpcrelease}{#1}}}
+  \tts{\href{https://gitlab.com/ohwr/project/wr-cores/blob/\wrpcrelease/#1}{#1}}}
 
 \title{White Rabbit PTP Core User's Manual}
 \author{Grzegorz Daniluk \\Dimitrios Lampridis \\Adam Wujek \hfill CERN (BE-CO-HT)}
@@ -127,7 +127,7 @@ Rabbit project. It describes the building and running process, and it provides a
 guide to instantiating the WRPC in your own HDL design.
 
 If you don't want to get your hands dirty and prefer to start with the demo binaries
-available at \url{https://ohwr.org/project/wr-cores/wikis/Documents/} for officially
+available at \url{https://gitlab.com/ohwr/project/wr-cores/wikis/Documents} for officially
 supported boards, please skip Section~\ref{Building the Core} and move forward
 directly to Section~\ref{Programming FPGA}. For help with instantiating the WRPC in
 your own HDL design, see Section~\ref{sec:wrpc_hdl}.
@@ -147,17 +147,17 @@ distributed in the following places:
 
 \begin{itemize*}
 
-\item \url{https://ohwr.org/project/wr-cores/wikis/Documents/}
+\item \url{https://gitlab.com/ohwr/project/wr-cores/wikis/Documents}
 
   Hosts the pdf documentation for every official release.
   The place where you can find already synthesized demo bitstreams,
   ready to be downloaded to one of the officially supported boards.
 
-\item \url{https://ohwr.org/project/wr-cores.git}
+\item \url{https://gitlab.com/ohwr/project/wr-cores.git}
 
   Repository with HDL sources of the WRPC.
 
-\item \url{https://ohwr.org/project/wrpc-sw.git}
+\item \url{https://gitlab.com/ohwr/project/wrpc-sw.git}
 
   Repository with the software running inside the WRPC. Starting from
   version 5, the soft CPU core is a RISC-V, while previous versions were
@@ -169,12 +169,14 @@ following locations:
 
 \begin{itemize*}
 
-\item \url{https://ohwr.org/project/hdl-make.git}
+\item \url{https://gitlab.com/ohwr/project/hdl-make.git}
 
   \textit{hdlmake} is used in the HDL synthesis process to create a Makefile and
   Xilinx ISE / Altera Quartus project file
 
-\item {\small\url{https://ohwr.org/project/wrpc-sw/wikis/uploads/9f9224d2249848ed3e854636de9c08dc/riscv-11.2-small.tgz}}
+% Split url into two \href
+\item {\href{https://gitlab.com/ohwr/project/wrpc-sw/wikis/uploads/9f9224d2249848ed3e854636de9c08dc/riscv-11.2-small.tgz}{https://gitlab.com/ohwr/project/wrpc-sw/wikis/uploads/}\\
+\href{https://gitlab.com/ohwr/project/wrpc-sw/wikis/uploads/9f9224d2249848ed3e854636de9c08dc/riscv-11.2-small.tgz}{9f9224d2249848ed3e854636de9c08dc/riscv-11.2-small.tgz}}
 
   This toolchain based on GCC 11.2 can be used to compile the software
   for WRPC. This toolchain can work only on 64bit host machines. The
@@ -195,17 +197,17 @@ The minimum hardware set required to run the WR PTP Core reference firmware
 depends on the hardware platform you want to use. One of the following setups
 can be chosen:
 \begin{itemize}
-\item \href{https://ohwr.org/project/spec}{SPEC PCIe board} +
-  \href{https://ohwr.org/project/fmc-dio-5chttla}{FMC DIO card} + PC
+\item \href{https://gitlab.com/ohwr/project/spec/wikis}{SPEC PCIe board} +
+  \href{https://gitlab.com/ohwr/project/fmc-dio-5chttla/wikis}{FMC DIO card} + PC
   computer running Linux
-\item \href{https://ohwr.org/project/svec}{SVEC VME board} + VME crate with
+\item \href{https://gitlab.com/ohwr/project/svec/wikis}{SVEC VME board} + VME crate with
   a single board computer running Linux\footnote{\label{note_a20}In our test setup
     we used MEN A20 board}
-\item \href{https://ohwr.org/project/vfc-hd}{VFC-HD VME board} +
-  \href{https://ohwr.org/project/fmc-dio-5chttla}{FMC DIO card} +
+\item \href{https://gitlab.com/ohwr/project/vfc-hd/wikis}{VFC-HD VME board} +
+  \href{https://gitlab.com/ohwr/project/fmc-dio-5chttla/wikis}{FMC DIO card} +
   VME crate with a single board computer running Linux\footref{note_a20}
-\item \href{https://ohwr.org/project/fasec}{FASEC board} +
-  \href{https://ohwr.org/project/fmc-dio-5chttla}{FMC DIO card}
+\item \href{https://gitlab.com/ohwr/project/fasec/wikis}{FASEC board} +
+  \href{https://gitlab.com/ohwr/project/fmc-dio-5chttla/wikis}{FMC DIO card}
 \end{itemize}
 
 To be able to test White Rabbit synchronization you would also need
@@ -216,7 +218,7 @@ above:
     White Rabbit Switch
   \item a pair of WR-supported SFP transceivers\footnote{The list of supported
     SFPs can be found on our wiki page
-    \url{https://ohwr.org/project/white-rabbit/wiki/SFP}}
+    \url{https://gitlab.com/ohwr/project/white-rabbit/wikis/SFP}}
   \item a roll of G652, single mode fiber to connect your WR devices
 \end{itemize}
 
@@ -226,7 +228,7 @@ above:
 \label{Building the Core}
 
 \textbf{Note:} you can skip this chapter if you want to use the release binaries
-available from \textit{ohwr.org}.
+available from \textit{https://gitlab.com/ohwr}.
 
 \vspace{1em}
 Depending on your needs, building the WRPC can be a one- or two-step process.
@@ -286,7 +288,7 @@ Please clone the \textit{hdlmake} repository from its location given in
 section \ref{Repositories and Releases}:
 \begin{lstlisting}
 $ cd <your-location>
-$ git clone https://ohwr.org/project/hdl-make.git
+$ git clone https://gitlab.com/ohwr/project/hdl-make.git
 $ cd hdl-make
 $ pip install .
 \end{lstlisting}
@@ -303,7 +305,7 @@ repository, checks out the release tag, and downloads other HDL repositories
 (submodules) needed to synthesize the core:
 \begin{lstlisting}
 $ cd <your-location>
-$ git clone https://ohwr.org/project/wr-cores.git
+$ git clone https://gitlab.com/ohwr/project/wr-cores.git
 $ cd wr-cores
 $ git checkout wrpc-v5
 $ git submodule init --update
@@ -409,7 +411,8 @@ Vivado flow to synthesize the bitstream.
 \label{Software compilation}
 
 By default, the RISC-V software for a stable release is embedded
-inside the FPGA bitstream you've downloaded from \textit{ohwr.org} or
+inside the FPGA bitstream you've downloaded from
+\textit{https://gitlab.com/ohwr} or
 synthesized in section \ref{HDL synthesis}. You can skip this section, unless
 you need to make some custom changes to the soft-core processor's software and
 compile it yourself.\\
@@ -422,8 +425,8 @@ you would have to install it manually. E.g. in Ubuntu, please install
 First, you need to download and unpack the toolchain from the location
 mentioned in section \ref{Repositories and Releases}.
 \begin{lstlisting}
-$ wget https://ohwr.org/project/wrpc-sw/wikis/uploads/9f9224d2249848ed3e854636de9c08dc/\
-riscv-11.2-small.tgz
+$ wget https://gitlab.com/ohwr/project/wrpc-sw/wikis/uploads/\
+9f9224d2249848ed3e854636de9c08dc/riscv-11.2-small.tgz
 $ tar xJf riscv-11.2-small.tgz -C <your_location>
 \end{lstlisting}
 
@@ -437,7 +440,7 @@ To get the sources of the WRPC software, please clone the \textit{wrpc-sw} git
 repository tagged with \texttt{wrpc-v5.0} tag. The commands in the listing below
 clone the \textit{wrpc-sw} repository together with submodules needed for this software.\\
 \begin{lstlisting}
-$ git clone https://ohwr.org/project/wrpc-sw.git <your_location>/wrpc-sw
+$ git clone https://gitlab.com/ohwr/project/wrpc-sw.git <your_location>/wrpc-sw
 $ cd <your_location>/wrpc-sw
 $ git checkout wrpc-v5
 \end{lstlisting}
@@ -504,12 +507,13 @@ one described in this manual, the up-to-date documentation can always be found
 in \textit{doc/} subdirectory of the \texttt{spec-sw} git repository.\\
 
 First you need to clone the SPEC board software support package
-(\textit{spec-sw}) from \textit{ohwr.org}. It is a set of Linux kernel drivers and
+(\textit{spec-sw}) from \textit{https://gitlab.com/ohwr}.
+It is a set of Linux kernel drivers and
 userspace tools, that interacts with a SPEC board plugged into a PCI-Express
 slot.\\
 
 \begin{lstlisting}
-$ git clone https://ohwr.org/project/spec-sw.git <your_location>/spec-sw
+$ git clone https://gitlab.com/ohwr/project/spec-sw.git <your_location>/spec-sw
 $ cd <your_location>/spec-sw
 $ git checkout 0745464
 $ make
@@ -518,8 +522,8 @@ $ make
 You have to download also the "golden" firmware for SPEC card. It is used by
 the drivers to recognize the hardware:
 \begin{lstlisting}
-$ wget https://www.ohwr.org/project/spec-sw/uploads/636e7eaa2e1c3a884e2f9f694fdfd1b9/\
-spec-init.bin-2015-09-18
+$ wget https://gitlab.com/ohwr/project/spec-sw/wikis/uploads/\
+636e7eaa2e1c3a884e2f9f694fdfd1b9/spec-init.bin-2015-09-18
 $ sudo mv spec-init.bin-2015-09-18 /lib/firmware/fmc/spec-init.bin
 \end{lstlisting}
 
@@ -663,15 +667,16 @@ To check the content of the SFP database you can execute the \textit{sfp show}
 shell command.\\
 
 \noindent\textbf{Note:} The $\Delta_{TX}$ and $\Delta_{RX}$ parameters above are
-the defaults for wrpc-v4.1 release bitstream available on \textit{ohwr.org},
+the defaults for wrpc-v4.1 release bitstream available on
+\textit{https://gitlab.com/ohwr},
 running on the SPEC v4 board and calibrated to port 1 of a~WR Switch
 v3.3. These values as well as the default parameters for other boards are
 available on the calibration wiki page
-(\url{https://ohwr.org/project/white-rabbit/wikis/Calibration}). If you
+(\url{https://gitlab.com/ohwr/project/white-rabbit/wikis/Calibration}). If you
 re-synthesize the firmware or want to use the most accurate estimation of
 the fixed delays and alpha for your fiber, you should read and perform the WR
 Calibration procedure
-(\url{https://ohwr.org/project/white-rabbit/wikis/Documents/White-Rabbit-calibration-procedure}).\\
+(\url{https://gitlab.com/ohwr/project/white-rabbit/wikis/Documents/White-Rabbit-calibration-procedure}).\\
 
 The WRPC  mode of operation (GrandMaster/Master/Slave) can be set
 using the \textit{mode} command:
@@ -2006,7 +2011,7 @@ calibration values loaded to both of your devices (see section \ref{Writing
 configuration}). If you made your own synthesis of the WRPC, then the default
 calibration values are no longer valid and you need to perform the White Rabbit
 Calibration procedure\footnote{Use the latest version of the document available
-at: \url{https://ohwr.org/project/white-rabbit/wikis/Documents/White-Rabbit-calibration-procedure}}.
+at: \url{https://gitlab.com/ohwr/project/white-rabbit/wikis/Documents/White-Rabbit-calibration-procedure}}.
 
 % ##########################################################################
 \section{Questions, reporting bugs}
@@ -2277,7 +2282,7 @@ the build of WRPC.
 
   Sets WRPC for absolute calibration.  You need special hardware for
   this process, which is described in
-  \url{https://ohwr.org/project/wr-calibration/wikis/home}.
+  \url{https://gitlab.com/ohwr/project/wr-calibration/wikis}.
 
 \item[ptp <prio1|prio2|domain|class|accuracy|allan|tsource> <val>] \mbox{}
 
@@ -2571,10 +2576,10 @@ To write SDBFS filesystem image to the Flash memory of a hosted SPEC card, you
 can use the \texttt{flash-write} tool available in the \emph{spec-sw} drivers
 package.
 
-First, please download the SDBFS image from \textit{ohwr.org}:
+First, please download the SDBFS image from \textit{https://gitlab.com}:
 \begin{lstlisting}
-$ wget https://ohwr.org/project/wr-cores/uploads/6f33b5a8660bd0f2ff7a07526b4484d6/\
-sdbfs-flash.bin
+$ wget https://gitlab.com/ohwr/project/wr-cores/wikis/uploads/\
+6f33b5a8660bd0f2ff7a07526b4484d6/sdbfs-flash.bin
 \end{lstlisting}
 It contains all the files required by the core. They are empty, but have to
 exist in the SDBFS structure to be filled later from the WR PTP Core shell or
@@ -2613,8 +2618,8 @@ This \textit{mcs} file already includes both SDBFS image and FPGA bitstream.
 In the case when you want to run a custom gateware or you have a custom hardware, you can
 download a standalone SDBFS image:
 \begin{lstlisting}
-$ wget https://ohwr.org/project/wr-cores/uploads/9dad995e74a3d49b472b8654833be01a/\
-sdbfs-standalone-160812.bin
+$ wget https://gitlab.com/ohwr/project/wr-cores/wikis/uploads/\
+9dad995e74a3d49b472b8654833be01a/sdbfs-standalone-160812.bin
 \end{lstlisting}
 and generate a custom \textit{*.mcs} file with your own FPGA bitstream. You should
 use the following layout:

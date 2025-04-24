@@ -38,7 +38,7 @@ void help()
 	fprintf(stderr, "  -h             display this help and exit\n");
 	fprintf(stderr, "\n");
 	fprintf(stderr,
-		"Report Etherbone bugs to <white-rabbit-dev@ohwr.org>\n");
+		"Report Etherbone bugs to https://forums.ohwr.org/c/white-rabbit-dev\n");
 }
 
 /* We don't want localized versions from ctype.h */
