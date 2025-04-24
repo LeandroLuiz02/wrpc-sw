@@ -4,7 +4,7 @@ all : $(FILE).pdf
 
 .PHONY : all clean
 
-$(FILE).pdf : $(FILE).tex *.tex references.bib
+$(FILE).pdf : $(FILE).tex *.tex
 	pdflatex $(FILE)
 	pdflatex $(FILE)
 	bibtex $(FILE)
