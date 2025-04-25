@@ -86,6 +86,11 @@ config TARGET_WR2RF_VME
 config TARGET_SPEC_SILABS
 	bool "SPEC Board with a silabs aux oscillator (TEST)"
 
+config TARGET_AMD_DEVBOARD
+	bool "AMD Development Board"
+	help
+	  Currently supported: ZC706, ZCU102, ZCU106
+
 endchoice
 
 config WR_NODE_SIM
@@ -126,6 +131,12 @@ config LPDC_GTHE4
 	  The transceiver is family7-gthe4-lp
 
 endchoice
+
+config IGNORE_HPLL
+	bool "Ignore helper PLL"
+	default n
+	help
+	  Ignore helper PLL for applications with external PLL options to generate DMTD clock.  The external DMTD clock must track the main PLL.
 
 # most options with no prompt here are prompted-for in the "advanced" section
 
@@ -355,8 +366,8 @@ config LLDP
 	boolean "Include LLDP protocol transmit-only"
 	default n
 	help
-	  This enable LLDP support. LLDP is a vendor-neutral link layer protocol 
-	  used by network devices for advertising their identity, capabilities, 
+	  This enable LLDP support. LLDP is a vendor-neutral link layer protocol
+	  used by network devices for advertising their identity, capabilities,
 	  and neighbors on local area network.
 
 config NETCONSOLE

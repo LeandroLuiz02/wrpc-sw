@@ -114,7 +114,7 @@ static void ptpd_netif_linearize_rx_timestamp(struct wr_timestamp *ts,
 /* Calculate the nanoseconds value for both timestamps. The rising edge one
    is just the HW register */
 	nsec_r = ts->nsec;
-/* The falling edge TS is the rising - 1 thick
+/* The falling edge TS is the rising - 1 tick
     if the "rising counter ahead" bit is set. */
 	nsec_f = cntr_ahead ? ts->nsec - (clock_period / 1000) : ts->nsec;
 

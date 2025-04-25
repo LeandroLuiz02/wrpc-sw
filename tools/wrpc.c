@@ -44,11 +44,14 @@
 #include "hw/wb_uart.h"
 #include "hw/softpll_regs.h"
 #include "hw/wrc_diags_regs.h"
+#include "hw/endpoint_regs.h"
 
-#define SUPPORT_WRS defined(CONFIG_TARGET_WR_SWITCH)
+#ifdef CONFIG_TARGET_WR_SWITCH
+/* Not all features are available when building for a switch */
+#define SUPPORT_WRS 1
+#endif
 
-#if SUPPORT_WRS
-
+#ifdef SUPPORT_WRS
 	#define BASE_FPGA		0x10000000
 	#define OFFSET_CPU_CSR  	0x00010800
 	#define SIZE_FPGA 		0x20000
@@ -56,6 +59,7 @@
 	#define OFFSET_SOFTPLL  	0x00010100
 #else
 	/* From include/boards.h */
+	#define OFFSET_ENDPOINT		0x100
 	#define OFFSET_SOFTPLL		0x200
 	#define OFFSET_SYSCON		0x400
 	#define OFFSET_UART		0x500
@@ -448,7 +452,7 @@ static int board_host_init(struct board *board_base,
 
 }
 
-#if SUPPORT_WRS
+#ifdef SUPPORT_WRS
 
 static void board_wrs_help(void)
 {
@@ -510,7 +514,7 @@ static uint32_t mem_wrsv3_readl(struct board *base_board, unsigned reg)
 
 	uint32_t r = *(volatile uint32_t *)(board->base + reg);
 	return r;
-} 
+}
 
 static void mem_wrsv3_writel(struct board *base_board, unsigned reg, uint32_t value)
 {
@@ -537,8 +541,8 @@ static struct board_host board_host =
 	},
 };
 
-#if SUPPORT_WRS
-static struct board_wrs board_wrs = 
+#ifdef SUPPORT_WRS
+static struct board_wrs board_wrs =
 {
 	{
 		{
@@ -657,11 +661,67 @@ static int cernvme_map(struct board_cernvme *board,
         return 0;
 }
 
+static unsigned cernvme_slot_to_addr(unsigned slot, unsigned verbose)
+{
+	struct vme_mapping map;
+	unsigned char *map_addr;
+	unsigned i;
+	unsigned res;
+
+        memset(&map, 0, sizeof(struct vme_mapping));
+        map.am = 0x2f;
+        map.data_width = 32;
+        map.sizel = 0x80000;
+        map.vme_addrl = slot << 19;
+
+        map_addr = vme_map(&map, 1);
+        if (!map_addr) {
+                fprintf(stderr, "cannot map vme CS/CSR: %s\n", strerror(errno));
+                return 0;
+        }
+
+	res = 0;
+
+	for (i = 0; i < 4; i++) {
+		unsigned adem = 0;
+		unsigned ader = 0;
+		unsigned j;
+
+		for (j = 0; j < 4; j++) {
+			adem <<= 8;
+			adem |= map_addr[0x623 + (i * 0x10) + (j << 2)];
+		}
+		if (verbose > 1)
+			printf("adem[%u] = %08x\n", i, adem);
+		if (adem == 0)
+			continue;
+		adem &= ~0xffU;
+
+		for (j = 0; j < 4; j++) {
+			ader <<= 8;
+			ader |= map_addr[0x7ff63 + (i * 0x10) + (j << 2)];
+		}
+		if (verbose > 1)
+			printf("ader[%u] = %08x, ader & adem = %08x\n",
+			       i, ader, ader & adem);
+		res = ader & adem;
+		if (res) {
+			if (verbose)
+				printf("VME slot %u: use ader %u, address: %08x\n", slot, i, res);
+			break;
+		}
+	}
+
+	vme_unmap(&map, 1);
+
+	return res;
+}
+
 static int board_cernvme_init_common(struct board *board_base,
 				     int *argc, char *argv[])
 {
 	struct board_cernvme *board = (struct board_cernvme *)board_base;
-
+	unsigned verbose = 0;
         unsigned vme_addr = ~0;
         unsigned data_width = 32;
         unsigned am = 0x39;
@@ -671,7 +731,11 @@ static int board_cernvme_init_common(struct board *board_base,
                 if (argv[1][0] != '-')
                         break;
 
-                if (!strcmp(argv[1], "-a") || !strcmp(argv[1], "--address")) {
+		if (!strcmp(argv[1], "-v")) {
+			remove_arg1(argc, argv);
+			verbose++;
+		}
+                else if (!strcmp(argv[1], "-a") || !strcmp(argv[1], "--address")) {
                         char *e;
                         remove_arg1(argc, argv);
                         vme_addr = strtoul(argv[1], &e, 0);
@@ -691,7 +755,11 @@ static int board_cernvme_init_common(struct board *board_base,
                                 fprintf(stderr, "invalid slot '%s'\n", argv[1]);
                                 return -1;
                         }
-                        vme_addr = slot << 19;
+			vme_addr = cernvme_slot_to_addr(slot, verbose);
+			if (!vme_addr) {
+				fprintf(stderr, "cannot find address for slot %u\n", slot);
+				return -1;
+			}
                         remove_arg1(argc, argv);
                 }
                 else if (!strcmp(argv[1], "-w")
@@ -777,7 +845,7 @@ static void board_cernvme_help_common(void)
 {
         printf("VME board (using CERN-vme bridge)\n");
         printf(" -a, --address ADDR   board address\n");
-        printf(" -s, --slot ADDR      board slot (512KB steps)\n");
+        printf(" -s, --slot SLOT      board slot (use vme64x CS/CSR)\n");
         printf(" -w, --data-width WD  data width\n");
         printf(" -m, --am AM          address modified\n");
         printf(" -o, --offset OFF     offset\n");
@@ -935,7 +1003,7 @@ static struct board *boards[] = {
 	&board_cernvme_le.parent.parent,
 	&board_wr2rf.parent.parent,
 #endif
-#if SUPPORT_WRS
+#ifdef SUPPORT_WRS
         &board_wrs.parent.parent,
 #endif
 	NULL
@@ -1789,7 +1857,8 @@ static int do_vuart(int argc, char *argv[])
 
 	return 0;
 }
-#if !defined(SUPPORT_WRS)
+
+#ifndef SUPPORT_WRS
 
 static void help_info(void)
 {
@@ -1821,6 +1890,34 @@ static int do_info(int argc, char *argv[])
                 putchar (c >= 32 && c < 127 ? c : '.');
         }
         printf ("\n");
+
+	board->fini(board);
+
+	return 0;
+}
+
+static void help_mac(void)
+{
+	printf("usage: %s mac\n", progname);
+	printf("display mac address\n");
+}
+
+static int do_mac(int argc, char *argv[])
+{
+	unsigned mach, macl;
+
+	if (board_open(&argc, argv) < 0)
+		return 1;
+
+	mach = board->readl(board, OFFSET_ENDPOINT + EP_REG_MACH);
+	macl = board->readl(board, OFFSET_ENDPOINT + EP_REG_MACL);
+	printf ("mac: %02x:%02x:%02x:%02x:%02x:%02x\n",
+		(mach >> 8) & 0xff,
+		(mach >> 0) & 0xff,
+		(macl >> 24) & 0xff,
+		(macl >> 16) & 0xff,
+		(macl >> 8) & 0xff,
+		(macl >> 0) & 0xff);
 
 	board->fini(board);
 
@@ -3382,7 +3479,7 @@ out_sock:
         return ret_exit;
 }
 
-#if !defined(SUPPORT_WRS)
+#ifndef SUPPORT_WRS
 
 static void help_wdiags(void)
 {
@@ -3751,12 +3848,19 @@ static const struct tool_base tool_vuart = {
         help_vuart
 };
 
-#if !defined(SUPPORT_WRS)
+#ifndef SUPPORT_WRS
 static const struct tool_base tool_info = {
         "info",
         "display wrpc info and check board",
         do_info,
         help_info
+};
+
+static const struct tool_base tool_mac = {
+        "mac",
+        "display wrpc mac address",
+        do_mac,
+        help_mac
 };
 #endif /* !defined(SUPPORT_WRS) */
 
@@ -3775,7 +3879,7 @@ static const struct tool_base tool_gdbserver = {
 };
 
 
-#if !defined(SUPPORT_WRS)
+#ifndef SUPPORT_WRS
 static const struct tool_base tool_wdiags = {
         "wdiags",
         "WR diags dumper",
@@ -3798,12 +3902,13 @@ static const struct tool_base *tools[] = {
         &tool_board,
 	&tool_load,
 	&tool_vuart,
-#if !defined(SUPPORT_WRS)
+#ifndef SUPPORT_WRS
 	&tool_info,
+	&tool_mac,
 #endif /* !defined(SUPPORT_WRS) */
 	&tool_spll_recorder,
 	&tool_gdbserver,
-#if !defined(SUPPORT_WRS)
+#ifndef SUPPORT_WRS
 	&tool_wdiags,
         &tool_aux_logger,
 #endif /* !defined(SUPPORT_WRS) */
