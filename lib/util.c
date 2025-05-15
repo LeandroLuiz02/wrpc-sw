@@ -125,7 +125,6 @@ int format_time_int(uint64_t sec_in, int *year, int *month, int *day, int *hour,
 	}
 
 	*diy = (int)dayno;
-	t.tm_year = tmp_year;
 	t.tm_mon = 0;
 	while (dayno >= _ytab[LEAPYEAR(tmp_year)][t.tm_mon]) {
 		dayno -= _ytab[LEAPYEAR(tmp_year)][t.tm_mon];
