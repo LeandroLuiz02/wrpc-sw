@@ -48,7 +48,7 @@ static int set_baud(uint32_t baudrate)
   int clk_freq = (NMEA_MASTER->SR & NMEA_MASTER_SR_CLK_FREQ_MASK) >> NMEA_MASTER_SR_CLK_FREQ_SHIFT;
   int cr = NMEA_MASTER->CR;
   int i=0;
-  for(i=0; i<5; i++){
+  for(i=0; i<ARRAY_SIZE(valid_bauds); i++){
     if(baudrate == valid_bauds[i]){
       valid = 1;
       break;
@@ -63,11 +63,10 @@ static int set_baud(uint32_t baudrate)
     baud_i = baudrate;
     return 0;
   }else{
-    pp_printf("invalid baud rate, valid rates:\n\t");
-    for(i=0; i<4; i++){
-      pp_printf("%i, ", valid_bauds[i]);
+    pp_printf("invalid baud rate, valid rates: ");
+    for(i=0; i<ARRAY_SIZE(valid_bauds); i++){
+      pp_printf("%d ", valid_bauds[i]);
     }
-    pp_printf("%i\n", valid_bauds[4]);
     return -1;
   }
 }
@@ -123,7 +122,7 @@ static void get_date(int *day, int *month, int *year)
   *year  = (date_yr);
 }
 
-static int print_status(void)
+static void print_status(void)
 {
 
   int day, month, year;
@@ -132,10 +131,9 @@ static int print_status(void)
   get_date(&day, &month, &year);
   get_tod(&hour, &min, &sec);
   get_status(&valid, &tip);
-  pp_printf("baud: %i \n", get_baud());
+  pp_printf("baud: %d \n", get_baud());
   pp_printf("date: %04x:%02x:%02x time: %02x:%02x:%02x\n", year, month, day, hour, min, sec);
   pp_printf("valid: %d tip: %d invert: %d\n", valid, tip, get_invert());
-  return 0;
 }
 
 static int cmd_nmea(const char *args[])
@@ -148,11 +146,10 @@ static int cmd_nmea(const char *args[])
   switch (icmd) {
   case 0:
     if (args[1]) {
-      baud = (uint32_t)(atoi(args[1]));
+      baud = atoi(args[1]);
       return set_baud(baud);
-
     }else{
-      pp_printf("baud: %i\n", get_baud());
+      pp_printf("baud: %d\n", get_baud());
       return 0;
     }
     break;
@@ -161,7 +158,7 @@ static int cmd_nmea(const char *args[])
       inv = (uint32_t)(atoi(args[1]));
       set_invert(inv);
     }else{
-      pp_printf("invert: %i\n", get_invert());
+      pp_printf("invert: %d\n", get_invert());
       return 0;
     }
     break;

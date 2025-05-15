@@ -136,7 +136,7 @@ static void wrc_initialize(void)
 
 #if defined CONFIG_AUX_TIMING_EN
 
-#if defined(CONFIG_AUXCLK_EN)
+	#if defined(CONFIG_AUXCLK_EN)
     auxclk_init(CONFIG_AUXCLK_FREQ, CONFIG_AUXCLK_DUTY);
   #endif
 

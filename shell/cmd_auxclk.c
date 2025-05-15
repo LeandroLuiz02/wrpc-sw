@@ -64,7 +64,7 @@ static int calc_settings(struct params *req, struct params *calc)
   }
 }
 
-static int get_settings(struct params *calc)
+static void get_settings(struct params *calc)
 {
   calc->h_width = (AUXCLK->PR);
   calc->l_width = (AUXCLK->DCR);
@@ -72,22 +72,19 @@ static int get_settings(struct params *calc)
   calc->period_ns = (calc->h_width + calc->l_width) * CNT_RES;
   calc->freq = NS_FACTOR / calc->period_ns;
   calc->duty = (calc->h_width*100)/(calc->period_ns/CNT_RES);
-  return 0;
 }
 
-static int apply_settings(struct params *p)
+static void apply_settings(struct params *p)
 {
   AUXCLK->PR = p->h_width;
   AUXCLK->DCR = p->l_width;
-  return 0;
 }
 
-static int print_settings(struct params *p)
+static void print_settings(struct params *p)
 {
-  pp_printf("frequency: %i Hz (%d ns)\n", p->freq, p->period_ns);
+  pp_printf("frequency: %d Hz (%d ns)\n", p->freq, p->period_ns);
   pp_printf("high: %d ns; low: %d ns\n", p->h_width, p->l_width);
-  pp_printf("duty: %i%%\n", p->duty);
-  return 0;
+  pp_printf("duty: %d%%\n", p->duty);
 }
 
 static int cmd_auxclk(const char *args[])
@@ -102,11 +99,11 @@ static int cmd_auxclk(const char *args[])
   switch (icmd) {
   case 0:
     if (args[1]) {
-      req.freq = (uint32_t)(atoi(args[1]));
-      req.duty = (uint32_t)(atoi(args[2]));
+      req.freq = atoi(args[1]);
+      req.duty = atoi(args[2]);
       ret = calc_settings(&req, &calc);
       if (!(calc.duty > 0 && calc.duty < 100)) {
-        pp_printf("Requested duty %i (calculated %i)"
+        pp_printf("Requested duty %d (calculated %d)"
             " outside range (0; 100)\n", req.duty, calc.duty);
         return -1;
       }

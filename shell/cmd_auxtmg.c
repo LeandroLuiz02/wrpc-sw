@@ -26,11 +26,11 @@ static const char * const auxtmg_cmds[] =
 static struct wr_timecode_fields tc;
 
 static void auxtmg_print_tc(struct wr_timecode_fields *tc){
-  pp_printf("%02d:%02d:%02d %02d:%02d:%02d diy:%i sbs:%i utc_valid:%i ls_val:%i ls_flag59:%i ls_flag61:%i ls_valid:%i\n", \
+  pp_printf("%02d:%02d:%02d %02d:%02d:%02d diy:%d sbs:%d utc_valid:%d ls_val:%d ls_flag59:%d ls_flag61:%d ls_valid:%d\n", \
     tc->year, tc->month, tc->day, tc->hour, tc->min, tc->sec, tc->diy, tc->sbs, tc->utc_valid, tc->ls_val, tc->ls_flag59, tc->ls_flag61, tc->ls_valid);
 }
 
-static int auxtmg_status(struct wr_timecode_fields *tc){
+static void auxtmg_status(struct wr_timecode_fields *tc){
 
   timecode_get_tc(tc);
   auxtmg_print_tc(tc);
@@ -53,7 +53,6 @@ static int auxtmg_status(struct wr_timecode_fields *tc){
   if(timecode_is_enabled(TIMECODE_SEL_IRIG))
     pp_printf("irig");
   pp_printf("\n");
-  return 0;
 }
 
 static int auxtmg_sel(const char *ip)
@@ -77,7 +76,7 @@ static int cmd_auxtmg(const char *args[])
 
   switch (icmd) {
   case 0:
-    return auxtmg_status(&tc);
+    auxtmg_status(&tc);
     break;
   case 1:
     if (args[1]) {
