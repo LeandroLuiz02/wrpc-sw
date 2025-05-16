@@ -38,7 +38,7 @@ static const uint32_t valid_bauds[5] =
   115200
 };
 
-static uint32_t baud_i = CONFIG_NMEA_BAUD;
+static uint32_t baud_i = CONFIG_NMEA_OUT_BAUD;
 
 static int set_baud(uint32_t baudrate)
 {

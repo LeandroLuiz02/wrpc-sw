@@ -41,7 +41,7 @@ obj-$(CONFIG_WR_NODE) += \
 	dev/sensors.o \
 	dev/pps_gen.o \
 	dev/auxclk.o \
-	dev/nmea.o \
+	dev/nmea_out.o \
 	dev/timecode.o
 
 obj-$(CONFIG_TARGET_WR_SWITCH) += dev/timer-wrs.o dev/gpio.o

@@ -431,18 +431,18 @@ config AUXCLK_DUTY
 	help
 	  set the auxclk duty cycle
 
-config NMEA_EN
+config NMEA_OUT_EN
 	boolean "Enable NMEA output"
 	default n
 	help
 	  Enable NMEA output
 
 choice
-	prompt "NMEA Baud Rate"
-	depends on NMEA_EN
+	prompt "NMEA out Baud Rate"
+	depends on NMEA_OUT_EN
 	default NMEA_B9600
 	help
-	  Set baud rate of NMEA interface
+	  Set baud rate of NMEA out interface
 	config NMEA_B9600
 		bool "9600"
 	config NMEA_B19200
@@ -455,14 +455,14 @@ choice
 		bool "115200"
 endchoice
 
-config NMEA_INVERT
-	depends on NMEA_EN
+config NMEA_OUT_INVERT
+	depends on NMEA_OUT_EN
 	boolean "Invert NMEA output"
 	default n
 	help
 	  Invert NMEA generator output.  Useful if interfacing directly with RS232 device without local RS232 line driver.
 
-config NMEA_BAUD
+config NMEA_OUT_BAUD
 	int
 	default 9600
 	default 19200 if NMEA_B19200
@@ -470,7 +470,7 @@ config NMEA_BAUD
 	default 57600 if NMEA_B57600
 	default 115200 if NMEA_B115200
 
-config IRIG_EN
+config IRIG_OUT_EN
 	boolean "Enable IRIG-B output"
 	default n
 	help
@@ -485,10 +485,10 @@ choice
 		depends on AUXCLK_EN
 		bool "Auxclk"
 	config AUXTMG_SEL_IRIG
-		depends on IRIG_EN
+		depends on IRIG_OUT_EN
 		bool "IRIG-B"
 	config AUXTMG_SEL_NMEA
-		depends on NMEA_EN
+		depends on NMEA_OUT_EN
 		bool "NMEA"
 endchoice
 
@@ -679,7 +679,7 @@ config CMD_AUXCLK
 	  This enables auxclk command, which can be used to configure auxclk output.
 
 config CMD_NMEA
-	depends on WR_NODE && NMEA_EN
+	depends on WR_NODE && NMEA_OUT_EN
 	boolean "Add 'nmea' command to configure NMEA output"
 	default n
 	help

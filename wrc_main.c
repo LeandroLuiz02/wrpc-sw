@@ -34,7 +34,7 @@
 #include "dev/wdiags.h"
 #include "dev/timecode.h"
 #include "dev/auxclk.h"
-#include "dev/nmea.h"
+#include "dev/nmea_out.h"
 
 #include "wrpc.h"
 #include "system_checks.h"
@@ -140,9 +140,9 @@ static void wrc_initialize(void)
     auxclk_init(CONFIG_AUXCLK_FREQ, CONFIG_AUXCLK_DUTY);
   #endif
 
-  #if defined(CONFIG_NMEA_EN)
+  #if defined(CONFIG_NMEA_OUT_EN)
     struct timecode *wrc_timecode =  ((struct timecode *)(BASE_TIMECODE));
-    nmea_init(&wrc_timecode->nmea, CONFIG_NMEA_BAUD, CONFIG_NMEA_INVERT);
+    nmea_out_init(&wrc_timecode->nmea, CONFIG_NMEA_OUT_BAUD, CONFIG_NMEA_OUT_INVERT);
   #endif
 
   //mux setup

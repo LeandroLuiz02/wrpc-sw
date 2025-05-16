@@ -10,18 +10,18 @@
 #include <dev/syscon.h>
 #include <stdlib.h>
 #include <wrc.h>
-#include "dev/nmea.h"
+#include "dev/nmea_out.h"
 
 #define SUART_CALC_BAUD(baudrate, clkrate) \
     ( ((( (unsigned long long)baudrate * 8ULL) << (16 - 7)) + \
       (clkrate >> 8)) / (clkrate >> 7) )
 
-void nmea_init(struct nmea_master *dev, uint32_t baudrate, uint32_t invert){
-  nmea_set_baud(dev, baudrate);
-  nmea_set_invert(dev, invert);
+void nmea_out_init(struct nmea_master *dev, uint32_t baudrate, uint32_t invert){
+  nmea_out_set_baud(dev, baudrate);
+  nmea_out_set_invert(dev, invert);
 }
 
-int nmea_set_baud(struct nmea_master *dev, uint32_t baudrate)
+int nmea_out_set_baud(struct nmea_master *dev, uint32_t baudrate)
 {
   int baud = 0;
   int clk_freq = (dev->SR & NMEA_MASTER_SR_CLK_FREQ_MASK) >> NMEA_MASTER_SR_CLK_FREQ_SHIFT;
@@ -33,7 +33,7 @@ int nmea_set_baud(struct nmea_master *dev, uint32_t baudrate)
   return 0;
 }
 
-void nmea_set_invert(struct nmea_master *dev, int invert)
+void nmea_out_set_invert(struct nmea_master *dev, int invert)
 {
   int cr = dev->CR;
   if(invert){
@@ -44,18 +44,18 @@ void nmea_set_invert(struct nmea_master *dev, int invert)
   dev->CR = cr;
 }
 
-int nmea_get_invert(struct nmea_master *dev)
+int nmea_out_get_invert(struct nmea_master *dev)
 {
   return (dev->CR & NMEA_MASTER_CR_INVERT) ? 1 : 0;
 }
 
-void nmea_get_status(struct nmea_master *dev, int *valid, int *tip)
+void nmea_out_get_status(struct nmea_master *dev, int *valid, int *tip)
 {
   *valid = (dev->SR & NMEA_MASTER_SR_VALID) ? 1 : 0;
   *tip   = (dev->SR & NMEA_MASTER_SR_TIP) ? 1 : 0;
 }
 
-void nmea_get_tod(struct nmea_master *dev, int *hour, int *min, int *sec)
+void nmea_out_get_tod(struct nmea_master *dev, int *hour, int *min, int *sec)
 {
 
   *hour = (dev->TOD & NMEA_MASTER_TOD_HOUR_MASK)   >> NMEA_MASTER_TOD_HOUR_SHIFT;
@@ -63,7 +63,7 @@ void nmea_get_tod(struct nmea_master *dev, int *hour, int *min, int *sec)
   *sec  = (dev->TOD & NMEA_MASTER_TOD_SECOND_MASK) >> NMEA_MASTER_TOD_SECOND_SHIFT;
 }
 
-void nmea_get_date(struct nmea_master *dev, int *day, int *month, int *year)
+void nmea_out_get_date(struct nmea_master *dev, int *day, int *month, int *year)
 {
 
   *day   = (dev->DATE & NMEA_MASTER_DATE_DAY_MASK)   >> NMEA_MASTER_DATE_DAY_SHIFT;
