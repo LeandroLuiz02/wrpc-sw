@@ -142,7 +142,11 @@ static void wrc_initialize(void)
 
   #if defined(CONFIG_NMEA_OUT_EN)
     struct timecode *wrc_timecode =  ((struct timecode *)(BASE_TIMECODE));
-    nmea_out_init(&wrc_timecode->nmea, CONFIG_NMEA_OUT_BAUD, CONFIG_NMEA_OUT_INVERT);
+    #if defined(CONFIG_NMEA_OUT_INVERT)
+    	nmea_out_init(&wrc_timecode->nmea, CONFIG_NMEA_OUT_BAUD, 1);
+    #else
+    	nmea_out_init(&wrc_timecode->nmea, CONFIG_NMEA_OUT_BAUD, 0);
+    #endif
   #endif
 
   //mux setup
