@@ -1811,7 +1811,7 @@ static void wrpc_vuart_command(struct board *board, char *command)
 
 static int do_vuart(int argc, char *argv[])
 {
-	char c;
+	int c;
 	int keep_term = 0;
 	char *cmd = NULL;
         unsigned timeout = 0;
