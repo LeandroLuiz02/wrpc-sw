@@ -1414,7 +1414,10 @@ static int do_help(int argc, char *argv[])
 				printf("tool '%s' does not exist\n", argv[i]);
 				return 1;
 			}
-			tool->help();
+			if (tool->help == NULL)
+				printf("%s\n", tool->short_help);
+			else
+				tool->help();
 		}
 	}
 	return 0;
