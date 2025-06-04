@@ -115,14 +115,13 @@ int timecode_sel(uint32_t ip)
 int timecode_update(void)
 {
   int time, year, month, day, hour, min, sec, diy, sbs;
-  // int ls_ptp, ls_sys;
+  int ls_ptp, ls_sys;
 
   if(timecode_next_sec(&time)){
 
     TIMECODE->CR &= ~TIMECODE_CR_VALID;
     format_time_int(time, &year, &month, &day, &hour, &min, &sec, &sbs, &diy);
-    // wrc_ptp_get_leapsec(&ls_ptp, &ls_sys);
-    // pp_printf("ls_ptp:%i ls_sys:%i\n", ls_ptp, ls_sys);
+    wrc_ptp_get_leapsec(&ls_ptp, &ls_sys);
 
     TIMECODE->NEXT.UTC_MDHMS = (((month << TIMECODE_NEXT_UTC_MDHMS_UTC_MON_SHIFT) & TIMECODE_NEXT_UTC_MDHMS_UTC_MON_MASK) | \
                                 ((day   << TIMECODE_NEXT_UTC_MDHMS_UTC_DAY_SHIFT) & TIMECODE_NEXT_UTC_MDHMS_UTC_DAY_MASK) | \
@@ -134,8 +133,8 @@ int timecode_update(void)
 
     TIMECODE->NEXT.UTC_SBS = sbs;
 
-    //update to handle leap second event
-    TIMECODE->NEXT.LEAP_SEC = (CONFIG_LEAP_SECONDS_VAL << TIMECODE_CURR_LEAP_SEC_LS_VALUE_SHIFT);
+    //TODO: update to handle leap second event
+    TIMECODE->NEXT.LEAP_SEC = (ls_ptp << TIMECODE_CURR_LEAP_SEC_LS_VALUE_SHIFT);
     TIMECODE->NEXT.LEAP_SEC |= TIMECODE_CURR_LEAP_SEC_LS_VALID;
 
     TIMECODE->CR |= TIMECODE_CR_VALID;
