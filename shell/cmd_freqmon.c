@@ -149,15 +149,19 @@ static int calc_apr(int meas_min, int meas_max, int f_center)
     return ppm_lo < ppm_hi ? ppm_lo : ppm_hi;
 }
 
-typedef void (*dac_setter_t)(int, int);
-
 struct cm_vco_stats
 {
     int f_min, f_max, f_center;
     int apr_ppb;
 };
 
-static int measure_vcxo_freq(int cm_channel, int n_steps, uint32_t expected_freq, int dac_index, dac_setter_t dac_setter, struct cm_vco_stats *stats)
+static void dac_setter(int index, int value)
+{
+    // pp_printf("sdac %d %d\n", index, value );
+    spll_set_dac(index, value);
+}
+
+static int measure_vcxo_freq(int cm_channel, int n_steps, uint32_t expected_freq, int dac_index, struct cm_vco_stats *stats)
 {
     int f_min = 0, f_max = 0;
     int tune_min = 0;
@@ -168,7 +172,6 @@ static int measure_vcxo_freq(int cm_channel, int n_steps, uint32_t expected_freq
 
     for (;;)
     {
-
         dac_setter(dac_index, tune);
         timer_delay_ms(100);
         wb_cm_restart(&cmon_dev);
@@ -213,13 +216,7 @@ static int measure_vcxo_freq(int cm_channel, int n_steps, uint32_t expected_freq
     return 0;
 }
 
-static void dac_setter(int index, int value)
-{
-    // pp_printf("sdac %d %d\n", index, value );
-    spll_set_dac(index, value);
-}
-
-void cm_show_clocks(void)
+static void cm_show_clocks(void)
 {
     int i;
     struct cm_clock_desc desc;
@@ -227,21 +224,24 @@ void cm_show_clocks(void)
     cmon_update();
 
     cm_get_clock_desc(cmon_ref, &desc);
-    pp_printf("Reference clock for frequency measurement: %s\n", desc.name);
+    pp_printf("Ref clock for measurement: %s\n", desc.name);
     for (i = 0; cm_get_clock_desc(i, &desc) >= 0; i++)
     {
-        char freq_str[32];
+	pp_printf("Channel %d: %-6s ", i, desc.name);
+
+	if (desc.is_tunable)
+	    pp_printf("dac=%-4d ", desc.dac_index);
+	else
+	    pp_printf("fix-freq ");
 
         if (cmon_dev.freq_valid_mask & (1 << i))
-            pp_sprintf(freq_str, "%-12u", cmon_dev.freqs[i]);
+            pp_printf("freq=%uHz\n", cmon_dev.freqs[i]);
         else
-            strcpy(freq_str, "UNKNOWN");
-
-        pp_printf("Channel %d: %-6s tunable=%d, freq=%s Hz\n", i, desc.name, desc.is_tunable, freq_str);
+	    pp_printf("freq unknown\n");
     }
 }
 
-int cm_check_vcos(const char *args[])
+static void cm_check_vcos(const char *args[])
 {
     int n_steps = 2;
     struct cm_clock_desc desc;
@@ -258,7 +258,7 @@ int cm_check_vcos(const char *args[])
     wrc_ptp_run(0);
     spll_init(SPLL_MODE_DISABLED, 0, 0);
 
-    wb_cm_configure(&cmon_dev, CM_CHANNEL_RX, CM_DEFAULT_PRESCALER, CM_DEFAULT_GATE_FREQ);
+    wb_cm_configure(&cmon_dev, cmon_ref, CM_DEFAULT_PRESCALER, CM_DEFAULT_GATE_FREQ);
     wb_cm_restart(&cmon_dev);
 
     for (i = 0; cm_get_clock_desc(i, &desc) >= 0; i++)
@@ -268,9 +268,9 @@ int cm_check_vcos(const char *args[])
             continue;
 
         // fixme: ref
-        int r = measure_vcxo_freq(i, n_steps, REF_CLOCK_FREQ_HZ, desc.dac_index, dac_setter, &stats);
+        int r = measure_vcxo_freq(i, n_steps, REF_CLOCK_FREQ_HZ, desc.dac_index, &stats);
         if (r < 0)
-            return 0;
+            return;
 
         pp_printf("VCO: %-6s: f_min=%d Hz, f_max=%d Hz, f_center=%d Hz, APR=%d ppb\n",
                   desc.name,
@@ -283,7 +283,6 @@ int cm_check_vcos(const char *args[])
     //    measure_vcxo_freq( ERTM14_CMON_CLK_REF, ERTM14_CMON_CLK_DMTD, 10000000, 1, 62500000, set_main_dac, NULL, NULL );
     //  board_dbg("Check DMTD VCXO\n");
     //    measure_vcxo_freq( ERTM14_CMON_CLK_DMTD, ERTM14_CMON_CLK_REF, 100000, 10, 62500000, set_dmtd_dac, NULL, NULL );
-    return 0;
 }
 
 static int cmd_freqmon(const char *args[])
