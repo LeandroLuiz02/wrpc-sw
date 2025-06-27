@@ -116,6 +116,7 @@ static int cmd_pll(const char *args[])
 		pp_printf("%d\n", spll_get_dac(vals[1]));
 		return 0;
 	case CMD_GAIN:
+		/*                loop     sched    kp       ki       shift */
 		spll_set_pi_gain( vals[1], vals[2], vals[3], vals[4], vals[5] );
 		return 0;
 #ifdef CMD_REGS

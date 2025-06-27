@@ -276,6 +276,7 @@ int mpll_update(struct spll_main_state *s, int tag, int source)
 
 	if (source == s->id_ref)
 	{
+		/* Capture ref tag */
 		s->tag_ref = tag;
 
 #ifdef CONFIG_FRAC_SPLL
@@ -292,6 +293,7 @@ int mpll_update(struct spll_main_state *s, int tag, int source)
 
 	if (source == s->id_out)
 	{
+		/* Capture out tag */
 #ifdef CONFIG_FRAC_SPLL
 		s->tag_out_raw_d = s->tag_out_raw;
 		s->tag_out_raw = tag;
@@ -350,6 +352,7 @@ int mpll_update(struct spll_main_state *s, int tag, int source)
 	}
 
 	if (s->tag_ref >= 0) {
+		/* If there is a new ref tag, compute the delta */
 		update_dtag_dt( &s->dref_dt, s->tag_ref, &s->tag_ref_raw_d );
 
 		if(s->tag_ref_d >= 0 && s->tag_ref_d > s->tag_ref)
@@ -360,6 +363,7 @@ int mpll_update(struct spll_main_state *s, int tag, int source)
 
 
 	if (s->tag_out >= 0) {
+		/* If there is a new out tag, compute the delta */
 		update_dtag_dt( &s->dout_dt, s->tag_out, &s->tag_out_raw_d2 );
 
 		if(s->tag_out_d >= 0 && s->tag_out_d > s->tag_out)
@@ -369,7 +373,7 @@ int mpll_update(struct spll_main_state *s, int tag, int source)
 	}
 
 	if (s->tag_ref >= 0 && s->tag_out >= 0) {
-
+		/* If there are both ref and out tags, ... */
 #ifndef CONFIG_FRAC_SPLL
 		if (s->discard_early_cnt == 1) {
 			int adj_ref = s->tag_ref + s->adder_ref;
@@ -452,6 +456,7 @@ int mpll_update(struct spll_main_state *s, int tag, int source)
 		spll_debug(s->dbg_src_id, SPLL_DBG_SIGNAL_SAMPLE_ID, s->sample_n++, 0);
 		spll_debug(s->dbg_src_id, SPLL_DBG_SIGNAL_Y, y, 1);
 
+		/* Wait for both out and ref tags */
 		s->tag_out = -1;
 		s->tag_ref = -1;
 
@@ -528,8 +533,7 @@ static int32_t from_picos(int32_t ps)
 }
 #endif
 
-int mpll_set_phase_shift(struct spll_main_state *s,
-				int desired_shift_ps)
+int mpll_set_phase_shift(struct spll_main_state *s, int desired_shift_ps)
 {
 	int div = (DIVIDE_DMTD_CLOCKS_BY_2 ? 2 : 1);
 	s->phase_shift_target = from_picos(desired_shift_ps) / div;
