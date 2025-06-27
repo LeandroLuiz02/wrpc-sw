@@ -2177,7 +2177,7 @@ static int do_spll_recorder(int argc, char *argv[])
 		return 1;
 
 	/* Parse specific args */
-	while ((c = getopt (argc, argv, "u:b:he:")) != -1) {
+	while ((c = getopt (argc, argv, "u:h")) != -1) {
 		switch (c) {
 		case 'u':
 			/* Enable command mode */
