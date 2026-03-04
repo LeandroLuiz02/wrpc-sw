@@ -1,0 +1,4 @@
+config MYD_JA7100T
+    bool "Placa customizada"
+    help
+      Suporte para placa customizada baseada em WR PTP Core.
