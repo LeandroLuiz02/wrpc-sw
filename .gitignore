@@ -1,6 +1,5 @@
 *.o
 *.a
-*.elf
 *.bram
 *.bin
 *.map
