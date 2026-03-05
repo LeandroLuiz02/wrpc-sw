@@ -52,6 +52,8 @@
 #  include "boards/wr2rf-vme/board-config.h"
 #elif defined(CONFIG_TARGET_AMD_DEVBOARD)
 #  include "boards/amd-devboard/board-config.h"
+#elif defined(CONFIG_TARGET_MYD_JA7100T)
+#  include "boards/myd/board.h"
 #else
 #  error no board defined
 #endif

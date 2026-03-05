@@ -10,7 +10,7 @@
   static inline void clear_irq(void) {}
 
 #elif defined(CONFIG_ARCH_RISCV)
-static inline void clear_irq(void) {
+static inline void __attribute__((target("arch=+zicsr"))) clear_irq(void) {
     unsigned long t;
     /* AW: needed? */
     asm volatile ("csrrc %0, mip, %1" : "=r"(t) : "r"(1 << 11));

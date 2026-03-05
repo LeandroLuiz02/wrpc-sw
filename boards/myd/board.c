@@ -1,25 +1,38 @@
-#include <wrc.h>
-#include <board.h>
-#include <uart.h>
-#include <syscon.h>
 #include "board.h"
+#include "dev/syscon.h"
+#include "dev/endpoint.h"
+#include "storage.h"
 
-/* Ponteiros para os periféricos Wishbone */
-struct SYSCON_WB  *syscon  = (void *) BASE_SYSCON;
-struct UART_WB    *uart0   = (void *) BASE_UART;
-
-/* Inicialização básica da placa */
-void board_init(void)
+/*
+ * wrc_board_early_init - chamado logo no início do boot, antes do PLL e rede.
+ * Use para inicializar I2C, EEPROM, osciladores externos, etc.
+ * TODO: adicionar inicializações específicas do hardware da sua placa.
+ */
+int wrc_board_early_init(void)
 {
-    /* Inicializa UART para console */
-    uart_init_hw();
-
-    /* Inicializa syscon */
-    // TODO: adicionar inicializações específicas do hardware
+	return 0;
 }
 
-/* Retorna frequência do clock em Hz */
-uint32_t board_get_ref_clock(void)
+/*
+ * wrc_board_init - chamado após PLL e rede estarem prontos.
+ * Deve configurar o endereço MAC do endpoint.
+ * TODO: ler o MAC da EEPROM ou usar um endereço fixo para testes.
+ */
+int wrc_board_init(void)
 {
-    return CLOCK_FREQ;
+	uint8_t mac_addr[6] = { 0x22, 0x33, 0x44, 0x55, 0x66, 0x77 };
+
+	ep_set_mac_addr(&wrc_endpoint_dev, mac_addr);
+	ep_pfilter_init_default(&wrc_endpoint_dev);
+
+	return 0;
+}
+
+/*
+ * wrc_board_create_tasks - registra tarefas periódicas específicas da placa.
+ * TODO: adicionar tarefas se necessário (ex: leitura de temperatura).
+ */
+int wrc_board_create_tasks(void)
+{
+	return 0;
 }

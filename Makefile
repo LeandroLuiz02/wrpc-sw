@@ -83,6 +83,9 @@ cflags-$(CONFIG_LTO) += -flto
 # Only for lm32
 cflags-$(CONFIG_ARCH_LM32)  +=  -Iinclude/std
 cflags-$(CONFIG_ARCH_RISCV) +=  -Iinclude/std
+# zicsr is required for CSR instructions (mie, mstatus, mip, etc.)
+# and must be explicit since GCC 12+ no longer implies it in rv32im
+cflags-$(CONFIG_ARCH_RISCV) +=  -Wno-error=implicit-function-declaration
 
 cflags-$(CONFIG_WRPC_PPSI) += \
 	-I$(PPSI)/arch-wrpc \
@@ -111,10 +114,10 @@ obj-$(CONFIG_EMBEDDED_NODE) += \
 	monitor/monitor_ppsi.o
 
 cflags-$(CONFIG_ARCH_LM32) += -mmultiply-enabled -mbarrel-shift-enabled
-cflags-$(CONFIG_ARCH_RISCV) += -march=rv32im$(USE-COMP-INSTR-y) -mabi=ilp32
+cflags-$(CONFIG_ARCH_RISCV) += -march=rv32im$(USE-COMP-INSTR-y)_zicsr -mabi=ilp32
 ldflags-$(CONFIG_ARCH_LM32) = -mmultiply-enabled -mbarrel-shift-enabled \
 	-nostdlib -T $(LDS-y)
-ldflags-$(CONFIG_ARCH_RISCV) = -march=rv32im$(USE-COMP-INSTR-y) -mabi=ilp32 \
+ldflags-$(CONFIG_ARCH_RISCV) = -march=rv32im$(USE-COMP-INSTR-y)_zicsr -mabi=ilp32 \
 	-nostdlib -T $(LDS-y)
 
 asflags-$(CONFIG_ARCH_RISCV) += -march=rv32im$(USE-COMP-INSTR-y)_zicsr -mabi=ilp32

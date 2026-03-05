@@ -9,7 +9,7 @@
  */
 #include "irq.h"
 
-void disable_irq(void)
+void __attribute__((target("arch=+zicsr"))) disable_irq(void)
 {
     unsigned long t;
 
@@ -19,7 +19,7 @@ void disable_irq(void)
     asm volatile ("csrrci %0, mstatus, %1" : "=r"(t) : "i"(1 << 3));
 }
 
-void enable_irq(void)
+void __attribute__((target("arch=+zicsr"))) enable_irq(void)
 {
     unsigned long t;
 

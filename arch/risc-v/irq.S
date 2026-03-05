@@ -30,7 +30,7 @@ trap_entry:
 	/* Handle irq cause (or fault) */
 	csrr	ra,mepc
 	csrr	t2,mcause
-	csrr	t3,mbadaddr
+	csrr	t3,mtval	/* mbadaddr renamed to mtval in RISC-V spec v1.10 */
 	andi	t2,t2,0xff
 	li	t0,11	/* Cause irq */
 	bne	t0,t2, fault_handler

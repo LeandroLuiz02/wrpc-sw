@@ -91,6 +91,13 @@ config TARGET_AMD_DEVBOARD
 	help
 	  Currently supported: ZC706, ZCU102, ZCU106
 
+config TARGET_MYD_JA7100T
+	bool "MYD JA7100T (Artix-7 customizada)"
+	help
+	  Placa customizada baseada em Artix-7 com WR PTP Core.
+
+source "boards/myd/Kconfig"
+
 endchoice
 
 config WR_NODE_SIM
